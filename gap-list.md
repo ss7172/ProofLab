@@ -164,3 +164,20 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 **Impact:** an auditor sees that the agent consulted the network twin (a governed, allowed, successful call) but can't see that the twin returned nothing usable. The ledger doesn't record it, and the conclusion wasn't grounded in the twin.
 
 **If you had one more day:** have the agent resolve each element to its site before querying, record whether each tool result actually answered the question, and choose gather-evidence or escalate when key evidence comes back empty.
+
+---
+
+### 11. A governed tool's code can change under its approval
+
+**What's missing:** a link between a tool's approval and the code that actually answers.
+
+**Why:**
+- Each Lambda-backed ToolConfig points at its function with **no version qualifier**, so every call runs the latest code. That holds for all seven: `network-twin`, `customer-records`, `runbook-lookup`, `evidence-lookup`, `cluster-status`, `cr-author` and `helper-docs`.
+- The approval is an annotation. For `network-twin`: `system-admin`, *"Approved by the workshop platform at install"*, 2026-10-04 10:40 UTC, empty `signature`. It records nothing about the code it approved.
+- The live participant IAM policy (`participant-permissions-policy-1`, v1) allows `lambda:UpdateFunctionCode`, `UpdateFunctionConfiguration`, `InvokeFunction`, `AddPermission` and `DeleteFunction` on `arn:aws:lambda:*:*:function:team-*`, with no condition. Every tool function is named `team-a61f5-…`.
+- `GetFunction` on the twin's function succeeds for that role. We haven't attempted a write, so whether an organisation-level policy would block one is untested.
+- The guide itself warns: *"poison the twin and every agent downstream acts on poisoned reality."*
+
+**Impact:** an auditor can't show that the tool which answered during a run was the one that was approved. A replaced tool, such as a poisoned twin, would keep its approval, and no record would show the change.
+
+**If you had one more day:** record each tool function's `CodeSha256` (readable with `GetFunctionConfiguration`) alongside its approval, and check it at run time, flagging any run where the code differs.
