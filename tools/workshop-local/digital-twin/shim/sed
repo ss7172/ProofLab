@@ -1,0 +1,7 @@
+#!/bin/bash
+# Module 10 shim: translate GNU-style `sed -i EXPR FILE` (no suffix) to BSD `sed -i '' EXPR FILE`.
+args=()
+for a in "$@"; do
+  if [ "$a" = "-i" ]; then args+=("-i" ""); else args+=("$a"); fi
+done
+exec /usr/bin/sed "${args[@]}"

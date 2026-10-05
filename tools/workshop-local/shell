@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Opens a bash shell with the workshop environment loaded (same tools and variables as the IDE terminal).
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec bash --rcfile <(echo "source \"$HERE/env.sh\"; PS1='(hackathon) \w \$ '") -i
