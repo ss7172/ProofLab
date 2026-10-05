@@ -70,6 +70,9 @@ Working notes for a review with the platform team. Not part of the hackathon sub
 | 58 | M10 · Twin roles · network-twin | Design gap | "Breach on demand" can't reach the agents, because the network-twin Lambda reads its own packaged dataset. The twin knows only three sites (none for S2), and the agents query it with element ids |
 | 59 | M10 · Twin as a governed tool · IAM | **Security — policy-level** | Participant credentials may replace, invoke or re-permission every governed tool's Lambda (`function:team-*`, no condition), and every ToolConfig runs unpinned (`$LATEST`) code, so a poisoned tool would answer under its old approval |
 | 60 | M10 · Set up, ask and feed | Doc accuracy | "Ask the twin" and the checkpoint run `example_app.py`, which uses its own `example_test_model`, never `tokyo-rf-twin`. The checkpoint output is identical before and after retraining |
+| 61 | Challenge · Control 16 worked example | Doc accuracy | *"A real fault-resolution run on this platform uses 700-1050 tokens"*, but the deployed reference agents use 25K–50K per S1/S3 run (S2 used 2.0M). A 900-token cap, or the kit's 2,000, breaches every run |
+| 62 | Challenge · steps 1 and 5 · starter kit | Doc accuracy | `evaluate.py` implements only control 16 and reads evidence rather than pulling it. The kit's C9 example metric (disposition match) differs from the page's (AgentCore metrics) |
+| 63 | Challenge · hand-in | Doc accuracy (minor) | The page's `bash ~/starter/submit.sh` prints usage and exits: the script needs the team name as its first argument |
 
 ---
 
@@ -491,6 +494,11 @@ The role is not cluster-admin: `*/*` → no, `create clusterrolebindings` → no
 **Impact:** once the gateway pod restarts or its log rotates, per-run token evidence can't be joined by run id. The durable copy needs a second hop: CloudWatch `trace_id` → `/modaas/evidence` `modaas.evidence.correlation_id`, which is present on 60/60 evidence records.
 
 **Suggested fix:** add the same `modaas.*` attributes to the OTLP access-log export (`modaas-telemetry-export`).
+
+**Also, the kit's evidence pull depends on that short-lived copy (checked 2026-10-05, Challenge section):**
+- `starter/pull-evidence.sh` builds `gateway-log.json` from the pod's stdout (`kubectl logs <modaas-agw pod> --tail=50000 | grep -F <run id>`), and `evaluate.py` sums tokens only from records whose `modaas.run_id` matches.
+- At 15:59 UTC the pod held all 1,779 lines since it started (2026-10-04 10:35 UTC), so nothing had rotated yet.
+- But a pod restart, or more than 50,000 lines, would leave a named run with "NO EVIDENCE", and the durable copy has no `run_id` to fall back on.
 
 ## 28. Models and tools still report "paused" after resume — Misleading status
 
@@ -1154,6 +1162,61 @@ A correct S3 run escalates, and S1's disposition check rejects an escalation. So
 **Impact:** neither "ask" nor the checkpoint exercises the twin the module trains and retrains, so a broken `tokyo-rf-twin` would still pass.
 
 **Suggested fix:** run the simulation with `model_id="tokyo-rf-twin"`, for example via a short query script or a `MODEL_ID` environment variable in the example.
+
+## 61. The Control 16 worked example's token figures don't match the deployed agents — Doc accuracy
+
+**Guide (Challenge, "Control 16, worked example"):**
+- *"900 is deliberately tight for this exercise: a real fault-resolution run on this platform uses 700-1050 tokens across the three agents, so a 900 cap gives you both a passing and a breaching run without an artificial wait."*
+- The capture shows three calls per run (one per agent), roughly 120–310 input tokens each, for totals of 778 and 1,030.
+
+**Observed (2026-10-05, gateway per-call lines, the figure of record, summed by run id):**
+
+| Run | Scenario | Model calls | Tokens |
+|---|---|---|---|
+| `fault-1791175626-0d34e2` | S1 (IT refused) | 6 | 24,796 |
+| `fault-1791177843-fde682` | S1 | — | 50,246 |
+| `fault-1791177636-8fa0bd` | S3 | — | 37,836 |
+| `fault-1791177926-b0ce69` | S3 | — | 37,799 |
+| `fault-1791179282-8ef1a8` | S1 (IT on nano-9b) | 9 | 37,664 |
+| `fault-1791177342-d3f892` | S2 (IT loop) | 174 | 1,999,001 |
+
+- The deployed reference agents are Strands agents that make several model calls per invocation, with about 3,500–4,800 input tokens per call (prompt, tool schemas, context). The guide's numbers fit a one-call-per-agent design.
+
+**Impact:**
+- The example's 900 cap, and the kit's `register.yaml` default of 2,000, breach every run of the deployed agents.
+- A team copying the example gets a control that never passes, and no meaningful "passing run" to name.
+
+**Suggested fix:** state the token range of the agents as deployed, or tell teams to calibrate the cap from their own runs' gateway totals.
+
+## 62. The Challenge page's evaluator and C9 framing don't match the starter kit — Doc accuracy
+
+**Guide (Challenge page):**
+- Step 1: *"control 9 (drift, the AgentCore metrics, Module 8)"*.
+- Step 5: *"static/starter/evaluate.py (stateless: control id + run id in, pulls the evidence, compares to your register.yaml, PASS/BREACH with record ids out)"*.
+
+**Observed (kit `starter/`, 2026-10-05):**
+- **`evaluate.py` implements only control 16** (`_METRICS = {"16": _control_16_token_spend}`). Any other control id gets *"add one (see _control_16_token_spend for the shape)"*.
+- **It doesn't pull evidence:** it reads the evidence directory and, when a run has no gateway records, returns NO EVIDENCE with *"run pull-evidence.sh … first"*.
+- **The kit's `register.yaml` frames C9 differently:** *"a diagnostic-quality measure you recompute per run (e.g. disposition-match-rate against score-run.py's expected disposition)"*, not AgentCore metrics.
+- **Its C7 entry** measures *"distinct phase per correlation_id / … (intent, invocation, result-inspection)"* from `otel-traces`.
+
+**Impact:**
+- Teams choosing C7 or C9 have no evaluator to start from.
+- C9 is described two different ways (ledger dispositions vs AgentCore latency/errors), so which drift the judges expect is unclear.
+
+**Suggested fix:** ship evaluator stubs for C7 and C9, describe the page's step 5 as "reads evidence pulled by `pull-evidence.sh`", and use one C9 framing in both places.
+
+## 63. `submit.sh` needs the team name; the page's command prints usage — Doc accuracy (minor)
+
+**Guide (Challenge, "What to bring"):** *"Run it once you have both named runs: `bash ~/starter/submit.sh`"*.
+
+**Observed:**
+- `starter/submit.sh` sets `TEAM="${1:-}"` and, when it's empty, prints *"usage: … <team-name> [--dir WORKDIR] [--evidence-dir DIR]"* and exits 2.
+- The script's own header example passes a team name: `bash submit.sh my-team`.
+
+**Impact:** a participant running the page's command at hand-in time gets a usage error instead of an upload.
+
+**Suggested fix:** show `bash ~/starter/submit.sh <team-name>` on the page, or default the team name to `$TEAM`, which the IDE already sets.
 
 ## Running from outside the IDE (FYI)
 
