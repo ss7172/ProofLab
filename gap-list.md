@@ -2,7 +2,7 @@
 
 *Draft started 2026-10-05, while working through the workshop and before our build. Entries change as we close gaps.*
 
-Gap 1 is about agent judgment, the gap the challenge asks us to close. Gaps 2–9 are platform limits we found and verified. They bound what any Evidence Pack on this platform can prove, so each one says what an auditor can't do and how we would work around it.
+Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. Gaps 2–9 are platform limits we found and verified. They bound what any Evidence Pack on this platform can prove, so each one says what an auditor can't do and how we would work around it.
 
 ---
 
@@ -148,3 +148,19 @@ Gap 1 is about agent judgment, the gap the challenge asks us to close. Gaps 2–
 **Impact:** an auditor can't show that customer data was handled under a declared classification, or that credentials and prompts were protected in transit and at rest.
 
 **If you had one more day:** classify the tool, decide deliberately what our agent's spans keep (and say so), and ask for agents to be wired to the TLS listener.
+
+---
+
+### 10. The network agent asks the twin the wrong question, gets nothing back, and carries on
+
+**What's missing:** any check that the evidence an agent gathered actually answered its question.
+
+**Why:**
+- The `network-twin` tool answers only for exact site ids. Its dataset has three: `SITE-DEN-12`, `SITE-DEN-09` and `SITE-PHX-04`.
+- In the last 24 hours, the reference network agent's own spans show 40 tool results reading *"no twin data for site"*. The agent had asked with **element ids**: `DU-DEN-12-A` (29 times), `RTR-DEN-12-CORE` (9) and `RTR-PHX-04-CORE` (7).
+- Each of those calls was a governed `tools/call` that returned HTTP 200 and was allowed. The agent went on to record a disposition anyway.
+- The S2 scenario (transport congestion) names no site at all, so the twin can't be its ground truth.
+
+**Impact:** an auditor sees that the agent consulted the network twin (a governed, allowed, successful call) but can't see that the twin returned nothing usable. The ledger doesn't record it, and the conclusion wasn't grounded in the twin.
+
+**If you had one more day:** have the agent resolve each element to its site before querying, record whether each tool result actually answered the question, and choose gather-evidence or escalate when key evidence comes back empty.
