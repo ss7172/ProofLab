@@ -2,7 +2,7 @@
 
 *Draft started 2026-10-05, while working through the workshop and before our build. Entries change as we close gaps.*
 
-Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. Gaps 2–9 are platform limits we found and verified. They bound what any Evidence Pack on this platform can prove, so each one says what an auditor can't do and how we would work around it.
+Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. Gaps 2–9 and 11 are platform limits we found and verified. They bound what any Evidence Pack on this platform can prove, so each one says what an auditor can't do and how we would work around it.
 
 ---
 
@@ -29,6 +29,7 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 
 **Why:**
 - Every agent calls the gateway with the same team key, so every Cedar decision names `ServiceIdentity::"bootstrap-key"`. For example, all 7 of `my-agent`'s decisions and all 24 of a three-agent run's.
+- The guide's suggested WHO source, the `modaas-authz` pod log, holds no per-call records, only its startup lines. The per-call identity is in `/modaas/evidence`, and there every authenticated call names `bootstrap-key`.
 - Per-agent Keycloak identities exist (one `IdentityConfig` per agent), but none is provisioned (`listenerRegistered: false`).
 - Every AgentCore runtime, ours included, runs as the same IAM role (`a-01-eks-cluster-agentcore-runtime`).
 
@@ -68,7 +69,8 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 - **The kill switch is recorded the same way** (Module 9 Step 3: `nemotron-super-120b` paused at 09:13:04 UTC; CID `my-agent-1791191585-4d9744`):
   - the agent's call was refused within 2 s (HTTP 404, route withdrawn)
   - but `/modaas/evidence` and the policy-decision log record `decision=ALLOW` (policy `model-nemotron-super-120b`, version 331993)
-  - the gateway's record joins only by trace id: the pod's own 404 line has no run, trace or action id, and its durable copy in `/aws/modaas/gateway` (trace `f5140819…`) shows a bare `404` on `/v1/chat/completions`, with no run id, model or reason
+  - the gateway's record joins only by trace id: the pod's own 404 line carries a trace id (`f5140819…`, the evidence record's) but no run id or action id, and its durable copy in `/aws/modaas/gateway` (same trace) shows a bare `404` on `/v1/chat/completions`, with no run id, model or reason
+  - that trace id joins the 404 to the run through the policy decision and its `/modaas/evidence` record, which carries the run's correlation id and records the call as `ALLOW`
   - Only the agent's own ledger says `disposition=refused`.
 - The reference agents write no guardrail verdict to the ledger, so the grader's guardrail check fails on every run.
 
@@ -83,7 +85,7 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 **What's missing:** an approval record that is attributable and covers the version that actually ran.
 
 **Why:**
-- An approval is two free-text annotations, stored with an empty `signature`, and EKS audit logging is off. So who set them isn't recorded independently.
+- An approval is two free-text annotations, stored with an empty `signature` (all 18 approval records in the cluster, re-checked 2026-10-05), and EKS control-plane logging, audit included, is off for all five log types. So who set them isn't recorded independently.
 - Changing an approved agent's model needed no re-review (the Module 7 swap). The guide states the same for image changes, from its own measurement; we haven't tested it.
 - The "re-attest" annotation added no approval record. The IT agent's only approval (04:37 UTC) predates its model change (05:47 UTC).
 
@@ -97,7 +99,13 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 
 **What's missing:** tamper evidence for the evidence ledger.
 
-**Why:** the audit store has no signatures or hash chain, and its write token sits in plain text in every AgentConfig spec. Signing and hash chains are out of scope for this challenge.
+**Why:**
+- The audit store has no signatures or hash chain, and its write token sits in plain text in every AgentConfig spec. Signing and hash chains are out of scope for this challenge.
+- It has no verification route either: its source exposes only `/healthz`, `/records`, `/timeline` and a write.
+- Participants can also read the write token from each agent runtime's environment variables (`get-agent-runtime`), not only from the AgentConfig specs.
+- The kit's own evidence pull copies the token into the Evidence Pack: `pull-evidence.sh` (line 78) saves the full Model/Tool/AgentConfig objects, specs included, as `cr-status.json`. `submit.sh` then zips the evidence folder as it is, uploads it to the team evidence bucket (stack output `TeamEvidenceBucketName`), which the judges read, and leaves a copy of the zip in the directory it was run from.
+- Its timestamps are the writer's: the store keeps any `ts` a writer sends and assigns only `seq` itself, so a forged record can also carry a chosen time.
+- The hand-in bucket can't vouch for the records either. Participants can't read its versioning, object-lock or lifecycle settings (AccessDenied), yet the same credentials can overwrite or delete its objects and can't list or read earlier versions. `submit.sh` prints no `VersionId`. A `head-object` after upload shows one only if versioning is on, and even then it shows only that versioning was on, not that the submission is unaltered.
 
 **Impact:** *"can you show the records were not altered?"* can be answered by corroboration, not proof.
 
@@ -105,19 +113,21 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 
 ---
 
-### 7. RECONSTRUCT: one run is spread across stores with no shared durable key
+### 7. RECONSTRUCT: a run's records sit in stores that only partly share a durable key
 
-**What's missing:** a single durable key that joins every record of a run.
+**What's missing:** the run's key on every record of a run, refusals included.
 
 **Why:**
-- The durable gateway log (`/aws/modaas/gateway`) has no run id; only the gateway pod's short-lived output does.
+- A durable shared key does exist for a run's model and tool calls. The gateway emits one trace span per request, which lands in CloudWatch Logs `aws/spans` and is kept 30 days, carrying the run id (the agents' correlation id), an action id and, for model calls, the token counts. For the S2 run (`fault-1791177342-d3f892`, 2026-10-05 05:15–05:20 UTC) that is 353 spans and 1,999,001 tokens, exactly what the gateway pod reported. `/modaas/evidence` (30 days) and the ledger carry the run id too.
+- The durable copy of the gateway's access log (`/aws/modaas/gateway`, 7 days) carries no run id or action id: none of its 1,630 records on 2026-10-05. The installer meant that copy to match the pod's output, so this is a build gap; we couldn't find the cause.
+- The policy-decision and authz logs live only on their pods; neither is shipped to CloudWatch.
 - Ledger records carry trace ids the agents mint themselves, which don't match the run's trace.
-- The gateway pod's lines for refused calls carry no run id or action id. The durable copy of the kill-switch 404 keeps only a trace id. A fail-closed refusal in S1 (`fault-1791175626-0d34e2`) appears in `/modaas/evidence`, but the ledger reports it as an HTTP 500 on the model.
-- The S2 runaway (`fault-1791177342-d3f892`: 174 model calls, 1,999,001 tokens) looks like 16 ordinary ledger records.
+- Refused calls carry no run id or action id on the gateway line; they join to the run only by trace id, via the policy decision and its `/modaas/evidence` record. A fail-closed refusal in S1 (`fault-1791175626-0d34e2`) appears in `/modaas/evidence`, but the ledger reports it as an HTTP 500 on the model.
+- The S2 runaway (174 model calls, 1,999,001 tokens) reads as 16 ordinary ledger records.
 
-**Impact:** replaying a run needs a multi-step join (trace id → `/modaas/evidence` correlation id), and a refusal or a loop can be missed when reading the ledger alone.
+**Impact:** governed calls can be replayed by run id from the gateway's spans, but refusals have to be joined by trace id, through the policy decision and its `/modaas/evidence` record, and a refusal or a loop can be missed when reading the ledger alone. The span copy also ends after 30 days, or earlier if the event account is torn down.
 
-**If you had one more day:** build that join once, and store the reconstructed timeline of each run in the Evidence Pack.
+**If you had one more day:** build the per-run join once, from `aws/spans` by run id (not X-Ray, which truncates long runs): every governed call with its action id, model and tokens, each linked to its `/modaas/evidence` decision by action id, with refused calls added by trace id. Store the reconstructed timeline of each run in the Evidence Pack.
 
 ---
 

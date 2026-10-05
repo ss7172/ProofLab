@@ -1,0 +1,8 @@
+# ServiceNow integration package (SERVICENOW_INTEGRATION_HANDOFF.md §5.2) + Python caches
+.venv*/
+*.env
+evidence/**/tmp/
+__pycache__/
+.pytest_cache/
+# submit.sh leaves evidence zips in the working directory; they can contain the ledger write token (pull-evidence.sh:78)
+*.zip

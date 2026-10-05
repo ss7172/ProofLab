@@ -1,11 +1,11 @@
 ---
 name: prooflab-project
-description: "What the user's team is building for the Trustworthy AI hackathon — ProofLab (controls C7/C9/C16, six deliverables, 2-minute judge query) — where the baseline context lives, and the open AICT question"
+description: "What the user's team is building for the Trustworthy AI hackathon — ProofLab (controls C7/C9/C16, six deliverables, 2-minute judge query) — where the baseline context lives, the open AICT question, and the team winning playbook + SN handoff (verdict, roster: user = Sree + Arth, first planning decision)"
 metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T02:59:53.473Z
+  modified: 2026-10-05T18:52:21.947Z
 ---
 
 The user's two-person team (per the handoff) is building **ProofLab** for the Trustworthy AI & Data Hackathon ("Quest for Proof"; event began Sunday 2026-10-04). It is an evidence-backed assurance tool around the three supplied telecom reference agents (customer-experience, it-resolution, network-resolution). The agents call Nemotron models through the governed gateway `modaas-agw` and are deployed in workshop **Module 7** (user, 2026-10-04).
@@ -75,7 +75,7 @@ The user's two-person team (per the handoff) is building **ProofLab** for the Tr
   - Options: fix the reference agents' evidence emission and/or build our own instrumented agent (Module 9). Decide in the plan, after all modules.
 - **Planning input, 2026-10-05: the idea "don't touch the agents can't hold; first carry one run ID end to end" (shared by the user).** Claude's assessment from live data:
   - The run ID (CID) ALREADY survives without code change: baggage → gateway `modaas.run_id`. Per-run token sums worked on 5 runs, and ledger `correlation_id` joins all 3 agents. The platform propagates the run trace (PDP decisions and the AgentCore runtime log carry it).
-  - Broken: only agent.py's ledger trace_id/action_id/tokens/guardrail fields; gateway-DirectResponse refusals carry no run_id; the durable gateway log lacks run_id.
+  - Broken: only agent.py's ledger trace_id/action_id/tokens/guardrail fields; gateway-DirectResponse refusals carry no run_id; the durable gateway log `/aws/modaas/gateway` lacks run_id (the gateway's spans in `aws/spans` have it for 30 d; confirmed live 2026-10-05).
   - Suggested minimal fix: make the ledger record what the platform knows (inbound trace, action_id, model, tokens, guardrail outcome, correct refusal status). Do it via CodeBuild → AgentConfig before thresholds and C9 baseline, and decide IT's model (currently nano-9b) first.
   - A real approval record for a new version needs designing: a swap needed no re-approval and re-annotation adds no record.
   - The quote "lose both your records and your spending limit" was NOT found in the slides, transcripts or brief.
@@ -84,6 +84,7 @@ The user's two-person team (per the handoff) is building **ProofLab** for the Tr
     - PDP: 24 decisions with the run trace
     - durable /modaas/evidence: 24 records with correlation_id=CID and the run trace
     - durable /aws/modaas/gateway: 30 records with the run trace
+    - durable `aws/spans`: 24 gateway spans with run_id = CID, 37,664 tokens (confirmed live 2026-10-05)
     - X-Ray: ONE trace containing all 3 agent runtimes plus 45 modaas-agw segments
     - Only the ledger trace_ids (0/12) differ.
     - So the agent fix is about the judged evidence shape, not run-ID propagation.
@@ -102,7 +103,7 @@ The user's two-person team (per the handoff) is building **ProofLab** for the Tr
     - So invocation latency moves with call count and agent code, not only platform health.
     - The gateway's per-call duration is the figure-of-record latency, and it survives model swaps and call-count changes. AgentCore metrics = the runtime-health drift signal.
     - Freeze a dated baseline from OUR healthy hours, tied to model/config (the IT swap at 05:47 changes it).
-  - Use hourly Maximum latency plus the Errors sum, not the average. S2's loop showed Errors=0 but max 278 s.
+  - Recommendation (not decided): hourly Maximum latency plus the Errors sum. In the S2 hour (05:00Z) Errors stayed 0; the IT runtime's hourly Average (71.6 s, vs 8.2–8.5 s for customer and network) showed the runaway too, but the Maximum (278.4 s) showed it most strongly, since an hourly average dilutes one long invocation across the hour's others (corrected 2026-10-05 after the handoff review: the Average did not hide it).
   - Fast is not healthy: a refused call returned in 1.05 s.
   - Tell "platform sick" from "agent looping" via the gateway's per-run call count (174 model calls in one IT invocation).
 - **DELIVERABLE `gap-list.md` exists (repo root, draft since 2026-10-05; `submit.sh <team> --dir <repo>` packages it).** Kit format: What's missing / Why / Impact / If you had one more day. Entries:
@@ -111,13 +112,30 @@ The user's two-person team (per the handoff) is building **ProofLab** for the Tr
   3. WHAT: undeclared tools usable; --tool doesn't declare
   4. AUTHORIZED: calls the platform refused (guardrail block, kill-switch pause) are recorded as ALLOW
   5. APPROVED: self-asserted approvals; changes not re-reviewed
-  6. INTEGRITY: no tamper evidence; write token in specs
-  7. RECONSTRUCT: no shared durable key; refusals and loops are invisible in the ledger
+  6. INTEGRITY: no tamper evidence; write token in specs (and, via the kit's own `pull-evidence.sh`, in the Evidence Pack)
+  7. RECONSTRUCT: the stores only partly share a durable key (the CID is on the gateway's spans in `aws/spans` for 30 d, but not on `/aws/modaas/gateway`, refusals or the ledger's trace ids); refusals and loops are invisible in the ledger (reframed 2026-10-05 after live verification)
   8. no per-run spend limit (C16 is the fix)
   9. customer data in spans, plain-HTTP key, no classification
   10. the network agent queries the twin with element ids, gets "no twin data" (40×), and proceeds (added 2026-10-05, commit 56b9cb1)
   11. a governed tool's code can change under its approval: unqualified Lambda ARNs; the participant policy allows UpdateFunctionCode on team-*; mitigation idea = record CodeSha256 at approval and compare at run time (commit ace0442)
   - Keep adding gaps as found (user instruction).
+  - 2026-10-05, from the Resources/Glossary/screenshot checks (lead's instruction): gap 2 + the authz pod log has no per-call records; gap 5 + EKS logging off (all 5 types), 18 empty signatures; gap 6 + no ledger verify route, the token also in runtime env (`get-agent-runtime`), bucket versioning unreadable; gap 7 + the telemetry export puts `modaas.run_id` on trace spans only, not on the `/aws/modaas/gateway` copy (a build gap; wording corrected 2026-10-05), PDP/authz logs pod-only, retention 30 d / 7 d, and the X-Ray action_id join as the one-more-day fix (superseded by the live-verification reframe below). No new numbered gaps.
+  - 2026-10-05, after the independent reviews: gap 4's kill-switch 404 line has a trace id but no run or action id (it joins the run by trace id, via the policy decision and its /modaas/evidence record, which carries the run's CID and records ALLOW; corrected after the lead's live check); gap 5 de-duplicated; gap 6 + the kit's evidence pull copies the token into the Evidence Pack, the store keeps writer-supplied timestamps, and the hand-in bucket can't vouch (a VersionId is not integrity proof); gap 7's export wording corrected; the header now names gap 11 as a platform limit. Repo `.gitignore` now ignores `*.zip`.
+  - Gap 7 reframed after live verification (2026-10-05). CONFIRMED: the gateway's trace spans in CloudWatch Logs `aws/spans` (30-day retention) carry `modaas.run_id` = the baggage CID, `modaas.action_id` and per-call token counts, one span per gateway request (S2 353 spans / 1,999,001 tokens; S1 `fault-1791179282-8ef1a8` 24 / 37,664; both equal the stdout figure of record). So a durable shared key exists for model and tool calls. Still missing: ids on the `/aws/modaas/gateway` copy (0 of 1,630), on refusals (the kill-switch 404's gateway line has none; it joins its run only by trace id, via the policy decision and evidence record) and in the ledger's trace ids. The one-more-day fix is the per-run join from `aws/spans` by run id.
+- **Team winning playbook + SN handoff (received 2026-10-05):**
+  - **Location:** repo root: `HACKATHON_WINNING_PLAYBOOK.md` (595 lines: §1 brief restated, §2 field guide, §3 checklist, §4 scorecard), `SERVICENOW_INTEGRATION_HANDOFF.md` (from Arth) and `prooflab/`. Copied in 2026-10-05; the original is in `~/Downloads/servicenow-integration-package/`. ServiceNow facts: [[servicenow-context]].
+  - **Verdict (lead session's check; corrections in repo `notes/playbook/playbook-verification.md`):**
+    - §1's brief and scoring rules (§1.1–§1.6, §1.8) and §4's scoring criteria are trustworthy: spot-checks trace to the Immersion Day slides, the meeting transcript and the master brief.
+    - The platform claims in §1.0/§1.7, §2 (field guide) and §3 carry workshop-guide claims our live evidence disproves: Cedar denies unauthorized or tampered tools (§2, §3.9), a ledger verification (§2, §3.6), "no durable trace exporter" (§1.7), a ~15 s kill switch (§2), "S2 fails 7/10" (§1.7), a scenario switch for breach on demand (§1.7, §2). §3.10/§4.1 and §3.5/§4.4 overstate what ServiceNow shows or enforces. §3.3's C9 on Average latency is not disproven (the Average showed the S2 runaway too); the statistic is a planning decision. (Corrected 2026-10-05 after review.)
+    - Use it as the strategy backbone for what judges reward, with that file's corrections. §1.8 "agents only on AgentCore or in ServiceNow" is an organisers' rule in the master brief (L91: "For AWS-hosted custom agents, the organizers specify Strands and AgentCore Runtime. ServiceNow-hosted agents are also allowed."; L93: "Submitted agents must operate within the provided AWS/ServiceNow environments."), not a platform constraint (corrected 2026-10-05).
+  - **The user's review of the corrections (2026-10-05, the user's words to the lead):**
+    - **Hostile/Rogue tests may use modified Cedar policies** ("for hostile and rogue tests, we can modify cedar policy"). Correction row 1 had overstated "these tests will show ALLOW". The live lever is the called tool's ToolConfig `spec.access.cedarPolicy` (projected to `modaas-toolconfig-<alias>`): a forbid rule keyed on toolName / arguments / dataClassification / toolMethod (e.g. classify customer-records and forbid restricted data; forbid a tool or argument pattern for all callers). Limits: not per agent (one shared principal; Cedar doesn't see the calling agent); not via the team ConfigMap (#33) or the AgentConfig overlay (#39); stateless, so no loop or token caps. Each edit is a cluster write (needs the user's OK); whether an edit resets approval is untested. See [[platform-verified-facts]] (Cedar levers).
+    - **The grader and INTEGRITY** ("we are given a grader i believe, can that be used"): `score-run.py` grades evidence shape. It can support INTEGRITY as completeness (≥3 records, all three domains; :90-92), capture consistency (it refuses a capture whose "AUDIT TRAIL -- N records" header disagrees with the parsed count; :159-168) and a reproducible verdict, but not as proof of non-alteration (no hashes or signatures, no ledger verify route, a readable write token). Pair it with cross-surface corroboration (gateway lines, PDP decisions, `/modaas/evidence`, X-Ray, the AWS-written `/aws/bedrock/aict-invocations`) and a MANIFEST of SHA-256 hashes (correction row 2).
+    - **Naming (row 9, reframed after the user disagreed):** both are right at different layers. Type `ifabric-…` into `new-agent.sh` / the CR (the generator rejects `_`, in a real run only after the CodeBuild build, so use `--dry-run` first); AgentCore/AICT then show `ifabric_…`, which meets the playbook's intent that judges can find our agents.
+    - **Risks accepted by the user, not blockers** (the remaining risks are "allowed"): Arth's Global OAuth property change on the shared instance, the two `prooflab/servicenow` adapter bugs, and AICT Monitor likely empty for our agents. See [[servicenow-context]].
+  - **Roster:** a two-person team: the user (= Sree; user confirmed 2026-10-05) builds the AWS side and is the control owner of all three controls per the SN handoff; Arth runs the ServiceNow workstream.
+  - **Planning question (not a decision):** the playbook says "nobody checks their own work" (owner ≠ builder), but the owner (the user) also builds the AWS-side controls. Separation of duties needs a plan, e.g. who acts as assurance.
+  - **FIRST planning decision:** the C9 baseline is clock-bound (closed UTC hours) and tied to model/config, and the IT agent is still on nano-9b (Module 7 swap). Decide revert-or-not BEFORE the baseline hours start.
 - **PLAN ITEM (user, 2026-10-05; do after all modules):** build working versions of the three twin fixtures the kit's recipes fail to produce:
   - C7 expected events: sites + predicted RSRP from twin-dataset.json
   - C9 drift pair: baseline vs breach values with a dated threshold, working on a COPY of the dataset

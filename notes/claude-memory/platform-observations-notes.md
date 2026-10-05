@@ -1,11 +1,11 @@
 ---
 name: platform-observations-notes
-description: "Pointer to the repo's platform-observations file (64 items as of 2026-10-05; #24 = cockpit leaks the ledger write token; #37–#40 = tool authorization / identity gaps; #41–#47 = Module 6–7 backlog) and how to frame it — context for the platform team, not build targets"
+description: "Pointer to the repo's platform-observations file (64 items as of 2026-10-05; #24 = cockpit leaks the ledger write token; #37–#40 = tool authorization / identity gaps; #41–#47 = Module 6–7 backlog) and how to frame it — context for the platform team, not build targets; plus parked candidates from the 2026-10-05 Resources/Glossary/screenshot checks"
 metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T03:14:03.297Z
+  modified: 2026-10-05T18:52:20.633Z
 ---
 
 Repo file `notes/platform-observations.md` is the running, evidence-backed list of where the live platform, kit or guide differs from what the guide claims. The user is reviewing it with the platform team on 2026-10-05. It is not part of the hackathon submission. Committed and pushed to GitHub main (first commit 03ff0bf, 2026-10-05). Details live in the file; this note records how to use it.
@@ -31,7 +31,7 @@ Repo file `notes/platform-observations.md` is the running, evidence-backed list 
   - #24 (lead security item): the ledger write token is a literal env value in AgentConfig specs, AND the cockpit's `/api/cr/AgentConfig/...` view returns it. Verified as a yes/no match without printing it. So anyone with the cockpit link can forge ledger records.
   - #25: the cockpit has no own auth and has a POST that invokes agents (the guide calls it read-only 3 times).
   - #26: participant RBAC is cluster-wide `admin`; secrets, pods and port-forward in kube-system, agentgateway-system, modaas-system and canvas-vault.
-  - #27: run ids are missing from the durable gateway log.
+  - #27: run ids are missing from the durable gateway log (still true for `/aws/modaas/gateway`; the gateway's spans in `aws/spans` carry them durably, confirmed live 2026-10-05; see the parked #27 update).
   - #28: nano-9b keeps "paused" status after resume.
   - #29: the telemetry tap was not shipped, so the cockpit live panels are empty.
   - #30: the AICT stack description contradicts the IAM user and access key that were created.
@@ -78,7 +78,7 @@ Repo file `notes/platform-observations.md` is the running, evidence-backed list 
     - The kill-switch block pauses nano-9b and says "every agent … depends on this model", but Step 1b builds my-agent on super-120b.
     - #36 update: the super-120b pause took effect in ≤2 s (vs 33–41 s for nano-9b), so latency varies.
     - #28 reproduced on super-120b.
-    - #35 extension: a pause refusal (404) is also recorded as ALLOW in /modaas/evidence, and its gateway line has no run/trace/action id.
+    - #35 extension: a pause refusal (404) is also recorded as ALLOW in /modaas/evidence, and its gateway line has no run id or action id (only `trace.id`, which joins it to the run through the PDP decision and the /modaas/evidence record that carries the run's CID; corrected 2026-10-05).
   - Minor: new-agent.sh passes the SDK packages in EXTRA_PIP, which Step 2 says never to do (the same versions as the pins, so harmless).
 - **Candidates from Module 10 Step 1 (2026-10-05), not yet proposed:**
   - The page's "ask the twin" and its checkpoint run `example_app.py`, which uses its own `example_test_model`, not `tokyo-rf-twin`. The checkpoint output is identical before and after retraining, so it tests nothing about the retrained twin.
@@ -100,13 +100,38 @@ Repo file `notes/platform-observations.md` is the running, evidence-backed list 
   - #61: the C16 example's 700–1050 tokens vs our 25K–50K runs
   - #62: evaluate.py is C16-only and reads rather than pulls; the kit's C9 framing differs
   - #63: submit.sh needs the team name
-  - #27 update: pull-evidence.sh depends on the pod's stdout for run ids
+  - #27 update: pull-evidence.sh depends on the pod's stdout for run ids (`aws/spans` keeps them durably, confirmed 2026-10-05)
 - **#64 added 2026-10-05 (user: "add"):** Choosing a Model: same tokens per call on 9B vs 120B (cost differs); stale approval states; 24 s vs "~10 s".
 - **Candidates from Reference: Network Tool Naming (2026-10-05), not yet proposed:**
   - the stale "plain HTTP /handle, /negotiate" claim about the network agent (it uses /mcp/network-twin)
   - the quoted heredoc leaves `${MODAAS_GATEWAY_ID}` literal
   - "cedarPolicy scoping agent identities" is impossible (→ #38 cross-ref)
   - The page's citation of the AI Native Networks workshop: the cited page has no callable tools (22 names as "potential projects"), no stated `<domain>_<verb>_<resource>` convention, and the quote is a paraphrase.
+- **Parked candidates (2026-10-05, add only on the user's "add"),** from the Resources & How-To, Glossary and cockpit-screenshot checks (facts in [[platform-verified-facts]]). Not in the repo file:
+  - **#27 update (corrected 2026-10-05 after live verification):** #27's "per-run token evidence can't be joined by run id" after a pod restart is wrong. The gateway's trace spans in CloudWatch Logs `aws/spans` (30 d) carry `modaas.run_id` = the CID, `modaas.action_id` and per-call tokens (S2: 353 spans, 1,999,001 tokens, equal to stdout). What #27 gets right: the `/aws/modaas/gateway` copy has no ids (0 of 1,630). `modaas-telemetry-export` adds them only to spans (`spec.frontend.tracing`), and its OTLP access-log sink (`spec.frontend.accessLog.otlp`) adds none, although the installer comment says that export was meant to match the stdout line (a build gap, cause unknown; both policies Accepted and Attached). Its suggested fix (add the `modaas.*` attributes to the OTLP access-log export) is not in place. The collector deletes only 6 payload keys, not the ids. X-Ray holds the same span fields but truncates long runs. See [[platform-verified-facts]].
+  - **#24 update:** all 5 AgentConfigs, our `my-agent` included, carry the literal token. `get-agent-runtime` (participant role) also returns runtime env in plain text: `AUDIT_WRITE_TOKEN`, `OPENAI_API_KEY`, `AGENTCORE_GATEWAY_MCP_TOKEN`.
+  - **#29:** its empty-panel list doesn't cover the Observability panels; the gateway-metrics (`:15020`) and cost-catalog panels don't need the tap.
+  - **#42:** a third cost source: the Observability panel's cost, computed by the gateway itself (683-model catalog), besides the Cost view's AWS/Bedrock figures and the guide's `/aws/modaas/gateway` claim.
+  - **"90 CEL" hard-coded:** the screenshots' "90 CEL validation rules" was a literal in an older UI; live is 94 by the cockpit's formula (89 Model/Tool/Agent; 100 across all ODA CRDs; VAP +2). The notes record no figure (closest #54).
+  - **Screenshots from an older build** (#5, #23): 7 assets vs our 19, kubernetesPod agents, `o2-network-inventory`.
+  - **"Self-contradictory specs never reach the cluster" is overstated** (#54): cross-CR contradictions are admitted, then parked at phase=Failed (per the CRD source; not tested live).
+  - **Authz WHO** (#38, #8): the Resources page's WHO step (`kubectl logs deploy/modaas-authz`) shows only startup lines; the per-call identity is only in `/modaas/evidence` (bootstrap-key on every authenticated call; the 23 unauthenticated `NoSigV4Credential` DENYs show `unknown`). The Trace view's fallback ("reconstruct … from the modaas-authz log") can't work either.
+  - **Trace view "no tracing configured"** is wrong (#32): the gateway exports to X-Ray.
+  - **`GATEWAY_API_KEY`** (#23, #2, #24, #38, #55): the modaas-docs section's "`GATEWAY_API_KEY` your AgentConfig already mounts from `agw-apikeys` in Module 9" matches no runtime. Keys arrive as `OPENAI_API_KEY` / `AGENTCORE_GATEWAY_MCP_TOKEN` (operator-injected); no spec references `agw-apikeys`; the name exists only in the stale `reference-impl/agents.yaml`.
+  - **#26 extension:** participants can use the k8s API pod proxy to gateway pod ports in `agentgateway-system` (`:15020/metrics` GET succeeded; `:15000` refused).
+  - **Cockpit "every route is a read (HTTP GET)"** on the Resources page (#25): 47 GET + 1 POST.
+  - **INTEGRITY step's "Kubernetes audit"** (#12): EKS logging is off for all 5 types; CloudTrail `describe-trails` is denied to us.
+  - **AUTHORIZED step's `deploy/modaas-pdp`** (#35): it reads 1 of 2 replicas, and the decision lines carry no principal.
+  - **WHAT step's `kubectl get events -n components`** (#14): events are kept ~1 h and all `reason=Logging`.
+  - **`demo-crm-lookup` policy loaded** (#9): still Reviewing, yet its Cedar ConfigMap exists and the PDP has loaded it (no route).
+  - **IDE-role gateway rights** (new; closest #59): `ide-workshop` allows Create/Update/DeleteGateway on `gateway/*`; WSParticipantRole denies them. Policy re-read 2026-10-05; not attempted.
+  - **`submit.sh` fallback** (#63): its bucket lookup (`… | [0]`) returns empty in this account; it works only because TEAM_EVIDENCE_BUCKET is set. The bucket's versioning/object-lock/lifecycle are unreadable to us.
+  - **Glossary checkpoint command** (new; doc drift): `kubectl api-resources … -o custom-columns=…` errors (unsupported); drop `-o`.
+  - **"Revoking"** (new): in no CRD phase enum; the Glossary also omits Pending, Failed, Retired, Active and ModelConfig's Validating/Validated/Configuring.
+  - **"Author policy in a ConfigMap; the operator loads it"** (#33): the PDP loads it, and a hand-written one decides nothing (0 of 1,037 decisions on both replicas over the pods' whole life, ~31 h).
+  - **AgentCore gateway target `aws-knowledge`** (new): an `mcpServer` target with no credential provider, the one exception to "fronts Lambda tool targets with IAM auth".
+  - **Dead Cedar link** (new): `cedarpolicy.com/en` is a 404; use docs.cedarpolicy.com (see [[reference-links]]).
+  - **Kit evidence pull copies the ledger token** (#24 extension; 2026-10-05, from kit source): `pull-evidence.sh:78` dumps the full CRs into `cr-status.json` (the ledger token, not the gateway key, which is only in the runtime env); `submit.sh` uploads it to the team evidence bucket and leaves the zip in its working directory (now gap-list gap 6).
 - Add an item only with evidence, and ask the user before editing the file (see [[hackathon-working-agreement]]).
 
 **Why:** the user said these findings are not what the hackathon wants built.

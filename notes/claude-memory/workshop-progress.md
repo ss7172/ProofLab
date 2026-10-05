@@ -1,14 +1,14 @@
 ---
 name: workshop-progress
-description: "Where the user is in the MoDaaS workshop modules, what live cluster state exists and who created it, and what was done along the way"
+description: "Where the user is in the MoDaaS workshop modules, what live cluster state exists and who created it, and what was done along the way; context gathering status, playbook check, evidence snapshot, handoff note"
 metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T03:16:30.204Z
+  modified: 2026-10-05T18:52:19.997Z
 ---
 
-**Progress (last updated 2026-10-05, after Module 9 (complete)):**
+**Progress (last updated 2026-10-05, after Module 11, the page checks and the playbook check):**
 - **Module 2:** done from the laptop on 2026-10-04. Step 6 (Amazon Q, console-only) was skipped.
 - **Module 3:** done on 2026-10-04; `validate-canvas.sh` gave 6 passed, 0 failed.
 - **Module 4 overview:** done on 2026-10-05.
@@ -19,7 +19,7 @@ metadata:
   - Capabilities 2–4, 6 and 7 matched in substance. Capability 5 needs `network-resolution-agent` (Module 7).
   - Capability 8 (cockpit Cost view) was explored read-only on the user's invitation; see [[platform-verified-facts]].
 - **Module 4 Step 2** ("The AWS services behind it", reading only): done on 2026-10-05.
-  - Its "one log line per model call … each with the run id … and policy verdict" is contradicted live (repo notes #27).
+  - Its "one log line per model call … each with the run id … and policy verdict" is contradicted live for `/aws/modaas/gateway` (repo notes #27). The gateway's spans in `aws/spans` do carry the run id and tokens per call (confirmed live 2026-10-05).
   - Its "nothing is pulled from an outside registry" holds only for the 5 MoDaaS images in the account's ECR; the other running images come from docker.io (18), quay.io (3), cr.agentgateway.dev (2), registry.istio.io (2), public.ecr.aws (1) and AWS's EKS add-on ECR (13).
 - **Module 5 "The models you serve: NVIDIA Nemotron"** (reading plus a checkpoint): done on 2026-10-05.
   - The checkpoint matched: 3 alias/modelId pairs, and the signed download is identical to the kit's `crs/demo-nemotron-models.yaml`.
@@ -88,6 +88,7 @@ metadata:
     - The IT agent looped. **174 model calls and 170 tool calls (137 runbook-lookup)**, 05:15:46–05:20:39.
     - **Peak 49 model calls/min.** The earlier "98/min" and "1,960,103" were wrong.
     - **1,999,001 tokens (1,992,059 in / 6,942 out), $0.3033 = 80% of the 2.5M/h ceiling.**
+    - Also durable by run id in `aws/spans`: 353 gateway spans (174 llm + 179 MCP), the same 1,999,001 tokens (confirmed live 2026-10-05).
     - Ledger: 16 records. IT has 8 across two invocations (INTENT 05:16:01 and 05:19:01); the first invocation finished last (05:20:39), after the network agent. The ledger is blind to the loop (notes #41, #44).
   - Account input tokens in the last hour reached ~2.05M of the 2.5M/h ceiling at ~05:22 UTC.
   - Token totals: S1 24,796; S2 1,999,001; S3 37,836.
@@ -99,7 +100,7 @@ metadata:
     - Headroom check: 2,139,857 input tokens in the last 60 min, so the user held S2.
     - So the IT 403 is intermittent, and S1 is 25–50K tokens depending on whether IT runs.
 - **Module 7 "Swap the model":** done by Claude on 2026-10-05 05:47–05:49 UTC (user "you run it for me").
-  - **it-resolution-agent now depends on `nemotron-nano-9b`** (`dependsOn.models[0]` and `modelRef`, generation 2). The runtime updated in 24 s.
+  - **it-resolution-agent now depends on `nemotron-nano-9b`** (`dependsOn.models[0]` and `modelRef`, generation 2). The runtime updated in 24 s. A CRD rule now ties `modelRef` to `dependsOn.models`, so a revert must update both consistently (2026-10-05 review). Live check (2026-10-05): one `kubectl patch` at 05:47:37Z set both fields; the runtime's `lastUpdatedAt` is 05:47:50Z (version 2, `MODEL_ALIAS=nemotron-nano-9b`).
   - S1 run `fault-1791179282-8ef1a8`: FAIL 6/8, 12 records. IT 2 calls on nano-9b, 8,450 tokens, $0.000537; customer+network 7 calls on super, 29,214 tokens, $0.004694; total 37,664 tokens, $0.005231.
   - The guide's compare grep (`it.resolution`) matches 0 lines; filter by CID and model instead.
   - **The model swap needed NO re-approval** (stayed Approved). The re-attest annotation did NOT add an approval record: still 1, "Reviewed: reference agent on AgentCore", 04:37:25.
@@ -114,7 +115,7 @@ metadata:
 - **Module 8 "Trace a run through its spans":** done read-only on 2026-10-05, reusing the swap run (trace `e13e7b73…`), with no new run.
   - 9/9 chat spans match the gateway per call.
   - show-run-spans.py totals are exactly 2× the gateway (12 calls / 75,328 vs 9 / 37,664) because it double-counts the invoke_agent parent spans.
-  - 48 Strands-native spans, not the guide's 8; no action_id in spans; no negotiate spans.
+  - 48 Strands-native spans, not the guide's 8; no action_id in the agents' spans (the gateway's spans in `aws/spans` carry it); no negotiate spans.
   - **CROSS-TOOL USE:** network (declared network-twin) called runbook-lookup ×2 and customer-records via `/mcp/network-twin`; IT (declared runbook-lookup) called evidence-lookup via `/mcp/runbook-lookup`. All 200 / ALLOW. PDP decides on the CALLED tool's policy. Every principal is `ServiceIdentity::"bootstrap-key"`, so there is no per-agent identity.
 - **Module 8 "Console, trust hierarchy, and health metrics":** done read-only by Claude on 2026-10-05 (~08:05 UTC). The console views are the USER's to check (console-only); a link and a time window were given (04:40–06:00 UTC).
   - **Drift command:** works with macOS `date -u -v-6H` instead of `-d '-6 hours'`. The CLI prints timestamps in LOCAL time (CDT: `00:00-05:00` = 05:00 UTC).
@@ -174,7 +175,7 @@ metadata:
     - `/tmp/my-agent-agentcore.yaml` and `/tmp/my-agent-image-uri` are mode 600.
     - AgentConfig `my-agent` was created 08:59:08: Reviewing, gen 1, models [nemotron-super-120b].
     - **`dependsOn.tools` is EMPTY:** `--tool` only adds the TOOL_MCP_URL/TOOL_MCP_ALIAS env vars, so the declaration (and registry) doesn't name the tool the agent uses.
-  - **D. Approved by Claude 08:59:51** (approver `satyabratsrikumar@team`, attestation "Reviewed: governed gateway path only"). Phase Approved by 09:00:16; runtime `my_agent-9AyPFbHh5Z` READY at 09:00:31.
+  - **D. Approved by Claude 08:59:52 UTC** (approval record 08:59:52.57Z, re-checked live 2026-10-05; approver `satyabratsrikumar@team`, attestation "Reviewed: governed gateway path only"). Phase Approved by 09:00:16; runtime `my_agent-9AyPFbHh5Z` READY at 09:00:31.
   - **E. Ask (09:01 UTC):** `bash ask-agent.sh my-agent "How does a ModelConfig get approved?"` → exit 0, CID `my-agent-1791190861-638235`, disposition "auto-resolve".
     - The answer cites docs via modaas-docs (ADR-006, Workshop resources). But the CONTENT misses the real mechanism (the two approval annotations): it says "Canvas does not perform model approval", whereas the helper answered correctly. Governed ≠ correct.
   - **Checkpoint:** 3 ledger records (INTENT, INVOCATION, RESULT-INSPECTION), as the guide says.
@@ -195,7 +196,7 @@ metadata:
     - **The pause took effect in ≤2 s, vs 33–41 s for nano-9b in Module 6, so latency VARIES.**
     - Stale ReconcilePaused/RegistryPauseProjected now on super-120b too (#28).
   - **Checkpoint:** 3 records (invocation http_status=404, result-inspection refused), exactly as the guide says.
-  - **Platform side of the refusal:** /modaas/evidence + PDP = ALLOW (model-nemotron-super-120b v331993); the pod's 404 line has no run/trace/action id, but its durable /aws/modaas/gateway copy shares the evidence trace id (f5140819…) and shows a bare 404. ONLY the agent's ledger names the refusal.
+  - **Platform side of the refusal:** /modaas/evidence + PDP = ALLOW (model-nemotron-super-120b v331993). The pod's 404 line carries `trace.id=f5140819…` (the evidence record's trace id) but no run id, action id or `gen_ai.*` field; its durable /aws/modaas/gateway copy shares that trace id and shows a bare 404. No other gateway line and no ledger record carries that trace id, but the PDP decision 6 ms earlier (action_id 642489b6…) and the /modaas/evidence record do, and that record carries the run's CID (`my-agent-1791191585-4d9744`): the 404 joins to its run by trace id (lead's live read-only check, corrected 2026-10-05). ONLY the agent's ledger names the refusal.
   - gap-list.md gap 4 was retitled "calls the platform refused are recorded as ALLOW" and both CIDs added.
 - **MODULE 9 COMPLETE.** my-agent is left running (Approved, on super-120b, tool modaas-docs via env only).
 - **Module 10 overview (2026-10-05, read-only):**
@@ -262,13 +263,19 @@ metadata:
   - **AICT IS LIVE:** CloudTrail shows ServiceNowAictUser AssumeRole about every minute (session `613052889143-session`).
     - Calls OK: GetAgentRuntime ×21, ListAgentRuntimes, ListGateways, and every 15 min a Logs Insights StartQuery/GetQueryResults on /aws/bedrock/aict-invocations ("stats … count(*) by eventName, requestParameters.sessionId …").
     - **AccessDenied:** bedrock ListAgents, sagemaker ListModelCards, agentcore ListBrowsers/ListCodeInterpreters. So the page's "discovers Bedrock agents and SageMaker models" fails with this role.
-  - **`/aws/bedrock/aict-invocations` = CloudTrail data events, AWS-written and durable.** Sample (500 events, 00:01–08:32 UTC):
+  - **`/aws/bedrock/aict-invocations` = CloudTrail data events, AWS-written, kept 7 d (retention re-checked 2026-10-05).** Sample (500 events, 00:01–08:32 UTC):
     - bedrock ConverseStream ×466 + Converse ×11 by role `a-01-eks-cluster-agentgateway-bedrock`; requestParameters = modelId, guardrailConfig, inferenceConfig (no prompts)
     - bedrock-agentcore InvokeAgentRuntime ×23 by WSParticipantRole, plus 2 by the IDE role
     - **A potential independent evidence source (WHO invoked agents, timestamps, guardrail config per model call)**; no run id; join by time/session id.
   - **Checkpoint:** role exists.
   - **DONE:** 5 reader subagents + 3 independent reviewers. The synthesis is in repo `notes/servicenow/servicenow-context.md` (raw notes in `raw/`). See [[servicenow-context]].
-- **Next (user plan, updated 2026-10-05):** the user will share MORE ServiceNow material and other resources first. Claude finishes the reviewed ServiceNow notes, then takes in the new material. Write the HANDOFF NOTE only when the user says so; then the user restarts for PLANNING.
+- **Context gathering COMPLETE (2026-10-05)**, except the pending inputs: "What the platform gives you", the Evidence Pack format (from the user) and more slides.
+  - The "Resources & How-To" page, the Glossary and two cockpit screenshots were checked read-only against live; the facts are in [[platform-verified-facts]], the candidate notes items are parked in [[platform-observations-notes]].
+  - The reference links were checked: repo `notes/references/links.md` (see [[reference-links]]).
+- **Team winning playbook VERIFIED (2026-10-05)** by the lead session: its scoring rules (§1.1–§1.6, §1.8) and §4 criteria are trustworthy; its platform claims (§1.0/§1.7, §2, §3) carry disproven guide claims (verdict corrected after independent review, 2026-10-05). Corrections in repo `notes/playbook/playbook-verification.md`; summary in [[prooflab-project]]. The package (playbook, SN handoff, `prooflab/`) is now at the repo root.
+- **Handoff note: drafted (2026-10-05)** at repo root `PLANNING-HANDOFF.md` (§0–§10), independently reviewed the same day, with its fixes applied in parallel. See [[planning-handoff]].
+- **Evidence snapshot: taken (2026-10-05; MANIFEST 17:42Z, ledger dump 17:44Z)** in `workshop-local/evidence-snapshots/20261005T173727Z/` (see Live state below).
+- **Next (user plan, updated 2026-10-05):** the user will share MORE ServiceNow material and other resources first. Claude finishes the reviewed ServiceNow notes, then takes in the new material. Write the HANDOFF NOTE only when the user says so; then the user restarts for PLANNING. (2026-10-05: the handoff note is drafted; planning starts from it, see [[planning-handoff]].)
 
 **Live state and who made it:**
 - **Reference agents:** 3 AgentConfigs (customer-experience, it-resolution, network-resolution) deployed by Claude at 04:35–04:38 UTC (Module 7 set-up, user "OK"). Approved by `satyabratsrikumar@team` ("Reviewed: reference agent on AgentCore"). The CodeBuild image is in ECR. **it-resolution-agent is on `nemotron-nano-9b`** (generation 2, swap at 05:47; still 1 approval record).
@@ -283,7 +290,12 @@ metadata:
 - **ToolConfig `demo-crm-lookup`:** the Module 6 demo, created 2026-10-05 00:36:35 UTC together with its backend Deployment `demo-tool-backend` (00:36:19 UTC). Creator unknown; it was not created by Claude. It is `Reviewing`. Don't approve or delete it without asking.
 - **CloudShell API activity (participant role):** from 6 distinct source IPs since 2026-10-04 18:38 UTC. During the approval window (23:29–00:05 UTC) only the laptop's public IP was active. The same IP does not mean the same person.
 - **ServiceNow AICT:** provisioned by the facilitators (`WSOpsRole`) on 2026-10-04 between 22:02 and 22:45 UTC. See [[workshop-aws-access]].
-- **EKS control-plane logging** (including audit) is off.
+- **EKS control-plane logging** (including audit) is off: all 5 log types, re-checked 2026-10-05.
+- **Evidence snapshot (snapshot agent, 2026-10-05):** `workshop-local/evidence-snapshots/20261005T173727Z/`, outside the repo (MANIFEST with sha256; all 8 re-verified and the pattern scan clean, independent reviewer 2026-10-05).
+  - Holds the gateway log (1,895 lines, 2026-10-04 10:35Z → 2026-10-05 17:33Z; 290 distinct run ids), both PDP pods (~22.8K lines each), authz (startup lines only), the audit-store log and `pods.txt`. It also holds the ledger dump (`ledger-records.jsonl`: 101 records, 17 CIDs).
+  - 0 restarts on all six pods (gateway 1, PDP 2, authz 2, audit-store 1).
+  - The ledger is on PVC `audit-store-data` (1Gi, `/data`): it survives pod restarts but is deleted with the PVC/stack (reclaimPolicy=Delete).
+  - Re-snapshot before judging, and export the ledger into the Evidence Pack.
 - **Guide vs live drift:** see repo notes #5 and #6.
 
 **Along the way:** on 2026-10-05 around 00:45 UTC, Claude deleted a leftover throwaway `egress-probe` pod in `components`. Who created it can't be determined, because EKS audit logging is off. Claude committed to asking before deleting anything it did not create.

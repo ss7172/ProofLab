@@ -1,0 +1,4 @@
+### governed CRs exactly as pull-evidence.sh step 2 reads them
+  [cmd failed rc=1] kubectl get modelconfig,toolconfig,agentconfig -n components -o :: error: You must be logged in to the server (Unauthorized)
+error: You must be logged in to the server (Unauthorized)
+error: You must be logged in to the server (Unauthorized)

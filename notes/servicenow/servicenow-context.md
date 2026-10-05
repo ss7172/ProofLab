@@ -58,7 +58,7 @@ Limits [live]:
 
 ## 3. The three vendor PDFs
 
-All three are recorded demos on a vendor instance (`platformdemoh8`; the console demo's data is dated 2026-09-30). None of it is our live state. Captions often contradict the screenshots, so trust the screenshots.
+All three are recorded demos on instance `platformdemoh8` (the console demo's data is dated 2026-09-30). Per the SN handoff (§2, not independently verified), `platformdemoh8` is the hackathon instance shared by all teams, so the demo records may sit beside ours, but none of the demo content is our live state (corrected 2026-10-05). Captions often contradict the screenshots, so trust the screenshots.
 
 ### Creating and Verifying Amazon Connection Setup (12 pages)
 - **Form fields** (p5–8): Connection name, Management account ID and CloudWatch log group carry required-field asterisks. Only "STS assume role" visibly shows *"Field is required"* (p7), so "won't submit without the log group" is inferred.
@@ -68,7 +68,7 @@ All three are recorded demos on a vendor instance (`platformdemoh8`; the console
 
 ### AI Control Tower console: discovered assets and AI agents (30 pages)
 - **Managed vs Unmanaged:** monitoring covers **"Managed"** agents only. Unmanaged ones show *"Unable to show Monitor dashboard"* (p10). *"Only managed assets are evaluated"*; *"Only Agentic AI assets are evaluated"* (p20). Sessions are sampled (p21).
-- **The demo's discovered AWS agents:** `network_resolution_agent` is Managed and Approved; `customer_experience_agent` and `it_resolution_agent` are Unmanaged (p4). Same names as our runtimes, on their instance.
+- **The demo's discovered AWS agents:** `network_resolution_agent` is Managed and Approved; `customer_experience_agent` and `it_resolution_agent` are Unmanaged (p4). Same names as our runtimes. Per the SN handoff (not independently verified), every team's reference agents have identical names on the shared instance, so these records need not be ours (corrected 2026-10-05).
 - **Evaluated sessions:** only 8 of 38 are visible. The one trace shown is a LangGraph/OpenAI app (`traceloop_*`, `tool_calls: []`, p21, p25–26), so whether AWS agent runs are evaluated is **not shown**. The narration's *"whole evidence track"* (p26) isn't demonstrated.
 - **Quality scores don't check what the agent claims it did:** an unperformed payroll update scores 100% Answer Relevancy (p22–26). No PII or action-check metric is shown.
 - **Missing:** authorisation decisions, approval history, integrity proof, export, incident creation. "Approved" is an editable field. Runtime-security figures are *"demo data"* (p15). An unopened **Integrations › Traces** tab (p28) is the only visible way traces could come in.

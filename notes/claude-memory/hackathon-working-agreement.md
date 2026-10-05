@@ -1,11 +1,11 @@
 ---
 name: hackathon-working-agreement
-description: "How the user wants Claude to work on the hackathon — read-only by default, ask before writes (including workshop write steps), keep memory continuously updated with independent review, go through all modules before planning"
+description: "How the user wants Claude to work on the hackathon — read-only by default, ask before writes (including workshop write steps), keep memory continuously updated with independent review (copied into the repo on every commit), go through all modules before planning, delegate work to background subagents, independently verify teammate documents; secret-scan literals to avoid, AWS credential refresh"
 metadata:
   node_type: memory
   type: feedback
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T17:48:39.032Z
+  modified: 2026-10-05T18:40:13.416Z
 ---
 
 - **Read-only by default.** User, 2026-10-04 (CDT): "only read only access please." Ask before any write to the repo or the cluster. That includes workshop steps that apply, annotate, approve, pause or delete resources. Never delete or change a cluster resource Claude did not create without asking; other people work in this account.
@@ -13,11 +13,18 @@ metadata:
 - **GIT: COMMIT AND PUSH AS WE GO** (user, 2026-10-05: "are you committing everything? push everything to github as well.").
   - First push: commit `03ff0bf` on `main` (repo was empty) with 289 files: notes/, gap-list.md, hackathon-context/.
   - Second push: `468b5e9` (tools/workshop-local backup, at the user's "yes copy the reusable scripts into the repo").
+  - `bfb1ce6` (2026-10-05 ~17:50 UTC) added the memory copy `notes/claude-memory/` and the verification reports `notes/verification/2026-10-05/`.
+  - **The user's direct approvals of 2026-10-05, given to the lead session in their own words:**
+    - "copy the package into the repo" (the playbook, the SN handoff and `prooflab/`; now at the repo root)
+    - "copy everything into the repo" (the memory folder and the verification reports)
+    - "make one commit now to github. after everything else finishes make another commit" (bfb1ce6 was the first; the second follows the review fixes)
+    - The practice that follows: refresh `notes/claude-memory/` from the primary memory on every commit (keep that folder's README.md).
   - **Before every push run `bash ~/firstmate-homes/TrustworthyAI/workshop-local/scripts/pre-push-secret-scan.sh <repo>` (must print RESULT: clean). It does:**
-    - patterns: AKIA/ASIA keys, private keys, the `tkn` query parameter with a value, bearer/ghp_/sk-
-    - EXACT VALUES loaded into variables and never printed: /tmp/modaas-token, the ledger AUDIT_WRITE_TOKEN, the hackathon AWS creds, the CockpitUrl/IdeUrl and their tokens. They must appear in 0 files.
+    - patterns (file names only; whole repo except .git and the script itself): AKIA/ASIA key ids; the two AWS credential parameter names (secret key, session token) even with no value; private-key headers; GitHub tokens (ghp_ with a long value, and the fine-grained PAT prefix even alone); sk- and Slack xox tokens with long values; long Bearer tokens; and the cockpit's `tkn` parameter name directly followed by an equals sign, EVEN WITH NO VALUE after it (bfb1ce6 had to reword memory for this). So never write that pair, or those two AWS names, in any repo file or in memory (memory is copied into notes/claude-memory/); write "the `tkn` query parameter" instead. It also fails on any file over 5 MB.
+    - EXACT VALUES loaded into variables and never printed: /tmp/modaas-token, the ledger AUDIT_WRITE_TOKEN, the hackathon AWS creds, the CockpitUrl/IdeUrl and their tokens. They must appear in 0 files. It fails closed (NOT CLEAN) if any value can't be loaded, e.g. when the AWS credentials have expired.
   - Commits end with the Co-Authored-By trailer.
-  - workshop-local/ and memory are OUTSIDE the repo and not pushed.
+  - workshop-local/ and memory live OUTSIDE the repo, but copies are committed and pushed: memory is copied into the repo at `notes/claude-memory/` with every commit (since commit bfb1ce6), and workshop-local is backed up in `tools/workshop-local/` (468b5e9). Both copies must pass the secret scan, so memory text must avoid the scan's literals too.
+- **AWS credentials are temporary** (2026-10-05). On ExpiredToken (AWS CLI) or Unauthorized (kubectl), ask the user to refresh the `[hackathon]` profile from the Workshop Studio dashboard ("Get AWS CLI credentials"). Live checks need them, and the secret scan fails closed without them.
 - **Repo writes the user has approved so far:**
   - correcting notes #13
   - adding notes #15
@@ -64,6 +71,12 @@ metadata:
   - Primary: `~/.claude/projects/-/memory/` (sessions started in `/`).
   - Mirror: `~/.claude/projects/-Users-satyabratsrikumar-firstmate-homes-TrustworthyAI-TrustworthyAI-iFabric/memory/` (sessions started in the repo folder).
   - After every memory change, run `rsync -a --delete <edited>/ <other>/`. Never edit the two copies separately.
+- **Delegate to subagents.** User, 2026-10-05: "i want you to be free, do all the work using subagents".
+  - **Why:** the user wants the main session free to talk while work runs.
+  - **How to apply:** hand reading, verification, writing and integration to background subagents, and keep the main session responsive for the user.
+- **Verify teammate documents yourself.** User, 2026-10-05: "i am not confident on winning handbook. verify it on your end too".
+  - **Why:** teammate-provided documents can repeat guide claims our live evidence disproves. The 2026-10-05 check of the winning playbook found its platform claims (§1.0/§1.7, §2, §3) did.
+  - **How to apply:** independently verify any teammate-provided document against the primary sources (slides, transcript, master brief) and live evidence before relying on it, and record the corrections (e.g. repo `notes/playbook/playbook-verification.md`).
 
 **Why:** the user corrected scope creep, asked for read-only access mid-task, and wants continuity across sessions.
 **How to apply:** run read-only checks freely, ask before writes, update memory as facts change, and cite evidence for every claim.

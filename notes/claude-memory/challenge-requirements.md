@@ -1,11 +1,11 @@
 ---
 name: challenge-requirements
-description: "The workshop's 'The Challenge' section (Challenge page, Control 16 worked example, Evidence cookbook) — the six required steps mapped to the platform, the two-minute finish line, the six auditor questions, the kit tooling as it really behaves, and the critical questions the planning session must answer"
+description: "The workshop's 'The Challenge' section (Challenge page, Control 16 worked example, Evidence cookbook) — the six required steps mapped to the platform, the two-minute finish line, the six auditor questions, the kit tooling as it really behaves, and the critical questions the planning session must answer; the masterclass C16 example (cap 10,000) differs from the guide's (900); which inputs are still pending"
 metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T16:05:30.194Z
+  modified: 2026-10-05T18:42:41.416Z
 ---
 
 The user pasted this section on 2026-10-05 to build context for planning. The plan is made in a FRESH session after the ServiceNow section and the shared PDFs are added. The master class brief is still the authority for "done", the judging axes and the artifacts; this section only maps them onto the platform.
@@ -22,8 +22,12 @@ The user pasted this section on 2026-10-05 to build context for planning. The pl
 4. **Build the control:** emit records bound to the control, the threshold version and the run.
 5. **Control test / evaluators:**
    - `starter/evaluate.py`: control id + run id in, PASS/BREACH/NO EVIDENCE with record ids out; exit 0/1/2.
-   - `score-run.py` grades fault resolution.
+   - `score-run.py` grades fault resolution (evidence shape). For INTEGRITY it shows completeness and capture consistency and gives a reproducible verdict, but it can't detect altered records (details in [[prooflab-project]], the user's review of 2026-10-05).
 6. **Run both ways:** one passing and one breaching NAMED run (run-ids.txt), plus `gap-list.md`.
+
+**Verified in the primary sources (2026-10-05, lead's playbook check; repo `notes/playbook/playbook-verification.md`):**
+- Axis 1 wording "nothing to score / in the running / ahead / the full set" and Axis 2 "does the control hold its own threshold?": Immersion Day slides.
+- The playbook's "five habits" are all verbatim on the Immersion Day slides, p15 ("FIVE HABITS THAT KEEP THE DESIGN HONEST"): "The telemetry store never judges", "The evaluator never remembers", "The control register is never in the path of execution", "The evidence ledger never interprets", "Records are sealed where they are made [out of scope]" (per the handoff writer; re-checked in the slide text 2026-10-05). The meeting transcript says the same, ending "the records are sealed and signed in the place where they are made. Again, not part of the scope".
 
 **The six auditor questions are a sidebar, not a step:** WHO / WHAT / AUTHORIZED / APPROVED / INTEGRITY / RECONSTRUCT, answerable "from your Evidence Pack alone, for an incident the judges pick from your event window".
 
@@ -40,7 +44,8 @@ The user pasted this section on 2026-10-05 to build context for planning. The pl
 **Kit tooling as verified read-only on 2026-10-05:**
 - **`pull-evidence.sh <run>`** writes 6 files: tmf639.json, cr-status.json (Model/Tool/AgentConfigs), approvals.json, gateway-log.json, registry.json, otel-traces.json.
   - gateway-log comes from the POD STDOUT: `kubectl logs <pod> --tail=50000 | grep -F <run id>`.
-  - The pod held 1,779 lines from its start (2026-10-04 10:35 UTC), incl. all our runs. A pod restart loses run_id attribution, since the durable /aws/modaas/gateway copy has no run_id (gap 7).
+  - The pod held 1,779 lines from its start (2026-10-04 10:35 UTC), incl. all our runs. A pod restart loses the pod log, which `pull-evidence.sh` and `evaluate.py` read as shipped, but not the run ids: the gateway's spans in CloudWatch `aws/spans` keep run id + per-call tokens for 30 d (confirmed live 2026-10-05). The `/aws/modaas/gateway` copy has no run_id (gap 7).
+  - **cr-status.json holds the ledger write token (2026-10-05, from source):** `pull-evidence.sh:78` dumps the full Model/Tool/AgentConfig JSON, specs included. `submit.sh` zips ~/evidence as it is, uploads it to the team evidence bucket (stack output `TeamEvidenceBucketName`; judges read it) and leaves the zip in the directory it ran from. Redact env values before submitting (gap-list gap 6; repo `.gitignore` now ignores `*.zip`). It holds the ledger token, not the gateway key, which lives only in the runtime env (live 2026-10-05).
 - **`evaluate.py` implements ONLY control 16** (`_METRICS = {"16": …}`): it filters gateway records by `modaas.run_id`, sums input+output tokens, and compares with observation_limit. **C7/C9 evaluators must be written by us.**
 - **Kit `register.yaml`:**
   - C16 limit 2000.
@@ -50,20 +55,21 @@ The user pasted this section on 2026-10-05 to build context for planning. The pl
 **The C16 worked example (guide, 2026-09-29):**
 - cap 900, version G-FM-v1; *"a real fault-resolution run on this platform uses 700-1050 tokens across the three agents"*; example PASS 778 / BREACH 1030.
 - **OUR measured runs are 25–50× larger:** S1 24.8K–50.2K, S3 ~37.8K, swap-S1 37.7K, S2 2.0M; my-agent's docs question 7.3K. A 900 (or 2000) cap would breach every run. The guide's numbers come from a 1-call-per-agent nano-9b agent. Our threshold must come from our own runs (cf. the judge's risk-matrix hint in [[prooflab-project]]).
-- **The gateway records** tokens per call with run_id (stdout), a per-account request ceiling (429), a per-account token ceiling (429), and prices every call.
+- **The masterclass's C16 example is a DIFFERENT one (slides; confirmed 2026-10-05 in the lead's playbook check):** cap 10,000, FM-A 9,600 → SATISFIED, FM-B 10,800 → NOT satisfied. Don't mix it up with the guide's 900 (778 / 1030). Either cap would breach every S1/S3 run we measured.
+- **The gateway records** tokens per call with run_id (stdout, and durably on its spans in `aws/spans`, 30 d), a per-account request ceiling (429), a per-account token ceiling (429), and prices every call.
 - **It does NOT** sum per run inline, cap per run inline, let Cedar see token counts, or cap cost.
 - Inline per-run enforcement = bonus.
 
 **Evidence cookbook:**
 - One command per surface into ~/evidence (checkpoint: ≥6 files).
 - Correlation map: ledger/evidence correlation_id; gateway modaas.run_id; traceparent = modaas.trace_id (gateway) / trace_id (PDP); action_id in PDP, gateway, /modaas/evidence and the response header.
-- Caveats already in the notes: the timeline is text; spans double-count (#49); the durable gateway log has no run_id (#27).
+- Caveats already in the notes: the timeline is text; spans double-count (#49); the durable gateway log `/aws/modaas/gateway` has no run_id (#27), though the gateway's spans in `aws/spans` do.
 
 **Critical questions the plan must answer:**
 1. Which controls, and why (C16 certain; C7 and/or C9)?
 2. Threshold values justified from OUR measurements and a risk framing (the judge's risk-matrix hint), dated in register.yaml before the first assessed run.
 3. Post-run only, or inline at the gateway (bonus)? What can actually run inline?
-4. Evaluators for C7/C9 (none shipped); evidence durability (pull before a pod restart).
+4. Evaluators for C7/C9 (none shipped); evidence durability (pull before a pod restart; `aws/spans` keeps run ids + tokens for 30 d).
 5. Two named runs per control (pass + breach), reproducible on demand.
 6. The two-minute answer: one command → verdict + record ids.
 7. Evidence Pack coverage of the six auditor questions, given our gap list (gaps 2–7, 11).
@@ -109,6 +115,8 @@ The user pasted this section on 2026-10-05 to build context for planning. The pl
     - the quoted sentence is a paraphrase
   - Sources are public via `static…/public/quicklinks/ai-native-networks/published.json`.
 
-**Not yet pasted:** "What the platform gives you" (enforcement points), the ServiceNow section (Module 11 AI Control Tower), the shared PDFs, the Evidence Pack format (from the user).
+**Inputs (updated 2026-10-05):**
+- **Done:** the ServiceNow section (Module 11 AI Control Tower), the shared PDFs, the "Resources & How-To" page and the Glossary (both checked against live; see [[platform-verified-facts]]).
+- **Still pending:** "What the platform gives you" (enforcement points), the Evidence Pack format (from the user), more slides.
 
 Related: [[prooflab-project]], [[workshop-progress]], [[platform-verified-facts]], [[reference-agents-facts]]

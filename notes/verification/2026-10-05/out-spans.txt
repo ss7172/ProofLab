@@ -1,0 +1,35 @@
+### aws/spans log group
+  [cmd failed rc=254] aws logs describe-log-groups --log-group-name-prefix aws/spans --output :: aws: [ERROR]: An error occurred (ExpiredTokenException) when calling the DescribeLogGroups operation: The security token included in the request is expired
+  xray segment destination: None
+  [cmd failed rc=254] aws logs start-query --log-group-name aws/spans --start-time :: aws: [ERROR]: An error occurred (ExpiredTokenException) when calling the StartQuery operation: The security token included in the request is expired
+  query status=StartFailed rows=0 stats={}
+
+== S2 fault-1791177342-d3f892: spans=0 (unique spanId) spans-with-token-fields=0 figure-of-record tokens=1999001 calls=174
+   paths whose value == run id: []
+   action_id paths: []
+   token sums by path: {}
+   spans by service|name: {}
+
+== S1a fault-1791179282-8ef1a8: spans=0 (unique spanId) spans-with-token-fields=0 figure-of-record tokens=37664 calls=None
+   paths whose value == run id: []
+   action_id paths: []
+   token sums by path: {}
+   spans by service|name: {}
+
+== S1b fault-1791177843-fde682: spans=0 (unique spanId) spans-with-token-fields=0 figure-of-record tokens=50246 calls=None
+   paths whose value == run id: []
+   action_id paths: []
+   token sums by path: {}
+   spans by service|name: {}
+
+== S3 fault-1791177926-b0ce69: spans=0 (unique spanId) spans-with-token-fields=0 figure-of-record tokens=37799 calls=None
+   paths whose value == run id: []
+   action_id paths: []
+   token sums by path: {}
+   spans by service|name: {}
+
+== KILL my-agent-1791191585-4d9744: spans=0 (unique spanId) spans-with-token-fields=0 figure-of-record tokens=None calls=None
+   paths whose value == run id: []
+   action_id paths: []
+   token sums by path: {}
+   spans by service|name: {}
