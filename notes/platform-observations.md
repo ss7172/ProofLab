@@ -73,6 +73,7 @@ Working notes for a review with the platform team. Not part of the hackathon sub
 | 61 | Challenge · Control 16 worked example | Doc accuracy | *"A real fault-resolution run on this platform uses 700-1050 tokens"*, but the deployed reference agents use 25K–50K per S1/S3 run (S2 used 2.0M). A 900-token cap, or the kit's 2,000, breaches every run |
 | 62 | Challenge · steps 1 and 5 · starter kit | Doc accuracy | `evaluate.py` implements only control 16 and reads evidence rather than pulling it. The kit's C9 example metric (disposition match) differs from the page's (AgentCore metrics) |
 | 63 | Challenge · hand-in | Doc accuracy (minor) | The page's `bash ~/starter/submit.sh` prints usage and exits: the script needs the team name as its first argument |
+| 64 | Reference · Choosing a Model | Doc accuracy | *"Burns far fewer tokens on the 9B than on the 120B"* isn't supported: tokens per call were the same on both. Model choice changes cost, not tokens. The page's approval states ("only nano-9b arrives Approved") and "~10 s" runtime update don't match this account |
 
 ---
 
@@ -1217,6 +1218,32 @@ A correct S3 run escalates, and S1's disposition check rejects an escalation. So
 **Impact:** a participant running the page's command at hand-in time gets a usage error instead of an upload.
 
 **Suggested fix:** show `bash ~/starter/submit.sh <team-name>` on the page, or default the team name to `$TEAM`, which the IDE already sets.
+
+## 64. "Choosing a Model": the 9B doesn't burn fewer tokens, and the approval states are stale — Doc accuracy
+
+**Guide (Reference: Choosing a Model):**
+- *"Model choice feeds control 16 directly. A run that makes hundreds of tool-check turns burns far fewer tokens on the 9B than on the 120B, so a token-budget run you want to keep under cap belongs on the smaller model."*
+- *"Only nemotron-nano-9b arrives Approved. The other two sit in Reviewing until someone attests them."*
+- *"… updates the runtime in place (about 10 seconds, measured 2026-09-28)."*
+
+**Observed (2026-10-05):**
+- **Tokens per call are the same on both models.** In the Module 7 swap run (`fault-1791179282-8ef1a8`, S1), by the gateway's per-call lines (the figure of record):
+
+  | Agents | Model | Calls | Tokens | Tokens per call | Cost |
+  |---|---|---|---|---|---|
+  | IT | `nemotron-nano-9b` | 2 | 8,450 | ≈4,225 | $0.000537 (≈$0.064 per million) |
+  | Customer and network | `nemotron-super-120b` | 7 | 29,214 | ≈4,173 | $0.004694 (≈$0.161 per million) |
+
+  Each call's input is mostly prompt and context (about 3,500–4,800 input tokens), whichever model answers. The smaller model is about 2.5× cheaper per token.
+- **Approval states:** all four ModelConfigs in this account are Approved. `nemotron-nano-3-30b` and `nemotron-super-120b-helper` were approved by `system-admin` at bootstrap, and `nemotron-nano-9b` and `nemotron-super-120b` by `cloudshell-user@team` (see #9, #12 and #5).
+- **Runtime update:** the Module 7 swap updated the IT agent's runtime in **24 s**.
+- **Not tested:** *"An agent pointed at an unattested model is refused 403 at the perimeter"*. No unapproved model exists in this account to try it against.
+
+**Impact:**
+- A team that switches to the 9B to stay under a token cap (control 16) will see the same tokens per call. What changes is the cost.
+- A token cap is driven by how many calls a run makes and how much context each carries, which is agent behaviour, not model size.
+
+**Suggested fix:** say that model choice changes cost per token (and latency), not tokens per call, and show measured per-call totals for each alias. Describe the approval states as bootstrap actually leaves them.
 
 ## Running from outside the IDE (FYI)
 
