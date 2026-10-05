@@ -68,6 +68,8 @@ Working notes for a review with the platform team. Not part of the hackathon sub
 | 56 | M9 Step 3 | Doc drift | The expected `disposition: blocked by guardrail` can't come from the template (we got `undetermined`), and the kill-switch step pauses `nemotron-nano-9b`, which the Step 1b agent doesn't use |
 | 57 | M10 · Scenario recipes | **Bug (kit)** | The recipes can't produce their artifacts as shipped. `twin-scenario.sh` prints text instead of JSON, overwrites its dataset in place, has no `trap` scenario, and can't find its data when run from `/tmp`. The checkpoint only counts files, so it passes anyway |
 | 58 | M10 · Twin roles · network-twin | Design gap | "Breach on demand" can't reach the agents, because the network-twin Lambda reads its own packaged dataset. The twin knows only three sites (none for S2), and the agents query it with element ids |
+| 59 | M10 · Twin as a governed tool · IAM | **Security — policy-level** | Participant credentials may replace, invoke or re-permission every governed tool's Lambda (`function:team-*`, no condition), and every ToolConfig runs unpinned (`$LATEST`) code, so a poisoned tool would answer under its old approval |
+| 60 | M10 · Set up, ask and feed | Doc accuracy | "Ask the twin" and the checkpoint run `example_app.py`, which uses its own `example_test_model`, never `tokyo-rf-twin`. The checkpoint output is identical before and after retraining |
 
 ---
 
@@ -688,6 +690,8 @@ The example omits `governance.approval`, so it can't isolate the rule it illustr
 - Per AR-11, what the clause should limit instead is which of a tool's **own** functions can be called. This is from the source, not observed (compare #53).
 - The kit template's own comment makes the same claim (`starter/mcp-tool-template/toolconfig.yaml`, agentCoreGateway variant): *"Without it, this route admits EVERY tool on the shared AgentCore Gateway"*; *"Removing this clause opens your route to foreign tools."* Both texts should describe the clause as limiting a tool's own functions; keeping foreign tools off a route needs the suggested fix above.
 
+**Also in Module 10 ("The twin as a governed tool", 2026-10-05):** the page makes the same claim about the very route our evidence covers: *"The network-twin ToolConfig's Cedar policy includes an unless { context has toolName && ![...].contains(context.toolName) } clause that restricts this route to only the tools it declares. Without this clause, the route would admit every tool on the shared AgentCore Gateway, not just the network twin's tools."* Yet in our runs the `network-twin` route (`/mcp/network-twin`) admitted `runbook-lookup___lookup` and `customer-records___customer_lookup` calls, all ALLOW (see the table above).
+
 ## 38. Per-agent identity is set up in Keycloak but not used — Identity gap
 
 **Designed (source and CRDs):**
@@ -1101,6 +1105,56 @@ A correct S3 run escalates, and S1's disposition check rejects an escalation. So
 - Cover S2, and map element ids to their site, or say in the tool description that it takes site ids.
 - State plainly which twin each recipe uses.
 
+## 59. Participant credentials can replace or invoke every governed tool's Lambda, and tools run unpinned code — Security (policy-level)
+
+**Guide (Module 10, "The twin as a governed tool"):**
+- *"That is the only address an agent is told. The Lambda's own address is never handed to an agent, so a call that bypasses the gateway has nowhere to go."*
+- *"An ungoverned world model is an attack surface: poison the twin and every agent downstream acts on poisoned reality."*
+
+**Observed (2026-10-05, read-only):**
+- **The live policy grants broad Lambda rights.** The participant role's managed policy `participant-permissions-policy-1` (default version v1, identical to the kit's `static/iam/participant-permissions-policy.json`), statement `P1HostUtilityLambdaAndApi`:
+  - allows `lambda:CreateFunction`, `UpdateFunctionCode`, `UpdateFunctionConfiguration`, `DeleteFunction`, `GetFunction`, `GetFunctionConfiguration`, `ListFunctions`, `InvokeFunction`, `AddPermission` and `RemovePermission`
+  - on `arn:aws:lambda:*:*:function:team-*`, with **no condition**
+- **Every governed tool's Lambda matches that pattern:** `team-a61f5-network-twin`, `-customer-records`, `-runbook-lookup`, `-evidence-lookup`, `-cluster-status`, `-cr-author` and `-modaas-docs` (behind `helper-docs`). `GetFunction` on `team-a61f5-network-twin` succeeds for the participant role and returns the code location and `CodeSha256`.
+- **No ToolConfig pins a version:** all seven Lambda-backed ToolConfigs reference the function ARN with no qualifier, so calls run `$LATEST`.
+- **The approval records no code identity.** For `network-twin` it is `system-admin` at 2026-10-04 10:40:52 UTC, with *"Approved by the workshop platform at install"* and an empty `signature`.
+- **Agents themselves can't bypass the gateway:** the AgentCore runtime role has no Lambda permissions and denies `bedrock-agentcore:InvokeGateway` (#48).
+- **Not tested:** we attempted no write or direct invoke, and any service control policy is invisible to us.
+
+**Impact:**
+- Anyone holding participant credentials (Workshop Studio hands out CLI keys) appears able to:
+  - replace a tool's code or data, for example poisoning the twin or the customer-records tool, while its ToolConfig stays Approved
+  - call a tool directly, outside Cedar and the evidence lane
+  - open it to other principals (`AddPermission`)
+- Nothing in the evidence lane would record the change.
+- The statement's name suggests it was meant for participants' own utility Lambdas, but the `team-*` prefix also matches the platform's governed tools.
+
+**Suggested fix:**
+- Give participant Lambdas a prefix of their own and deny update, permission and invoke rights on governed tool functions.
+- Pin ToolConfigs to a published version.
+- Record `CodeSha256` in the approval or registry record, and send the tool back to review when it changes.
+
+## 60. Module 10's "ask the twin" and its checkpoint never query the twin it trains — Doc accuracy
+
+**Guide (Module 10, "Set up, ask and feed the twin"):**
+- *"python3 apps/example/example_app.py — The output dataframe is the twin speaking."*
+- Checkpoint: *"Run the example app again to confirm the retrained model still serves … It finishes without an exception and prints an rxpower_dbm column."*
+
+**Observed (2026-10-05, run locally; see the FYI section):**
+- `apps/example/example_app.py` sets `MODEL_ID = "example_test_model"` (line 25), then trains, updates and simulates with that model. It never references `tokyo-rf-twin`, the model `setup-digital-twin.sh` trains and the page's section 3 retrains (`model updated: True`).
+- The checkpoint's output was **byte-identical** to the output before retraining.
+- **Querying `tokyo-rf-twin` directly works:** we ran the example's own simulation event with only `model_id` swapped. It succeeded with 45 rows, and the per-cell mean RSRP differs from the example model's:
+
+  | Cell | `tokyo-rf-twin` | `example_test_model` |
+  |---|---|---|
+  | cell_1 | −73.45 dBm | −74.59 dBm |
+  | cell_2 | −99.98 dBm (the same value for every UE) | −100.40 dBm |
+  | cell_3 | −78.59 dBm | −77.54 dBm |
+
+**Impact:** neither "ask" nor the checkpoint exercises the twin the module trains and retrains, so a broken `tokyo-rf-twin` would still pass.
+
+**Suggested fix:** run the simulation with `model_id="tokyo-rf-twin"`, for example via a short query script or a `MODEL_ID` environment variable in the example.
+
 ## Running from outside the IDE (FYI)
 
 The guide assumes the browser IDE throughout. With only the Workshop Studio "Get AWS CLI credentials" keys, a participant can:
@@ -1112,6 +1166,15 @@ The guide assumes the browser IDE throughout. With only the Workshop Studio "Get
 **The participant keys can search logs, the IDE role can't (checked 2026-10-05).** Module 8 says *"your roles can read a log stream but not search one."* That holds for the IDE role: `a-02-code-editor-IdeInstanceRole-…`'s inline policy `ide-workshop` allows `logs:GetLogEvents`, `DescribeLogStreams` and `DescribeLogGroups`, but not `FilterLogEvents`. The Workshop Studio participant role (`WSParticipantRole`) can run `logs filter-log-events`; we used it throughout. So evidence tooling written for the IDE has to read streams one by one, while tooling run with the participant keys can search.
 
 **A kit synced from S3 loses file modes.** After `aws s3 sync`, `starter/ask-agent.sh` isn't executable: `ask-agent.sh …` fails with *Permission denied* until it's run as `bash ask-agent.sh …` (or after `chmod +x`). Module 9's download lists (Step 1 and Step 1b) don't include `ask-agent.sh` or `ask_agent.py`, although both pages use `ask-agent.sh`. On the IDE they presumably come from bootstrap (not checked).
+
+**Module 10's `setup-digital-twin.sh` assumes the IDE (Linux).** We ran it on macOS (Apple Silicon, Docker Desktop) with three adaptations:
+- **`sed -i "s|…|…|" .env`** is GNU syntax, and under `set -euo pipefail` it aborts the script on macOS. We used a shim that maps `-i` to BSD's `-i ''`.
+- **RADP's client needs Python ≥3.8 and <3.11,** and the script builds its venv from whatever `python3` is first on PATH. We used a shim pointing at macOS's `/usr/bin/python3` (3.9.6).
+- **The clone path** defaults to `~/environment/maveric`; we set `TWIN_DIR`.
+
+Its `ss` port check silently skips on macOS, which is harmless because it sits inside an `if`. The images built natively for arm64, and setup plus training took about 4 minutes.
+
+On a laptop, the compose overlay publishes `api_manager` on `0.0.0.0:8090` and Kafka on `0.0.0.0:9094`, so both are reachable from the local network while the twin runs.
 
 Things that only exist on the IDE: `~/.modaas-bootstrap/status` and the `/etc/profile.d/modaas-team.sh` variables (`TEAM`, `MODAAS_GATEWAY_ID`). Both can be derived from the `workshop-identity` and `modaas-gateway` ConfigMaps in `modaas-system`.
 
