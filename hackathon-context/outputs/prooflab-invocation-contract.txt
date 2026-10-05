@@ -1,0 +1,236 @@
+PROOFLAB — ENFORCEMENT, CONTROL AND EVIDENCE CONTRACT
+Design proposal; no cloud integration or control is represented as implemented.
+Grounded in the newly attached slide “Five problems, and none of them is logging” (printed slide 15; physical page 14 in the full PDF), its next page “One contract, four transports”, and the submission rubric.
+
+1. WHAT THE FIVE PROBLEMS MEAN
+The slide names five design obligations, not five API functions:
+1) Run controls in five modes: static, scheduled, event-driven, in-transaction and continuous.
+2) Define how enforcement points invoke the same architecture.
+3) Keep the live decision path small and prevent races.
+4) Bind evidence to the control, frozen specification and assessed scope.
+5) Accommodate enforcement points that differ in editability, timing and ability to stop actions.
+
+The four invocation methods are evaluate(), emit(), callback(), pull(). A sidecar/SDK is an integration mechanism, not a fifth mandatory function. The other slide's Ask/Wait/Act/Record/Seal are enforcement responsibilities, not five mandatory RPCs. Cryptographic sealing is explicitly outside this hackathon's scored scope. A query/test operation is additionally required for judges; it is not a fifth enforcement transport.
+
+2. HOW AN ENFORCEMENT POINT INVOKES US
+A small adapter is attached at a real passage in the action path, using a supported gateway hook, SDK wrapper, platform flow or log connector. Register it and its authorized scope. It translates platform fields into one common envelope, uses a frozen applicability mapping, invokes the appropriate method, and honors any synchronous decision before the action proceeds. Merely writing an API does not connect a gateway to it; deployment/configuration of that adapter is a separate deliverable.
+
+Proposed logical SDK contract (ours, not pre-existing AWS or ServiceNow APIs):
+evaluate(request) -> OverallDecisionWithPerControlDecisions
+emit(event) -> Receipt
+callback(result) -> Receipt
+pull(scope, cursor) -> ObservationBatch
+query(control_id, run_or_window, as_of) -> AssessmentWithEvidence
+
+These signatures do not prescribe five public HTTP endpoints. evaluate may be an in-process SDK call or approved authenticated RPC; emit may use existing telemetry or a durable bus; callback is an authenticated later-result receiver; pull is usually the connector method invoked by our scheduler. query is the judge tool. Do not make every enforcement point implement or invoke every method.
+
+Method direction and semantics:
+- evaluate: modifiable enforcement point -> control entry point. Wait for an admission decision. Response includes decision_id, action/attempt, selected control, frozen spec, reason, and reservation reference when relevant. ALLOW is effective only after the required reservation is committed. Return an overall decision plus per-control decisions/specifications; a DENY or required-admission-control ERROR prevents dispatch. Observational controls do not become blocking merely because they share an action. Cancel a reservation after another gate denies only when it is provably undispatched; otherwise retain it.
+- emit: adapter/source -> asynchronous collection. Receipt means accepted for processing, not that the control passed. Facts and control tests are separate records. Receipts state durable acceptance versus best-effort receipt. Durable acceptance follows recoverable persistence, not an in-memory enqueue. Retries, durable delivery where available, deduplication, completion and gaps are specified.
+- callback: authorized deferred workflow -> receiver. Correlate the later result with the original request/action and pinned specification. Validate source identity, allowed transition and repeated/late callbacks. A later approval cannot undo a completed action. A genuinely deferred action stays in a durable pending queue until the matching authorized callback permits an idempotent resume; do not hold an HTTP request open for hours. Late, duplicate or expired callbacks cannot authorize a different action. Human silence stays pending.
+- pull: scheduler -> source adapter -> authorized platform source. Retrieve observations for an explicit scope with cursor and completion semantics. A poll cycle is not proof the source is complete. Turn returned observations into the same evidence pipeline.
+- query: judge/client -> control test over evidence and frozen specs. Recompute the measurement and missingness; do not simply return a previously stored green flag.
+
+3. WHICH POINT INVOKES WHICH CONTROL
+A versioned applicability map selects controls from team, enforcement point, action type, phase and declared scope. Pin it with the run/window's specifications before assessment; do not ask an LLM to select required controls.
+
+Proposed bindings:
+- Shared model gateway / model.requested / before dispatch: evaluate Control16 admission; emit request/admission records supporting7 and16.
+- Shared model gateway / model.completed or model.failed / after execution: emit actual usage and outcome supporting7 and16. Usage consumer invokes the internal budget-settlement operation. This internal state transition does not create another public transport.
+- Gateways A/B / zone.handoff events: emit for7. If hooks are read-only, pull logs and reconcile instead. No blocking claim for that path.
+- Agent/tool wrappers / declared tool actions and handoffs: emit for7. Do not instrument only the gateway and call that every action in three zones.
+- Performance source / comparable window closure: scheduled or rolling monitor pulls measurements and invokes the pure drift evaluator for9 off the action path. Emit measurement and alert results. Window evidence can support7 only when those events are explicitly in7's declared scope.
+- ServiceNow alert/owner workflow: emit or callback actual delivery/response state supporting9; a human response is not required. A deferred approval example may demonstrate callback extensibility but is not an extra scored control.
+- Unmodifiable SaaS/log source: pull for applicable recording/usage/monitoring evidence. It observes after the fact and cannot stop the original action.
+
+Control7 spans the declared in-scope actions across all three zones. Control16 spans all actual model attempts across all agents and retries. Control9 assesses measurements over comparable windows, not the correctness of every individual action by default.
+
+4. A CONTROL IS MORE THAN A CONFIGURATION FILE
+A working implementation consists of: external policy specification + applicability mapping + adapter + deterministic evaluator/handler + enforcement or monitoring behavior + state where needed + emitted records + a control test.
+
+Illustrative policy configuration, not a required workshop schema:
+control_id: ACN-COST-001
+specification_id: TEAM-C16-v1
+declared_at: <actual date/time before assessed runs>
+owner: <named person>
+metric: actual_input_plus_output_tokens
+scope: all_three_agents_and_all_model_attempts_in_one_run
+cap_tokens: 10000
+allowed_over_cap_runs: 0
+usage_accounting_basis: <verified model usage and cache/reasoning semantics>
+completion_and_late_data_rule: <declared reconciliation deadline and sources>
+
+10,000 is illustrative, not a proposed justified final threshold. The final spec must state the basis for the cap. The control code must not hardcode its own copy of this threshold. A deployment/run initializer validates an authorized bundle containing immutable spec contents, effective interval, applicability-map version and supported evaluator version before the run; the evaluator receives them as parameters. The external register is not queried on each inference call.
+
+Illustrative adapter binding, independent from the policy's numbers:
+enforcement_point_id: shared-model-gateway
+on: model.requested
+method: evaluate
+handler: token_cap_admission
+specification_from: pinned_run_context
+on_unavailable: deny_governed_dispatch_and_record_error
+
+The handler is code that implements the rule and protocol. A register entry alone cannot stop anything. Choose timeout/error behavior explicitly; for our proposed governed token admission, absence of a reliable decision blocks that dispatch and records a control error. It does not fabricate a token-spend breach. Only enforce this at a permitted team-controlled boundary.
+
+5. CONCRETE CONTROL16 REQUEST AND RESPONSE
+All fields below are proposed and illustrative. They are not verified workshop payloads.
+
+Request to evaluate:
+{
+  "schema_version": "1",
+  "team_id": "TEAM",
+  "run_id": "FM-A",
+  "action_id": "action-42",
+  "attempt_id": "attempt-42-1",
+  "enforcement_point_id": "shared-model-gateway",
+  "actor_id": "network-agent",
+  "event_type": "model.requested",
+  "spec_bundle_id": "TEAM-RULES-v1",
+  "facts": {"verified_input_bound": 400, "enforced_output_bound": 500}
+}
+
+Response after a durable reservation succeeds:
+{
+  "decision_id": "decision-42",
+  "control_id": "ACN-COST-001",
+  "specification_id": "TEAM-C16-v1",
+  "run_id": "FM-A",
+  "attempt_id": "attempt-42-1",
+  "overall_decision": "ALLOW",
+  "per_control": [{"control_id": "ACN-COST-001", "specification_id": "TEAM-C16-v1", "decision": "ALLOW"}],
+  "reason": "Budget reserved before dispatch",
+  "reservation_id": "reservation-42",
+  "reserved_tokens": 900
+}
+
+The trusted adapter computes or validates bounds against the exact immutable downstream request, model/version and accounting options. Naming an incoming field "verified" does not make it so. Bind the reservation to that request and dispatch only that request; authenticate and authorize producers for their team, point and event types. Bind the selected policy and authenticated adapter identity server-side; a caller cannot evade a required control by omitting its ID or selecting an easier spec. The full immutable policy is already in approved execution context. Reusing an attempt ID with different action facts is a conflict, not a second admission.
+
+6. END-TO-END MODEL-CALL WALKTHROUGH
+Suppose earlier actual usage is8,000, pending reservations are0, cap is10,000. This example is synthetic, not measured.
+1 The gateway adapter submits the900-token bounded request above.
+2 The budget coordinator reads state; the pure evaluator computes8,000+0+900<=10,000.
+3 The coordinator checks team ownership, OPEN run state and authorized pinned bundle inside the atomic admission preconditions, then commits the reservation, durable unique-attempt record and minimal transition journal/outbox. Concurrent conflicts re-read/re-evaluate; no dispatch before commit. The gateway receives ALLOW.
+4 The gateway atomically transitions RESERVED -> DISPATCHING before sending the exact bounded request. Duplicate admission returns the existing state, not fresh dispatch permission. After an ambiguous send/crash, move to OUTCOME_UNKNOWN and keep the reservation; never redispatch that attempt unless downstream idempotency is verified. An intentional fresh inference gets a new attempt and reservation while the old liability remains. Lease expiry or fencing alone cannot stop an already-sent model request. This prevents intentional duplicate dispatch at the adapter; it does not manufacture an exactly-once guarantee from the provider.
+5 Actual input400+output300=700 returns. Adapter emits an actual-usage fact for attempt42-1, with decision/reservation/source links.
+6 A trusted usage consumer reconciles authoritative provider-attempt usage, atomically settles actual700, releases unused200, and transitions the attempt to SETTLED once, with a minimal recoverable transition/outbox record. If settlement is delayed,900 stays reserved. Unknown outcome or expired lease does not release potentially spent budget.
+7 Asynchronous processors create control-specific evidence links for7 and16 from the same source fact. Recording the fact twice never charges700 twice.
+8 At the run's declared closure, the control test reconciles all expected attempts and actual usage across three agents. It computes the full run result; one allowed call alone never establishes a full-run pass.
+
+The synchronous evaluate entry point is a facade over orchestration; its pure evaluator function remains stateless. The stateful coordinator is separate. Only minimal decision/state transactions block admission. Journal recoverable ALLOW/DENY and settlement identities where the admission store is operational; asynchronous workers export them later. If the store is unavailable, record ERROR through adapter recovery and disclose any remaining evidence gap rather than promise durable capture. Rich telemetry, ledger writes, ServiceNow updates, UI and register access do not block the call. If authoritative actual usage exceeds the reserved bound, retain the actual value, report the invariant failure and halt further admission. Strict prevention requires complete interception and genuinely enforceable model-accounting bounds.
+
+7. HOW ACTIONS, CONTROLS AND EVIDENCE JOIN
+Use distinct identities:
+- run_id: one end-to-end fault-resolution execution, propagated through ServiceNow, gatewayA, IT, gatewayB, network and model calls.
+- action_id: one logical action inside that run.
+- attempt_id: one actual execution attempt; new actual retries get new IDs.
+- event_id plus source identity: one emitted observation. Re-delivery keeps its identity. Distinct sources may report the same execution under different event IDs.
+- trace_id/span_id and source_ref: pointers to platform telemetry; not substitutes for an agreed business run identity.
+- control_id + specification_id: the obligation and immutable version applied.
+- decision_id / assessment_id: runtime admission vs later control test.
+- window_id: metric interval with explicit dataset, baseline, eligibility and member runs.
+
+Create one canonical source observation, then separate control-evidence bindings. For example:
+source observation E-42: FM-A / action42 / attempt42-1 / gateway / actual700 tokens.
+binding B-42-7: E-42 -> AIA-LOG-001 / TEAM-C7-v1 / recording presence.
+binding B-42-16: E-42 -> ACN-COST-001 / TEAM-C16-v1 / measured usage700.
+
+Separate observation identity, execution identity and accounting-entry identity. Reconcile gateway, provider and pulled observations into one authoritative per-attempt usage entry, with declared source precedence. Never sum parent aggregate spans with leaf attempts. Contradictory totals, reused execution IDs, or attempted reassignment to another run are conflicts. Preserve both assertions; correct through versioned auditable state adjustments rather than a second settlement. Stop further admission if corrections expose a budget invariant failure.
+
+This is a many-to-many relationship. A source observation may support multiple controls; a control test usually needs many observations. A Control9 window may contain multiple runs and must list its membership rather than invent a single run ID. Incompatible policy/baseline/dataset groups must not silently share one performance comparison.
+
+The ledger stores source facts, bindings and assessment statements; the evaluator/tester owns interpretation. An emitted fact does not need an invented pass verdict. Later evidence includes control, pinned spec, scope, actor, source references, measured value, denominator, exceptions and verdict. Preserve event time and ingestion time; avoid cross-host gap arithmetic unless clocks/order are defensible. Control7 needs an independently justified expected population, not a list reconstructed only from surviving observations.
+
+Keep ALLOW/DENY/ERROR separate from SATISFIED/BREACHED/INDETERMINATE/NOT_ASSESSED. Report control operation and evidence sufficiency separately. A known subtotal above cap proves a breach; under-cap subtotal with missing calls does not prove a pass. Late evidence creates a new linked assessment revision while the original is retained.
+
+8. FIVE OPERATING MODES AND DIFFERENT ENFORCEMENT POINTS
+Static: reviewer checks a frozen policy/document; record the assessment via emit, or retrieve the artifact via pull. Generic architecture support; no extra static control is required for this submission.
+Scheduled: scheduler invokes pull for a closed interval, then tests it. No request path to block.
+Event-driven: source/adapters emit events as actions occur; recording/reconciliation supports7.
+In-transaction: gateway calls evaluate before action, waits and enforces the decision; supports preventive16.
+Continuous: maintain/update comparable windows; monitor evaluates9 as windows become assessable. This can use event ingestion plus scheduling rather than blocking each inference.
+
+An SDK/sidecar wraps whatever supported integration the source provides. Managed unmodifiable gateway uses log pull; human queue correlates callbacks; scheduled batch uses pull; SaaS without hooks uses polling. An independent stop mechanism belongs outside the evidence pipeline if implemented, with explicit stop scope. Do not assume a global kill switch or build all possible adapters merely because they appear on the slide. Demonstrate two genuinely different points with the same core to support portability; show unsupported capabilities as gaps.
+
+9. WHERE EACH TECHNOLOGY FITS
+- ServiceNow supplied chat/ticket agent: customer-zone subject workflow; propagate business-run correlation through actual supported fields.
+- Strands: framework for custom AWS agents per the transcript; adapter/SDK hooks depend on actual workshop integration.
+- AgentCore Runtime: hosts approved AWS agents/tools. It is not automatically the shared model gateway, policy registry, database or scheduler.
+- Shared model gateway and zone gateways: actual action passages; their verified hooks determine whether evaluate, emit or pull is possible.
+- Nemotron: retain and verify the supplied governed agents' Nemotron usage. Use Nemotron for custom agents as required by workshop guidance. An optional assurance agent does not establish an exemption for the governed agents. Verify actual model invocation records and required variants/scope. The model does not own deterministic accounting or policy selection.
+- OpenTelemetry / CloudWatch: sources of execution records and usage. Actual field availability, sampling and retry coverage need verification.
+- Control package/service: our routing, pure evaluators, budget coordinator, tests, connectors and query API, deployed through permitted workshop services.
+- Durable state/storage: use workshop-enabled storage; DynamoDB for atomic state and S3 for raw/exported evidence are conditional candidates, not verified entitlements.
+- ServiceNow AI Control Tower: required governance integration. Asset discovery, traces, finding APIs and approval flows are distinct capabilities to verify. Use team-scoped objects and read back actual remote status; do not invent table names or call it a kill switch.
+- Local UI/CLI: judge-facing client and development tooling, plus independent offline evidence recheck. A GUI is optional.
+
+AWS documentation describes AgentCore Gateway REQUEST/RESPONSE Lambda interceptors. Those apply only if the actual gateway is AgentCore Gateway and the governed action traverses it; its tool/MCP gateway documentation does not establish interception of every model invocation in this workshop. ServiceNow documents an AWS AI connector, but that does not establish permissions or enabled features in the shared tenant.
+
+10. LOCAL APP OR CLOUD SERVICE?
+Recommended arrangement: runtime adapters and required admission/state operations run inside the approved AWS/ServiceNow environment, close to the actual action path. The local browser/CLI queries authenticated services or exported evidence. The cloud control remains operational when the UI closes. An offline rechecker works entirely from the exported bundle.
+
+A laptop localhost URL is not reachable as the team's laptop from AWS or ServiceNow; there localhost denotes the calling host. Do not depend on an unapproved public tunnel. All assessed agents stay within the provided AWS/ServiceNow environments under the transcript's constraints. The slides permit a CLI/script/API/small app, so they do not require a fully hosted frontend. Exact hosting of auxiliary services must match the workshop's enabled options.
+
+If only read-only source access is available, a local post-run tool can meet the control-evaluation floor once it produces complete evidence. This does not waive six submission artifacts, named pass/breach cases, dated specifications, required agent/model environment or ServiceNow AICT/human-loop integration. It cannot be described as live enforcement. UI hosting, evidence location and enforcement location are three separate decisions.
+
+11. WHAT WE DELIVER ACROSS ALL EVENTS
+Working software target: adapter(s), versioned specifications and bindings, evaluator/coordinator, asynchronous evidence normalization, control tests and query/export tool, required ServiceNow integration. Each run ties together its start, actions, attempts, outcomes, boundary crossings, decisions and closure. Performance windows tie explicitly to their source observations and member runs. Alert/finding records tie to their relevant assessment. Preserve passing and failing history.
+
+Not every emitted event triggers all three controls. The mapping explains inclusion, exclusion and unobserved sources. Conflicts and events that should be covered but are not mapped become visible gaps. Reusing one envelope and core logic across a model gateway and a zone/tool adapter demonstrates architecture reuse, while per-platform field translation remains in adapters.
+
+Six required submission artifacts (physical PDF26):
+1 Evidence export covering assessed runs and source records.
+2 Dated threshold document with metric, limit, exception tolerance, measurement basis, named owner and version.
+3 Runnable control test/query tool: CLI, script, API or small app.
+4 Two named runs/cases: one passing and one breaching under unchanged specifications; demonstrate each claimed control end to end. Preserve actual vs attempted breaches and provenance.
+5 One-page architecture showing invocation and the execution path.
+6 Gap list: what could not be closed and why.
+
+For pursued bonuses also provide an actual live inline decision, adversarial test log, and a running second enforcement point with a note of what changed. Cryptographic sealing and a presentation deck are not required. A human reply is not required; alert, named recipient and silence must be recorded. AICT/human-loop integration is required according to the transcript correction.
+
+12. THE JUDGES' QUESTIONS
+Explicit examples from the slides:
+- “Show me control 16 for run FM-B.”
+- “Was control 9 satisfied for run FM-B?”
+- A selected control and run/window, answered from your tool in two minutes.
+
+Preparation questions inferred from the rubric, not a separately published questionnaire:
+Which dated specification applied? Why that metric and threshold? What actions/windows should exist? What was actually measured? Which source records support the number? What is missing? Did the rule breach, did the safeguard operate, and can an outsider recompute this? Does the evaluator remain stateless? Is the register out of the live path? What changed to support the second enforcement point? What broke under attack? Was a finding closed only after a passing new-run retest?
+
+A proposed query response shows: control, scope, immutable spec/date, metric/formula, expected and observed counts, actual value and limit, exceptions, rule satisfaction, evidence sufficiency, source references, finding/owner/response status and gaps. It is a computation with evidence, not an LLM summary over logs.
+
+13. INTEGRATION CHECKPOINTS BEFORE PLATFORM-SPECIFIC CODE
+Resolve these from the promised workshop guides/access, rather than guessing APIs:
+- Identity/type of shared model gateway; modify/wrap/log-only access; all-zone coverage and bypasses.
+- Actual source payloads, model usage semantics, retry IDs, business-run propagation and sampling/completion.
+- Enabled deployment/storage services and network/authentication paths.
+- Team-scoped ServiceNow discovery, trace, finding and callback capabilities.
+- Authoritative expected actions and Control9 reference labels/baseline/windows.
+
+Next concrete unit of work: implement and test one complete normalized model-call contract, from admission through actual usage to a reproducible query, with an independent expected inventory; then connect the same evidence envelope to a zone-boundary adapter. Do not advertise simulated adapters as working cloud integrations.
+
+14. EDGE-CASE REQUIREMENTS ADDED AFTER THREE INDEPENDENT AI REVIEWS
+These are specification refinements, not evidence of implementation. Three reviewers worked independently without reading one another's reports. They reviewed interface/concurrency, evidence/causality, and deployment/submission. Reports are preserved separately.
+
+A. Policy validity and run lifecycle
+Validate authorized bundles before admission; reject unknown, unsupported, expired or mismatched bundles and closed/unknown runs. Declare whether open runs finish under their pinned version or stop when a policy is revoked. If immediate revocation is required, use a separately distributed revocation/stop signal; do not fetch the register per model call. Historical queries retain the original spec and separately expose policy-validity failures. Admission and run closure must coordinate atomically. Distinguish ACTIONS_CLOSED from EVIDENCE_FINAL: pending/unknown attempts, source completion and late-arrival policy determine finality. Queries show as-of time, processing state and whether conclusions are provisional.
+
+B. Executable expected-population contract
+Freeze event obligations by action type/phase, declared source coverage and expected boundary send/receive pairs. Dynamic branches create durable expected-work obligations before execution, independently of the later telemetry emitter where available. Reconcile them against authoritative execution/usage inventories and scheduler expectations. Include source completion checkpoints, failed pagination, sampling, unmatched/orphan events and bypasses. Separate requested, admitted, dispatched, denied and cancelled obligations. A proven never-dispatched denial needs its decision record, not invented provider usage; an ambiguous dispatch cannot be treated as a zero-usage denial. A start/end marker or inventory derived only from received records cannot prove full coverage. If these populations cannot be established, prohibit a completeness-based SATISFIED verdict. Workshop support for such inventories remains unverified.
+
+C. Control7 timing and Control9 attribution
+C7 freezes coverage target, exact gap comparator, ordered eligible streams, exception allowance, clock/order basis and treatment of missing timestamps. Report expected/observed events separately from eligible/violating/unmeasurable gaps. Define zero-gap behavior and preserve unmeasurable intervals; do not turn missingness into a timing pass.
+C9 freezes expected windows, member-run eligibility, metric direction, minimum observations, valid positive baseline for relative drop, and missing-label/data treatment. A run query lists its applicable window results. A window result is not proof of that individual run's accuracy; aggregate only under a declared, justified rule. Runs with no applicable measured window stay explicitly unassessed/indeterminate as appropriate. Report performance, monitoring and actual alert delivery separately. Silence does not prove delivery.
+
+D. Reproducible export and claim scope
+Export exact policy/applicability/baseline/expected-inventory versions, evaluator/test version, raw observations, source refs and bindings, exact assessment input set, event-time scope, ingestion-time cutoff, source-completion state and superseded revisions. Include a C-FM-01 manifest listing7,9,16 and each branch's assessed scope/status. A substantiated breach remains visible; missing or unassessed branches prevent a full-claim SATISFIED result. This manifest is part of our evidence export, not a seventh official artifact.
+
+E. Capability status and breach eligibility
+Maintain an adapter/mode matrix containing source, methods, authorization boundary, timeout behavior, actual blocking ability and status: PROPOSED / FIXTURE_TESTED / LIVE_VERIFIED / UNAVAILABLE. All current implementation statuses are PROPOSED. Design accommodation is not demonstrated support. For the required breached case, prepare a permitted observation-only assessed scenario or organizer-accepted recorded breach under the unchanged predeclared threshold, separately from a successful preventive run. Confirm replay eligibility. Do not secretly disable safeguards or change thresholds to manufacture a failure.
+
+SOURCES
+User's newly attached single-slide PDF was read and visually inspected. Full PDF physical12–15,17,19–26 and relevant transcript were consulted. Physical and printed slide numbers differ.
+AWS Gateway interceptors: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-interceptors.html
+AWS Runtime: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html
+Strands tracing: https://strandsagents.com/docs/user-guide/sdk/observability-evaluation/traces/
+ServiceNow AWS connector: https://www.servicenow.com/docs/r/intelligent-experiences/ai-control-tower/create-ai-connection-for-amazon.html
+Platform capabilities described in documentation are not proof of workshop availability.

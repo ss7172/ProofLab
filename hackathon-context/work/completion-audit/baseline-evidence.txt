@@ -1,0 +1,49 @@
+BASELINE — INDEPENDENT EVIDENCE/COMPLETION AUDIT
+
+Reviewed outputs/prooflab-architecture.txt and outputs/prooflab-invocation-contract.txt together, against the common scorecard and supplied slide text. No other review reports consulted. Ratings assess design specificity, not implementation or winning probability.
+
+DESIGN COMPLETENESS
+Criterion | Weight | Rating /4 | Points
+D1 Control7 scope/coverage/timing/denominators | 12 | 2 | 6
+D2 Control9 metric/baseline/window/alert | 16 | 2 | 8
+D3 Control16 accounting/admission/recovery | 16 | 3 | 12
+D4 Invocation/runtime/immutable specifications | 12 | 3 | 9
+D5 Evidence/source authority/claim rollup | 12 | 3 | 9
+D6 Deployment/ServiceNow/model/data integration | 12 | 2 | 6
+D7 Six deliverables/query/provenance scenarios | 12 | 3 | 9
+D8 Two-person delivery plan/dependency gates | 8 | 2 | 4
+TOTAL: 63/100
+
+WINNING-POTENTIAL DESIGN
+Criterion | Weight | Rating /4 | Points
+W1 Credible path to three completed controls | 32 | 2 | 16
+W2 Reliable independent two-minute query | 16 | 3 | 12
+W3 Correct portable architecture | 16 | 3 | 12
+W4 Verifiable evidence and honest failures | 16 | 3 | 12
+W5 Inline/adversarial/second enforcement point | 12 | 3 | 9
+W6 Deliverable within two-person constraints | 8 | 2 | 4
+TOTAL: 65/100
+
+ACTUAL STATE
+0/3 completed controls demonstrated. No judge-ready submission evidenced. The scorecards are internal weighted design comparisons, not the official rubric. Official ordering is completed-control count, then quality, then bonuses. One completed control is the minimum; three remain a conditional target.
+
+ASSESSMENT
+The design handles difficult accounting and evidence distinctions unusually explicitly: unknown dispatch retains liability, duplicate observations do not become duplicate charges, decisions are separate from assessments, immutable specifications stay outside the live register path, and missing evidence cannot create a pass. The remaining shortfall is conversion of these principles into filled control contracts and executable acceptance matrices. Repeating “freeze/declare/verify” does not yet resolve the choice.
+
+1. HIGH — Control7 still lacks a concrete event universe and timing algorithm.
+The latest contract correctly requires independent obligations, but neither document supplies the initial event taxonomy, per-action required phases, denominator formula, or precise eligible gap pairs. Thus two competent implementers could return different results. Add a machine-readable obligations table for run lifecycle, model attempts, tool actions and boundary crossings; identify which source independently creates each obligation. Specify expected-only denominator behavior, conflicts/extra events, cancellation/denial obligations, missing timestamps and zero-pair results. Define timing on ordered causal streams with an identified clock basis. Acceptance cases must include an entire missing attempt, missing cross-zone receive, duplicate delivery, out-of-order events and zero eligible gaps. If an independent population cannot be observed, the affected scope remains indeterminate.
+
+2. HIGH — Control9 is a candidate measurement, not yet a reproducible experiment.
+“Correct fault_id / eligible labelled scenarios” leaves exact matching, multi-fault cases, abstentions, missing output, timeouts, label access, minimum sample size and window allocation unresolved. Add a frozen scoring function, baseline dataset manifest disjoint from assessed cases, label authority, comparison cohorts, minimum count and scheduled-window manifest. Define direction and relative-drop formula, allowable violating-window proportion, monitoring coverage, and delivery evidence. A missing expected measurement can breach coverage while performance remains unknown. A run query must list its relevant windows without claiming window drift measures that run’s accuracy. Obtain organizer acceptance for any simulated corpus before treating it as completion; otherwise explicitly concede the unavailable branch.
+
+3. HIGH — Turn per-observation violations into branch/claim assessments deterministically.
+Current prose risks different interpretations of a violating gap/window/run when nonzero exception allowances are permitted. Add a truth table: observation limit violation → complete eligible population and exceptions → branch requirement verdict → claim rollup. Unknown denominators forbid a tolerant aggregate pass; a known sufficient lower bound can establish a breach. Preserve separate operation and delivery states. Implement identical reference cases for primary and independent checkers, including allowed exceptions, unknown population, late correction and mixed policy versions. Control16’s robust protocol deserves a concrete configuration and recovery matrix; its illustrative 10,000 cap still requires a pre-assessment rationale.
+
+4. HIGH — Complete-control acceptance must connect evidence, integrations and all six artifacts.
+Create one row per control with actual source fields, independent population, joins, pinned spec, passing case, genuine/accepted breaching case, query command and exported records. Map every required artifact to a filename and acceptance check. Add a remote AICT readback proof and model-use verification to the deployment gate, without assuming inventory integration proves trace/finding delivery. A denied overspend proves prevention, not the required actual breached case; cloned-export damage proves checker sensitivity, not missing live telemetry.
+
+5. MEDIUM — Delivery order is credible but not allocated.
+Assign two owners, bounded work blocks and explicit stop/go checkpoints. Resolve all-zone usage, expected-event visibility and authoritative drift labels in the first access block; escalate unavailable source requirements immediately. Complete one exportable control before parallelizing the remaining two. Make inline enforcement, second-point demonstration and adaptive proposer conditional on artifact readiness. The present dates, broad gates and optional-feature cuts help, but do not establish two-person capacity.
+
+SOURCE FIDELITY
+The proposal correctly preserves post-run evaluation as the floor, mandatory dated specifications and six artifacts, two-minute query, unchanged rules across pass/breach cases, and the exclusions for cryptographic sealing and actual human replies. AWS/ServiceNow hooks, tenant permissions, source completeness and accepted datasets remain unverified; documentation alone cannot settle them.

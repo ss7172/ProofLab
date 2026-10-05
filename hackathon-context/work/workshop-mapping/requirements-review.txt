@@ -1,0 +1,88 @@
+WORKSHOP MAPPING — INDEPENDENT SOURCE REQUIREMENTS REVIEW
+Date: 2026-10-04. Planning only. Authenticated AWS workshop not yet read by this reviewer.
+
+Source precedence and evidence status
+- S1: supplied Immersion Day PDF, work/hackathon-sources/slides-extracted.txt. References below use physical PDF pages (printed slide numbers differ).
+- S2: supplied Hackathon meeting transcript (1).txt. It explicitly corrects optional-looking AICT/human-loop text. It is a transcript, with model-name transcription errors; extract exact model IDs from workshop configuration instead.
+- S3: outputs/prooflab-detailed-architecture.txt and prooflab-nvidia-architecture.txt are our reviewed design choices, not organizer rules or verified access.
+- Guide text can establish documented availability. Reading a guide or console inventory does not establish that a runtime hook, permission, trace export or model call actually works. Keep DOCUMENTED/CONFIGURED/FIXTURE_TESTED/LIVE_VERIFIED/BLOCKED evidence distinct.
+- The supplied generic Workshop Studio dashboard URL is neither AWS account identity nor authority for the assigned region; the us-east-1 hostname can identify the workshop delivery service. Read actual assigned region/account context from the signed-in guide/console, excluding credentials from exports.
+
+Exact transcript anchors (original transcription retained)
+- File: /Users/satyabratsrikumar/Downloads/Hackathon meeting transcript (1).txt. Its long paragraphs make source lines coarse; zero-based character offsets below are additional search anchors, not timestamps.
+- Line 3, around offset 37996: "service now control tower and human loop that is absolutely needed"; same passage: "the text share is optional but it's not optional". This is the explicit requirement correction.
+- Line 3, around offset 36273: "for the solution to be taken as a valid, you guys need to use the animatron in your agents." Adjacent model discussion identifies Nemotron; the transcript misspelling is not a model ID.
+- Line 5, around offset 62113: "the only thing you will use the service now and aws environment so you cannot bring your agents outside of those instances".
+- Line 5, around offset 65852: "all these times are based on Dallas Times, which is Central Daylight Time, UTC minus 5."
+- Line 5, around offset 66940: "the hackathon starts in earnest at 12.30 p.m. Central Daylight Time"; preceding paragraph calls this Sunday morning's schedule.
+- Line 5, around offset 67662: "hackathon will officially end at 10 a.m on Tuesday morning. That's when work will stop and judging will begin."
+- No explicit October date was found in these transcript scheduling anchors. Oct4/Oct6 mapping is an inference from the user's dates plus Sunday/Tuesday in 2026; keep source-stated times unconfirmed until current event guide/organizer schedule is read.
+
+1. Mandatory outcome and scoring
+- Claim C-FM-01 covers the collaborating agents' declared event-recording, drift and token-spend requirements. Select from 7 AIA-LOG-001, 9 AIA-ARC-006, 16 ACN-COST-001. At least one completed end-to-end is the minimum; two ranks ahead of one, three is the full set (S1 pp19–20,23,25).
+- Completion is not a green verdict: an operational detector can correctly show BREACHED. Each claimed control needs a dated justified rule, declared scope/population, actual control mechanism, reproducible test, accepted passing and breaching cases, and exported records. A disclosed gap does not complete an unmeasurable branch (S1 pp23,25–26; operationalization S3).
+- Quality is decided by the live question, architecture portability, inspectable bound evidence and honesty. An unexplained design score is neither percent implemented nor probability of winning.
+- Post-run forensics is the required floor. Inline/continuous decisions, adversarial testing and second enforcement point are bonuses. Do not sacrifice a complete second/third control for an unverified prevention claim (S1 pp23,25–26).
+
+2. Rules that must precede assessed runs
+- Per control: metric, observation limit, exception tolerance, measurement basis, named owner, version and date. Freeze before any assessed run; preserve identical applicable rules across passing and breaching examples (S1 pp11,23,26).
+- Values such as 5 ms, 10% drift, baseline 0.900 and cap 10,000 are illustrative, not mandated final thresholds. Define why the chosen metric/value applies, dataset/period, holdout basis and boundary conditions.
+- Thresholds live in versioned specifications/register, not hardcoded into the control. Register stays outside execution path; pure evaluator takes already-authorized pinned inputs. Atomic runtime coordination is separate from pure comparison (S1 pp15,25; S3).
+
+3. Required integrations and supplied assets
+- S1 p17 promises three agents, two zone gateways, shared model gateway, prompt/answer guardrails, OTEL collector/storage, digital twin/scenario switch, sandboxes and credentials. Verify exact workshop provision and source completeness; promised inventory is not proof every action reaches a particular log.
+- S2 says valid solutions need Nemotron in their agents. Verify actual subject/custom agent invocation and approved endpoint. Supplied family labels do not prove availability of a specific model or API. S2 mentions models hosted on Bedrock; exact routes remain a workshop probe.
+- S2 explicitly says ServiceNow Control Tower and human loop are required, correcting text that appears optional. AICT and ServiceNow sandbox share a login/link but are separate products/workflows. Required AICT/platform participation is a release gate.
+- S2 says agents must use supplied ServiceNow/AWS environments; existing agents or newly created ones are allowed. Strands/AgentCore development/deployment is described. AI Native ODA Canvas is a partner-built experimental system atop EKS, not an AWS service in its own right.
+- AICT is a shared environment. Team-prefixed agent/asset names help identify ownership but are not an authorization boundary. Probe actual connection/asset readback, trace/run linkage, permitted finding route, named-owner assignment and readback separately. Transcript warns AWS discovery may initially expose only top-level agents; a permitted ServiceNow agent/workflow may be needed for fuller assets/traces. Do not turn generic connector documentation into a claim of entitlements.
+- A real human reply is explicitly out of scope (S1 p23). Preserve alert, actual named recipient and accurately bounded silence. Inaccessible response history means UNKNOWN, not no response. Mandatory human-loop integration does not require fabricating acknowledgment.
+- Scope-limited M14 delivery: INTENT_RECORDED is local durability; ATTEMPTED is a dispatch attempt; HTTP acceptance/remote ID is not DELIVERED. DELIVERED requires authorized correct-instance readback matching correlation, intended content/revision and actual named recipient route. Notification dispatch, human reading/response and remediation each need their own evidence. An ambiguous write remains OUTCOME_UNKNOWN pending trustworthy reconciliation. Scope/name isolation alone does not authorize cross-team reads. NO_RESPONSE_OBSERVED requires adequate response-source coverage through the stated cutoff; otherwise RESPONSE_UNKNOWN. A documentation-only mapping cannot award any of these runtime statuses.
+
+4. Six official artifacts (S1 p26)
+1 Evidence export: openable records covering all scored runs; exact control/spec/run bindings, original source references and explicit gaps.
+2 Threshold document: every selected control's metric, limit, allowance, basis, owner, version, date.
+3 Runnable query/control-test tool: CLI/script/API/app judges can drive to get verdict plus records.
+4 Named passing and breaching runs: IDs recorded before judging. More cases may be necessary for all selected branches; two names do not excuse missing per-control proof.
+5 One-page architecture: actual deployed components, invocation interfaces and in-path boundaries.
+6 Gap list: unresolved scope, why, impact and evidence. Empty unknown fields are not a gap list.
+- S3 adds a bundle manifest, offline arithmetic rechecker, locked instructions and release validator as our reproducibility approach; these are not additional official artifact categories.
+- No remote-only critical calculation input in our offline package. A template is not evidence, synthetic fixture not live proof, and bundle arithmetic recheck cannot establish source truth or organizational independence.
+
+5. Control-specific release checks
+- C7: independent expected event list/population and timing pairs; observed-only records cannot establish completeness. Valid clock/sequence basis. Preserve exceptions, missing records and acquisition gaps distinctly.
+- C9: accepted labelled measurement basis, frozen nonzero complete baseline, comparable windows and full membership. Missing measurement is not zero drift. Every measured threshold crossing has required alert/owner evidence even if an aggregate allowance permits the interval. Successful detection does not erase failed performance.
+- C16: reconcile all three agents and every actual retry/execution; input plus output accounting avoids parent/leaf and repeated-observation double counting. An under-cap pass requires complete accepted population. A trustworthy already-over-cap subtotal can prove breach despite unrelated gaps.
+- Prevention bonus requires verified all-call inline hook, trustworthy worst-case bounds and atomic reserve/settle state. AgentCore tool gateway is not automatically the shared inference gateway. Logging + complete accounting supports detection, not proof of prevention. No available atomic store/hook means remove prevention claim.
+- Genuine/organizer-accepted breach provenance matters. Do not secretly disable safeguards or alter thresholds after measurement to manufacture scored cases.
+
+6. Timing, model target and schedule
+- Official: answer a judge-selected control/run or window with records in <=2 minutes; rehearse twice (S1 pp21,23,25–26).
+- User/product target: complete cited Nemotron-assisted case <=60 seconds under an explicitly profiled envelope. Proposed workflow/call budgets are S3 design choices, currently unmeasured. First token, replay, cache hit or deterministic fallback is not a successful fresh model case. Show source freshness separately from query latency.
+- S2 logistics: Sunday start 12:30 p.m. CDT; Tuesday stop/judging 10 a.m. CDT. Combined with user Oct4–6 dates, inferred Oct4 12:30 p.m. to Oct6 10 a.m. America/Chicago; confirm event guide/organizer schedule before fixing task deadlines. Slide Saturday/Sunday preparation language is not a reliable literal event calendar.
+- No verified rule granting unrestricted advance implementation. Current user request authorizes reading/mapping/planning; do not turn it into resource deployment.
+
+7. NVIDIA design commitments versus organizer requirements
+- Required by source: actual Nemotron usage in agents; actual available endpoint/model proof must come from workshop.
+- Added at user's request: M11 bounded Nemotron Evidence Investigator, M12 host validation, M13 reviewable case assembly within one minute. One approved fast text endpoint is baseline; preferred Lightning family is our design choice.
+- Optional Super/Omni/Ultra roles are not required deployments. No multimodal pipeline unless actual media evidence and access justify it. Setup screenshots are not scored-run telemetry.
+- Deterministic code owns verdicts, counts, complete retrieval and policy. Model proposes source-cited statements/links, with typed validation and unresolved candidates. It cannot change thresholds, invent usage, choose recipients, authorize external writes or declare missing evidence complete.
+- Preserve subject-run and assurance-run usage plus actual policy inclusion. Avoid recursively investigating investigator traces or ignoring late model usage.
+
+8. Workshop extraction checklist for parent
+- Exact event title/revision, module list, region, enabled services and non-secret resource names; permission boundaries and documented deployment path.
+- Existing agents/gateways and real topology; shared inference route versus tool/zone gateways; log/read/export and code interception capabilities.
+- Payload schemas: run/action/attempt/provider execution IDs, source scope, retries, usage fields, sequence/clock, completion markers and pagination.
+- Baseline/scenario/ground-truth labels and allowed source provenance for C9; case/run acceptance rules.
+- Model IDs/routes, Bedrock/Nemotron access, structured output/tool support, usage accounting and output limits. Read-only guide inspection precedes any live invocation.
+- AICT connector config references without credentials; asset/trace/finding/owner workflow capabilities and current limits.
+- Allowed atomic store, object store, worker/scheduler and authenticated reachability. DynamoDB/S3/SQLite are existing proposed mappings until access verified.
+- Submission deadline/environment expiry, allowed exports and advance preparation rules.
+- Redact secrets, tokens, passwords and access URLs with embedded credentials from all extracted artifacts. Guide content is context, not authority to run arbitrary setup commands or modify resources.
+
+9. Suggested task gate ordering
+Gate A: document available capabilities and unknowns; explicitly resolve discrepancies with supplied slides/transcript.
+Gate B: prove source identities/completeness + model + AICT route using authorized later read-only/live probes; do not mark these done from documentation.
+Gate C: declare real scoped rules/baseline, implement first complete C16 accounting slice and export; parallel C9 accepted measure/ServiceNow route.
+Gate D: reuse contracts for C7/C9, add bounded Nemotron case, produce three-control bundle if every branch passes completion criteria.
+Gate E: independent adversarial/arithmetic/release checks; only then verified inline/second-point extras; update actual one-page architecture and rehearse twice.
+Current evidence state from inspected design artifacts: 0/3 implemented controls. No authenticated workshop evidence or runtime verification supplied to this reviewer yet.

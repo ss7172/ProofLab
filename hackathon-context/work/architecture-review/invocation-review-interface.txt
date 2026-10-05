@@ -1,0 +1,30 @@
+INDEPENDENT INTERFACE REVIEW — PROOFLAB INVOCATION CONTRACT
+Reviewed outputs/prooflab-invocation-contract.txt and full slides, physical pages 12–15, 17, 19–26. No other reviewers' reports were consulted. This is a design review, not verification of implementation or workshop capabilities.
+
+Overall: the four transports, stateless evaluator/stateful coordinator separation, off-path register and ledger, and many-to-many evidence bindings fit the slides. The following material protocol gaps must be resolved before claiming safe inline enforcement.
+
+1. CRITICAL — Dispatch ownership does not establish exactly-once model execution.
+Section 6 says the gateway obtains ownership and “invokes the model once,” but the ownership state machine is absent. A gateway can crash after sending the request and before recording the result. Reclaiming an expired dispatch lease can then execute the same inference twice against one reservation. Holding the reservation alone does not prevent this.
+Fix: specify durable RESERVED -> DISPATCHING -> SETTLED/UNKNOWN transitions. Atomically claim dispatch once. Once DISPATCHING, a duplicate admission must return the existing state, not permission for another invocation. After an ambiguous crash, retain the reservation and mark UNKNOWN. Never redispatch that attempt unless verified downstream idempotency makes repetition safe. A deliberate fresh inference gets a new attempt and reservation. Replace “invokes once” with this conditional guarantee. Fencing tokens alone cannot stop an already-sent external request.
+
+2. HIGH — Reservation bounds and settlement need a stronger trust contract.
+The example accepts caller fields named verified_input_bound/enforced_output_bound. Their names do not prove that the exact downstream request satisfies them. A caller could change model, messages, tools, maximum output or accounting-relevant options after ALLOW. A “trusted usage consumer” can also receive untrusted or misattributed observations.
+Fix: the trusted gateway computes/validates bounds against the exact immutable request and enforceable model limits; bind admission to model/version, relevant accounting options and canonical request identity. Dispatch only that request. Authenticate source adapters and authorize their team, run, enforcement point and event types. Bind actual usage to the admitted provider attempt. If bounds or authoritative usage cannot be established, explicitly offer post-run detection rather than strict prevention. These are required abstract properties; available gateway/provider mechanisms remain unverified.
+
+3. HIGH — Close the state-to-evidence crash gap.
+The coordinator can commit ALLOW, DENY or settlement and crash before its asynchronous evidence emission. The current design does not identify how those facts are subsequently recovered. This can erase the very decision records Control 7 and the Control 16 test need.
+Fix: atomically retain the minimal decision/transition record, or an outbox pointer, with each relevant state transaction; export it asynchronously. Persist normalized incoming usage before acknowledging durable acceptance. Give every outcome, including DENY/ERROR, a recoverable identity where admission is operational. An unavailable admission store cannot promise durable ERROR capture: use adapter recovery and surface any remaining gap. This adds no synchronous rich ledger or ServiceNow write. Explicitly distinguish a durable receipt from a best-effort receipt.
+
+4. HIGH — Specify canonical accounting and contradictory usage handling.
+Transport event_id deduplication is insufficient: gateway and telemetry collectors can report the same provider attempt using different event IDs. Parent spans may repeat totals from child calls. First-arriving usage can also differ from a later authoritative report.
+Fix: settle once by authoritative (team, run, attempt), and separately deduplicate transport delivery by producer/event ID. Declare which source and model fields are authoritative. Never sum parent aggregate usage with leaf attempt usage. Conflicting assertions are retained and reconciled under a declared rule; do not silently accept the first value or settle twice. Corrections require versioned, auditable budget adjustments, with immediate admission stop if they expose an invariant failure.
+
+5. HIGH — Run lifecycle must participate in the admission transaction.
+The request contains a run_id, but the protocol does not require that the run is open, belongs to the authenticated team, and already has pinned rules. Closure can race with a new reservation, producing a premature full-run pass.
+Fix: include run status, owning scope and specification-bundle identity in the atomic reservation preconditions. Reject unknown, closed or mismatched runs. Distinguish ACTIONS_CLOSED from EVIDENCE_FINAL: pending/unknown attempts and late-data deadlines determine evidence finality. Query responses must identify observation time, processing completeness and whether the result is provisional. A closure marker alone is insufficient.
+
+6. MEDIUM — A multi-control invocation needs decision composition semantics.
+The mapping can select multiple controls, while the evaluate response exposes one control. That is adequate for today's sole admission Control 16, but not the claimed reusable interface.
+Fix: either declare evaluate single-control and make the adapter's composition explicit, or return an overall decision plus per-control decisions/specifications. State DENY/required-control ERROR precedence. Monitoring controls cannot block merely because they share an action. If another required gate denies after a reservation, cancel only a demonstrably undispatched reservation; otherwise retain it. Do not advertise generic multi-control admission before these semantics exist.
+
+These are protocol refinements, not reasons to add more public transports, microservices or cryptographic sealing. The current proposal appropriately treats AgentCore gateway hooks, storage entitlements and ServiceNow capabilities as integration checkpoints rather than established facts.

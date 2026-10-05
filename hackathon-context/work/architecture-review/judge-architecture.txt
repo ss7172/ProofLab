@@ -1,0 +1,87 @@
+INDEPENDENT SIMULATED JUDGE 2 — DISTRIBUTED SYSTEMS AND PORTABILITY
+
+Assessment basis: brief.txt V1; slides-extracted.txt, especially PDF pages 14–15 and 19–26; corroborating ServiceNow integration caveats in transcript-4.txt. No other judge's report was consulted. This is an architecture proposal review, not a submission score or a prediction of winning.
+
+CURRENT OFFICIAL STATE
+All three options have 0 implemented controls and no demonstrated readiness. Nothing in this report awards implementation or live-demo credit. The organizer's order is completed controls first, quality second, bonus differentiation third (PDF p25). A working A can therefore outrank an unfinished B or C regardless of these design scores.
+
+RANKING AND SHARED INTERNAL SCORECARD
+All axes use the same 0–5 scale; six equally weighted axes /30 are an internal comparison only. Scores consider the stated access uncertainty and two-person event, rather than an imaginary fully deployed system. A 4 denotes a strong design with material validation still required; a 5 denotes an especially strong fit on that axis. Coverage scores reflect potential, not completed controls.
+
+Option | Control coverage potential | Evidence credibility/query | Correctness/portability | Differentiation/bonus | Integration feasibility | Two-person delivery | Total | Rank
+A      | 2                          | 4                          | 4                       | 1                     | 4                       | 5                   | 20/30 | 3
+B      | 4                          | 4                          | 4                       | 4                     | 3                       | 4                   | 23/30 | 1
+C      | 4                          | 4                          | 4                       | 5                     | 2                       | 2                   | 21/30 | 2
+
+B is the recommended architecture. It targets all three claim branches, exposes reproducible answers, and can earn adversarial and second-enforcement-point credit without adaptive agent orchestration. Its conditional inline budget coordinator can be omitted without destroying the required post-run tool. The largest unresolved dependency is actual source access, especially expected-event completeness and a defensible Control 9 baseline.
+
+C has the strongest differentiation potential, but it has the same control coverage ceiling and essentially the same correctness core as B. Investigator/challenger agents do not repair absent source events, make a budget operation atomic, or establish reference labels. They consume implementation and rehearsal capacity while adding permissions, state, run attribution, and nondeterministic demo behavior. The safeguards in the brief are sensible enough to retain the same correctness design score as B; they are not yet evidence of a working implementation. C's higher bonus potential narrowly keeps it above A in this internal comparison, not in an official unfinished-versus-finished comparison.
+
+A has the smallest integration surface and clearest route to a real result. Its post-run design makes no unwarranted prevention claim, and a reconciled actual-token total is valuable. Its lack of extra claim branches and live/second-point demonstrations limits the ceiling. It is the mandatory first checkpoint and a credible emergency final submission.
+
+WHY THE CORE ARCHITECTURE IS CREDIBLE
+Separating a pure evaluator from a stateful budget coordinator resolves the superficial conflict between a stateless evaluator and a cumulative cap. Loading frozen specifications before execution keeps the register outside the live path. Exported raw references, a manifest, explicit missing-data outcomes, and an independent formula implementation support the two-minute stranger query. These decisions align with PDF pp14–15, 21, and 25–26.
+
+Portability should mean that verified source adapters change while the evaluator, normalized evidence contract, and tests remain unchanged. It does not mean AWS and ServiceNow offer equivalent interception, trace, or write APIs. An asynchronous observer at a tool boundary can establish architectural reuse; it cannot demonstrate prevention there. Callback and pull are useful supported contract shapes, but unused shapes should stay documentation rather than implementation claims.
+
+TOP THREE POTENTIALLY FATAL REJECTION RISKS FOR C
+
+1. A race-free diagram becomes an unsafe real budget gate.
+The invariant settled_actual + outstanding_reserved <= cap is only meaningful if every physical invocation has a reservation and admission is a single atomic state transition. A pure evaluator reading a snapshot followed by an independent reservation write still races. A run-scoped cap split into separate buckets by threshold version also permits overspend. A response timeout or retry may hide a charged invocation; automatic reservation expiry makes that invocation free in the admission ledger. Unknown provider-added input or an unenforced output maximum defeats the reservation bound.
+
+Required fix: expose one admission operation from the governed gateway. Its coordinator evaluates against a serialized/CAS-protected run budget and commits the reservation before returning allow. The evaluator itself remains pure. Pin one immutable spec version to the run at creation; reject mismatched version requests without opening another budget. Use a stable logical-operation ID plus a distinct physical-attempt ID. Repeated delivery of the same admission request returns the existing decision; an actual retry receives its own reservation. An uncertain dispatched attempt retains its hold until authoritative reconciliation. Prove cancellation before releasing an unused hold. Settle each attempt idempotently against actual input and output usage; conflicting settlements produce a visible gap, not an arbitrary winner. If actual usage exceeds the reserved bound, record an invariant violation and real breach rather than pretending the guarantee held.
+
+Acceptance demonstration: two concurrent reservations at the boundary, duplicate requests, gateway restart after reservation, timeout after possible dispatch, late settlement, and version mismatch. Confirm every governed route crosses the gateway and provider bounds cover all accounted tokens. Otherwise present post-run reconciliation and withdraw the strict-prevention claim. An attempted call denied at the cap is successful enforcement, not the required actual-spend breach run (PDF pp14, 19, 21, 23).
+
+2. A complete-looking export silently covers only the observations that arrived.
+An observed span count is not an expected-event inventory. Static scenario expectations may omit dynamic retries and downstream actions. A model-gateway inventory alone cannot prove every meaningful action across ServiceNow customer, AWS IT, and AWS network zones. A close marker from one producer does not close all other producers. Sorting cross-zone wall-clock timestamps can manufacture short or long gaps under clock skew. Attaching the current spec version at ingestion can rewrite the meaning of old events even with an append-only ledger.
+
+Required fix: freeze an event-family/producer matrix before assessed runs. For each family identify authoritative expected IDs/counts, run-link propagation, close condition, and arrival deadline. The independent expected source must actually observe the governed actions or be a justified scenario oracle; describe its shared failure modes. Track producer sequences, explicit retries, and terminal watermarks separately. Calculate eligible gaps only within a declared causal stream and timestamp basis; cross-zone comparisons need a justified clock-error bound or must remain indeterminate. Preserve source-bound run/spec identifiers and immutable spec contents, validate them against the run manifest, and quarantine cross-run/version conflicts.
+
+Async evidence stays off the live path. Document acknowledgement, redelivery, backlog, restart recovery, and reconciliation behavior without claiming losslessness from an in-memory queue. Budget state needed for admission may be durable on the decision path; exporting it as evidence happens asynchronously. A coordinator reservation inventory can help recover expected attempts but is not an independent proof of bypass-free routing. After a crash or missed deadline, incomplete evidence cannot yield a satisfied claim. A known actual-token subtotal over cap still proves breach; a subtotal below cap with gaps does not prove satisfaction. A later complete export should create a new assessment revision while preserving the earlier inconclusive result.
+
+Acceptance demonstration: one real trace that traverses all three zones, independent expected-versus-observed reconciliation, delayed and duplicate records, one missing producer, an incorrect run link, and a historical query after a new spec is published. The cloned record-removal example must make the missing expectation visible. It only establishes a Control 7 failure if the removed record corresponds to an in-scope required event with no remaining acceptable evidence (PDF pp19–22, 25).
+
+3. Integration and agent spectacle consume the event before a complete control exists.
+No live APIs, credentials, event schemas, or labelled performance corpus have been obtained. ServiceNow agent discovery is materially better supported by the recording than full model/tool/prompt/trace discovery. A generic finding writer, the proposed ServiceNow-agent fallback, and interception at the AWS gateway remain assumptions. A custom local finding screen is not proof of AICT delivery. An agent selecting a hand-authored attack is not proof of a new discovered failure or extra official credit. C9 may be only a synthetic benchmark rather than the proposed real diagnostic accuracy measure.
+
+Required fix: before advanced work, produce a capability matrix with actual endpoint/object, access test, sample record, available identity fields, supported operation, and team namespace. Obtain one real AWS execution and one verified ServiceNow result early. Use the actual supported finding/alert object; do not invent a product API. Preserve pending delivery durably during outages and distinguish sent, acknowledged, visible in the target, and unanswered. Inventory-only access remains an integration limitation. Keep the portable evidence/query core usable with verified read-only sources.
+
+Accept C9 only with frozen reference labels, baseline, comparable window definitions, expected-window inventory, named recipient, and a recorded alert. If the available data is synthetic, label the measured claim accordingly and confirm its eligibility with the mentor; do not imply production diagnostic performance. Missing values cannot become zero drift. Add adaptive Nemotron selection only after the required end-to-end runs and exports are reproducible. Otherwise use a fixed bounded test catalog. The mandatory Nemotron participation can be satisfied in a narrower verified workflow without making two assurance agents a prerequisite (PDF pp22–26; transcript-4 integration caveats).
+
+REQUIRED DESIGN CHANGES BEFORE BUILDING
+1. Turn the capability map into a go/no-go input to scope, not a later integration task.
+2. Write the coordinator state machine and run/spec identity rules before adding the UI or agents. Avoid a separate live-path register lookup, evidence-ledger write dependency, or LLM decision.
+3. Define the expected-source and gap semantics for every claimed event family and all three zones. List uncontrolled paths explicitly; a narrowly valid subset must not be described as the full claim.
+4. Make the exported assessment contain observed value, denominator, expected inventory, applicable frozen rule, source records, gaps, provenance, and test-code version. Preserve original runs and old assessments through remediation/retest.
+5. Build an actual breaching assessed case with the threshold frozen beforehand. If inline enforcement prevents overspend, use an explicitly allowed and labelled observation-only scenario/replay; determine whether it qualifies for the required run evidence. Do not present a deny decision as spent tokens over cap.
+6. Bound C's optional challenge episode to one known-safe local/test action and a deterministic fallback. Record model/version, chosen test, authorization, action outcome, and probe cost. Prevent the probes from altering the subject-run denominator or exhausting the subject's budget accidentally.
+
+RECOMMENDED FINAL SCOPE
+Ship B as the product architecture, with A as the first verified milestone. Person 1 owns normalized sources, actual-token reconciliation, and budget admission only if interceptable. Person 2 owns frozen specs, expected inventories, judge query/export, and early ServiceNow verification. Integrate daily using the same run manifest.
+
+Primary finished target: Controls 16 and 7 across their stated scope, named passing and breaching cases, verified AICT connection/findings to the extent available, adversarial replay log, and all six required artifacts. Add Control 9 immediately when labels and a frozen comparable baseline make an end-to-end test credible; a third complete control outranks agent ornamentation. Prefer a running second adapter and an actual inline deny over implementing every possible transport.
+
+Retain C as an optional final layer: one short Nemotron investigator/challenger episode over the existing allowlisted catalog, producing one executed, validated test and one evidence-linked finding. Do not make the live judge query depend on an LLM, ServiceNow connectivity, or a successful challenge episode. Preserve a passing new-run retest before closing the old finding. Freeze scope early enough to rehearse the two-minute query and open the final export on a clean environment.
+
+WHAT WOULD CHANGE THIS RANKING
+C moves above B if the team first demonstrates all three deterministic controls end to end, actual AWS/ServiceNow integration, version-pinned crash-safe admission, all-zone completeness, and the full required artifacts; then shows a bounded agent selected an additional discriminating test that revealed a validated issue beyond the fixed suite without degrading reliability. That is measurable incremental value.
+
+A moves above both if real access leaves only complete per-run usage available or if B/C cannot close a second control before the event freeze. A complete, source-backed Control 16 with honest gaps is preferable to an elaborate claim with no completed branch.
+
+B remains first if the adaptive layer merely chooses among tests the deterministic suite already runs. The published rubric rewards the tested failure and portable enforcement architecture; it does not award automatic credit for the number of assurance agents.
+
+REVISION CHECK
+Reviewed architecture-v2.txt independently. V1 ranking and scores remain unchanged; no rescore.
+
+The revision addresses the major design objections: B is the required core; adaptive testing is optional; admission and attempt journaling are atomic; ambiguous dispatch remains reserved; budget state is distinguished from asynchronous evidence; cross-zone source authority, clock domains, provenance, and real integration limits are explicit. No remaining conceptual blocker prevents implementation.
+
+Three material implementation requirements should be explicit:
+
+1. Settlement must atomically update BOTH the attempt's terminal state and the run's settled/reserved totals, with conditional idempotency. A late or stale worker cannot release twice. Dispatch ownership needs a conditional state transition; never recycle ambiguous ownership merely because a lease expired. If authoritative actual usage exceeds the reserved bound, preserve actual usage, mark the invariant violation, and stop further admission; do not clamp the measurement to the reservation.
+
+2. A version name alone is insufficient pinning. Preserve immutable spec contents with the run/window manifest, reject mismatching incoming threshold versions, and retain historical assessment revisions when late evidence changes a result. Publishing a new registry version must not change old queries or create another budget bucket for the same run.
+
+3. Control 9 must explicitly require a positive baseline for its relative-drop formula. A zero baseline is undefined, not zero drift. Freeze a policy for invalid/insufficient baseline data and keep the branch unassessed until a usable baseline exists.
+
+The remaining largest uncertainty is empirical: verified all-zone capture and actual AWS/ServiceNow capabilities. The revised document appropriately withholds guarantees pending that evidence.

@@ -1,0 +1,50 @@
+INDEPENDENT REVISED AUDIT — INTERFACES / IMPLEMENTATION PRECISION
+
+Reviewed work/completion-audit/detailed-architecture-v2.txt independently under the unchanged common scorecard, including its exact changes from v1. Prior baseline was66/100 design completeness and62/100 winning-potential design. No other reviewer outputs consulted. Scores below apply to v2, before any subsequent corrections.
+
+DESIGN COMPLETENESS
+Criterion                                      Weight  Rating  Points
+D1 Control7 scope/coverage/timing/denominators      12      4      12
+D2 Control9 metric/baseline/window/alert           16      3      12
+D3 Control16 accounting/admission/recovery        16      4      16
+D4 Invocation/runtime/immutable specifications    12      4      12
+D5 Evidence/source authority/claim rollup         12      4      12
+D6 Deployment/ServiceNow/model/data integration   12      3       9
+D7 Six deliverables/query/provenance scenarios    12      4      12
+D8 Two-person plan/dependency gates                8      3       6
+TOTAL                                                           91/100
+
+WINNING-POTENTIAL DESIGN SCORE
+Criterion                                      Weight  Rating  Points
+W1 Credible path to3 completed controls            32      3      24
+W2 Reliable independent2-minute query              16      4      16
+W3 Correct portable architecture                  16      4      16
+W4 Verifiable evidence/honest failures             16      4      16
+W5 Live inline/adversarial/secondpoint             12      3       9
+W6 Deliverable within2-person constraints           8      3       6
+TOTAL                                                           87/100
+
+The gains reflect executable definitions, acceptance criteria and bounded deployment alternatives—not increased document length. None of these scores is an official mark, winning probability, percent built or runtime verification. Actual demonstrated readiness remains0/3 completed controls and no judge-ready submission evidenced. The official control-count/quality/bonus ordering still governs.
+
+WHAT CHANGED ENOUGH TO EARN HIGHER RATINGS
+Control9 now defines an actual scoring contract: canonical single-fault output, fixed aliases, confirmed failure versus unknown telemetry, positive baseline, separate assessed cases, comparable registered batches and explicit run-to-window attribution. Control7 adds event obligations, a retry example, mathematical denominators and unmeasurable-gap bounds. The canonical keys separate delivery identity from execution/accounting identity. Query/export now fixes input identities, as-of cutoffs and source completeness, and the six-artifact release validator has explicit failure conditions. Deployment gates specify detection/prevention/unassessable alternatives rather than claiming generic vendor features exist in the sandbox. Two named work tracks and feature cut lines materially improve deliverability.
+
+THREE REMAINING MATERIAL RISKS
+
+1. HIGH — Source authority and accepted measurement remain unverified dependencies.
+The three-control path requires an independent expected-work source across all zones, authoritative actual model usage including retries, and accepted diagnostic labels/output mapping. A complete architecture cannot supply these facts by itself. The revised gate branches are credible, but one accepted demonstration scenario is not proof of whole-scope population coverage. Require each source probe to produce a scope/coverage argument, real payload and negative/missingness case; obtain organizer acceptance for any reference corpus or recorded breach. If those fail, keep the declared2-control or detection-only ceiling. D2/D6 and W1/W5 remain3 for this reason, not because production evidence was expected from a design-only task.
+
+2. HIGH — Safe prevention depends on faithfully implementing the stated transaction boundary.
+The protocol is now coherent, but a developer can easily split the run-state check, dispatch ownership or settlement updates into separate operations, defeating it. Add a named dispatch-versus-close race to the existing acceptance campaign and inject crashes after every transition commit but before the next external effect. Verify hidden SDK/provider retries: if an admitted attempt can trigger multiple billable provider executions, source reconciliation must expose all of them and the strict bound may be invalid. Verify the outbox and ingestion acknowledgment survive restart. These are implementation/integration acceptance risks, not remaining contradictory requirements; they do not justify calling the current design deployed or tested.
+
+3. MEDIUM — Two-person delivery remains sensitive to integration work.
+RoleB owns the riskiest data experiment, ServiceNow, export/query and reference checker. RoleA owns all source normalization, event obligations and runtime state. This is plausible only if the initial gates expose usable sources quickly. Preserve the90-minute discovery timebox as a decision point, not a promise that provisioning finishes. After discovery, move specific finished work to the less-blocked person and stop optional state-machine/second-adapter work until required artifacts are complete. No additional agent service should compete with accepted baseline construction or actual AICT evidence. The cut lines are now explicit, but throughput and permissions remain untested.
+
+V2 closes the two must-fix contradictions identified in v1: dispatch now checks OPEN atomically against closure, and Control7 includes admission.error without inventing denial evidence. Already-dispatching calls remain liabilities; evidence finality explicitly means an as-of cutoff, not proof every remote request finished. No remaining must-fix source contradiction found in v2. Four transports, off-path register/ledger, pure evaluator plus separate coordinator, honest breach evidence and out-of-scope cryptographic sealing align with the slides. Record any later correction separately; do not silently present this score as a new post-correction numerical review.
+
+FINAL V3 CHECK
+Reviewed work/completion-audit/detailed-architecture-v3.txt and its changes from v2 without consulting other reports. No remaining must-fix contradiction found. The stricter baseline denominator, explicit empty-population results, independently sourced expected gap pairs and per-window alerts remove opportunities for implementation misinterpretation. Dispatch/closure and hidden-retry acceptance cases now cover the specific runtime risks raised. Artifact ownership and the end-of-Day1 C9 decision improve execution discipline.
+
+Final design completeness:91/100. Final winning-potential design:87/100. All criterion ratings remain unchanged from the table above; no new rating was earned merely by adding detail. D2 and D6 remain3 because the accepted measurement inputs and enabled platform paths remain unresolved. D8 remains3 because the revised ownership and cut lines are credible but two-person throughput remains conditional. W1,W5,W6 remain3 for the corresponding source, live-capability and delivery dependencies.
+
+The high remaining ratings describe a precise, reviewable conditional design, not verified software. Final demonstrated readiness remains0/3 completed controls and no judge-ready submission evidenced. The next progress must come from actual accepted source samples, implementation and measured acceptance runs, rather than further architecture scoring.

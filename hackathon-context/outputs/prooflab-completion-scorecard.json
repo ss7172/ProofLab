@@ -1,0 +1,206 @@
+{
+  "status": "DESIGN_ONLY",
+  "implemented_controls": 0,
+  "required_full_set": 3,
+  "method": "Each criterion rated 0\u20134; sum(weight \u00d7 rating / 4). Mean of three independent AI reviews. Not official judging weights, percent implemented or probability of winning.",
+  "design_criteria": [
+    [
+      "Control 7: population, coverage and timing",
+      12
+    ],
+    [
+      "Control 9: metric, baseline, windows and alert",
+      16
+    ],
+    [
+      "Control 16: accounting, admission and recovery",
+      16
+    ],
+    [
+      "Invocation and external policy",
+      12
+    ],
+    [
+      "Evidence authority and claim rollup",
+      12
+    ],
+    [
+      "Platform, model and ServiceNow integration",
+      12
+    ],
+    [
+      "Six artifacts and judge query",
+      12
+    ],
+    [
+      "Two-person delivery and dependency gates",
+      8
+    ]
+  ],
+  "competitive_criteria": [
+    [
+      "Credible path to three completed controls",
+      32
+    ],
+    [
+      "Independent answer within two minutes",
+      16
+    ],
+    [
+      "Correct, portable architecture",
+      16
+    ],
+    [
+      "Verifiable evidence and honest failures",
+      16
+    ],
+    [
+      "Inline, adversarial and second-point bonuses",
+      12
+    ],
+    [
+      "Feasibility for two participants",
+      8
+    ]
+  ],
+  "reviewers": [
+    {
+      "name": "Runtime / interfaces",
+      "file": "interface",
+      "baseline_D": [
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        3,
+        2
+      ],
+      "final_D": [
+        4,
+        3,
+        4,
+        4,
+        4,
+        3,
+        4,
+        3
+      ],
+      "baseline_W": [
+        2,
+        3,
+        3,
+        3,
+        2,
+        2
+      ],
+      "final_W": [
+        3,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "baseline_D_score": 66.0,
+      "baseline_W_score": 62.0,
+      "final_D_score": 91.0,
+      "final_W_score": 87.0
+    },
+    {
+      "name": "Evidence / measurement",
+      "file": "evidence",
+      "baseline_D": [
+        2,
+        2,
+        3,
+        3,
+        3,
+        2,
+        3,
+        2
+      ],
+      "final_D": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        3,
+        4,
+        3
+      ],
+      "baseline_W": [
+        2,
+        3,
+        3,
+        3,
+        3,
+        2
+      ],
+      "final_W": [
+        3,
+        4,
+        3,
+        3,
+        3,
+        3
+      ],
+      "baseline_D_score": 63.0,
+      "baseline_W_score": 65.0,
+      "final_D_score": 81.0,
+      "final_W_score": 79.0
+    },
+    {
+      "name": "Delivery / judging",
+      "file": "delivery",
+      "baseline_D": [
+        3,
+        2,
+        3,
+        4,
+        3,
+        2,
+        3,
+        2
+      ],
+      "final_D": [
+        3,
+        3,
+        4,
+        4,
+        4,
+        3,
+        4,
+        3
+      ],
+      "baseline_W": [
+        2,
+        3,
+        3,
+        3,
+        2,
+        2
+      ],
+      "final_W": [
+        3,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "baseline_D_score": 69.0,
+      "baseline_W_score": 62.0,
+      "final_D_score": 88.0,
+      "final_W_score": 87.0
+    }
+  ],
+  "means": {
+    "baseline_D": 66.0,
+    "baseline_W": 63.0,
+    "final_D": 86.66666666666667,
+    "final_W": 84.33333333333333
+  }
+}

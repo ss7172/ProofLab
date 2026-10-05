@@ -1,0 +1,2373 @@
+[
+  {
+    "id": "T01",
+    "title": "Inventory the documented platform and inspect the supplied starter before extending it",
+    "phase": "access",
+    "owner": "BOTH",
+    "component_ids": [
+      "M01.1",
+      "M01.2",
+      "M01.3",
+      "M01.4",
+      "M01.5",
+      "M01.6",
+      "M01.7",
+      "M01.8",
+      "M01.9",
+      "M01.10",
+      "M01.11",
+      "M01.12"
+    ],
+    "depends_on": [],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: AI Native ODA Canvas operators on EKS, AgentConfig-managed AgentCore Runtime, ToolConfig-managed Lambda through AgentCore Gateway MCP, shared modaas-agw inference gateway and TMF639 registry. Runtime resources remain unexercised.",
+    "steps": [
+      "Read the supplied ~/starter/register.yaml, evaluate.py, pull-evidence.sh, gap-list.md, run-ids.txt and submit.sh; record existing behavior and extension points before creating code.",
+      "Resolve actual team AgentConfig, ToolConfig and ModelConfig resources in oda.tmforum.org/v1beta1, including governed model alias fields, status.endpoint and TMF639 v5 inventory. Record each supplied agent/tool/scenario and gaps against the earlier three-zone drawing.",
+      "Keep AgentCore Gateway MCP/tool routing distinct from modaas-agw model inference and the conceptual gateway A/B business handoffs. Preserve IDs and document unsupported slide assumptions.",
+      "Record displayed account lifetime separately from the actual submission deadline and independently verify region/account identity without storing credentials.",
+      "Inspect actual reference source before assuming a framework: reference-agent docs describe plain Python, setup text calls it Strands, while the custom-agent module is Strands. Record the actual source as the implementation authority.",
+      "Record TMF639 Projected=False as a documented possibility caused by egress port8639. Use authoritative CR phase for resource deployment state while retaining the registry-projection gap; conditions may lag about2minutes.",
+      "The actual workshop places all three supplied reference agents in AgentCore Runtime. Treat earlier ServiceNow-customer/AWS-IT/AWS-network zone labels as logical roles, not evidence of three different deployed hosting platforms."
+    ],
+    "done_when": [
+      "Every original M01 component maps to a documented asset, a runtime probe still to execute, or an explicit absent/unverified capability.",
+      "The starter files and registry/endpoint discovery paths are catalogued; no supplied platform is scheduled for rebuilding.",
+      "Documented topology and operator lifecycle are distinguished from runtime verification.",
+      "Actual CR kinds are ModelConfig, ToolConfig and AgentConfig in oda.tmforum.org/v1beta1; a governed model alias is a ModelConfig field/value, not a separate ModelConfigAlias kind."
+    ],
+    "status": "PLANNED",
+    "risk": "The workshop is materially different from the initial schematic; matching names alone can attach controls to the wrong gateway.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/ai-native-oda-canvas/aws-services",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/self-check",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TMF639_REGISTRY",
+      "AGENTCONFIG",
+      "AGENTCORE_RUNTIME",
+      "TOOLCONFIG",
+      "AGENTCORE_GATEWAY_MCP",
+      "MODEL_GATEWAY_AGW",
+      "REFERENCE_SCENARIOS",
+      "OPERATOR_APPROVAL"
+    ]
+  },
+  {
+    "id": "T02",
+    "title": "Use the documented AgentConfig deployment path and separate operator approval",
+    "phase": "access",
+    "owner": "A",
+    "component_ids": [
+      "M16.2"
+    ],
+    "depends_on": [
+      "T01"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: new-agent.sh copies the custom template, builds ARM64 through CodeBuild into ECR, then generates/applies AgentConfig in Reviewing. Legitimate approval/attestation precedes operator provisioning of AgentCore Runtime. ToolConfig supplies permitted tools; direct AgentCore creation and IAM writes are prohibited.",
+    "steps": [
+      "Inspect the build-agent flow and supplied project layout; plan the investigator inside the permitted AgentConfig runtime.",
+      "Follow new-agent.sh -> CodeBuild/ECR -> generated/applied AgentConfig -> legitimate review/approval -> operator-provisioned AgentCore Runtime; inspect the script first and retain image digest/generation/readiness evidence. No new IAM roles or direct Runtime creation.",
+      "Record platform operator approval as a deployment gate separate from control decisions, human alert response and ServiceNow approval.",
+      "Plan required approval annotations and attestation as future user/team actions through the documented operator path; no approval is already completed by reading this plan."
+    ],
+    "done_when": [
+      "The agent/runtime build and approval path references actual documented resources and required status checks.",
+      "Team code fits the starter rather than a new platform/service fleet.",
+      "Deployment remains PLANNED until separately authorized and exercised.",
+      "Actual required policy names/status are checked dynamically. Do not hardcode the older four-policy count because the later ceiling policy adds another required policy."
+    ],
+    "status": "PLANNED",
+    "risk": "Direct AWS creation calls can bypass the operator contract and fail permission boundaries.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/ai-native-oda-canvas/aws-services",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/prove-the-platform",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/ceiling"
+    ],
+    "platform_asset_aliases": [
+      "AGENTCONFIG",
+      "AGENTCORE_RUNTIME",
+      "CODEBUILD_ECR",
+      "TOOLCONFIG",
+      "AGENTCORE_GATEWAY_MCP",
+      "OPERATOR_APPROVAL"
+    ]
+  },
+  {
+    "id": "T03",
+    "title": "Bind team identities and configure scoped access",
+    "phase": "access",
+    "owner": "A",
+    "component_ids": [
+      "M16.4",
+      "M03.1"
+    ],
+    "depends_on": [
+      "T01",
+      "T02"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: team agent JWT/API-key credentials identify gateway callers; team-* Lambda and DynamoDB permissions are documented. No IAM writes, direct Bedrock invocation or direct AgentCore creation.",
+    "steps": [
+      "Inspect the gateway credential guide and issuer/audience/team identity fields without copying secrets into prompts or evidence.",
+      "Bind team/agent identity from verified credential context; distinguish a team name header from authenticated scope.",
+      "Plan positive/negative source, gateway, registry and submission-bucket permission probes and safe credential-expiry handling within documented boundaries.",
+      "Do not assume the fixed PDP exposes per-agent identity. Team/agent credentials, host provenance and policy input attributes are distinct; use only documented actual attributes for authorization."
+    ],
+    "done_when": [
+      "A permitted read succeeds and an unauthorized scoped access is denied without leaking record existence.",
+      "Credentials are absent from source, logs and exported fixtures.",
+      "Team prefixes are treated as names, not proof of tenant isolation."
+    ],
+    "status": "PLANNED",
+    "risk": "Shared workshop accounts can appear isolated while readers, caches or exports remain overbroad.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/gateway-credential",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/ai-native-oda-canvas/aws-services"
+    ],
+    "platform_asset_aliases": [
+      "TEAM_GATEWAY_IDENTITY",
+      "MODEL_GATEWAY_AGW",
+      "PDP_CEDAR",
+      "TEAM_LAMBDA_DYNAMODB",
+      "TEAM_S3_SUBMISSION"
+    ]
+  },
+  {
+    "id": "T04",
+    "title": "Resolve the ServiceNow requirement conflict before assuming an AICT connector",
+    "phase": "access",
+    "owner": "B",
+    "component_ids": [
+      "M14.1"
+    ],
+    "depends_on": [
+      "T01"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED CONFLICT: the ServiceNow guide describes a facilitator-enabled optional connector, absent by default, and escalate-to-incident as stretch; the earlier transcript says AICT/human loop is mandatory.",
+    "steps": [
+      "Record both source statements precisely and prepare an organizer clarification on which requirement applies to this event/account; no external message is sent by this plan.",
+      "Read the ServiceNow guide independently of AWS compute work and determine whether the facilitator has enabled any connector/instance for this team.",
+      "If enabled, inventory actual asset, trace, finding, named-owner and response readback capabilities separately. If waived/absent, record the official resolution and permitted governance route rather than fabricate ServiceNow access."
+    ],
+    "done_when": [
+      "The discrepancy has an authoritative documented resolution and a dated capability state.",
+      "Any connector claimed present has actual endpoint/permission evidence; guide existence does not count as connection verification.",
+      "The downstream governance route and release requirement reflect the organizer decision."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Implementing an unavailable ServiceNow API or silently waiving a mandatory transcript requirement can invalidate the plan.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "SN_FACILITATOR_CONNECTOR",
+      "OPERATOR_APPROVAL"
+    ]
+  },
+  {
+    "id": "T05",
+    "title": "Prove approved Nemotron Nano9B through the supplied inference gateway",
+    "phase": "access",
+    "owner": "A",
+    "component_ids": [
+      "M11.1",
+      "M11.2"
+    ],
+    "depends_on": [
+      "T01",
+      "T02",
+      "T03"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: OpenAI-style POST /v1/chat/completions through modaas-agw port8081 using the governed alias from ModelConfig. nemotron-nano-9b maps to nvidia.nemotron-nano-9b-v2; nemotron-nano-3-30b maps to nvidia.nemotron-nano-3-30b; baseline nemotron-super-120b maps to nvidia.nemotron-super-3-120b. Direct Bedrock invocation is prohibited.",
+    "steps": [
+      "Resolve the documented alias/endpoint/credential and verify current approval/attestation/readiness; prefer nemotron-nano-9b for the first investigator benchmark. Try supported Nano30B only when current access permits it and measured quality needs justify it; Super120B is the documented reference baseline, not automatically ready. No unprovided Lightning endpoint.",
+      "Plan one minimal authorized model call through the supplied gateway; record request/response, actual alias/model metadata, modaas.run_id/action_id/trace_id and reported tokens/cost.",
+      "Test structured-output capability, output limits and content-filter handling. A blocked response can be HTTP200 with finish_reason=content_filter and zero usage; status code alone does not prove success.",
+      "Record nemotron-super-120b-helper bootstrap calls separately but include them in the documented account-wide ceiling; alias inventory is not actual model execution proof.",
+      "Guide pages conflict about which aliases are preapproved. Read the current ModelConfig approval/attestation, dependency and runtime/route state for every selected alias, including helper,9B,30B andSuper. Follow the actual legitimate review path if required; no fixed bootstrap-versus-participant split is assumed."
+    ],
+    "done_when": [
+      "A later real gateway invocation demonstrates the approved route with safe provenance and no credential leakage.",
+      "The current plan says DOCUMENTED, not runtime verified, until that probe executes.",
+      "Parser distinguishes usable completion, content filtering, denial, timeout and uncertain charge."
+    ],
+    "status": "PLANNED",
+    "risk": "The documented alias/route may expose different capabilities than a public Nemotron endpoint; HTTP200 can still be a guardrail block.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/gateway-credential",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough/nemotron-models"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_CONFIG_ALIAS",
+      "MODEL_GATEWAY_AGW",
+      "TEAM_GATEWAY_IDENTITY",
+      "NEMOTRON_NANO9B",
+      "NEMOTRON_NANO30B",
+      "NEMOTRON_SUPER120B",
+      "NEMOTRON_HELPER_ALIAS"
+    ]
+  },
+  {
+    "id": "T06",
+    "title": "Extend the starter evaluator and helpers as one package",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M16.1",
+      "M16.8"
+    ],
+    "depends_on": [],
+    "priority": "CORE",
+    "technology": "DOCUMENTED BASE: ~/starter/register.yaml, evaluate.py, pull-evidence.sh, gap-list.md, run-ids.txt and submit.sh. PROPOSED TEAM EXTENSION: shared Python helpers imported by evaluate.py and the AgentConfig investigator.",
+    "steps": [
+      "Inspect supplied evaluator inputs/output and preserve the starter entry points expected by the workshop.",
+      "Add small shared modules for schemas, reconciliation, controls, validation and query only where the starter lacks them; avoid a greenfield service scaffold.",
+      "Pin package/configuration versions and document build/run commands for the supplied runtime and submission flow."
+    ],
+    "done_when": [
+      "Existing starter behavior is understood and retained where correct.",
+      "Team additions have a single shared schema/evaluator implementation and clear entry points.",
+      "No starter template or documentation-only extension is labelled implemented."
+    ],
+    "status": "PLANNED",
+    "risk": "Separate ad hoc notebooks/scripts can silently diverge on IDs, thresholds and arithmetic.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "AGENTCONFIG",
+      "CODEBUILD_ECR"
+    ]
+  },
+  {
+    "id": "T07",
+    "title": "Define canonical schemas and retry identities",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M03.2",
+      "M03.3",
+      "M03.4"
+    ],
+    "depends_on": [
+      "T06"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED INPUT FIELDS: modaas.run_id, action_id and trace_id in gateway evidence; audit-store correlation_id; CR status.registryRecordId and governance.approvals. PROPOSED: canonical versioned team schemas with explicit cross-source correlation.",
+    "steps": [
+      "Map each actual source field into distinct canonical run/action/attempt/execution/observation identities; do not assume action_id proves exactly one model execution.",
+      "Bind AgentConfig, ToolConfig and ModelConfig CR/registry records and approval evidence by exact IDs and source versions; preserve the governed model alias as a separate field.",
+      "Retain duplicate, missing and conflicting identifier mappings; document source namespace and retry semantics from observed payloads."
+    ],
+    "done_when": [
+      "Fixtures cover duplicate delivery, hidden retries and execution IDs reused across source namespaces.",
+      "Every persisted type has schema version, team and provenance fields.",
+      "Actual executions cannot be erased by deduplicating only on attempt ID.",
+      "A ModelConfig alias, registry asset ID, deployment CR UID and provider execution ID remain separate typed fields."
+    ],
+    "status": "PLANNED",
+    "risk": "Conflating an attempted call, actual provider execution and observation undercounts usage.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_GATEWAY_AGW",
+      "AUDIT_STORE",
+      "TMF639_REGISTRY",
+      "OPERATOR_APPROVAL"
+    ]
+  },
+  {
+    "id": "T08",
+    "title": "Implement authoritative lifecycle and execution correlation",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M03.5",
+      "M03.6"
+    ],
+    "depends_on": [
+      "T07",
+      "T11"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED SOURCES: audit-store timeline/records by correlation_id, gateway correlation fields, AgentCore traces and CR/registry records. PROPOSED lifecycle interpretation must match observed source finality.",
+    "steps": [
+      "Map authoritative lifecycle events from the starter/source timeline into OPEN, ACTIONS_CLOSED and EVIDENCE_FINAL, retaining unknown transition authority.",
+      "Correlate run/action/trace/correlation IDs using explicit relations, preserving unmatched executions and conflicting run assignments.",
+      "Keep operator deployment approval distinct from a business run opening or assurance finalization.",
+      "A pause is an eventually propagated runtime condition: the guide observed roughly15seconds to stop and50seconds to resume. Observe actual effect and preserve in-flight work; do not assert instant physical no-send from a pause request."
+    ],
+    "done_when": [
+      "Closing actions does not discard late usage or imply source finality.",
+      "A provider execution claimed by two runs is retained as a conflict, not charged twice.",
+      "Evidence finalization records either satisfied completion rules or explicit gaps."
+    ],
+    "status": "PLANNED",
+    "risk": "Local lifecycle state does not prove upstream dispatch stopped without an actual supported hook.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/pause"
+    ],
+    "platform_asset_aliases": [
+      "AUDIT_STORE",
+      "MODEL_GATEWAY_AGW",
+      "AGENTCORE_METRICS_OTEL",
+      "TMF639_REGISTRY",
+      "OPERATOR_APPROVAL"
+    ]
+  },
+  {
+    "id": "T09",
+    "title": "Freeze dated thresholds, measurement definitions and owners",
+    "phase": "foundation",
+    "owner": "B",
+    "component_ids": [
+      "M04.1",
+      "M04.2",
+      "M04.5"
+    ],
+    "depends_on": [
+      "T01",
+      "T06"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED BASE: ~/starter/register.yaml plus workshop control briefs. PROPOSED declared rules: C7 event evidence, C9 per-runtime hourly AgentCore Latency/Errors, and C16 per-run token cap.",
+    "steps": [
+      "Extend register.yaml with dated owner, metric, comparison direction, units/statistic, threshold, allowance, source authority and measurement population.",
+      "For C9 freeze AgentCore Latency statistic Average in milliseconds and Errors statistic Sum as count for each runtime in one clock-hour windows. Preserve namespace, complete dimensions, period, units, timestamps, region, start/end and source/query status before comparison; score-run.py is a separate diagnosis grade.",
+      "For C16 choose and justify a per-run cap independently of the documented account quotas100RPM and2.5million tokens/hour; those quotas are not a run budget.",
+      "Version and preserve baseline/policy/configuration before executing assessed runs.",
+      "Freeze each applicable control rule and its baseline/treatment acquisition protocol before any assessed run/window. Any permitted pre-freeze exploratory/calibration case is labelled exploratory and excluded from submitted assessed evidence unless organizers explicitly accept another declared provenance."
+    ],
+    "done_when": [
+      "Every claimed control has an explicit immutable rule and accepted evidence basis.",
+      "C9 metric normalization/statistic/direction, window closure and zero-baseline/error handling are declared before use.",
+      "Account quotas cannot be substituted for a per-run threshold and later observed outcomes cannot choose the rule."
+    ],
+    "status": "PLANNED",
+    "risk": "Choosing thresholds or denominators after seeing outcomes invalidates pass/breach demonstrations.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/control-16",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/self-check"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "AGENTCORE_METRICS_OTEL",
+      "SCENARIO_GRADER",
+      "MODEL_GATEWAY_AGW"
+    ]
+  },
+  {
+    "id": "T10",
+    "title": "Load pinned policy and explicit action-to-control mappings",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M04.3",
+      "M04.4",
+      "M04.6"
+    ],
+    "depends_on": [
+      "T07",
+      "T09"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: starter register; narrow Module6 Cedar exception permits team policy ConfigMap in modaas-system with app.kubernetes.io/part-of=modaas-pdp label and policy-id annotation. Fixed PDP/gateway code is not editable, and per-agent identity is not exposed to policy. PROPOSED control applicability remains separate.",
+    "steps": [
+      "Map model inference to C16 accounting/C7 records, tool/runtime evidence to declared C7 scope, and hourly AgentCore metrics to C9.",
+      "Load the immutable starter register outside the inference path; pin scope/spec/configuration versions to assessed runs/windows.",
+      "Document Cedar enforcement as supplied authorization behavior, not our custom token admission hook. Keep operator approvals and finding/human-response decisions separate.",
+      "Inspect actual required Cedar/policy names and readiness, including the later modaas-ceiling policy, instead of enforcing the older four-policy count. Keep policy/condition propagation lag visible.",
+      "Apply only the documented team Cedar ConfigMap scope; this is a narrow authorized exception to protected-namespace rules, not blanket shared-platform write permission or an automatic new approval blocker.",
+      "Inspect route policy composition: a permit/unless toolName check may permit a missing toolName or be overridden by another applicable permit. Constrain the shared AgentCore Gateway route to declared tool names, testing absent/unknown names and all applicable policies; use supported explicit-forbid semantics where needed."
+    ],
+    "done_when": [
+      "Unmatched in-scope actions appear as mapping gaps.",
+      "Historical assessments load their original exact rule after later policy changes.",
+      "Updating a bundle cannot reset an existing run's spend or silently replace a frozen C9 baseline.",
+      "The effective route decision is tested for declared, undeclared and missing toolName across composed policies; a template text alone is not proof of restriction."
+    ],
+    "status": "PLANNED",
+    "risk": "A single expiry timestamp used for all purposes can incorrectly stop valid work or rewrite historical results.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/prove-the-platform",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/ceiling",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/cedar"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "PDP_CEDAR",
+      "OPERATOR_APPROVAL",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T11",
+    "title": "Implement raw and canonical repositories with a portable local path",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M06.1",
+      "M06.2",
+      "M16.3"
+    ],
+    "depends_on": [
+      "T06",
+      "T07"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED PERMISSIONS: workshop IDE host may use team-output files/SQLite and documented team-* tables/Lambda; component pods have no ambient AWS credentials/public-S3 egress. PROPOSED FIRST STORE: IDE-host SQLite plus immutable team-output files, with persistence/restart tests before relying on it.",
+    "steps": [
+      "Inspect the starter and reuse IDE-host team-output files plus SQLite for normalization/query. Confirm actual host persistence and restart behavior rather than assuming a container filesystem is durable.",
+      "Keep captured sources, facts, candidates, bindings and cases versioned and locally resolvable; stage only permitted team outputs for the IDE-side submission helper.",
+      "Do not use the IDE role as proof that EKS component pods or an AgentCore process can call DynamoDB/S3. Add a cloud store only with verified execution identity, network path and an actual shared-state need; no local SQLite distributed-admission claim."
+    ],
+    "done_when": [
+      "A raw capture and corresponding canonical record survive restart and remain addressable by version.",
+      "Malformed/unmatched inputs can be retained without fabricating valid facts.",
+      "Repository choice and concurrency guarantees are documented.",
+      "IDE host permissions, AgentConfig Runtime access and component-pod access are recorded independently; missing credentials/egress remain real boundaries."
+    ],
+    "status": "PLANNED",
+    "risk": "Mutable overwrite or unversioned references make prior answers impossible to reproduce.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/ai-native-oda-canvas/aws-services",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TEAM_LAMBDA_DYNAMODB",
+      "TEAM_S3_SUBMISSION",
+      "CLOUDWATCH_EVIDENCE",
+      "AUDIT_STORE"
+    ]
+  },
+  {
+    "id": "T12",
+    "title": "Extend pull-evidence.sh across the documented evidence surfaces",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M05.1",
+      "M05.4",
+      "M05.5",
+      "M02.8"
+    ],
+    "depends_on": [
+      "T01",
+      "T03",
+      "T11"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: TMF639 v5 inventory; CR approval/registry fields; modaas-agw and modaas-pdp logs; audit-store port8080 /timeline?cid= and /records?cid= JSONL; /modaas/evidence CloudWatch; AgentCore CloudWatch OTEL spans. The collector trace pipeline has no durable exporter, so X-Ray/cockpit Trace may be empty.",
+    "steps": [
+      "Inspect and extend ~/starter/pull-evidence.sh instead of replacing it with a new ingestion service.",
+      "Read registry assets/CR status.governance.approvals and status.registryRecordId; collect gateway token/cost/correlation fields, Cedar decisions, audit timeline/JSONL, CloudWatch evidence and relevant AgentCore spans.",
+      "Resolve endpoints through status.endpoint; document authentication, paging/filter/retention and capture semantics per surface.",
+      "Preserve recoverable scoped captures before durable receipt/checkpoint; expose failed pages and incomplete sources.",
+      "Use gateway/PDP/CloudWatch evidence and AgentCore CloudWatch spans as documented durable sources. Do not promise X-Ray or cockpit Trace completeness from the broad services overview; record missing collector export explicitly.",
+      "When TMF639 projection fails, preserve CR captures and the explicit registry gap. Authoritative CR phase can establish resource state while lagging conditions or Projected=False cannot establish registry completeness."
+    ],
+    "done_when": [
+      "Every selected source has a tested reader or an explicit source gap; nothing is inferred from the starter filename alone.",
+      "A captured run can be followed across registry/runtime/gateway/audit evidence using exact IDs.",
+      "Collection completeness and upstream execution completeness remain separate."
+    ],
+    "status": "PLANNED",
+    "risk": "Different stores can contain correlated copies of the same event or usage; pulling all of them must not double-count.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/governed-tool",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TMF639_REGISTRY",
+      "OPERATOR_APPROVAL",
+      "MODEL_GATEWAY_AGW",
+      "PDP_CEDAR",
+      "AUDIT_STORE",
+      "CLOUDWATCH_EVIDENCE",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T13",
+    "title": "Add the ServiceNow reader only if the facilitator route is enabled",
+    "phase": "integration",
+    "owner": "B",
+    "component_ids": [
+      "M05.2"
+    ],
+    "depends_on": [
+      "T04",
+      "T03",
+      "T11"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED OPTIONAL SURFACE: facilitator-enabled ServiceNow connector; no default access or exact table assumed.",
+    "steps": [
+      "Wait for T04 requirement/capability resolution; inspect actual supplied connector schema before implementing a reader.",
+      "If enabled, capture permitted asset/incident/response records with actor, source version and generated provenance.",
+      "If absent or officially waived, leave this reader unimplemented and expose the actual governance evidence route; do not invent notes or human responses."
+    ],
+    "done_when": [
+      "A real permitted record is retrievable by stable captured reference.",
+      "Generated notes are not treated as independent corroboration.",
+      "Missing read permission remains a visible response/evidence gap.",
+      "An authoritative waiver/approved alternative may resolve this task scope, but must not be labelled a working ServiceNow reader/delivery/human-response integration."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "ServiceNow documentation is optional in this event guide; a fictional connector would corrupt architecture and evidence claims.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "SN_FACILITATOR_CONNECTOR",
+      "STARTER"
+    ],
+    "conditional_gate": "If T04 establishes an authoritative event-specific waiver/approved alternative, close this branch as WAIVED_OR_REPLACED with that source and no runtime-delivery claim. If the integration remains mandatory and unavailable, retain ACCESS_BLOCKED. Runtime acceptance criteria below apply only when the corresponding route is enabled."
+  },
+  {
+    "id": "T14",
+    "title": "Build independent expected-work and source-authority manifests",
+    "phase": "foundation",
+    "owner": "B",
+    "component_ids": [
+      "M05.3"
+    ],
+    "depends_on": [
+      "T01",
+      "T09",
+      "T07"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED CANDIDATES: registered resources/CRs, scenario/run-reference manifests, audit timeline and AgentCore runtime/hour metric dimensions. Source authority/completeness still needs runtime tests.",
+    "steps": [
+      "Define independent expected agents/actions/event slots and runtime/hour windows from the accepted run/scenario/configuration authority, not surviving telemetry alone.",
+      "Treat registry inventory as resource inventory, not automatically the complete model-execution ledger; identify the additional execution/run finality evidence.",
+      "Freeze C9 expected hourly windows/runtimes and permitted metric dimensions; preserve no-traffic, missing metric and collection lag separately.",
+      "Neither a partially projected TMF639 inventory nor an empty cockpit Trace is a complete expected-work ledger. Preserve independent declared run/runtime populations and unresolved projection/export gaps."
+    ],
+    "done_when": [
+      "Removing an observed event does not remove its independent expected obligation.",
+      "A wholly missing stream/window can be represented and queried.",
+      "No control claims a complete population solely from what was collected."
+    ],
+    "status": "PLANNED",
+    "risk": "Unavailable independent populations may block completion of an affected control scope.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/self-check",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/governed-tool",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough"
+    ],
+    "platform_asset_aliases": [
+      "TMF639_REGISTRY",
+      "REFERENCE_SCENARIOS",
+      "AUDIT_STORE",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T15",
+    "title": "Parse and reconcile duplicates, conflicts, corrections and freshness",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M05.6",
+      "M05.7",
+      "M05.8",
+      "M05.9"
+    ],
+    "depends_on": [
+      "T07",
+      "T12",
+      "T14"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: gateway input/output token and cost fields plus modaas IDs; audit/CloudWatch/OTEL correlated records; Cedar permit/deny and guardrail content-filter outcomes.",
+    "steps": [
+      "Normalize actual gateway usage/cost schema, units and source namespace; never add duplicate OTEL/audit/log copies or parent totals again.",
+      "Parse HTTP200 content_filter/zero-usage blocks and Cedar denials distinctly from successful inference; preserve uncertain charged executions.",
+      "Reconcile late corrections, hidden retries and changed source content; keep field authority and completeness explicit.",
+      "Normalize quota HTTP429 with source-supported zero-charge evidence separately from provider unknown outcomes. Do not assume every429 from every layer is free without the documented provenance."
+    ],
+    "done_when": [
+      "A corrected total replaces the accepted previous total instead of adding to it.",
+      "Duplicate observations do not multiply an execution charge.",
+      "Collection lag, missing source, unusable field and conflicting authority remain separate states."
+    ],
+    "status": "PLANNED",
+    "risk": "Incorrect cumulative counter semantics can produce plausible but false cost totals.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/ceiling"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_GATEWAY_AGW",
+      "PDP_CEDAR",
+      "AUDIT_STORE",
+      "CLOUDWATCH_EVIDENCE",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T16",
+    "title": "Store evidence bindings, model proposals and versioned cases",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M06.3",
+      "M06.4",
+      "M06.5"
+    ],
+    "depends_on": [
+      "T11",
+      "T07"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED BASE: registry IDs, captured starter evidence and team output storage. PROPOSED: typed JSONL/tables for exact fact/control/spec/scope bindings, candidates and cases; no graph service.",
+    "steps": [
+      "Represent many-to-many fact/control/spec/scope bindings with exact record revisions.",
+      "Store candidate model assertions separately from accepted facts.",
+      "Persist assessment and case manifests only with resolvable required inputs or explicit gaps."
+    ],
+    "done_when": [
+      "One usage fact supports multiple controls without multiplying accounting rows.",
+      "Candidate extraction cannot enter authoritative calculations before validation.",
+      "Partial writes remain pending; published cases reference coherent durable versions."
+    ],
+    "status": "PLANNED",
+    "risk": "Fan-out joins and silent proposal promotion corrupt both arithmetic and explainability.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TMF639_REGISTRY",
+      "TEAM_S3_SUBMISSION",
+      "TEAM_LAMBDA_DYNAMODB"
+    ]
+  },
+  {
+    "id": "T17",
+    "title": "Build exact-scope retrieval and bounded narrative context selection",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M06.6",
+      "M06.7"
+    ],
+    "depends_on": [
+      "T15",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED BASE: starter evidence capture and audit-store correlation reads. PROPOSED: exact team-output indexes and bounded narrative context selection; no new search/vector platform.",
+    "steps": [
+      "Retrieve complete available obligations, records, unmatched inputs and gaps for a pinned scope.",
+      "Expose index lag, page limits and unavailable references.",
+      "Rank narrative excerpts for context without using top-k retrieval as the control denominator."
+    ],
+    "done_when": [
+      "A scope lookup returns explicit coverage metadata with the requested revision.",
+      "Records without an existing control binding remain discoverable.",
+      "Context truncation is disclosed independently of structured-evidence completeness."
+    ],
+    "status": "PLANNED",
+    "risk": "Semantic retrieval can omit decisive records if reused as the evidence population.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "AUDIT_STORE",
+      "TEAM_S3_SUBMISSION"
+    ]
+  },
+  {
+    "id": "T18",
+    "title": "Adapt supplied model/MCP/audit evidence rather than install custom gateway code",
+    "phase": "integration",
+    "owner": "A",
+    "component_ids": [
+      "M02.1",
+      "M02.2",
+      "M02.6"
+    ],
+    "depends_on": [
+      "T01",
+      "T03",
+      "T08",
+      "T10",
+      "T12",
+      "T15"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: modaas-agw inference port8081, AgentCore Gateway MCP /mcp/<alias> port8080, ToolConfig Lambda and audit evidence. The shared inference gateway exposes Cedar ConfigMap policy, not arbitrary inline team code.",
+    "steps": [
+      "Translate observed model calls, MCP tool calls and declared handoff/runtime records into shared emit/pull contracts.",
+      "Implement team observation code in the permitted AgentConfig agent or team tool where needed; reuse gateway logs for evidence.",
+      "Capture one run through the real documented path and label observation versus supplied Cedar authorization honestly. Do not deploy an imagined synchronous token-control plugin.",
+      "For any added MCP tool, declare its exact permitted name and validate the shared route policy across existing permits, absent toolName and undeclared names. Per-agent isolation cannot be claimed from unavailable PDP identity attributes."
+    ],
+    "done_when": [
+      "Real source records bind the selected model and tool/runtime boundaries to canonical IDs.",
+      "Every boundary diagram names the actual product and supported extension surface.",
+      "Custom gateway-inline enforcement is absent from core implementation claims."
+    ],
+    "status": "PLANNED",
+    "risk": "A tool gateway does not observe every model call; Cedar authorization is not token metering.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/cedar"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_GATEWAY_AGW",
+      "AGENTCORE_GATEWAY_MCP",
+      "TOOLCONFIG",
+      "AGENTCONFIG",
+      "PDP_CEDAR"
+    ]
+  },
+  {
+    "id": "T19",
+    "title": "Implement C16 whole-run actual token accounting first",
+    "phase": "control",
+    "owner": "A",
+    "component_ids": [
+      "M09.1",
+      "M09.2",
+      "M09.3",
+      "M09.4",
+      "M09.5"
+    ],
+    "depends_on": [
+      "T08",
+      "T09",
+      "T15",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: control16 brief and modaas-agw input/outputtokens/cost with run/action/trace correlation. PROPOSED: extend starter evaluate.py for actual whole-run accounting.",
+    "steps": [
+      "Extend the supplied evaluator to collect all governed agent/model executions for the selected run, including actual retries when observable.",
+      "Declare the precise token fields and non-overlap/dedup rules before summation; show reported cost separately and retain missing execution/finality gaps.",
+      "Compare actual whole-run tokens to the dated chosen per-run cap. Treat100RPM and2.5million tokens/hour as shared account quotas, never the run cap."
+    ],
+    "done_when": [
+      "Named accepted pass/breach cases reproduce their actual totals from captured gateway inputs.",
+      "A trusted scoped subtotal over the cap proves breach; incomplete under-cap evidence remains indeterminate.",
+      "No reservation estimate or duplicate audit/span copy is charged as extra actual usage."
+    ],
+    "status": "PLANNED",
+    "risk": "Provider usage may omit hidden retries or finality, blocking reliable under-cap satisfaction.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/control-16",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "MODEL_GATEWAY_AGW",
+      "AUDIT_STORE",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T20",
+    "title": "Validate extraction schemas, spans, scope and authority",
+    "phase": "investigator",
+    "owner": "B",
+    "component_ids": [
+      "M12.1",
+      "M12.2",
+      "M12.3"
+    ],
+    "depends_on": [
+      "T07",
+      "T09",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED BASE: immutable captured workshop evidence and starter control outputs. PROPOSED: host-side validation/revision/composition helpers inside the same team package, not a second LLM truth service.",
+    "steps": [
+      "Check exact source/span/version and normalization mappings for each proposal.",
+      "Reauthorize both ends of every relation and validate permitted scope/type.",
+      "Separate VERIFIED source quote, verified relation and operational fact; require declared authority/corroboration for the precise assertion."
+    ],
+    "done_when": [
+      "A valid quote with wrong meaning or negation cannot support an operational claim.",
+      "Similar incident names and forged IDs cannot create verified cross-run/team links.",
+      "REJECTED proposal means failed validation, not proof the underlying world claim is false."
+    ],
+    "status": "PLANNED",
+    "risk": "Exact text occurrence alone cannot establish entailment or source truth.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TMF639_REGISTRY",
+      "AUDIT_STORE",
+      "MODEL_GATEWAY_AGW"
+    ]
+  },
+  {
+    "id": "T21",
+    "title": "Manage accepted revisions and invalidate affected assessments",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M12.4",
+      "M12.5"
+    ],
+    "depends_on": [
+      "T16",
+      "T20",
+      "T10"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED BASE: immutable captured workshop evidence and starter control outputs. PROPOSED: host-side validation/revision/composition helpers inside the same team package, not a second LLM truth service.",
+    "steps": [
+      "Promote validated candidates atomically against their base revision; revalidate conflicts.",
+      "Track dependencies from inputs to runs/windows/populations/claims/caches and recompute only affected branches.",
+      "Preserve historical assertions and explicit baseline restatements; distinguish authority changes from access revocation."
+    ],
+    "done_when": [
+      "Concurrent corrections cannot publish mixed old/new accepted facts.",
+      "A parser/link correction can invalidate cases even when raw bytes are unchanged.",
+      "Frozen baseline corrections retain the original dated basis and explicit restatement."
+    ],
+    "status": "PLANNED",
+    "risk": "Stale cache or partial dependency invalidation can present an invalid proof as current.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TMF639_REGISTRY",
+      "AUDIT_STORE",
+      "MODEL_GATEWAY_AGW"
+    ]
+  },
+  {
+    "id": "T22",
+    "title": "Implement C7 event coverage and valid timing-pair evaluation",
+    "phase": "control",
+    "owner": "A",
+    "component_ids": [
+      "M07.1",
+      "M07.2",
+      "M07.3",
+      "M07.4",
+      "M07.5"
+    ],
+    "depends_on": [
+      "T09",
+      "T14",
+      "T15",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: CR governance.approvals and registry IDs, PDP/Cedar logs, audit timeline, CloudWatch /modaas/evidence and AgentCore CloudWatch OTEL spans. PROPOSED: extend evaluate.py for declared C7 event coverage/timing.",
+    "steps": [
+      "Choose the exact approved C7 event scope and independent expected sequence from the real run/operator/tool lifecycle; do not automatically count deployment approvals as business run events.",
+      "Match each expected event and preserve missing adjacent pairs; check actual source clock/epoch/precision before interval arithmetic.",
+      "Apply the dated limit/allowance in register.yaml and return exact supporting records plus source/collection gaps.",
+      "Record trace-export and registry-projection gaps instead of declaring complete C7 because the remaining durable sources contain some events."
+    ],
+    "done_when": [
+      "Each required event type has a documented source mapping and observed or missing state.",
+      "Source clocks unsuitable for the claimed timing metric yield an explicit limitation rather than fabricated millisecond precision.",
+      "The original illustrative arithmetic remains a fixture, not a measured workshop result."
+    ],
+    "status": "PLANNED",
+    "risk": "Cross-agent timestamps may not share an eligible clock, restricting meaningful timing assertions.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/governed-tool",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "OPERATOR_APPROVAL",
+      "TMF639_REGISTRY",
+      "PDP_CEDAR",
+      "AUDIT_STORE",
+      "CLOUDWATCH_EVIDENCE",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T23",
+    "title": "Freeze the C9 AgentCore metric manifest and baseline by runtime/hour",
+    "phase": "control",
+    "owner": "B",
+    "component_ids": [
+      "M08.1",
+      "M08.2",
+      "M08.3"
+    ],
+    "depends_on": [
+      "T01",
+      "T09",
+      "T14"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED C9 CONTRACT: AWS/Bedrock-AgentCore metrics with exact Name, Operation and Resource dimensions; Latency Average milliseconds and Errors Sum count, period3600seconds in closed UTC clock-hour windows. score-run.py remains separate diagnostic grading.",
+    "steps": [
+      "Replace the earlier scenario-accuracy C9 basis with the documented operational metrics: Latency Average milliseconds and Errors Sum count, evaluated per runtime over declared one clock-hour windows.",
+      "Capture namespace AWS/Bedrock-AgentCore, exact Name/Operation/Resource dimension values and runtime identity, metric name, statistic, unit, period3600seconds, region, closed UTC start/end and returned timestamps. Do not use a values-only response or a partial dimension set.",
+      "Freeze a complete comparable baseline before assessed windows; preserve runtime/model/prompt/tool versions and traffic/eligibility rules. Define explicit minimum coverage and closed-window/late-data conditions.",
+      "Use a declared relative-increase rule only with a positive latency baseline. For an Errors baseline of zero use a predeclared absolute count rule; an error rate is an alternative only with a declared valid invocation denominator, not the default Errors Sum metric.",
+      "Keep scenario outcomes/labels and score-run.py grades in a separate diagnostic-quality manifest.",
+      "Begin declared baseline capture into preserved team-output files as soon as the initial collection gate passes; do not wait for the full proposal/case repository in T16. Bind the captured baseline into that repository when ready, preserving original timestamps and policy version."
+    ],
+    "done_when": [
+      "The C9 register pins AWS/Bedrock-AgentCore, complete Name/Operation/Resource series identity, Latency Average milliseconds and Errors Sum count with closed UTC one-hour boundaries.",
+      "Baseline and assessed windows meet frozen closure/coverage/comparability rules; missing datapoints and no eligible traffic are not silently converted to measured zero.",
+      "Pagination/completeness and source availability lag are captured before a window is considered final.",
+      "A zero baseline cannot enter a relative division; the predeclared alternative rule is reproducible."
+    ],
+    "status": "PLANNED",
+    "risk": "Latency statistics, error counts and error rates are not interchangeable; zero baseline or missing hourly data can invalidate a relative comparison.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/self-check",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "AGENTCORE_METRICS_OTEL",
+      "SCENARIO_GRADER",
+      "REFERENCE_SCENARIOS"
+    ],
+    "milestone_dependencies": {
+      "initial_declared_baseline_collection": [
+        "T01",
+        "T09",
+        "T14"
+      ],
+      "canonical_repository_binding": [
+        "T16"
+      ]
+    }
+  },
+  {
+    "id": "T24",
+    "title": "Evaluate C9 hourly runtime drift with declared direction and coverage",
+    "phase": "control",
+    "owner": "B",
+    "component_ids": [
+      "M08.4",
+      "M08.5",
+      "M08.6",
+      "M08.7"
+    ],
+    "depends_on": [
+      "T23",
+      "T15",
+      "T10"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: AgentCore Latency Average milliseconds and Errors Sum count per runtime, one clock-hour. PROPOSED deterministic C9 evaluator in starter evaluate.py.",
+    "steps": [
+      "Register the full expected runtime/closed-UTC-hour population and fetch every required datapoint/page for AWS/Bedrock-AgentCore with exact Name/Operation/Resource dimensions, statistic, period3600seconds, unit, region and timestamps.",
+      "Assess only windows closed under the frozen clock-hour boundary, source-lag and coverage contract. Partial/current hours or missing pages remain provisional/unknown, not passing.",
+      "Compare compatible versions/traffic populations with declared worsening direction and exact unrounded arithmetic; never average per-runtime averages into an aggregate without valid weights and an explicitly different scope.",
+      "Handle duplicate/revised datapoints by authoritative identity/revision; preserve old answers and restate affected assessments.",
+      "Apply interval allowance separately and create an alert for every measured crossing; keep missing/no-traffic/incompatible windows explicit."
+    ],
+    "done_when": [
+      "Known fixtures reproduce exact Latency Average/Errors Sum boundary outcomes with all required dimensions/units preserved.",
+      "Wrong-unit, wrong-statistic, partial-hour, missing-page, duplicate/revised-data and zero-baseline fixtures cannot falsely pass.",
+      "Crossing alerts retain runtime/hour/spec/input references independently of aggregate tolerance."
+    ],
+    "status": "PLANNED",
+    "risk": "A changing model/configuration or traffic mix can make two hourly metrics incomparable; measurement and explanation must disclose that scope.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T25",
+    "title": "Create local measured findings and resolve the authorized external governance route",
+    "phase": "integration",
+    "owner": "B",
+    "component_ids": [
+      "M08.8",
+      "M14.2"
+    ],
+    "depends_on": [
+      "T19",
+      "T16",
+      "T10"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED CONFLICT: facilitator ServiceNow connector is optional/default absent; deterministic local findings can be produced from starter assessments while organizer clarification is pending.",
+    "steps": [
+      "Create durable local C16 findings first with exact control/spec/run/assessment, dated owner and cited evidence; extend to each C9 measured hourly crossing after T24.",
+      "Keep local intent distinct from external delivery. Gate all remote routing on T04 organizer resolution and actual permitted connector/workflow capability.",
+      "Use immutable mutation/content/recipient revisions; optional Nemotron explanation cannot choose recipients, authorize sends or replace measured verdicts."
+    ],
+    "done_when": [
+      "Local findings can be inspected while the remote-route question remains honestly blocked.",
+      "The accepted external governance route is named by source and no unavailable ServiceNow integration is implied.",
+      "Every measured C9 crossing retains its obligation and evidence regardless of aggregate allowance."
+    ],
+    "status": "PLANNED",
+    "risk": "Idempotency keyed only by assessment revision can lose later route/content changes.",
+    "milestone_dependencies": {
+      "initial_local_C16_finding": [
+        "T19",
+        "T16",
+        "T10"
+      ],
+      "authorized_external_route": [
+        "T04"
+      ],
+      "C9_crossing_alerts": [
+        "T24"
+      ]
+    },
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "SN_FACILITATOR_CONNECTOR"
+    ]
+  },
+  {
+    "id": "T26",
+    "title": "Deliver findings with bounded retries and verified remote readback",
+    "phase": "integration",
+    "owner": "B",
+    "component_ids": [
+      "M14.3",
+      "M14.4"
+    ],
+    "depends_on": [
+      "T25",
+      "T04",
+      "T13",
+      "T03"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: ServiceNow connector/workflow is conditional on facilitator enablement and event requirement clarification. PROPOSED outbox/readback applies only to the actual authorized route.",
+    "steps": [
+      "Do not execute external writes until T04 resolves the event requirement and the user authorizes the concrete integration; if officially waived, preserve the waiver and do not pretend remote delivery happened.",
+      "Persist intent/outbox consistently or recover via explicit durable sweep.",
+      "Check intent validity/supersession before conditional dispatch claim; reconcile uncertain writes without blind repeated creates.",
+      "Read back target instance, correlation, intended mutation revision/content and named-recipient route; bound attempts and expose terminal gaps."
+    ],
+    "done_when": [
+      "Lost acknowledgement becomes OUTCOME_UNKNOWN until reconciled.",
+      "Remote ID or HTTP202 alone cannot mark intended content/recipient delivered.",
+      "Stale updates cannot silently overwrite accepted corrections; unsupported safe remote ordering remains unresolved.",
+      "An authoritative waiver/approved alternative may resolve this task scope, but must not be labelled a working ServiceNow reader/delivery/human-response integration."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "No remote ServiceNow delivery may be claimed while the connector is absent or the obligation is unresolved; local intent is not a substitute.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "SN_FACILITATOR_CONNECTOR",
+      "STARTER"
+    ],
+    "conditional_gate": "If T04 establishes an authoritative event-specific waiver/approved alternative, close this branch as WAIVED_OR_REPLACED with that source and no runtime-delivery claim. If the integration remains mandatory and unavailable, retain ACCESS_BLOCKED. Runtime acceptance criteria below apply only when the corresponding route is enabled."
+  },
+  {
+    "id": "T27",
+    "title": "Track human response, remediation and passing retests honestly",
+    "phase": "integration",
+    "owner": "B",
+    "component_ids": [
+      "M14.5",
+      "M14.6"
+    ],
+    "depends_on": [
+      "T26",
+      "T13"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED CONDITIONAL ROUTE: facilitator ServiceNow integration; operator governance approval is separately documented and cannot stand in for an end-user alert response.",
+    "steps": [
+      "Apply the organizer-approved human-loop requirement from T04; deployment/operator approvals are separate evidence and do not prove a human received or answered a measured-control alert.",
+      "Retain recipient-at-delivery, reassignment and authoritative actor/action history.",
+      "Record actual acknowledgement/response or covered no-response as-of; distinguish missing visibility from silence.",
+      "Link authorized remediation closure to relevant passing retest; distinguish correction/withdrawal from remediation."
+    ],
+    "done_when": [
+      "Human reply is not made a hackathon completion prerequisite.",
+      "Performance BREACHED, alert DELIVERED, no response observed and remediation OPEN can coexist.",
+      "New passing run or policy version does not erase the original failure.",
+      "An authoritative waiver/approved alternative may resolve this task scope, but must not be labelled a working ServiceNow reader/delivery/human-response integration."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Auto-generated notes or assignment changes can be mistaken for actual human action.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook"
+    ],
+    "platform_asset_aliases": [
+      "SN_FACILITATOR_CONNECTOR",
+      "OPERATOR_APPROVAL",
+      "STARTER"
+    ],
+    "conditional_gate": "If T04 establishes an authoritative event-specific waiver/approved alternative, close this branch as WAIVED_OR_REPLACED with that source and no runtime-delivery claim. If the integration remains mandatory and unavailable, retain ACCESS_BLOCKED. Runtime acceptance criteria below apply only when the corresponding route is enabled."
+  },
+  {
+    "id": "T28",
+    "title": "Build the first Nemotron evidence-extraction prompt and fixtures",
+    "phase": "investigator",
+    "owner": "B",
+    "component_ids": [
+      "M11.3",
+      "M11.4"
+    ],
+    "depends_on": [
+      "T05",
+      "T12",
+      "T20"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED ROUTE: nemotron-nano-9b (nvidia.nemotron-nano-9b-v2) through modaas-agw from AgentConfig Runtime. PROPOSED first bounded extraction over captured audit/registry/log evidence, followed by host validation/template rendering.",
+    "steps": [
+      "Start with real captured audit/registry/runtime evidence; ServiceNow notes are optional inputs only if T13 becomes available.",
+      "Request typed source statements, exact references, candidate relations and explicit ambiguity; use an extraction schema suited to the actual gateway capability.",
+      "Prepare forged IDs, conflicting gateway usage, Cedar-denial and content-filter fixtures; prompt-injection text stays data.",
+      "Preserve exact approved model/alias/run/usage provenance and host validation output."
+    ],
+    "done_when": [
+      "Output validates against the host schema and links back to exact captures.",
+      "Unsupported links remain candidates rather than entering accepted facts.",
+      "The first usable vertical slice has a real approved model invocation, not just a stored prompt."
+    ],
+    "status": "PLANNED",
+    "risk": "More elaborate prompting cannot repair missing authoritative sources.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough/nemotron-models"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_CONFIG_ALIAS",
+      "MODEL_GATEWAY_AGW",
+      "AGENTCONFIG",
+      "AUDIT_STORE",
+      "TMF639_REGISTRY"
+    ]
+  },
+  {
+    "id": "T29",
+    "title": "Add bounded corroboration and optional second-call composition",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M11.5",
+      "M11.6"
+    ],
+    "depends_on": [
+      "T28",
+      "T19",
+      "T21",
+      "T30",
+      "T31",
+      "T33"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: AgentConfig Runtime and supported text aliases Nano9B, Nano30B and Super120B. Current approval/attestation/dependency/route readiness must be verified for each selected alias. PROPOSED bounded workflow prefers Nano9B and a measured Nano30B replacement if needed; at most two calls.",
+    "steps": [
+      "Use only an alias whose current approval and readiness are verified; a supported alias name or prior guide example does not establish access.",
+      "Start with extraction plus deterministic rendering; add a second call only if composition of validated facts adds measured value.",
+      "Permit one bounded corroborating-read batch; validate/promote and recompute before composition.",
+      "Pass only final assessments, validated facts and labelled candidates to a constrained explanation-plan composer with no more tools or extraction."
+    ],
+    "done_when": [
+      "At most two model calls and six model-requested read invocations including pages occur per declared profile.",
+      "No hidden third call interprets newly retrieved prose.",
+      "All numeric verdicts and exact quotations are rendered from host-validated inputs."
+    ],
+    "status": "PLANNED",
+    "risk": "Agent loops and implicit SDK retries can break the deadline and make costs unpredictable.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough/nemotron-models"
+    ],
+    "platform_asset_aliases": [
+      "AGENTCONFIG",
+      "AGENTCORE_RUNTIME",
+      "MODEL_GATEWAY_AGW",
+      "MODEL_CONFIG_ALIAS"
+    ]
+  },
+  {
+    "id": "T30",
+    "title": "Record all-call assurance usage and coordinate account-wide pacing",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M16.5",
+      "M16.6"
+    ],
+    "depends_on": [
+      "T05",
+      "T07",
+      "T09",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: modaas-ceiling limits100requests/minute and2.5million tokens/hour across all calls including helper aliases. Gateway/AgentCore CloudWatch evidence records usage. PROPOSED coordinated account-wide pacing and tighter per-investigation host limits.",
+    "steps": [
+      "Capture all subject/investigator/helper gateway attempts, correlation, usage/cost and outcomes; preserve guardrail, Cedar deny, quota429 and uncertain charges distinctly.",
+      "Coordinate every team-controlled caller through one shared request/token pacing budget and include baseline/helper traffic. Three agents at1request/second total180RPM, above100RPM; reject any guide example that labels this safe.",
+      "Allow conservative headroom for unmanaged/in-flight activity, use bounded backoff on authoritative quota429 and never add hidden SDK inference retries. Record which callers cannot be centrally controlled.",
+      "Keep the account ceiling separate from declared C16 per-run cap and investigator budgets. Reconcile late included assurance usage deterministically without recursive investigations."
+    ],
+    "done_when": [
+      "All controlled callers and helpers share a documented pacing/accounting rule, with actual effective limits tested before throughput claims.",
+      "The3-agent1RPS arithmetic is explicitly rejected; claimed safe throughput includes burst/concurrency and token-window effects.",
+      "Source-supported quota rejection/zero charge and unknown outcomes remain distinct.",
+      "An as-of case does not claim finality over its own later/in-flight composition charges."
+    ],
+    "status": "PLANNED",
+    "risk": "Self-accounting can recurse or undercount unless as-of cutoffs and policy inclusion are explicit.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/ceiling"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_GATEWAY_AGW",
+      "AGENTCORE_METRICS_OTEL",
+      "STARTER",
+      "MODAAS_CEILING",
+      "NEMOTRON_HELPER_ALIAS"
+    ]
+  },
+  {
+    "id": "T31",
+    "title": "Compose coherent control states and the C-FM-01 claim",
+    "phase": "investigator",
+    "owner": "B",
+    "component_ids": [
+      "M12.6",
+      "M12.7",
+      "M12.8"
+    ],
+    "depends_on": [
+      "T09",
+      "T16",
+      "T20"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED BASE: immutable captured workshop evidence and starter control outputs. PROPOSED: host-side validation/revision/composition helpers inside the same team package, not a second LLM truth service.",
+    "steps": [
+      "Keep requirement verdict, safeguard operation, evidence sufficiency, analysis completion and control completion distinct.",
+      "Combine compatible required objective-level branches after their allowances, preserving exact run/window scope.",
+      "Validate explanation references/manifests and exclude known-invalid current proof."
+    ],
+    "done_when": [
+      "Any valid required branch breach makes the claim BREACHED even with other gaps.",
+      "No breach plus unknown/incompatible required branch yields NOT_ESTABLISHED, not SATISFIED.",
+      "Unavailable C7/C9 branches remain explicitly missing during the initial C16/model slice."
+    ],
+    "status": "PLANNED",
+    "risk": "Averaging child statuses or combining different snapshots can produce false all-green claims.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TMF639_REGISTRY",
+      "AUDIT_STORE",
+      "MODEL_GATEWAY_AGW"
+    ]
+  },
+  {
+    "id": "T32",
+    "title": "Implement explicit judge query profiles and scope resolution",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M13.1",
+      "M13.2"
+    ],
+    "depends_on": [
+      "T08",
+      "T09",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED BASE: starter evaluate.py and judge-readable team S3 submission. PROPOSED explicit query entry point and optional HTML view; laptop UI is a helper, not the official submission surface.",
+    "steps": [
+      "Accept explicit control/run/window/profile and a stable client query key before dispatch.",
+      "Distinguish fresh investigation, recorded-case inspection and offline recheck.",
+      "Resolve the complete requested runtime/hour metric window for C9 and exact run scope for C7/C16; pin source captures, accepted-input revision and applicable register version."
+    ],
+    "done_when": [
+      "Ambiguous scope returns NEEDS_SCOPE without selecting the easiest subset.",
+      "Changed payload under an existing query identity is a conflict.",
+      "Recorded/cached analysis is labelled with its original model execution."
+    ],
+    "status": "PLANNED",
+    "risk": "Run-only selectors can omit multi-run window evidence and change the meaning of C9.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TEAM_S3_SUBMISSION",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T33",
+    "title": "Implement exact read tools and durable query/deadline control",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M13.3",
+      "M13.4"
+    ],
+    "depends_on": [
+      "T17",
+      "T32",
+      "T30"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: AgentConfig Runtime hosts custom agent code; IDE-host files/SQLite are available for team orchestration/evidence subject to persistence tests. Component-pod AWS access is restricted. PROPOSED minimal durable host controller with separately verified invocation/state permissions.",
+    "steps": [
+      "Provide authorized list/get evidence tools for pinned complete available scope.",
+      "Persist original deadline, stage claims, read/model/token budgets and request identity.",
+      "On disconnect/crash/cancel, stop new claims conditionally; reconcile ambiguous work without redispatching blindly.",
+      "Run host acquisition/query/state work on the verified permitted IDE/runtime path; invoke the custom investigator through AgentConfig. Do not assume a component pod inherits IDE AWS credentials or can reach public S3."
+    ],
+    "done_when": [
+      "Reconnect never resets elapsed time or grants a fresh model budget.",
+      "Already-claimed remote work remains potentially chargeable after cancellation.",
+      "Busy/oversize/degraded outcomes are explicit; no hidden queue or implicit inference retries."
+    ],
+    "status": "PLANNED",
+    "risk": "Local cancellation cannot guarantee an already-authorized provider send did not occur.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook"
+    ],
+    "platform_asset_aliases": [
+      "AGENTCONFIG",
+      "AGENTCORE_RUNTIME",
+      "TEAM_LAMBDA_DYNAMODB",
+      "STARTER"
+    ]
+  },
+  {
+    "id": "T34",
+    "title": "Render the evidence case with authorized cache, fallback and drill-down",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M13.5",
+      "M13.6",
+      "M13.7",
+      "M13.8"
+    ],
+    "depends_on": [
+      "T29",
+      "T31",
+      "T33"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED SUBMISSION SURFACE: judge-readable team S3 bucket. PROPOSED query/case renderer in the starter/AgentConfig package and portable approved team-output HTML; no laptop-only judged dependency.",
+    "steps": [
+      "Render fixed verdict/rule/formula/source/gap/delivery blocks plus validated cited explanation.",
+      "Key cache by permission scope, exact source and accepted revisions and all relevant versions; reauthorize retrieval/publication/export.",
+      "Support deterministic degraded fresh-analysis output and successful requested replay/recheck; expose bidirectional source links safely."
+    ],
+    "done_when": [
+      "A source/reference click resolves the exact authorized captured revision.",
+      "Model outage cannot change deterministic control arithmetic or masquerade as complete fresh model analysis.",
+      "Old prose cannot be attached to new numbers after a correction."
+    ],
+    "status": "PLANNED",
+    "risk": "Cached sensitive content or stale citations can bypass current permissions or invalidate proof.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TEAM_S3_SUBMISSION",
+      "AGENTCONFIG"
+    ]
+  },
+  {
+    "id": "T35",
+    "title": "Capture the first C16 pass/breach pair, then extend per control",
+    "phase": "validation",
+    "owner": "B",
+    "component_ids": [
+      "M15.1"
+    ],
+    "depends_on": [
+      "T01",
+      "T09",
+      "T19"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: S1-fronthaul-degradation expects auto-resolve and baseline passes8/8; S2-transport-congestion is ambiguous, expects gather-evidence and baseline fails7/10; S3-restricted-change is the trap, expects escalate and baseline passes10/10. These are guide examples, not this team's executed results.",
+    "steps": [
+      "Inspect run-reference/self-check and preserve the documented S1 auto-resolve, S2 gather-evidence and S3 escalate expectations; execute unchanged baseline later to establish actual team results rather than copying guide scores as tests.",
+      "Capture C16 pass/breach evidence under the frozen per-run policy through an authorized/accepted mechanism. A scenario label or failed diagnosis does not automatically produce a token breach.",
+      "Extend named cases to C7 after T22 and measured hourly C9 windows after T24; do not equate score-run.py failure with Latency/Errors drift.",
+      "Track actual reference diagnostic scores and later S2 evidence-gathering improvement separately; save actual IDs in ~/starter/run-ids.txt and gap/assumption notes in gap-list.md.",
+      "Add actual governance/model milestones only when available; synthetic fixtures remain labelled."
+    ],
+    "done_when": [
+      "The initial C16 milestone has named reproducible pass and genuine or organizer-accepted breach evidence with dated rules and actual identifiers.",
+      "Each later claimed completed control has its own independently checked pass/breach milestone; unfinished C7/C9 evidence cannot be concealed by the C16 result.",
+      "Governance and model-assisted integration milestones have separate actual evidence before those integration claims are made.",
+      "Simulation/replay is not presented as a live platform fault without organizer acceptance."
+    ],
+    "status": "PLANNED",
+    "risk": "Safe live breach generation may require organizer-supported modes; invented failures do not satisfy completion.",
+    "milestone_dependencies": {
+      "initial_C16_pair": [
+        "T01",
+        "T09",
+        "T19"
+      ],
+      "C7_pair": [
+        "T22"
+      ],
+      "C9_pair": [
+        "T24"
+      ],
+      "end_to_end_governance_case": [
+        "T26"
+      ],
+      "model_assisted_case": [
+        "T34"
+      ]
+    },
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/self-check",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/control-16",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics"
+    ],
+    "platform_asset_aliases": [
+      "REFERENCE_SCENARIOS",
+      "SCENARIO_GRADER",
+      "STARTER",
+      "MODEL_GATEWAY_AGW",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T36",
+    "title": "Run the focused adversarial campaign across all required paths",
+    "phase": "validation",
+    "owner": "BOTH",
+    "component_ids": [
+      "M15.2"
+    ],
+    "depends_on": [
+      "T19",
+      "T22",
+      "T24",
+      "T27",
+      "T34"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED FAILURE SURFACES: S2 transport ambiguity, S3 restricted-change trap, Cedar decisions, content_filter/HTTP200, quota429, missing durable collector export and optional ServiceNow absence. PROPOSED permitted local/adversarial campaign.",
+    "steps": [
+      "Test fabricated/duplicate correlation IDs, missing audit/log/spans, conflicting usage, stale configuration and incomplete runtime/hour metrics.",
+      "Test HTTP200 content_filter/zero usage, Cedar deny, model timeout and malformed output; no status-code-only inference success.",
+      "Test source prompt injection and false joins against actual captured shapes; any live stress/fault scenario must be explicitly permitted.",
+      "Test missing ServiceNow route as a visible capability gap; actual remote-write recovery tests are conditional on enabled access.",
+      "Check paused/in-flight work, actual policy readiness including ceiling, failed registry projection and account-wide pacing; guide state examples are expected fixtures, not executed tests.",
+      "Add C9 fixtures for complete query dimensions, Average-versus-Sum, milliseconds-versus-other units, timestamps/hour closure, pagination, zero baseline, no traffic and delayed/revised datapoints; add composed Cedar allow/deny tests for missing or undeclared toolName."
+    ],
+    "done_when": [
+      "Critical false VERIFIED links and unsupported numeric/verdict assertions are rejected.",
+      "Known breaches survive unrelated missing evidence.",
+      "Every observed defect has a correction/retest or a clearly scoped unresolved gap."
+    ],
+    "status": "PLANNED",
+    "risk": "A happy-path demo can conceal the exact failures judges ask about.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/self-check",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/ceiling",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/governed-tool",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/pause",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/cedar"
+    ],
+    "platform_asset_aliases": [
+      "REFERENCE_SCENARIOS",
+      "PDP_CEDAR",
+      "MODEL_GATEWAY_AGW",
+      "AUDIT_STORE",
+      "AGENTCORE_METRICS_OTEL",
+      "SN_FACILITATOR_CONNECTOR"
+    ]
+  },
+  {
+    "id": "T37",
+    "title": "Build the C16 offline rechecker first, then extend C7/C9",
+    "phase": "validation",
+    "owner": "B",
+    "component_ids": [
+      "M15.3"
+    ],
+    "depends_on": [
+      "T09",
+      "T19"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED BASE: starter evidence/evaluate.py. PROPOSED separate arithmetic rechecker distributed only with approved team outputs; not a copy of restricted lab materials.",
+    "steps": [
+      "Implement independent C16 execution-dedup/accounting arithmetic first and run it on hand-checked fixtures immediately after T19; exercise actual named captures as the first T35 milestone arrives.",
+      "Extend the checker to C7 expected events/pairs after T22 and C9 declared hourly/runtime Latency/Errors baseline arithmetic after T24; diagnostic scenario grading remains a separate test.",
+      "Do not import production evaluator functions. Consume explicit accepted input manifests and preserve missing-evidence states.",
+      "Compare exact calculations with hand-checked boundary/duplicate/correction fixtures and then named captured cases."
+    ],
+    "done_when": [
+      "C16 accepted inputs can be independently recomputed before the other control evaluators are finished.",
+      "Every control claimed in a later package has its own passing reference-checker milestone; unsupported controls remain explicitly unsupported.",
+      "Changing an accepted input produces an explained result difference.",
+      "The report states that arithmetic agreement does not certify upstream truth."
+    ],
+    "status": "PLANNED",
+    "risk": "A wrapper around the main evaluator is not an independent recomputation.",
+    "milestone_dependencies": {
+      "initial_C16_checker": [
+        "T09",
+        "T19"
+      ],
+      "C7_checker": [
+        "T22"
+      ],
+      "C9_checker": [
+        "T24"
+      ],
+      "actual_named_cases": [
+        "T35"
+      ]
+    },
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/control-16",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "MODEL_GATEWAY_AGW",
+      "AGENTCORE_METRICS_OTEL"
+    ]
+  },
+  {
+    "id": "T38",
+    "title": "Evaluate extraction/link quality and model contribution",
+    "phase": "validation",
+    "owner": "B",
+    "component_ids": [
+      "M15.4"
+    ],
+    "depends_on": [
+      "T28",
+      "T29",
+      "T34"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: real gateway alias and structured audit/registry/source captures; PROPOSED held-out extraction/link evaluation separate from score-run.py agent diagnosis.",
+    "steps": [
+      "Freeze positive, negative, ambiguous, contradictory and injection cases not used to tune the final prompt.",
+      "Measure field/span correctness, verified-link precision, missed/unresolved links and unsupported assertions.",
+      "Compare validated coverage, latency/cost and navigation effort with and without Nemotron; report observed results only."
+    ],
+    "done_when": [
+      "Critical suite has zero false VERIFIED cross-team/cross-run links and zero unsupported numeric/verdict assertions before release.",
+      "All counts, sample sizes and failures are reported.",
+      "Claimed model value is supported by the comparison, or its role is narrowed."
+    ],
+    "status": "PLANNED",
+    "risk": "Small hackathon tests do not establish universal accuracy or production safety.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/self-check"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_GATEWAY_AGW",
+      "AUDIT_STORE",
+      "TMF639_REGISTRY",
+      "SCENARIO_GRADER"
+    ]
+  },
+  {
+    "id": "T39",
+    "title": "Benchmark full analysis, freshness, degraded behavior and costs",
+    "phase": "validation",
+    "owner": "B",
+    "component_ids": [
+      "M15.5"
+    ],
+    "depends_on": [
+      "T30",
+      "T34",
+      "T35",
+      "T38"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: AgentCore observability and shared gateway quotas; PROPOSED measured bounded investigator benchmarks over actual team evidence, not inferred from platform metrics alone.",
+    "steps": [
+      "Freeze at least20 held-out bounded scopes and repeat trials including missing/conflicting cases and size limits.",
+      "Measure arrival-to-publication, data-ready full analysis, source-to-index freshness, cold/warm/concurrent behavior and usage separately.",
+      "Report median/p95/max, sample count and complete-analysis rate; count unexpected fallbacks/errors as full-analysis failures.",
+      "Benchmark below coordinated account-wide request/token limits including helper traffic; separately report quota-driven degraded results and uncontrolled competing load."
+    ],
+    "done_when": [
+      "Official answer-and-records target of two minutes is rehearsed; own60-second full-analysis target is claimed only within the measured envelope.",
+      "Declare the tested run or full runtime/hour window envelope, record counts/context/model token limits and concurrency. Retrieve every required metric/input in that scope; never truncate the denominator to fit the target.",
+      "Deliberate outage success is reported as correct degradation, not successful full Nemotron analysis."
+    ],
+    "status": "PLANNED",
+    "risk": "Fast partial or cached answers cannot substantiate a fresh full-analysis latency claim.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/ceiling"
+    ],
+    "platform_asset_aliases": [
+      "AGENTCORE_METRICS_OTEL",
+      "MODEL_GATEWAY_AGW",
+      "STARTER"
+    ]
+  },
+  {
+    "id": "T40",
+    "title": "Inspect submit.sh and prepare the actual team-S3 submission plus approved offline recheck",
+    "phase": "release",
+    "owner": "A",
+    "component_ids": [
+      "M15.6"
+    ],
+    "depends_on": [
+      "T34",
+      "T35",
+      "T37",
+      "T49"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: ~/starter/submit.sh uploads the submission to the actual team S3 bucket and returns a short-lived URL; judges read the bucket, not the laptop. Packaging behavior must be inspected.",
+    "steps": [
+      "Resolve T49 export boundary, then inspect submit.sh and archive contents before packaging; do not assume the helper includes all six required artifacts.",
+      "Prepare approved team-authored evidence/manifests, dated register, runnable query/evaluator, named run IDs, actual one-page architecture and honest gap list. Include independent rechecker only with permitted critical team-output inputs.",
+      "Rebuild and test the approved offline index/query in a clean directory; retain snapshot and authorization limits.",
+      "Prepare and inspect the submit.sh invocation and target object/manifest/readability checks; perform the final authorized upload in T42 after T41 release validation. Record the documented short-lived URL behavior without inventing its lifetime.",
+      "Publish an initial supported C16 package early, extend only with completed control milestones, and never make a laptop UI the sole judge path."
+    ],
+    "done_when": [
+      "The inspected archive has all six artifacts with locally resolvable approved critical inputs and no secrets/restricted bulk lab source.",
+      "The local approved team-output package is validated and ready for authorized upload; actual upload/object/judge-readability verification belongs to T42, and remains unverified now.",
+      "Short-lived URL expiry, stable object reference and the confirmed submission deadline are visible.",
+      "If ServiceNow obligations remain unresolved, the package reports a blocked/incomplete integration rather than silently claiming acceptance."
+    ],
+    "status": "PLANNED",
+    "risk": "A local ZIP or successful script exit does not prove the correct six artifacts are readable by judges; exported AWS materials remain subject to the account terms.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TEAM_S3_SUBMISSION"
+    ],
+    "milestone_dependencies": {
+      "initial_approved_team_package": [
+        "T34",
+        "T35",
+        "T37",
+        "T49"
+      ],
+      "required_governance_release": [
+        "T04",
+        "T27"
+      ]
+    }
+  },
+  {
+    "id": "T41",
+    "title": "Validate all six artifacts, documented gaps and event-specific release gates",
+    "phase": "release",
+    "owner": "BOTH",
+    "component_ids": [
+      "M15.7"
+    ],
+    "depends_on": [
+      "T04",
+      "T36",
+      "T38",
+      "T39",
+      "T40",
+      "T49"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: starter submission flow, team S3 judge access, platform permission contract and ServiceNow optional-guide conflict. PROPOSED release checker plus cross-review.",
+    "steps": [
+      "Validate the six-artifact manifest against actual submit.sh contents, exact evidence references, dated rules and named pass/breach cases.",
+      "Verify the approved Nemotron/AgentConfig path and actual used technology; no direct IAM/Bedrock/AgentCore bypass or custom gateway code may appear in the actual architecture.",
+      "Resolve T04 ServiceNow obligation and T49 export/deadline questions before claiming an accepted complete submission; if unresolved, label the gap explicitly.",
+      "Track each completed control separately; do not use diagnostic self-check grades as C9 drift evidence or account quotas as C16 caps."
+    ],
+    "done_when": [
+      "Completion is evidence-backed per control, with no RUNTIME_VERIFIED badge awarded from guide text.",
+      "The architecture shows implemented starter extensions, actual operators/gateways and conditional components with source references.",
+      "Core submission gates and any authorized waivers are recorded before upload.",
+      "A ServiceNow branch can be waived/replaced only by the authoritative T04 event resolution; otherwise lack of required access remains a blocking release gap."
+    ],
+    "status": "PLANNED",
+    "risk": "A polished design score must not be represented as percent implemented or probability of winning.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/control-16",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TEAM_S3_SUBMISSION",
+      "SN_FACILITATOR_CONNECTOR",
+      "OPERATOR_APPROVAL"
+    ],
+    "milestone_dependencies": {
+      "enabled_governance_required": [
+        "T27"
+      ]
+    }
+  },
+  {
+    "id": "T42",
+    "title": "Upload the validated team submission when authorized and rehearse judge access",
+    "phase": "release",
+    "owner": "BOTH",
+    "component_ids": [
+      "M15.8"
+    ],
+    "depends_on": [
+      "T41"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED JUDGE PATH: actual team S3 submission and short-lived URL. PROPOSED rehearsals use the packaged query and approved model route, with laptop optional.",
+    "steps": [
+      "After T41 and explicit implementation/submission authorization, run the inspected submit.sh on the final approved package; verify target bucket/object contents and judge readability, then record the short-lived URL expiry. No upload is performed during this planning task.",
+      "Rehearse from a clean judge-style client against the submitted/readable team bucket and packaged query, not the developer laptop state; check the short-lived URL before judging.",
+      "Demonstrate normal fresh analysis, a rejected false relation and deterministic model-outage behavior.",
+      "Time answer plus supporting records, record failures and re-run only affected fixes."
+    ],
+    "done_when": [
+      "Both participants can explain enforcement point, control, evidence binding, owner delivery and uncertainty.",
+      "Selected supported scopes meet the official timing requirement or the failure is disclosed.",
+      "Demo does not depend on a preselected cached answer being passed off as fresh.",
+      "Submitted object contents match the validated six-artifact manifest and are readable via the actual documented judge path; local success alone is insufficient."
+    ],
+    "status": "PLANNED",
+    "risk": "One rehearsed happy path may fail when judges choose different scope.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TEAM_S3_SUBMISSION"
+    ]
+  },
+  {
+    "id": "T43",
+    "title": "Add a second observation point or generic callback only if useful",
+    "phase": "bonus",
+    "owner": "A",
+    "component_ids": [
+      "M02.3",
+      "M02.7"
+    ],
+    "depends_on": [
+      "T18",
+      "T34"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "DOCUMENTED: ToolConfig Lambda via AgentCore Gateway MCP and AgentConfig runtime evidence. PROPOSED second observation/callback point only through these supported surfaces.",
+    "steps": [
+      "Choose exactly one supported additional boundary based on evidence benefit and available time.",
+      "Reuse canonical contracts/control logic; authenticate/correlate any callback and retain duplicate safety.",
+      "Demonstrate portability with clear observation versus enforcement labels."
+    ],
+    "done_when": [
+      "Additional boundary contributes actual scoped records without a forked control engine.",
+      "Unimplemented alternative adapters are explicitly deferred.",
+      "Callback sender identity is not confused with proof of an actual human decision."
+    ],
+    "status": "PLANNED",
+    "risk": "Attempting every possible boundary can delay all completed controls.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "TOOLCONFIG",
+      "AGENTCORE_GATEWAY_MCP",
+      "AGENTCONFIG"
+    ]
+  },
+  {
+    "id": "T44",
+    "title": "Gate optional inline admission on provable bounds and bypass coverage",
+    "phase": "bonus",
+    "owner": "A",
+    "component_ids": [
+      "M02.5",
+      "M10.8"
+    ],
+    "depends_on": [
+      "T18",
+      "T19",
+      "T30",
+      "T41"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "DOCUMENTED LIMITATION: a narrow team Cedar ConfigMap exception in modaas-system permits policy configuration with required labels/annotation, but fixed gateway/PDP accepts no custom code, has no per-agent policy identity and no documented token attributes/meter. M10 strict admission remains unsupported research, cut from core.",
+    "steps": [
+      "Do not implement this task under the current contract. Reopen only if organizers explicitly provide a permitted all-call blocking hook, trusted aggregate token bounds and required atomic/finality semantics; otherwise record deferred scope.",
+      "Verify every reachable model route, hidden retry and all counted input/output/reasoning usage can be conservatively bounded.",
+      "Define synchronous evaluate contract and unsupported/error behavior.",
+      "Stop this bonus if bypass, bound, finality or atomicity cannot be proved; retain completed accounting."
+    ],
+    "done_when": [
+      "Under current documented capabilities, the honest completed planning action is to mark strict admission unsupported/deferred; no prevention implementation is claimed.",
+      "Aggregate bound covers all permitted executions and the actual hook can prevent dispatch.",
+      "Contract differentiates per-control results from overall admission.",
+      "Unverified assumptions are visible; a post-run detector is not called strict prevention."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "No verified enforcement point can support the original strict token-admission assumptions. Cedar allow/deny and team DynamoDB alone do not make the design implementable.",
+    "platform_evidence_level": "DOCUMENTED_LIMITATION",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/control-16",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/cedar"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_GATEWAY_AGW",
+      "PDP_CEDAR",
+      "TEAM_LAMBDA_DYNAMODB"
+    ]
+  },
+  {
+    "id": "T45",
+    "title": "Implement atomic optional admission and dispatch ownership",
+    "phase": "bonus",
+    "owner": "A",
+    "component_ids": [
+      "M10.1",
+      "M10.2",
+      "M10.3",
+      "M10.7"
+    ],
+    "depends_on": [
+      "T44",
+      "T08",
+      "T10",
+      "T11"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "DOCUMENTED LIMITATION: a narrow team Cedar ConfigMap exception in modaas-system permits policy configuration with required labels/annotation, but fixed gateway/PDP accepts no custom code, has no per-agent policy identity and no documented token attributes/meter. M10 strict admission remains unsupported research, cut from core.",
+    "steps": [
+      "Do not implement this task under the current contract. Reopen only if organizers explicitly provide a permitted all-call blocking hook, trusted aggregate token bounds and required atomic/finality semantics; otherwise record deferred scope.",
+      "Reserve before ALLOW using finally settled actual F plus all unresolved full bounds H plus requested bound B<=cap.",
+      "Reuse exact transport duplicate attempts and reject changed content under reused identities.",
+      "Conditionally claim one dispatch owner against run/policy state; durably journal transitions before action."
+    ],
+    "done_when": [
+      "Under current documented capabilities, the honest completed planning action is to mark strict admission unsupported/deferred; no prevention implementation is claimed.",
+      "Concurrent requests cannot exceed the declared exposure bound under tested assumptions.",
+      "Crash/ambiguous dispatch retains liability and cannot blindly retry.",
+      "One local dispatch claim is never described as exactly-once provider execution."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "No verified enforcement point can support the original strict token-admission assumptions. Cedar allow/deny and team DynamoDB alone do not make the design implementable.",
+    "platform_evidence_level": "DOCUMENTED_LIMITATION",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/control-16",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/cedar"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_GATEWAY_AGW",
+      "PDP_CEDAR",
+      "TEAM_LAMBDA_DYNAMODB"
+    ]
+  },
+  {
+    "id": "T46",
+    "title": "Implement optional settlement, cancellation and uncertain-outcome recovery",
+    "phase": "bonus",
+    "owner": "A",
+    "component_ids": [
+      "M10.4",
+      "M10.5",
+      "M10.6"
+    ],
+    "depends_on": [
+      "T45"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "DOCUMENTED LIMITATION: a narrow team Cedar ConfigMap exception in modaas-system permits policy configuration with required labels/annotation, but fixed gateway/PDP accepts no custom code, has no per-agent policy identity and no documented token attributes/meter. M10 strict admission remains unsupported research, cut from core.",
+    "steps": [
+      "Do not implement this task under the current contract. Reopen only if organizers explicitly provide a permitted all-call blocking hook, trusted aggregate token bounds and required atomic/finality semantics; otherwise record deferred scope.",
+      "Release cancellation only after conditional proof dispatch could not be claimed.",
+      "Retain full bounds across provisional usage and unknown outcomes; settle only complete execution sets with verified final usage.",
+      "Stop new claims on closure/revocation and halt admission on accepted bound violation/upward-final correction; preserve historical liabilities."
+    ],
+    "done_when": [
+      "Under current documented capabilities, the honest completed planning action is to mark strict admission unsupported/deferred; no prevention implementation is claimed.",
+      "Provisional usage never prematurely frees capacity.",
+      "Already-claimed work may still physically send after closure and remains accounted.",
+      "Without finality evidence, the bound stays reserved for the run instead of being guessed away."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "No verified enforcement point can support the original strict token-admission assumptions. Cedar allow/deny and team DynamoDB alone do not make the design implementable.",
+    "platform_evidence_level": "DOCUMENTED_LIMITATION",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/control-16",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/cedar"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_GATEWAY_AGW",
+      "PDP_CEDAR",
+      "TEAM_LAMBDA_DYNAMODB"
+    ]
+  },
+  {
+    "id": "T47",
+    "title": "Add background extraction or natural-language scope planning only after core proof",
+    "phase": "bonus",
+    "owner": "B",
+    "component_ids": [
+      "M11.7",
+      "M11.8"
+    ],
+    "depends_on": [
+      "T38",
+      "T41"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "DOCUMENTED BASE: same ModelConfig-governed model alias/gateway and AgentConfig runtime. PROPOSED optional bounded background/NL features only after the core submission succeeds.",
+    "steps": [
+      "Profile whether pre-extracting notes improves measured latency/cost; deduplicate with explicit budgets and generated-text exclusions.",
+      "Optionally translate natural-language questions into proposed explicit scopes requiring host validation.",
+      "Retain explicit-selector baseline and prevent automatic investigation recursion."
+    ],
+    "done_when": [
+      "Background work is separately accounted and does not count as a fresh query model call.",
+      "Ambiguous scope is surfaced rather than silently narrowed.",
+      "Optional feature demonstrates a measured benefit without reducing control completion."
+    ],
+    "status": "PLANNED",
+    "risk": "Natural-language planning can select a favorable subset or create hidden unbounded work.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_CONFIG_ALIAS",
+      "MODEL_GATEWAY_AGW",
+      "AGENTCONFIG"
+    ]
+  },
+  {
+    "id": "T48",
+    "title": "Compare approved Nano30B/Super profiles only after the Nano9B core works",
+    "phase": "bonus",
+    "owner": "B",
+    "component_ids": [
+      "M11.9",
+      "M11.10",
+      "M11.11"
+    ],
+    "depends_on": [
+      "T05",
+      "T38",
+      "T41"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "DOCUMENTED SUPPORTED TEXT MODEL ALIASES (each needs current approval/readiness verification): nemotron-nano-9b -> nvidia.nemotron-nano-9b-v2; nemotron-nano-3-30b -> nvidia.nemotron-nano-3-30b; nemotron-super-120b -> nvidia.nemotron-super-3-120b. Omni is outside this text-only event and Ultra is unavailable; those earlier component ideas are cut.",
+    "steps": [
+      "Read current ModelConfig approval/attestation/dependency/route state for every comparison alias; conflicting guide examples are not an entitlement or substitute for readiness.",
+      "Reuse the fixed held-out Nano9B evaluation and compare Nano30B only if extraction quality needs improvement; compare Super120B only if its extra measured value justifies latency/token cost.",
+      "Replace a bounded stage/profile rather than chain more models into the deadline; count helper/model calls against the account ceiling.",
+      "Mark M11.10 Omni and M11.11 Ultra as CUT_UNSUPPORTED for this event. Preserve their inventory IDs for traceability but do not provision or wait for them."
+    ],
+    "done_when": [
+      "Every retained profile has actual approved-alias execution, quality and latency/cost measurements.",
+      "Optional model comparison leaves the completed core submission intact.",
+      "No Lightning, Omni or Ultra capability appears in the actual deployed architecture."
+    ],
+    "status": "PLANNED",
+    "risk": "Larger approved models can consume shared account quotas without improving validated evidence; unprovided models are not a valid fallback.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough/nemotron-models",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/ceiling"
+    ],
+    "platform_asset_aliases": [
+      "MODEL_CONFIG_ALIAS",
+      "MODEL_GATEWAY_AGW",
+      "AGENTCONFIG",
+      "NEMOTRON_NANO9B",
+      "NEMOTRON_NANO30B",
+      "NEMOTRON_SUPER120B",
+      "MODAAS_CEILING"
+    ],
+    "component_disposition": {
+      "M11.9": "OPTIONAL_APPROVED_SUPER_PROFILE",
+      "M11.10": "CUT_UNSUPPORTED_TEXT_ONLY_EVENT",
+      "M11.11": "CUT_UNAVAILABLE"
+    }
+  },
+  {
+    "id": "T49",
+    "title": "Resolve export/submission permissions and confirm the actual deadline",
+    "phase": "access",
+    "owner": "BOTH",
+    "component_ids": [
+      "M16.7"
+    ],
+    "depends_on": [
+      "T01"
+    ],
+    "priority": "CORE",
+    "technology": "DOCUMENTED: account review terms restrict AWS-provided materials outside the account; starter submit.sh supplies a team S3 submission route. This narrows the delivery path but does not authorize bulk export of lab sources/data.",
+    "steps": [
+      "Maintain the dated capability/gap register distinguishing documented, configured, fixture-tested and runtime-verified; every guide-derived entry stays DOCUMENTED until exercised.",
+      "Confirm permitted team-authored output/evidence submission classes and whether an independent offline recheck package may contain the needed source inputs. Do not infer blanket export permission from submit.sh.",
+      "Prepare organizer clarifications for unresolved export classes, the ServiceNow mandatory-versus-optional conflict and the actual submission cutoff/timezone; no messages are sent by this plan.",
+      "Record the displayed Oct4 2026 09:00 AM start and72-hour environment lifetime only as account facts; compare the transcript Tuesday10:00 AM CDT stopping time with current event instructions before fixing a deadline."
+    ],
+    "done_when": [
+      "Allowed team-S3 submission and any approved offline-export boundaries are explicit; restricted lab data/source stays out of the package.",
+      "Actual submission cutoff/timezone and bucket/URL access behavior are confirmed independently of environment expiry.",
+      "Outstanding rule conflicts are assigned, visible release gates rather than silently resolved assumptions.",
+      "No external organizer message or account modification has been performed during planning."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Submission requirements and account-material restrictions may conflict in scope; exporting by assumption or treating environment duration as the deadline can invalidate the submission.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration"
+    ],
+    "platform_asset_aliases": [
+      "STARTER",
+      "TEAM_S3_SUBMISSION",
+      "SN_FACILITATOR_CONNECTOR"
+    ]
+  },
+  {
+    "id": "T50",
+    "title": "Improve S2 ambiguity through named disambiguating evidence and a reversible action",
+    "phase": "bonus",
+    "owner": "B",
+    "component_ids": [
+      "M02.4"
+    ],
+    "depends_on": [
+      "T35",
+      "T41"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "DOCUMENTED: S2-transport-congestion expects gather-evidence and the guide baseline fails7/10; S1 auto-resolve passes8/8 and S3 restricted-change escalate passes10/10. Actual team execution is unverified. Team AgentConfig and ToolConfig Lambda/MCP are the supported extension path.",
+    "steps": [
+      "Capture the unchanged baseline S1/S2/S3 results and inspect actual reference source; do not assume Strands where the reference is documented as plain Python.",
+      "For S2 explicitly name the evidence needed to distinguish candidate causes, gather it through a permitted ToolConfig/MCP tool, and choose a justified reversible action; do not guess or auto-resolve ambiguity.",
+      "Preserve correct S3 restricted-change escalation and S1 automatic resolution. Actual ServiceNow incident creation remains a separate facilitator-enabled stretch.",
+      "When authorized, build via CodeBuild/ECR and obtain required operator approval/attestation; repeat the fixed scenarios and compare actual grades, supporting evidence and extra tokens/cost.",
+      "The new tool must appear in the declared shared-Gateway tool-name allowlist and pass composed policy negative tests; do not rely on a per-agent attribute the fixed PDP does not expose."
+    ],
+    "done_when": [
+      "Actual comparable S2 results and evidence improve while S1/S3 regression outcomes are reported; guide sample scores are not claimed as our measurements.",
+      "Gathered evidence and reversible action are visible in the source timeline, rather than merely asserted by model text.",
+      "Any remote incident claim has enabled connector/delivery proof; diagnostic quality remains separate from hourly C9 drift."
+    ],
+    "status": "PLANNED",
+    "risk": "Optimizing a single scenario can overfit or add unsafe/unnecessary actions; a self-check pass does not complete the three assurance controls.",
+    "platform_evidence_level": "DOCUMENTED",
+    "runtime_verified": false,
+    "implementation_status": "NOT_IMPLEMENTED",
+    "source_urls": [
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/self-check",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough",
+      "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/cedar"
+    ],
+    "platform_asset_aliases": [
+      "REFERENCE_SCENARIOS",
+      "SCENARIO_GRADER",
+      "AGENTCONFIG",
+      "CODEBUILD_ECR",
+      "TOOLCONFIG",
+      "AGENTCORE_GATEWAY_MCP",
+      "SN_FACILITATOR_CONNECTOR"
+    ]
+  }
+]

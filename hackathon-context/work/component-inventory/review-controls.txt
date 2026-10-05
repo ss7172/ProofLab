@@ -1,0 +1,13 @@
+The inventory is materially complete and correctly makes Nemotron investigation core while keeping inline prevention and additional model profiles optional. The 117 entries are logical responsibilities, not separate services; the shared package/workspace descriptions correctly preserve that distinction.
+
+Must fix or clarify:
+
+1. The Attempt record description says “one actual execution attempt.” Attempts also exist before dispatch and for reserved, cancelled or denied work. Describe it as one identified intended execution/admission attempt with lifecycle state; actual provider executions and charges are separately reconciled. Otherwise the inventory implies denied work cannot be represented.
+
+2. M02.3/M02.4 “Build” should retain conditional scope explicitly: gateway B is the preferred second-point target, with a permitted tool boundary or honestly labelled read-only source as alternatives. The foundation does not require building every possible boundary adapter. Inline evaluate is conditional on a verified blocking hook.
+
+3. M11’s “approved external model endpoint” should say “approved workshop Nemotron endpoint/gateway path.” The current wording could suggest an additional externally hosted route, which V4 expressly does not assume.
+
+Useful precision within existing entries: M13.2 should name a per-source snapshot vector and forbid silently fetching mutable live revisions into a frozen case. M16.5 should state separate subject/assurance subtotals plus combined spend and policy-dependent inclusion; separate scopes are not permission to exclude assurance spend.
+
+No new major group or extra service is needed. Keep C9 alert creation in M08 and delivery in M14; their split is intentional, as are M05 reconciliation versus M10 transactional settlement.

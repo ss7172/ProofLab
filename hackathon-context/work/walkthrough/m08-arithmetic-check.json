@@ -1,0 +1,30 @@
+{
+  "provenance": "SYNTHETIC_ARITHMETIC_CHECK_ONLY",
+  "baseline": "0.900",
+  "W10": "0.792",
+  "relative_drop_percent": 12,
+  "percentage_point_drop": "54/5",
+  "exactly_10_percent_allowed": true,
+  "window_drops_percent": [
+    4,
+    6,
+    3,
+    8,
+    5,
+    7,
+    9,
+    6,
+    4,
+    12
+  ],
+  "violating_windows": 1,
+  "expected_windows": 10,
+  "violating_window_share_percent": 10,
+  "allowed_window_share_percent": 0,
+  "nine_measured_zero_known_violations_one_unknown_bounds_percent": [
+    0,
+    10
+  ],
+  "one_known_violation_proves_breach_with_zero_allowance": true,
+  "runtime_tested": false
+}

@@ -1,0 +1,19 @@
+{
+  "guide_pages": 62,
+  "major_components": 16,
+  "minor_components": 123,
+  "tasks": 50,
+  "core": 43,
+  "conditional_bonus": 7,
+  "coverage": "all 123 minor IDs assigned once",
+  "task_dependencies": "start and milestone graphs acyclic; no CORE start dependency on BONUS",
+  "runtime_verified": false,
+  "primary_bytes": 332430,
+  "primary_words": 36547,
+  "primary_sha256": "70cf815d822dcac080af26d1f3c0e1616b09ec2ef70a4cf2c311c1b47ef58bf2",
+  "checks": "JSON parse, ID coverage, dependency DAG, selected credential patterns, source-link membership; no live runtime tests",
+  "html_static_check": "50 rows, unique IDs, inline JavaScript syntax valid; no interactive browser execution",
+  "diagram_check": "SVG rendered and visually inspected",
+  "guide_link_check": "all task and component source URLs occur in exact 62-page guide index",
+  "portable_html_export": "zero unresolved local assets"
+}

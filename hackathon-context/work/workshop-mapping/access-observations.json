@@ -1,0 +1,27 @@
+{
+  "recorded_at": "2026-10-04",
+  "event_name": "Trustworthy AI and Data Hackathon",
+  "workshop_title": "MoDaaS \u2014 Governed AI Models, Tools & Agents on ODA Canvas",
+  "access": "Authenticated workshop guide readable after user personally joined event",
+  "terms_acceptance": "User reviewed and joined personally; agent did not accept terms",
+  "guide_pages_read": 62,
+  "observed_dashboard_output_names": [
+    "IdeUrl",
+    "CockpitUrl",
+    "TeamEvidenceBucketName"
+  ],
+  "observed_account_start_display": "10/04/2026 09:00 AM; timezone not shown",
+  "observed_environment_lifetime": "72 hours; not a confirmed submission deadline",
+  "documented_region": "us-east-1",
+  "runtime_verified": false,
+  "cloud_mutations_performed": false,
+  "model_invocations_performed": false,
+  "submission_performed": false,
+  "credentials_stored_in_handoff": false,
+  "unread_material": [
+    "Linked downloadable starter source",
+    "Linked ServiceNow PDF guides",
+    "External documentation pages catalogued by the guide"
+  ],
+  "scope_note": "Guide content and observed output names inspected. Actual IDE/cluster inventory, permissions, endpoint behavior, integration and submission require implementation-time probes."
+}

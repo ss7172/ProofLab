@@ -1,0 +1,10 @@
+The inventory is coherent, but 117 numbered entries can still look like 117 services. Add a prominent sentence: “These are responsibilities and supporting parts; most live in one Python package, with worker/query entry points, a local judge client and optional inline admission.”
+
+Concrete clarifications:
+- Add a kind label (software module, interface, record/configuration, provided system, external service) beside each entry. Status answers what is supplied/built/optional, not what the thing is. M02.5–8 are interfaces; M04.2 and M08.1 are declarations/manifests; M16.5 is data produced by instrumentation.
+- Explicitly distinguish the provided gateways A/B from the custom adapters attached to or reading them. The shared model gateway is another integration role; do not imply these three names identify the same gateway.
+- State that the interfaces appendix repeats contracts already listed under their owners; it does not add components. Apply the same rule to repositories versus the records they contain.
+- Correct the Attempt record gloss: an attempt may be denied, reserved or never dispatched. “One identified inference attempt and its lifecycle; duplicate delivery keeps its identity” matches the state machine better than “one actual execution attempt.”
+- Keep M07–M09 labelled implementations: C7/C9/C16 themselves are requirements, while these groups contain deterministic evaluators. Model profiles are configurations of approved endpoints, not four deployments.
+
+First story step: a permitted ServiceNow fault request reaches the customer agent; ProofLab identifies the team/run and pins its dated policy before governed work starts. Then establish independent expected obligations before tracing the first model request.

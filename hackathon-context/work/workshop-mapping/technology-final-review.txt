@@ -1,0 +1,72 @@
+INDEPENDENT TECHNOLOGY REVIEW — CLAUDE HANDOFF
+Date: 2026-10-04
+Reviewer: workshop_technology_map subagent
+
+FINAL VERDICT: ACCEPTED AS A DOCUMENTED IMPLEMENTATION PLAN. All four requested consistency corrections are resolved in the regenerated primary handoff and component JSON. This is not runtime verification or confirmation of completed controls.
+
+Initial review requested narrow consistency corrections; the findings below are retained as review history.
+
+Scope inspected:
+- outputs/claude-hackathon-context.txt: technology summary, deployment/access/source sections, embedded contracts and targeted complete task/component sections concerning C9, models, storage, approvals, admission and evidence.
+- outputs/prooflab-workshop-components.json: all 16 groups and 123 minor component records, task IDs, dispositions, runtime-verification flags and guide URLs.
+- work/workshop-mapping/claude-technical-contracts.txt: complete current technical contracts.
+- work/workshop-mapping/workshop-map.json and guide-index.txt: documented mapping and exact guide locators.
+This is an independent consistency/engineering review, not another authenticated reading of all 62 source guide pages. No runtime checks, model calls, IAM modifications, deployments, evidence uploads or ServiceNow writes were performed.
+
+INITIAL FINDINGS — ALL RESOLVED IN REGENERATED SNAPSHOT
+
+F01 — RESOLVED (initial severity MEDIUM): a task reintroduces fixed approval assumptions.
+Primary T05 step5 says “helper/30B bootstrap approval and ordinary9B/Super participant attestation are distinct.” That retains the older one-page snapshot as a fixed split, contradicting the corrected statement that /baseline-walkthrough/declare and /choosing-a-model disagree. T29 technology and T48 technology also call the alias list “approved” as a class, although approval must be read live.
+Correction: refer to documented supported text aliases; inspect each selected ModelConfig’s current lifecycle/attestation, required permitted approval and provisioning/serving evidence. Do not require attesting 9B if already approved or assume30B is ready. Nano9B can remain the preferred profile, with an actually approved working alternative when needed.
+
+F02 — RESOLVED (initial severity MEDIUM): minor M16.3 retains the old storage plan.
+Generated component M16.3 still says conditional DynamoDB for atomic state, S3 raw/export and SQLite offline indexing. The current chosen baseline is permissioned IDE raw files + SQLite facts/checkpoints/transactional outbox, then submit.sh to team S3; no pod credentials/public-S3 assumption.
+Correction: update this minor purpose to the current baseline, with any DynamoDB/alternate worker a later explicit permitted choice. SQLite is not only an offline index. This prevents an implementer following the minor inventory from building the obsolete database-first branch.
+
+F03 — RESOLVED (initial severity LOW): minor M05.1 uses generic “OTEL” source wording.
+The generated minor says “Read available gateway, OTEL and CloudWatch source records.” Group-level warnings are correct, but the minor can be read as directing an adapter to the discarded collector pipeline.
+Correction: explicitly name surviving gateway/PDP/audit-store sources and separate per-runtime AgentCore CloudWatch spans; say collector trace export is unavailable. Preserve runtime verification/completeness gate.
+
+F04 — RESOLVED (initial severity LOW): minor M08.6 describes only relative change.
+The revised C9 design includes higher-is-worse Latency Average and a predeclared absolute Errors Sum rule when baseline is zero. The minor still says “Computes the declared relative change...”
+Correction: describe declared metric comparison: relative latency increase where valid, absolute error-count threshold where declared; preserve exact boundaries and zero-baseline handling. Do not imply every C9 metric is a lower-is-worse relative score.
+
+SUPPORTING-FILE CORRECTIONS APPLIED BY THIS REVIEWER
+- M06 adjustment now permits IDE SQLite facts/checkpoints/outbox and a separate offline index; it no longer says SQLite is offline-only.
+- M05/M16 now say separate AgentCore CloudWatch spans are already documented/read, with runtime permissions/schema/completeness still unverified.
+- M09 no longer lists X-Ray as a surviving C16 observation path; current collector trace export is explicitly absent.
+- C9 remaining-proof text now treats Errors Sum as documented count, not an undecided count/rate choice; a rate is separately declared only with an accepted denominator.
+- Matching technical-contract text now makes the IDE SQLite role and distinct documented AgentCore span path explicit.
+The parent regenerated the primary/component artifacts after consuming these patches. This reviewer verified the resulting task/component text without editing the primary handoff or its generator.
+
+CORRECTED/ACCEPTED DESIGN AREAS
+- C9 defaults to AWS/Bedrock-AgentCore Name/Operation/Resource, Latency Average milliseconds and Errors Sum count, period3600; score-run.py remains separate diagnostic grading. UTC closed-hour boundaries are declared, empty data is not zero, baseline-zero rules and full timestamp/unit/dimension provenance are retained.
+- M11.10 Omni and M11.11 Ultra are CUT_CURRENT_EVENT. No hidden implementation dependency on unsupported families was found. Lightning is historical wording only; actual9B/30B/Super aliases govern implementation.
+- Phase is lifecycle evidence, not sufficient readiness. Approved/provisioned/runtime READY/reachable execution are distinguished. TMF639 projection failure is not equated with serving failure.
+- Build order is new-agent.sh -> CodeBuild ARM64 -> ECR -> generated/applied AgentConfig -> required approval -> operator-managed AgentCore Runtime. No custom AgentConfig-triggered build or direct participant AgentCore creation is required.
+- Permissioned IDE collector/SQLite path, absent pod AWS credentials/public-S3 access, and bounded evidence payload/authorized read-tool bridge to AgentCore are explicit.
+- Actual Nemotron invocation metadata/usage/quality/latency are required. Cached answers, badges and fixture-only prompts do not meet the model gate.
+- C7 expected slots/pairs, C16 whole-run execution population and C9 expected hours are independent of received observations. Header fragmentation, retries, corrections, pagination and uncertain outcomes remain visible. Many-to-many binding joins do not multiply token charges.
+- Fixed gateway/PDP prohibits custom code/token admission; M10 minor items remain DEFERRED_UNSUPPORTED_INLINE_HOOK. Cedar access policy, table availability and delayed pause are not claimed as per-run atomic prevention.
+- Human-loop/AICT conflict stays open with facilitator dependence; actual recipient/delivery/response evidence is distinct from asset discovery and operator attestation. Missing response access is not silence.
+- Account-wide100RPM/2.5M tokens/hour includes helpers, with all controlled callers coordinated; no3-agent1RPS safe-throughput claim.
+- Actual control implementation remains0/3; no runtime verification fabricated.
+
+STRUCTURAL CHECKS PASSED
+- Exactly16 ordered major IDs M01–M16.
+- Exactly123 unique minor IDs retained.
+- Every minor maps to a valid T01–T50 task ID.
+- Every group/minor runtime_verified value is false.
+- All generated component source URLs resolve to a suffix present in guide-index.txt.
+
+LIMITS
+This review checks implementation instructions and mapping consistency. It cannot establish access, source completeness, field semantics, real model response quality/latency, accepted breach provenance or winning probability. Runtime gates and organizer decisions remain implementation work. Final correction verification is complete for F01–F04. No new architecture rewrite or remaining documentation blocker was identified within this review scope.
+
+FINAL CORRECTION VERIFICATION
+- T05 now treats guide approval snapshots as conflicting and requires current selected-alias approval/attestation/dependency/route readiness; no fixed bootstrap-versus-participant split. T29/T48 say supported aliases with explicit live approval/readiness gates.
+- M16.3 now specifies initial IDE SQLite facts/checkpoints/outbox plus raw files, team S3 submission and separately verified roles for any distributed store; no pod inheritance of IDE credentials.
+- M05.1 now separates gateway/PDP logs from AgentCore CloudWatch spans/metrics and explicitly excludes the discarded collector/X-Ray path. Current M05/M07/M16 group mappings likewise contain no broad X-Ray availability claim.
+- M08.6 now includes higher-is-worse latency, predeclared absolute Errors-count rule for zero baseline and validated denominator requirement for any rate.
+- Regenerated structure remains16 major groups/123 minor components, with all runtime_verified flags false.
+
+No unresolved critical or medium findings remain in the reviewed documentation. Runtime/source/gov-access gaps correctly remain open implementation gates.

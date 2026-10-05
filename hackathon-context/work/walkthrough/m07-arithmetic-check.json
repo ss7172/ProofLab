@@ -1,0 +1,34 @@
+{
+  "provenance": "SYNTHETIC_ARITHMETIC_CHECK_ONLY",
+  "slide_gaps_ms": [
+    2,
+    3,
+    4,
+    2,
+    8,
+    3,
+    2,
+    4,
+    3,
+    2
+  ],
+  "events": 11,
+  "pairs": 10,
+  "violations": 1,
+  "violating_share_percent": 10,
+  "missing_E06": {
+    "P": 10,
+    "M": 8,
+    "K": 0,
+    "U": 2,
+    "lower_percent": 0,
+    "upper_percent": 20,
+    "coverage": {
+      "matched": 10,
+      "expected": 11
+    }
+  },
+  "exactly_5_ms_violates": true,
+  "second_violation_percent": 20,
+  "runtime_tested": false
+}

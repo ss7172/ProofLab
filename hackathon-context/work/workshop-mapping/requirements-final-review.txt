@@ -1,0 +1,43 @@
+FINAL REQUIREMENTS / SOURCE-AUTHORITY REVIEW
+Date: 2026-10-04
+Artifact: outputs/claude-hackathon-context.txt. Initial review inspected the 2,490-line / 35,155-word draft; targeted correction verification was performed against the regenerated final primary.
+Reviewer: independent requirements/source reviewer. No runtime tests or browser actions performed.
+
+VERDICT
+ACCEPTED within the reviewed scope. No remaining critical mandatory-scope contradiction found. All three component-map findings below were corrected and verified in the regenerated primary. No open requirement-review finding remains; explicit organizer/access questions remain accurately documented as unresolved rather than claimed complete.
+
+RESOLVED FINDINGS — FINAL TARGETED VERIFICATION
+R1 — M06 storage contradiction (medium clarity/implementation risk).
+RESOLVED. The old offline-only restriction is removed. M06 now describes IDE-host SQLite normalized facts/checkpoints/transactional outbox and a separately generated offline index, with neither treated as distributed admission state. Durability/restart verification remains required.
+
+R2 — M05 already-read documentation labelled forthcoming (low).
+RESOLVED. The obsolete "forthcoming" wording is removed. M05/M16 now require runtime verification of the already documented per-runtime AgentCore CloudWatch source, schema/scope/permissions/completeness; no runtime proof is inferred from having read documentation.
+
+R3 — M09 X-Ray source wording (medium clarity/implementation risk).
+RESOLVED. M09 names surviving audit-store/gateway CloudWatch/separate AgentCore CloudWatch sources and explicitly excludes X-Ray as C16 execution/usage evidence under the current collector limit. M05/M07/M16 broad mapping assertions were also corrected to preserve this distinction.
+
+CORRECTIONS VERIFIED
+- Human reply is explicitly not required; named recipient/delivery/response-or-bounded-silence remain distinct.
+- Nemotron case begins early on the first complete C16 slice; its <=60-second target is separate from official <=120-second judging and is unmeasured.
+- S2 improvement is optional differentiation; score-run.py sample grades are neither team results nor the control judging rubric.
+- One completed control is the minimum; three is the chosen ambition. Completion is distinct from green requirement verdicts.
+- Exact five architecture topics and six incident auditor questions are present and separated from six deliverables/evidence fields.
+- Rubric has three axes and counts0/1/2/3; no invented official numeric weights or win probability.
+- AICT requirement conflict is unresolved with facilitator/organizer route; no assumed private ServiceNow instance, auto-waiver or runtime-delivery claim.
+- C9 baseline now uses AgentCore Latency Average ms / Errors Sum count per runtime clock-hour; accuracy/twin alternatives require acceptance; zero/no-traffic/missing/window/denominator distinctions remain.
+- All actual model aliases replace Lightning planning; Omni/Ultra are excluded; conflicting approval snapshots require actual state/readiness verification.
+- Lifecycle approval, provisioning/runtime readiness, serving and registry projection are separate.
+- Fixed PDP/gateway custom-code prohibition and absent token state keep M10 conditional/deferred. Account100RPM/2.5M tokens/hour is separate from C16 run cap; per-agent1RPS mistake is corrected.
+- Specific discarded collector/X-Ray warnings override generic overview, with separate AgentCore CloudWatch source explained.
+- Official team S3 submission/readback, six-artifact archive inspection, presigned-URL handling and export-scope conflict are explicit.
+- Submission cutoff is not inferred from account lifetime or old slide weekday prose; current organizer confirmation remains open.
+- Original slides' illustrative numeric examples are labelled illustrative, not real team runs or mandatory threshold values.
+- Supplied integrity capability is reused; custom cryptographic work remains out of scope; integrity does not prove completeness.
+
+DEFINED DOCUMENTATION-COMPLETENESS SCORE
+20 of20 review criteria met for this source/requirements handoff checklist after verifying R1–R3 corrections. This measures the defined documentation coverage/consistency checklist only; it is not a guarantee of exhaustive factual perfection, code completion, runtime assurance, official judging score or probability of winning.
+Checklist: (1) source precedence/provenance; (2) control set/minimum; (3) six required steps; (4) six artifacts; (5) five architecture questions; (6) six auditor questions; (7) rubric without invented weights; (8) dated freeze/rationale; (9) actual named pass/breach proof; (10) two-minute query/rehearsal; (11) current C9 contract; (12) bounded actual NVIDIA role; (13) AICT conflict; (14) human-response scope; (15) permissions/runtime placement; (16) official submission/export; (17) deadline uncertainty; (18) preventive-bonus boundary; (19) documented-versus-executed status; (20) internally consistent current component mapping.
+
+TESTED SCOPE AND LIMITS
+Directly compared the original extracted PDF requirements and transcript clarifications with the primary draft's introductory workshop notes, source-authority chapter, implementation sequence, control/model/governance rules and current component map. Targeted searches checked old assumptions, exact references, mandatory/optional language and model/approval/runtime wording. Cross-checked parent-extracted workshop facts available in this task and the current workshop-map/task artifacts. This is not an independent reread of all62 authenticated workshop pages, all downloaded starter source, all external documents or every one of the35,155 words. Newly documented guide details outside those sources are not independently certified here. No deployment, model call, source query, test run, control completion, S3 upload or ServiceNow delivery was verified.
+Final recheck was deliberately limited to the three correction targets and adjacent source-mapping wording; it was not a new expansive audit of unrelated regenerated text.

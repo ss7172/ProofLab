@@ -1,0 +1,19 @@
+M06 INDEPENDENT AI DESIGN REVIEW — 2026-10-03
+Reviewer: separate agent /root/m02_contract_review.
+Sources: current inventory and detailed architecture, V4 source/proposal/accepted-revision rules; actual M06 chapter draft.
+Verdict: ACCEPT — no material corrections required.
+
+Reviewed and consistent:
+- Captured assertions, accepted facts, model proposals and assessments/cases remain distinct typed records.
+- B-01/B-02/B-03 demonstrate many-to-many binding without multiplying the P-091 usage charge.
+- Team/source namespaces, unbound observations, unknown facts and missing obligations remain visible.
+- Source snapshot and accepted-input revision are both pinned; a parser or validated link change can require reassessment without changing source bytes.
+- Exact scope retrieval includes population/gaps and exposes pagination/index lag. Contextual relevance results never define control denominators.
+- Late corrections preserve prior source assertions and assessments. The example1000-to1200 correction changes total9000 to9200 without another charge or edited history.
+- Partial publication remains pending; completed analysis can explicitly report insufficient evidence.
+- Storage/SQLite mappings are conditional; rich evidence writes are outside admission, and SQLite is not shared atomic coordinator state.
+- Portable exports contain critical referenced versions/inputs. A gap disclosure does not complete a control missing critical evidence.
+
+Module ownership: M05 reconciles; M12 validates model proposals; control modules calculate; M06 preserves and serves their versioned outputs. Seven logical modules do not imply seven deployed services.
+
+Limits: independent AI conceptual review, not runtime/storage certification, source-truth verification or evidence of deployed integration.

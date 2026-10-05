@@ -1,0 +1,71 @@
+INDEPENDENT NVIDIA MODEL / DELIVERY REVIEW
+Reviewed outputs/prooflab-detailed-architecture.txt, supplied transcript excerpts and the actual image of physical PDF18 (printed17). No other reviewer’s report consulted. Public capabilities checked against NVIDIA primary sources. This is a design review; no endpoint was called.
+
+1. SOURCE FIDELITY
+The supplied slide has four cards despite its “Family of3” heading: Lightning30B-A3B; Nano Omni30B-A3B; Super120B-A12B; Ultra550B-A55B. The transcript’s30B/“120p” descriptions broadly match those cards but are not endpoint identifiers. The slide attributes fast agent/tool work to Lightning, multimodal inputs to Omni, enterprise reasoning to Super and difficult long-running work to Ultra.
+
+NVIDIA’s current public Lightning3.5 documentation describes text reasoning, coding, tool calling and configurable serving support. JSON output still needs schema validation; total generation and reasoning budgets differ. Served identifiers can be configured, so actual metadata/model listings and invocation records are necessary. NVIDIA’s public Super card confirms nvidia/nemotron-3-super-120b-a12b as a text agentic/reasoning model. NVIDIA’s Omni documentation covers image/video/audio inputs. None proves the workshop’s deployed versions, permissions, performance or endpoints. Treat public IDs as references, never silently replace workshop labels with them. Do not introduce external NVIDIA API hosting into a workshop-only solution without verified authorization.
+
+2. THE GAP AND MINIMAL SUBSTANTIVE MODEL ROLE
+The current design uses NVIDIA primarily through supplied subject agents and an optional last-stage test proposer. It does not specify team-owned extraction or evidence synthesis, validate that work, or measure its latency. The new user request makes that a core product feature rather than optional decoration.
+
+Implement one bounded Nemotron Evidence Analyst in the permitted Strands/AgentCore environment, with two model stages in one controlled workflow:
+A. Extract candidate observations from a bounded selection of actual unstructured incident notes, agent explanations and tool-result text. Output typed candidates: assertion_type, entity/action/attempt candidates, exact source_id and source span, time mentioned, ambiguity and suggested control relevance.
+B. After deterministic reconciliation and control tests, synthesize a concise explanation of the result, supported observations, contradictions, missing evidence and the next specific inspection step. Cite immutable source/assessment IDs. The explanation should identify why the evidence supports or fails to support the claim, not merely restate a colored status.
+
+Example: a note says “retried the diagnostic request,” while the authoritative attempt inventory contains only one known attempt and reports incomplete coverage. The model can extract the retry assertion and highlight a discrepancy; it cannot invent a second provider execution or token count. Exact source-span validation proves the note said it, not that the retry occurred.
+
+The extraction improves discovery and navigation; authoritative structured telemetry remains directly parsed. The model never creates expected populations, ground truth, cap arithmetic, final verdicts or admission decisions. Schema/citation validity alone does not prove semantic extraction correctness. Unverified critical identities remain unresolved candidates. Render authoritative verdict/measurement fields from the deterministic assessment, separately from model prose.
+
+3. MODEL CHOICE AND OPTIONAL ROLES
+Core default: the workshop’s permitted fast text Nemotron endpoint, preferably the supplied Lightning class if verified. One endpoint should perform both extraction and synthesis first. Tool calling is useful only if its actual serving configuration works; a host-controlled two-call pipeline is sufficient and simpler. This is a proposed design choice, not an organizer requirement to use a specific Lightning ID.
+Optional Super: ambiguous, complex cross-source synthesis after a benchmark demonstrates worthwhile quality improvement within the same latency/cost budget. Do not make it the automatic second hop on every query.
+Optional Nano Omni: interpret a genuinely necessary screenshot/audio/video source, preserving modality provenance and uncertainty. A screenshot of a token counter must not replace machine-readable usage. Skip if the actual demo sources are text.
+Optional Ultra: offline adversarial hypothesis generation or complex investigation outside the one-minute path, only if available and useful. Four model labels do not mean the team must build four agents. No self-hosted GPU deployment project is justified for two people using supplied environments.
+
+Retain the governed agents’ required Nemotron usage; a new analyst is not an exemption. Separate analyst_job_id and analyst spend from the original fault run; link the jobs without hiding either cost or recursively analyzing the analyst’s own telemetry as subject evidence.
+
+4. AN HONEST UNDER-60-SECOND TARGET
+Define two separate measurements: evidence readiness delay after the subject event/run, and analyst turnaround after query acceptance against a named snapshot. A60-second query target cannot promise that delayed telemetry has arrived.
+
+Proposed bounded demonstration envelope: one selected run or C9 window, a preindexed snapshot, at most10 selected narrative fragments and a declared token cap. Deterministic assessment still covers its complete population even when only a subset of text enters the model. Persist selection criteria, included/excluded source IDs and truncation; never imply the model reviewed everything.
+
+Illustrative engineering budget, not a measured promise: retrieval/assessment5s; extraction15s; validation5s; synthesis20s; final checks/render5s; reserve10s. Use an end-to-end deadline, bounded output/reasoning settings verified for the endpoint and no recursive retries. At deadline return the deterministic evidence result plus ANALYSIS_UNAVAILABLE/INCOMPLETE; that is a transparent fallback, not successful model completion. Cancellation may not cancel provider billing; reconcile late usage.
+
+Benchmark before claiming success: freeze at least20 representative cases covering ordinary, breach, missing source, contradictory notes, injected instructions and oversized inputs; run repeated trials with exact endpoint/config, input/output tokens, concurrency, cold/warm and caching status. Report count, success rate, median/p95/max, deadlines and failures. Measure extraction against labelled candidates and synthesis against source-supported claims, not another model’s confidence. A modest sample is a hackathon benchmark, not a production SLA. Compare against a parser/template-only baseline to show what the LLM adds.
+
+5. DELIVERY AND JUDGING FIT
+Two-person scope: A owns validated evidence retrieval, schemas and deterministic assessment; B owns the one-model pipeline, labelled extraction/synthesis cases and timing. Share ServiceNow/release work before adding model tiers. Build one real narrative extraction and cited synthesis slice early, then broaden. Optional multimodality, second model and adaptive testing are cut before the three controls and six artifacts.
+
+Demo: judge names control/run; tool returns exact result; Nemotron extracts a real ambiguous note and produces a sourced account; missing/injected material does not produce invented evidence; timeout preserves the original result. Show actual model ID, request trace, usage, timing and validation report.
+
+Update the one-page architecture with an asynchronous Evidence Analyst lane: snapshot retrieval → candidate extraction → validation/reconciliation → authoritative assessment → cited synthesis → judge/ServiceNow draft. Keep it outside admission. Add model/config/prompts, source selections, candidate validations, analysis jobs and benchmark results to existing evidence/tool artifacts; model policy to thresholds/supporting configuration; timed cases to runs; real deployment boundaries to architecture; limitations to gaps. This supplements the six artifacts rather than replacing them with an LLM-generated narrative.
+
+PRIMARY SOURCES
+Lightning model/runtime guide: https://docs.nvidia.com/nim/large-language-models/2.0.10/get-started/advanced/get-started-nemotron-3.5-lightning.html
+Super model card: https://build.nvidia.com/nvidia/nemotron-3-super-120b-a12b/modelcard
+Omni modality/architecture documentation: https://docs.nvidia.com/nemo/automodel/latest/recipes-e2e-examples/nemotron-omni
+NIM model support matrix (public catalog only): https://docs.nvidia.com/nim/large-language-models/latest/supported-models.html
+Local source: supplied immersion-day PDF physical18/printed17 and meeting transcript (mandatory Nemotron, model descriptions, AWS/ServiceNow hosting).
+
+FINAL SYNTHESIS CHECK
+Reviewed work/nvidia-review/nvidia-architecture-v1.txt independently; no other reviewer’s report read. The revision gives NVIDIA a substantive extraction/investigation role, preserves authoritative calculations and keeps optional model tiers out of the deadline path. Source labels, endpoint uncertainty, workload caps, actual model-use proof and the six-artifact mapping are sound. Prior numerical scores are correctly not carried over.
+
+Three corrections should be made before delivery:
+
+1. MEDIUM — Make the primary-model decision explicit. “Primary required role: Lightning” can be mistaken for an organizer rule and leaves the branch undefined if Lightning is unavailable. Replace it with: “The required new feature is one Nemotron Evidence Investigator. Lightning is the preferred workshop class, subject to verified access and quality/latency; use one other approved Nemotron endpoint only after the same benchmark passes, otherwise report model integration blocked.” Do not imply the public catalog supplies that fallback automatically.
+
+2. HIGH — Resolve the renewed RoleB bottleneck now. B again owns C9, ServiceNow, model prompts and held-out evaluation, while “rebalance if critical” defers the decision that the previous review already identified. Assign A the model adapter, source boundary, deadlines and case export; B owns minimal extraction/composition prompts and labels while C9/ServiceNow remain protected. Start with structured control/run selection and one extraction/composition call. Natural-language planning and model-selected follow-up reads follow the first accepted slice. If effort exceeds its declared integration timebox, cut those two features before control/evidence completion or core extracted/cited synthesis. No additional models until release checks pass.
+
+3. MEDIUM — Separate the latency benchmark populations. The document calls for all acceptance cases to meet the complete-case target but deliberately returns PARTIAL/DEGRADED for missing sources, aliases, rate limits and timeouts. Define successful full-case trials over predeclared data-ready, valid-scope inputs; separately report resilience cases and the actual degraded response latency. Never exclude unexpected model failures from the full-case denominator. A complete explanation of an INDETERMINATE control may still be a fully generated case if it explicitly covers every known gap; distinguish evidence sufficiency from model-workflow completion instead of letting a control’s unknown result automatically mean the LLM failed.
+
+One acceptance caution: citation existence and matching quotes cannot automatically establish that free-form prose is supported. Preserve the specified human-held-out semantic evaluation and restrict critical numeric/verdict prose to typed templates; reject or label unsupported interpretation rather than claiming code proves every sentence.
+
+No live endpoint, extraction quality or60-second performance has been verified. The proposed changes are implementation decisions and honest measurement definitions, not certification.
+
+FINAL V2 CHECK
+Reviewed work/nvidia-review/nvidia-architecture-v2.txt independently. The requested corrections are present: Lightning is preferred rather than mandatory; an alternative requires approved access and the same benchmark; A owns integration/deadlines/export while B owns minimal templates/examples; the first model block is capped at2hours; the core can use one call, with a measured two-call target. Readiness and deliberate resilience cohorts are separated, and analysis completion is correctly distinct from evidence sufficiency and control verdict.
+
+One small wording inconsistency remains in Section10’s artifact paragraph: “query tool with natural-language entry” makes the deferred NLP feature sound mandatory. Replace with “query tool with explicit control/run/window selectors, cited model analysis and deterministic fallback; natural-language entry only if implemented and profiled.” This preserves the agreed minimum.
+
+No other must-fix deployment/delivery inconsistency found. The one-call profile must validate referenced candidates/templates after extraction and bind its rendered case to the final reassessed input revision, as already specified. No score change or live certification is implied; actual approved endpoint use, extraction quality and the60-second target remain unverified.

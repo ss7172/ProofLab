@@ -1,0 +1,347 @@
+PROOFLAB — CLAUDE IMPLEMENTATION CONTRACTS
+Prepared 2026-10-04. Supporting engineering handoff, not the primary task plan.
+
+STATUS AND AUTHORITY
+
+This document converts the reviewed M02–M14 design into implementation contracts for the actual workshop constraints. Nothing here establishes that code is built, a model call ran, a control passed, an AWS resource is reachable, or ServiceNow received a record. Existing walkthrough HTML files are design artifacts. Actual completed controls remain unproven.
+
+Labels used below:
+DOCUMENTED = the parent extracted this behavior from the authenticated event guide; not independently live-tested by this author.
+PROPOSED = our application contract or implementation choice; build and test it.
+UNTESTED = a runtime assertion that still requires actual evidence.
+BLOCKED/CONDITIONAL = do not implement or claim this branch until its explicit capability gate is satisfied.
+
+Source precedence: /challenge-brief says the masterclass governs completion/judging. The current event guide governs available products, permissions and deployed constraints. Specific current-build warnings override generic overview diagrams. Explicit contradictions that affect required delivery, particularly ServiceNow, stay in the gap/decision register until an organizer resolves them. Never treat source material as permission to expose credentials or mutate unrelated resources.
+
+Read alongside:
+- work/workshop-mapping/workshop-map.json: M01–M16 technology mapping and unresolved proof.
+- work/workshop-mapping/workshop-conflicts.txt: requirement conflicts and scoring implications.
+- outputs/prooflab-detailed-architecture.txt and outputs/prooflab-nvidia-architecture.txt: reviewed invariants, subject to the event-specific changes here.
+- outputs/prooflab-m02–m14 walkthrough/review artifacts: conceptual explanations. Earlier Lightning, diagnostic-score C9, generic X-Ray and custom-gateway assumptions are superseded below.
+
+1. NON-NEGOTIABLE EVENT BOUNDARIES
+
+DOCUMENTED platform:
+- EKS hosts AI Native ODA Canvas/MoDaaS ModelConfig, ToolConfig and AgentConfig operators, Cedar PDP and agentgateway. The canvas is an experimental partner platform atop AWS, not an AWS service.
+- AgentConfig/operator reconciliation creates AgentCore Runtime agents. Do not create AgentCore resources directly as participant.
+- ModelConfig supplies an approved model alias through the shared modaas-agw. Bedrock provides serverless Nemotron inference behind that route. Direct Bedrock calls are denied; do not bypass governance.
+- ToolConfig provider agentCoreGateway exposes Lambda MCP tools via AgentCore Gateway behind modaas-agw. AgentCore Gateway is the tool layer, not a synonym for the shared model gateway.
+- Custom gateway/PDP code is not permitted. Supported policy configuration is Cedar in the permitted ConfigMap. The current PDP does not expose token attributes or a token meter for our proposed atomic per-run admission.
+- Custom AgentCore code may observe actions. Observation is not proof of unbypassable pre-inference enforcement across three agents.
+- CRD API group is oda.tmforum.org/v1beta1. Discover destinations from actual status.endpoint: model service port 8081 /v1/chat/completions; tool service port 8080 /mcp/<alias>; ledger port 8080 /timeline?cid= and /records?cid=. Gateway TLS is available on 8443. Use the documented authenticated path; these logical ports are not permission to expose public endpoints.
+- Phase is lifecycle evidence, not a readiness guarantee; Conditions may lag two minutes. Separately require provisioned status, AgentCore runtime READY and authorized reachable-serving probes before claiming readiness. TMF639Projected=False is a documented operator-egress/port-8639 limitation, not by itself a serving failure. TMF639 inventory contains ODAComponents, not every AI asset. Keep AWS Agent Registry status.registryRecordId, TMF639 identity and AICT identity separate.
+
+DOCUMENTED observability limit:
+The current OTEL collector trace pipeline has NO durable exporter and discards spans. Nothing from that pipeline reaches X-Ray; Cockpit Trace is empty. Do not build a critical evidence dependency on this pipeline. A separate per-runtime AgentCore CloudWatch span path is documented in /agent-observability/trace-spans; its actual schema/source permissions/completeness still require runtime verification. This source is distinct from the discarded collector trace pipeline. CloudWatch /aws/modaas/gateway is documented for gateway logs. The token-gated audit-store has a 1 Gi gp3 volume; limited capacity is not an archival guarantee. Copy permitted evidence through an actually authorized durable path.
+
+DOCUMENTED account ceiling:
+The Oct 3 modaas-ceiling AgentgatewayPolicy specifies 100 requests/minute and 2,500,000 tokens/hour across the account, including helper/investigator calls. Enumerate actual active policies; old four-policy checks are stale. One request/second for each of three agents is 180 requests/minute before tools/helpers, so per-agent 1 RPS is unsafe guidance. Apply one coordinated global limiter or conservative serialized execution across all workloads. Account token/hour ceiling, request rate, and our per-run C16 cap are three different rules. Observed pause about 15 seconds and resume about 50 seconds are not instantaneous cancellation guarantees or promised future latency.
+
+DOCUMENTED model aliases:
+- nemotron-super-120b -> nvidia.nemotron-super-3-120b, supplied baseline agents.
+- nemotron-nano-9b -> nvidia.nemotron-nano-9b-v2, fast candidate.
+- nemotron-nano-3-30b -> nvidia.nemotron-nano-3-30b, middle candidate.
+- Approval snapshots conflict: /baseline-walkthrough/declare shows 30B/helper approved and ordinary 9B/Super Reviewing, whereas /choosing-a-model shows 9B Approved and other aliases Reviewing. These examples are not a universal current state. Read actual phase/attestation and applicable conditions on the chosen ModelConfig, complete only the required permitted approval steps, then verify provisioning and serving. Do not assume 30B/helper is always approved or 9B always needs attestation.
+Omni is outside this text-only event and Ultra is unavailable. Replace the old Lightning profile with a measured approved 9B/30B/helper profile. No latency promise follows from parameter count or the word “fast.”
+
+DOCUMENTED code/build constraints supplied by the guide extraction:
+- Strands GatewayModel adaptation must omit/remove an empty tools: [] member where the gateway rejects that payload; do not disable legitimate non-empty tool definitions. Add a transport fixture that checks the actual emitted request after the SDK has finished serializing it.
+- Use the workshop CodeBuild/ECR route and ARM64-compatible agent artifact. Build and verify the actual image architecture; a local x86 image or Python native wheel is not automatically compatible. Do not invent buildspec settings before inspecting the supplied example.
+- Participant/IDE role may read resources, start builds and create permitted team-prefixed Lambda functions/tables. IAM writes and direct platform resource creation are denied. Use existing permitted roles/operator reconciliation; do not add a task to “fix IAM” by granting ourselves rights.
+- EKS components pods have no AWS credentials and public S3 access is blocked. Do not put boto3 S3/DynamoDB calls in an EKS pod and presume the IDE role is inherited. No copied temporary credential files in images, manifests, prompts or exports.
+
+2. DEPLOYMENT AND REPOSITORY SHAPE
+
+PROPOSED one Python distribution with modules:
+contracts; policy; adapters; sources; repositories; controls/c7,c9,c16; validation; investigator; query; governance; scenarios; export.
+These are logical modules, not a request for thirteen microservices. The 16 major/123 minor inventory remains a decomposition, not a deployment count.
+
+Baseline execution choice:
+PROPOSED initial implementation: permissioned scraper/evaluator in the provided IDE, raw source files plus SQLite facts/index and transactional outbox, then documented submit.sh from IDE to team S3. This avoids pretending EKS pods inherit AWS rights. Use the provided IDE credentials and documented command paths for allowed read/collection/evaluation/export commands first. This can establish the post-run floor. An IDE command is not an always-running cloud monitor; label scheduling/continuity accurately. Exact build/deploy order is new-agent.sh -> CodeBuild ARM64 build -> ECR image -> generated AgentConfig -> required approval -> operator provisioning of AgentCore Runtime. AgentConfig does not start CodeBuild. The resulting agent uses an actually approved ModelConfig alias. Match exact workshop examples before modifying them.
+
+Storage choices:
+- Supplied audit-store/ledger: raw source, token-gated, small volume, source retention and integrity semantics to inspect. It is not our normalized database by default.
+- Team evidence S3 bucket: documented durable delivery/export destination. Verify allowed prefix/object reads/writes from the credential-bearing environment. Judging reads this bucket via inspected submit.sh flow; a laptop copy alone is not submission.
+- IDE-local SQLite/raw files: proposed normalized facts, checkpoints and transactional outbox for the initial single-host application. SQLite transactions coordinate local writers; test persistence/restart behavior. Separately build a portable offline query index from authorized exported JSONL. Neither use is a distributed reservation store or proof of an always-on cloud service.
+- Team-prefixed table: candidate shared fact/idempotency/outbox store where exact allowed service/API and conditional operations are verified. Do not claim DynamoDB transactions merely because a “table” permission is mentioned.
+- If a custom runtime needs storage, verify its operator-assigned role or use a specifically permitted authenticated writer/tool service with the right existing role. A possible ToolConfig/Lambda route is conditional, not yet authorized proof. Direct custom service credentials, public tunnels and copied IDE credentials are not fallbacks. An AgentCore investigator cannot read IDE-local files merely because both are in the workshop: send a bounded, authorized evidence payload through its invocation or provide specifically authorized read tools. The investigator receives only that permitted data; exact host access is a capability test.
+
+Keep runtime dispatch independent from rich evidence export/UI/ServiceNow/model explanation. Minimal required journal writes may be synchronous only at an actually supported control point. Store outages produce explicit errors/gaps; no durable-receipt claim from an in-memory queue.
+
+3. M02 — INTERFACES AND ROUTING
+
+PROPOSED interfaces, not asserted AWS/ServiceNow endpoint names:
+evaluate(request) -> DecisionEnvelope
+emit(observation) -> Receipt
+callback(result) -> Receipt
+pull(scope, cursor) -> SourcePage
+query(scope, snapshot, profile) -> Case
+
+They need not be five HTTP endpoints. evaluate is unavailable for strict C16 admission at the fixed gateway unless a supported all-call hook is proven. emit may be an allowed in-process adapter or explicit source capture. pull is our connector. callback is needed only for a real deferred/result workflow. query belongs to M13. The slide’s five architectural problems are not five functions every point must invoke.
+
+Common trusted context: schema_version, authenticated team_id, source/point identity, authorized scope, request/capture identity, event and ingestion times where relevant. Bind team/source policy server-side; caller text and model output cannot choose privileges or omit required controls.
+
+evaluate request adds run_id, action_id, attempt_id, event_type, pinned_bundle_id, exact downstream request identity, model alias/config version and any supported trusted bounds. Response carries decision_id, overall ALLOW/DENY/ERROR, per_control results with control/spec IDs and reason, optional reservation reference. Required blocking ERROR prevents dispatch only where the integration actually enforces it. Monitoring ALERT is not automatically DENY.
+
+emit receipt explicitly distinguishes DURABLE_ACCEPTED from BEST_EFFORT or REJECTED. Durable acceptance requires recoverable raw persistence. Preserve malformed input as a quarantined capture when allowed; report parsing gap instead of silently dropping it. Idempotent repeats match both identity and content; changed content under an old immutable key is a conflict.
+
+callback validates source, original correlation, exact action/policy, permitted transition and expiry. A later approval cannot undo an already executed action. Human silence never becomes synthetic approval. No callback capability is claimed just because its schema exists.
+
+pull response: source_instance, authorized scope/filter, captures, next_cursor, fetched-through position, source-observed-at, pagination/truncation/error state and explicit completeness evidence if supplied. “No next page” proves only that this fetch exhausted its query. It does not prove all expected work was recorded upstream.
+
+Frozen applicability rows:
+- Actual model usage/outcome -> C16 actual accounting; C7 only for declared event slots.
+- Handoff/tool lifecycle -> C7 declared observations/expected pairs.
+- Closed comparable AgentCore metric hour -> C9 pure evaluation and crossing intent.
+- Actual ServiceNow delivery/result -> C9 alert-operation evidence; C7 only if explicitly in its declared scope.
+- Unmatched in-scope action -> mapping gap, not automatic exclusion.
+Control code remains independent of adapter field translation. A second real point can use a different adapter; do not say “nothing rewritten” if entire evaluator logic was forked.
+
+4. M03 — IDENTITIES, VERSIONS AND LIFECYCLE
+
+Canonical IDs and relationships:
+- team_id: authenticated ownership scope, never supplied by an untrusted note alone.
+- source_instance: namespace including account/region/endpoint/instance/session as necessary for uniqueness. Avoid putting sensitive account identifiers into shareable planning artifacts; real execution records may use authorized opaque aliases.
+- run_id: one business fault-resolution run. cid/run header and traceparent are correlation inputs whose actual semantics must be verified.
+- action_id: logical intended work in a run.
+- attempt_id: one proposed execution attempt/admission identity. An attempt can produce ZERO, ONE or SEVERAL actual executions due to failure/hidden retries.
+- provider_execution_id: authoritative actual inference execution, unique within source namespace. Uniqueness key excludes run_id; conflicting claims by two runs must be resolved rather than charged twice.
+- observation_id/capture_id: one source assertion/version; several observations may describe the same execution.
+- trace_id/span_id: telemetry correlation, not substitutes for business run/execution identity.
+- asset_id / registryRecordId / runtime_id: long-lived asset identity, not a call ID.
+- control_id plus spec_id/version: obligation and immutable rule applied.
+- window_id: metric/runtime/hour scope with explicit expected membership, baseline and versioned source inputs.
+- assessment_id/revision versus decision_id: post-fact verdict versus optional live admission.
+- accepted_input_revision: normalized/validated fact version, distinct from raw source snapshot.
+
+Transport retry retains idempotency identity; new actual inference gets a distinct execution and normally a new attempt. Hidden SDK retries must not disappear when attempt IDs are reused. Store missing/unmatched identity records; never guess joins from similar text.
+
+Lifecycle: OPEN allows declared new actions; ACTIONS_CLOSED stops new authorization claims; EVIDENCE_FINAL means declared reconciliation is complete or final gaps recorded. Closing actions does not mean all in-flight model requests have finished, and cannot promise no physically delayed send after a prior dispatch claim. Late evidence/corrections create new revisions, not deletion. New policy or new arbitrary run alias cannot reset an existing budget.
+
+5. M04 — DATED CONTROL SPECIFICATION
+
+Each immutable bundle includes team, bundle/spec versions, declared_at/effective interval, named owner, scope, metric and units, worsening direction, single-observation threshold, interval exception allowance, baseline refs, independent population source, expected source/clock rules, scorer/evaluator version, source authority, missingness/completion/correction rule and applicability-map version.
+
+Freeze it BEFORE assessed activity. Do not change the threshold to make a case pass. Historical pre-existing windows require explicitly accepted provenance; do not backdate the threshold. Registry stays off inference path: initialize authorized immutable policy context, then evaluate with parameters. Code holds no private second copy of the threshold.
+
+Declare new-run selection expiry separately from continuation, hard cutoff and revocation. Preserve old rules for replay. Access revocation applies at current read/export time, while retrospective evidence invalidation is a distinct source-validity event.
+
+Platform Cedar access policy is not the same record as our C7/C9/C16 measurement specification. Both may be versioned, but the existence of a policy object is not evidence our control executed.
+
+6. M05/M06 — RAW CAPTURE, RECONCILIATION AND MANY-TO-MANY EVIDENCE
+
+Independent expected populations:
+- C7 needs an authority for intended event slots/adjacent pairs BEFORE filtering to received telemetry. Prefer accepted scenario/workflow obligations or verified agent lifecycle instrumentation. Do not generate expectation solely from logs that survived.
+- C16 needs all actual model executions in the declared run, including retries and all three zones. The authoritative gateway inventory may be the source only if its complete scope/finality is proven. Sampling or a few trace spans is not a complete execution population.
+- C9 needs expected runtime/hour/metric windows from declared deployment/time scope, not just hours CloudWatch happened to return.
+These authorities may differ. A collector is not automatically ground truth for intended work or billable executions.
+
+Capture algorithm:
+1 Authenticate source read and fix scope/filter/version.
+2 Read page/record and preserve raw bytes/content plus source/capture identity recoverably.
+3 Only then acknowledge durable receipt or advance restart checkpoint.
+4 Parse typed fields; preserve malformed/unmatched/conflicting records with gap status.
+5 Resolve identical duplicates and authoritative revision precedence under frozen rules.
+6 Publish accepted normalized revision and exact input lineage; index completeness only covers ingested records.
+
+Changed unversioned source content gets a new local capture identity, not a fabricated source-issued revision. Out-of-order records and late corrections remain visible. Event-time-only watermarks can lose updates; use documented cursor/update semantics or disclosed rescan guarantees. Token-gated source tokens belong in authorized credential handling, not raw export text.
+
+Core repositories:
+RawCapture; Run/Action/Attempt; Obligation; Observation; ExecutionUsage; Window; PolicyBundle; EvidenceBinding; Proposal; Validation; Assessment; FindingIntent/Delivery; Investigation; CaseManifest; Gap.
+
+EvidenceBinding fields: binding_id/revision, team, exact fact_id/fact_revision, control_id, spec_id/version, assessed_scope_kind/id, role (measurement/expected population/context/operation), accepted_input_revision and validation/source references.
+One usage observation can support both C7 recording and C16 spend. One C9 window can contain several runs. One ServiceNow case can group multiple findings only if every required control/scope/recipient/status remains explicit.
+
+Never aggregate token usage after a many-to-many binding join. First select one accepted authoritative usage revision per execution; sum that set once. Then attach the calculation to its control bindings. A source total corrected from 1,200 to 1,300 replaces its accepted total; it is not an additional 1,300-token call.
+
+Structured exact indexes and narrative relevance indexes are separate. Semantic top-k cannot choose a control denominator. Exact reads include obligations, unmatched facts, unbound inputs and missing references. A model proposal remains a proposal until M12 validates it. A source quote proves the source said something; it does not prove the operational claim is true.
+
+Publish cases only after referenced required versions are durable/resolvable or gaps are explicit. Critical missing inputs prevent completion of a claimed control even if the query itself completes with INDETERMINATE. Export locally resolvable raw/typed inputs for replay. Supplied ledger integrity metadata may be retained/checked through documented facilities; do not add a new signing/hash/Merkle project. Integrity does not establish completeness or truth.
+
+7. M07 — C7 AIA-LOG-001 EXACT EVALUATION CONTRACT
+
+Inputs: pinned C7 specification, independent expected event slots E, expected adjacent-pair set P, matched observations, source completeness and clock eligibility.
+
+Coverage = matched required slots / total required eligible slots. Declare accepted cancellation/eligibility rules in advance; do not cancel obligations because evidence is absent. Alternative valid terminal outcomes occupy the same slot rather than inflating expected count. For E=0, return NOT_ASSESSED/invalid scope under declared policy, not 100% by convention.
+
+Timing: for each expected pair, use trusted ordered endpoints only if clock domain/epoch/precision permit subtraction. A missing middle event leaves its two expected pairs unmeasurable; never bridge the first and third into a new favorable pair. Negative time/clock reset/cross-host offset uncertainty is not a fast pass.
+
+Single-gap comparison uses the exact declared operator. Example from masterclass: gap <5 ms, so 5 ms violates. Exception fraction = violating eligible measured gaps / policy-defined expected eligible pair population, with unmeasurable count and timing coverage reported separately. Do not let a missing endpoint shrink the required population or let a low violation count prove timing pass without required coverage. If the guide/approved spec uses a different denominator, encode it explicitly and preserve missingness; never silently switch.
+
+Illustrative source case: 11/11 events, ten eligible gaps [2,3,4,2,8,3,2,4,3,2] ms -> one timing violation /10 =10%; allowed <=10%, so SATISFIED if all other required coverage conditions hold. The 8 ms exception remains visible. This is illustration, not a measured lab result or recommended threshold.
+
+Verdict: prove BREACHED where an authoritative omission/timing condition violates the frozen rule; preserve that known breach even if other sources have gaps. Missing acquisition alone cannot prove an event never happened. Unknown required coverage without independently established violation -> INDETERMINATE. Distinguish requirement satisfaction from recording mechanism health.
+
+Current-build gate: discarded OTEL spans cannot support a claimed complete source. Verify audit-store/gateway/custom-agent observation coverage and clock resolution before freezing a millisecond rule.
+
+8. M08 — C9 AIA-ARC-006 HOURLY AGENTCORE PERFORMANCE CONTRACT
+
+DOCUMENTED default from /agent-observability/console-and-metrics: CloudWatch namespace AWS/Bedrock-AgentCore; dimensions Name, Operation, Resource; metric Latency with Average statistic and period 3600 seconds (milliseconds), metric Errors with Sum statistic and period 3600 seconds. This is runtime/hour performance; score-run.py diagnostic grading is separate. Do not make diagnosis labels a prerequisite for the documented path. Read actual dimension VALUES from the relevant runtime/operation rather than inventing them.
+
+PROPOSED measurement contract: closed UTC clock-hour boundaries, exact selected runtime/operation/resource scope, frozen runtime/model/configuration versions, declared baseline and exception rules. The CLI guide’s values-only extraction loses timestamps and units: collect the full result, including timestamps, units, pagination, status/messages and sample count/Invocations where available. Preserve source request parameters and response revision/capture.
+
+UNTESTED details remaining: exact runtime dimension values and operation selection; availability of sample counts/Invocations; minimum traffic; baseline construction/approval; metric availability lag, corrections and authoritative completeness. Errors Sum is a COUNT, not an error rate. A rate requires a verified aligned invocation denominator. Closed UTC hour is our declared baseline contract, not proof CloudWatch has finished delivering its datapoints.
+
+PROPOSED Window record:
+team, runtime_id, metric_contract_id, window_start/end/time_zone, expected_runtime_set, metric/statistic/unit, observed_value, sample_count or required invocation denominator, baseline_id, configuration/cohort version, source timestamp/revision, completeness/lag, membership links to subject runs where established.
+Use closed UTC [start,end) clock hours, pinned in the specification before assessed activity. Exclude partial leading/trailing hours only by a predeclared eligibility rule, never because they look bad. A run query resolves every applicable measured window, or returns NEEDS_SCOPE when ambiguous. It does not invent a run-specific latency from runtime/hour aggregates.
+
+PROPOSED evaluation, parameterized by the approved metric rule:
+- Higher-is-worse latency with positive baseline B and observed M: relative_increase_pct = (M-B)/B *100. Compare with declared inclusive/exclusive limit. This reverses the older lower-is-worse diagnostic-score drop formula.
+- Errors count is not an error rate. If the spec uses rate, require accepted requests/errors denominator and declare zero-traffic semantics. Sum counts and denominators consistently; do not average hourly rates with unequal populations unless the metric contract calls for that weighting.
+- Baseline B=0 makes relative increase undefined. Use a predeclared absolute-error/error-rate rule or mark the relative comparison invalid; do not divide by epsilon, invent infinite percentage or silently change rule after observing errors.
+- Missing hour/metric is UNKNOWN, not zero errors/latency. Complete no-traffic evidence can establish a declared NOT_ASSESSED case; absence of a datapoint cannot alone establish no traffic.
+- Do not combine incompatible runtime/model/prompt/tool configurations or latency statistics. Platform throttling and configuration changes must be accounted for in the frozen comparability rule; do not erase throttling errors post hoc to improve score.
+
+Illustrative latency arithmetic only: baseline250 ms and observed325 ms gives (325-250)/250*100=30% increase. With a predeclared <=20% limit, that hour crosses the threshold. This is not a measured lab result or a recommended final threshold. Do not average hourly averages into a baseline without the declared sample weighting; when a request-weighted mean is required, retain sample counts.
+
+For each comparable hour: record metric comparison and threshold-crossing status. For the declared interval: count expected eligible hours, measured/comparable hours, crossing hours and exception allowance. A missing hour remains expected and prevents a complete pass where 100% coverage was declared.
+
+EVERY measured threshold crossing creates a deterministic idempotent named-owner alert obligation, including a crossing inside an aggregate allowed-exception tolerance. Aggregate interval satisfaction can coexist with a delivered crossing alert. Separate monitoring-health missing-data findings require their own declared rule; never turn missing data into a made-up performance crossing.
+
+Every alert identifies runtime/metric/window/specification/baseline/assessment revision and affected run memberships where proven. M14 owns delivery. Later passing windows do not suppress earlier valid crossing obligations. A corrected metric/baseline produces explicit linked restatement and finding correction, preserving original history. Baseline is never silently replaced to improve outcomes.
+
+9. M09 — C16 ACN-COST-001 WHOLE-RUN ACCOUNTING CONTRACT
+
+DOCUMENTED authority: gateway input/output token and cost records. Verify actual record shape and complete execution population before final satisfaction claims.
+
+Inputs: pinned run scope/cap/allowance policy; authoritative execution inventory; accepted usage per execution; correlation resolution; accounting units; source finality/completeness.
+
+Algorithm:
+1 Enumerate all authoritative actual executions for the run across every declared agent and retry. Distinguish requests denied before inference from actual provider execution. Unknown send outcomes remain unresolved, not zero.
+2 Resolve source namespaces and one accepted authoritative usage revision for each execution. Gateway and provider/agent observations of the same call corroborate one charge.
+3 Validate nonnegative input/output token fields and documented non-overlap. Cache/reasoning fields are added only if not already included under the source accounting definition. Do not sum parent aggregate and leaf usage.
+4 Sum integer input+output across the accepted actual execution set. Monetary cost is separate unless an additional spec declares it.
+5 Compare actual run total to frozen cap with exact operator. If max=10,000 and rule is <=cap, exactly10,000 passes;10,001 breaches. Illustrative10,800 exceeds by800.
+6 For a population of runs, compare over-cap run fraction with its separately declared allowance. Expected run population is independent, not only returned rows.
+
+Evidence logic:
+- Trusted deduplicated unambiguously in-scope subtotal >cap proves breach even with additional unrelated gaps.
+- Under-cap subtotal with unresolved/missing executions or usage cannot prove pass.
+- Conflicting run attribution or untrusted usage is not silently usable as a confirmed in-scope subtotal.
+- Actual usage is not reservation, model token estimate, account hourly ceiling or wall-clock timeout.
+- Authoritative cumulative correction supersedes previous accepted usage and triggers reassessment; never add both totals.
+
+Subject and assurance runs are separately identified and linked. Show subject subtotal, assurance subtotal and combined platform spend. The actual declared C16 policy determines inclusion; do not exclude investigator calls merely to improve results. The shared account ceiling includes helper calls regardless. An immutable case cannot include its own later/in-flight composition usage as already final; reconcile those charges into a later deterministic assessment without recursively invoking Nemotron to explain itself.
+
+10. M10 — CONDITIONAL ADMISSION, NOT BASELINE WORK
+
+BLOCKED/CONDITIONAL: fixed gateway/PDP has no permitted custom code/token meter. Cedar policy and delayed pause do not implement our atomic per-run cap. Complete M09 first. A wrapper on one custom agent covers that agent only, not all three agents/retries. No baseline task should attempt to install our coordinator in the fixed gateway.
+
+Only if facilitators identify a permitted unavoidable all-inference boundary, trustworthy exact request/output/retry bounds and conditional shared state, use this reviewed PROPOSED invariant:
+F = finally settled actual tokens; H = full bound of every unresolved admission; B = bound of exact new request. Atomically require F+H+B<=cap and authorized OPEN run, reserve B and journal attempt before ALLOW.
+
+Conditional dispatch ownership claim is not exactly-once provider execution. Hold full liability after ambiguous send or lease expiry; no blind redispatch. Release a cancellation only if atomically proven unclaimed/undispatched. Settle only after complete execution-set finality and final usage eliminate remaining upward liability. A first/provisional response does not release “unused” capacity. If finality cannot be verified, hold the bound for the rest of the run.
+
+Any actual>bound or upward correction after purported final settlement exposes a failed premise and halts new admission pending resolution. Existing authorized work may still finish; stopping new work cannot undo overspend. No physical-no-send guarantee after closure/cancellation is claimed for already-claimed requests. Keep rich evidence/ServiceNow/model explanation asynchronous.
+
+11. M11 — BOUNDED NEMOTRON INVESTIGATOR
+
+Purpose: extract exact statements from unstructured notes, propose relationships, request limited corroborating reads and compose a cited explanation of deterministic results. It is not the control evaluator, authority selector or owner-routing engine.
+
+Use only an actually approved workshop alias. Start with the fastest useful text profile whose actual approval, provisioning and serving pass the readiness probe. Approval examples disagree, so choose 9B,30B or helper based on current inspected state rather than assuming a preapproved fallback. Benchmark quality/latency before selection. No Omni/Ultra/Lightning endpoint in this event plan.
+
+First slice: one model extraction call + deterministic validation/calculation + host-rendered explanation template. Target extension: at most two calls, where call2 receives already validated facts and cannot request more tools/extractions.
+
+PROPOSED maximum workload envelope, to be confirmed or reduced after measurement:
+- One run or one metric window with <=20 runs.
+- <=2,000 required structured records processed by host; never truncate required calculation population to fit model context.
+- <=20 selected narrative excerpts and <=18,000 total narrative characters, with selection disclosed.
+- <=6,000 actual input tokens per call including instructions/schema, using actual supported counting/limits; character count is not a token bound.
+- <=1,000 generated tokens including reasoning only where enforceable and observable. If model does not expose a reliable combined bound, report that limitation and use a smaller supported profile.
+- At most2 model invocations, at most6 model-requested read calls INCLUDING pages, <=3 concurrent reads, zero implicit inference retries.
+
+PROPOSED sixty-second full-case schedule, not a guarantee: 0–8 load/snapshot;8–25 call1 extraction/read plan;25–34 host corroboration/validation/reassessment;34–48 optional call2 composition from validated facts;48–53 render;53–60 publish. One-call profile uses the same total budget. Do not start a third call to interpret new prose or reset deadline after reconnect. Official judge requirement remains <=120seconds answer with records.
+
+Read tools are authorized, bounded, exact-scope reads outside model control. Model cannot send messages, change policy, choose arbitrary MCP calls, close findings, dispatch a telecom action or enlarge its own scope/budget. Logs/notes containing “ignore instructions” remain data. Read tool output cannot change system policy.
+
+Persist query/stage ownership before request dispatch. A claimed stage is not proof model received the call. Lost response remains ambiguous usage; recover an authoritative result or degrade, rather than blindly repeating. Respect account-wide rate/token ceilings across subject and assurance calls.
+
+Output proposals include exact source reference/version/span, extracted field/value, claimed relationship endpoints, unresolved/conflicting status and rationale. No invented IDs, totals or verdicts. Store actual model alias/resolved model ID where exposed, request/call identity, prompt/schema version, usage, timing and completion/error state. UI badges are not invocation evidence.
+
+12. M12 — VALIDATION AND CLAIM COMPOSITION
+
+Validation layers:
+1 Schema/types/size limits.
+2 Source exists and caller authorized for it.
+3 Exact quoted span occurs in the cited source version, with preserved raw coordinates or explicit normalization map.
+4 Quote actually supports the statement, including negation; occurrence alone is not entailment.
+5 Relationship identifiers/canonical scopes match authorized evidence, not mere text similarity.
+6 Field-specific authority/corroboration establishes operational fact if required.
+
+SOURCE_SAYS, verified exact quotation, verified relationship and verified operational fact are distinct types. CANDIDATE is unresolved; REJECTED means the proposal failed a check, not that the world-claim is proven false. Manual adjudication requires named authorized reviewer/reason and original source retention; it does not invent evidence.
+
+Promote via conditional accepted_input_revision. If base changed, revalidate/recompute; do not overwrite newer facts. Corrected source/parse/link invalidates all dependent assessments/claims/caches. Scope prospective permission/source-authority revocation separately from retroactive evidence invalidation. A downloaded offline bundle cannot learn future corrections automatically.
+
+Compose result dimensions separately:
+requirement_verdict = SATISFIED/BREACHED/INDETERMINATE/NOT_ASSESSED;
+operation_state = actual mechanism/monitor/delivery behavior;
+evidence_sufficiency = COMPLETE/PARTIAL/UNKNOWN plus explicit gaps;
+analysis_completion = COMPLETE/DEGRADED/PARTIAL;
+implementation_completion = supported actual end-to-end completion, not a computed metric.
+
+C-FM-01 claim manifest pins compatible required scopes/policies/input revisions. An established required in-scope branch breach -> claim BREACHED even with other gaps. No established breach plus missing/incompatible required scope -> NOT_ESTABLISHED. All required branches satisfied with needed coverage -> SATISFIED. Do not average verdicts. A violating C9 hour within allowed interval tolerance is not automatically an interval/claim breach. Preserve old valid as-of cases; never attach new arithmetic to old model prose.
+
+13. M13 — JUDGE QUERY CONTRACT
+
+Request: authenticated team, explicit control(s), run/runtime/window scope, requested profile (fresh model/recorded case/offline recheck), as-of selection and client idempotency key generated before first send. Reusing a key with changed payload is a conflict; repeated exact request resolves the same durable query.
+
+Persist received_at, original deadline, scope, snapshot vector, accepted_input_revision, profile, stage ownership and remaining budgets. Browser disconnect does not mean cancellation. Conditional cancellation stops new scheduling/claims; already-claimed remote work may still send/consume tokens. Retain it for reconciliation.
+
+Case manifest: query/case revisions; exact source snapshot vector; accepted inputs; rule/baseline/evaluator/model/prompt/schema versions; source-event interval and capture cutoff; required source coverage; assessments; finding delivery states; model trace; cited source/calculation dependencies; gaps; selected profile and completion status.
+
+No global atomic timestamp across AWS and ServiceNow is invented. Cache identity includes team/current authorization, exact scope, source snapshot, accepted_input_revision and all relevant versions. Reauthorize retrieval/publication/export. Cached case records its original model execution; it is not a new Nemotron call.
+
+First screen/CLI response must answer: what scope, what rule/date, what expected/observed population, what measured value/formula/limit/exceptions, what verdict, what is missing, what source supports it, and what alert/delivery/response actually occurred. Every citation opens an exact permitted record/span. Escape raw source text in HTML; do not execute embedded source markup.
+
+Fallback deterministic case remains available when Nemotron fails. Mark fresh-model request DEGRADED, not successful full model analysis. A requested offline or recorded-case profile can complete successfully on its own terms. A correct complete explanation of INDETERMINATE is possible; the control still lacks sufficient evidence.
+
+Query delivery does not wait for ServiceNow retries. Export only currently authorized content and packaged critical input versions. Official submission uses inspected S3 submit/readback workflow; temporary presigned URLs are bearer access and must not be copied into durable public artifacts. Offline arithmetic recheck reproduces calculations, not source truth or future freshness.
+
+14. M14 — GOVERNANCE AND HUMAN RESPONSE
+
+DOCUMENTED guide: AICT connector stack is optional/default absent and facilitator-owned; escalate-to-incident.py is a stretch route. Earlier transcript explicitly calls AICT/human loop required. This is an unresolved requirement/access conflict, not permission to invent a ServiceNow stack. Continue independent controls while obtaining organizer resolution through an authorized channel.
+
+AICT native discovery covers AgentCore runtimes, Bedrock agents and SageMaker models. It does not natively discover EKS pods, MCP tools, guardrails or ModelConfig call identities. CloudTrail discovery proof is asset inventory evidence, not evidence a particular inference ran or a control passed.
+
+Before implementation inspect actual escalation script, allowed table/route, credentials, target instance, required fields, owner identities and readback. No guessed ServiceNow table names/API paths. A team prefix is naming hygiene, not an authorization boundary.
+
+PROPOSED finding model:
+stable logical finding = team + configured instance + control/spec + run/window/declared episode + kind.
+immutable delivery operation = finding + assessment revision + operation kind + mutation revision + exact payload/target/recipient/routing/content.
+Exact retries keep identity/body. Changed recipient or narrative enrichment creates a new linked operation even if assessment revision is unchanged. Preserve every crossing obligation when one remote record groups several findings.
+
+Persist assessment+intent atomically where supported, or use a durable reconciliation sweep with pending-generation lag visible. Outbox remains off inference/query publication path. Before dispatch recheck authorization and supersession/accepted validity. Unclaimed obsolete operation can be superseded; already-claimed/unknown operation may still send and needs later reconciliation/correction.
+
+Delivery states: PENDING, DISPATCHING, OUTCOME_UNKNOWN, DELIVERED, FAILED, SUPERSEDED as supported. HTTP202, an invocation log or remote record ID alone does not prove correct delivery. DELIVERED requires authorized correct-instance readback of intended correlation/content revision/named recipient. Required notification dispatch, platform presence/assignment and human reading are distinct observations.
+
+Ambiguous create after lost response may already have succeeded. Retry only with verified receiver idempotency or conclusive reconciliation; empty eventually consistent lookup is not conclusive absence. Bounded backoff respects known rate limits and dispatch deadline. Local serialization alone cannot prevent an older delayed remote request from overwriting newer state: verify target revision semantics or leave ordering unresolved and reconcile explicitly.
+
+Human state: actual actor/action/time/version where supported; service-account changes and note assertions are not acknowledgments. NO_RESPONSE_OBSERVED requires adequate response-source coverage through an explicit cutoff. Missing permission, lag or incomplete history -> RESPONSE_UNKNOWN. A real human reply is explicitly outside the required masterclass scope; never fabricate one to finish the demonstration.
+
+Remediation: retain original breach, link actual corrective task/action and relevant passing retest under a valid predeclared basis, then record authorized remote closure if claimed. Relaxing the rule does not cure the old breach. Evidence-driven invalidation/correction/withdrawal is a different disposition from remediation; preserve old assertions and do not invent a passing retest for a false finding.
+
+Nemotron may supply validated cited explanatory text. It cannot select the recipient, authorize dispatch or close a finding. A deterministic required crossing alert still operates when Nemotron fails. Reading our own generated explanatory note back through the source reader does not create independent corroboration.
+
+15. ACCEPTANCE CHECKS FOR THESE CONTRACTS
+
+Baseline before bonuses:
+1 Verify actual source/auth/approval, lifecycle phase, provisioned state, runtime READY and reachable endpoints, then collect one authorized run with surviving durable evidence.
+2 Freeze applicable C7/C9/C16 rules before named assessed cases; record actual values/rationale rather than copying illustrative thresholds.
+3 Complete C16 accounting slice with all executions/retries, named pass/breach and reproducible query/export.
+4 Add approved Nemotron extraction/validation/cited case using actual alias, metadata and measured workload.
+5 Complete C7 expected population and hourly C9 source/baseline/windows independently; do not claim old diagnostic-score examples as current C9.
+6 Resolve or expose facilitator-dependent human/governance scope and real permitted route.
+7 Package six artifacts with critical references and inspected S3 submission/readback, then rehearse <=120-second judge question.
+
+Required failure fixtures include: missing middle event; cross-clock time; header fragmentation; duplicate gateway observation; two actual executions under one attempt; corrected cumulative usage; missing/unknown model outcome; incomplete under-cap run; known trusted subtotal above cap with other gaps; zero/partial metric hour; wrong runtime dimension/statistic; zero error baseline; tolerated C9 crossing still alerting; model invalid JSON/timeout/429; tools:[] adapter payload; prompt injection; false citation/negation; cross-team candidate link; correction versus cached case; outbox lost response; stale remote update; response channel inaccessible; ARM64 artifact mismatch; account-wide rate contention.
+
+Run only meaningful tests for actual implemented behavior. Synthetic fixtures prove software handling, not live source authority or accepted hackathon breach provenance. Preserve explicit LIVE_SUBJECT, AUTHORIZED_TEST, REPLAY, COUNTERFACTUAL_EXPORT and SYNTHETIC provenance. No design score is percent built or probability of winning.
+
+CURRENT EXPLICIT GAPS
+
+Runtime probes have not been executed by this mapping/review work. C9 namespace/dimension names/Latency Average/Errors Sum/3600-second period are documented; actual dimension values, denominators, baseline acceptance and source finality remain to verify. No strict all-call per-run token-admission hook is established. Current OTEL traces are discarded; surviving event population must be proven. AICT/human requirement conflict and facilitator access remain open. No measured Nemotron latency, extraction quality, ServiceNow delivery or S3 submission is claimed. The implementer must replace each gap with actual recorded evidence or retain it honestly in the final submission.
+
+SOURCE LOCATORS FOR EVENT-SPECIFIC CHANGES
+
+Authenticated guide page slugs supplied by parent extraction: /ai-native-oda-canvas/aws-services; /challenge-brief/platform-contract; /platform-access/api-surface; /baseline-walkthrough; /baseline-walkthrough/nemotron-models; /baseline-walkthrough/declare; /choosing-a-model; /build-your-own-agent/build-agent; /build-your-own-agent/what-the-script-did; /controls-and-policies; /controls-and-policies/governed-tool; /controls-and-policies/ceiling; /agent-observability/console-and-metrics; /agent-observability/trace-spans; /servicenow-integration. Workshop entry: https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop. These locators identify documentation provenance, not evidence that runtime probes passed.

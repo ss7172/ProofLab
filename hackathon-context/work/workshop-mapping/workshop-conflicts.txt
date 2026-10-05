@@ -1,0 +1,66 @@
+AWS WORKSHOP — REQUIREMENTS CONFLICTS AND ARCHITECTURE IMPLICATIONS
+Date: 2026-10-04
+Review scope: parent agent's authenticated reading of named workshop pages, provided in its review request; this reviewer has not independently accessed the browser. Page slugs below identify provenance. Replace/add exact saved excerpt references when the extraction is persisted. No deployment, submission, model invocation or scored run was performed by this review.
+
+1. What the workshop confirms
+The /challenge-brief explicitly makes the masterclass brief authoritative for completion and judging axes. Controls remain 7/9/16; the six required steps, six deliverables and two-minute question remain. The guide does not create a replacement hackathon or justify interpreting module completion as completed controls. Continue separating requirement satisfaction, control mechanism operation, evidence sufficiency and end-to-end completion.
+
+2. Decision register
+
+C01 — C9 metric and population: change the implementation baseline now.
+Guide /platform-contract specifies AgentCore Latency/Errors per runtime in one clock-hour windows. score-run.py's single-fault grade is not the default drift measurement. The reviewed architecture's diagnostic exact-match metric remains only an alternative subject to organizer approval.
+Resolution: adopt guide-native Latency/Errors as the default plan. Do not describe the earlier accuracy metric as an organizer requirement or continue making accepted diagnosis labels the baseline blocker. Keep any accuracy branch separate and unclaimed until permitted.
+Still to extract exactly: metric names/units, namespace/dimensions and runtime identity, statistic/aggregation, errors count versus rate, denominator, one-hour boundary/time zone, baseline construction and window comparability, thresholds and exception semantics, missing-data rules, metric availability lag and authoritative closed-window criteria. The shorthand "Latency/Errors" does not establish any of these details by itself.
+Effect: M03 schemas/window identities, M04 dated policy, M05 metrics source/completeness, M08 scorer and M12 assessment composition change. M11 semantic extraction and M14 alert association reuse the same contracts. Old worked accuracy examples may remain explicitly illustrative; they cannot be represented as the now-confirmed implementation.
+Required tests: complete comparable pass/breach windows, exact boundary, missing hour/runtime, delayed metrics, wrong statistic/dimension, partial hour, zero traffic where applicable, duplicate/revised datapoints and alert on each measured crossing. A missing observation must not become zero latency/errors. Freeze approved rules before assessed activity; existing historical data needs accepted provenance rather than retroactive threshold dating. Do not promise enough completed clock-hour windows without checking event timing and guide provisions.
+
+C02 — ServiceNow AICT / human loop: unresolved source conflict.
+Transcript explicitly requires AICT and human loop. Guide /servicenow-integration says the AICT stack can be absent by default, the connector is facilitator-owned, participant steps need no ServiceNow instance, and escalate-to-incident.py is stretch.
+Resolution: record REQUIREMENT_CONFLICT and ask the organizer one precise question: "For scoring, is participant-specific AICT connection plus a named-recipient human-loop demonstration required, or does the guide's facilitator-owned/default-absent path satisfy the masterclass/transcript requirement? If it is required, which permitted route and evidence are supplied?"
+Do not silently let new guide prose erase the transcript correction, and do not invent a participant ServiceNow build requirement the guide cannot support. While awaiting resolution, finish all independent control/evidence tasks and retain the existing intended M14 route as CONDITIONAL / FACILITATOR_DEPENDENT. Include the conflict and its impact in the gap list. A deployment that lacks access cannot be labelled integration verified.
+Human reply remains explicitly out of scope in the masterclass. Whatever integration is accepted, evidence must distinguish intent, dispatch, remote presence/assignment, actual notification, observed response and bounded silence. A successful escalation script alone does not establish recipient, readback or a human answer. Record platform delivery in the permitted scope, not a supposed private instance.
+Effect: M14.1 ownership shifts toward facilitator connection verification; M14.2–6 are gated by the permitted scenario and organizer resolution. Participant estimates must not assume creating a new AICT stack, private ServiceNow tenant or arbitrary finding tables.
+
+C03 — C16 inline prevention: platform contract constrains the bonus.
+Guide /platform-contract says gateway/PDP accept no custom code; Cedar ConfigMap is configurable, but there are no token attributes or token meter. Guide confirms per-run post-hoc accounting as floor and inline enforcement as bonus.
+Resolution: baseline C16 is complete post-run accounting/reconciliation. Existing Cedar policy can establish only what its actual input attributes and evaluation semantics support; it cannot enforce a live token budget merely because it can ALLOW/DENY other requests. Do not put our M10 state machine into the fixed PDP or claim a ConfigMap supplies atomic reservations.
+Conditional bonus: only if a separately permitted, unavoidable inference boundary and trusted accounting bounds/state are demonstrated. No such alternative is established by the summary. A wrapper around our own investigator or one agent covers that scope only; it is not whole-run prevention across all three agents and retries.
+Effect: M02 adapters map to actual permitted interception/log paths; M07/M09 post-hoc tests remain core. M10 is not on the baseline critical path. Mark its deployment unresolved/conditional until an approved all-call point, dispatch guarantee, upper bound and atomic store are proven. If unavailable, cut prevention honestly without blocking completed post-hoc C16.
+
+C04 — Submission location: S3 is the scoring source, not the laptop.
+Guide provides submit.sh to a team S3 evidence bucket; it prints a short-lived presigned URL. Judging reads the bucket.
+Resolution: M15 owns a submission task that runs the inspected permitted script only after the full final package is validated, then verifies the expected team bucket/prefix and uploaded manifest/artifacts. A local portable copy remains useful for rehearsal/rechecking but is not submission proof. M13 must expose the tool/records in the organizer's expected manner; the guide's exact expected package/entrypoint still needs extraction.
+Keep bucket scope, object keys/version identifiers and upload/readback outcome as non-secret provenance. Treat a presigned URL as temporary bearer access: do not reproduce it in public/shareable architecture or long-lived task exports. Do not expose AWS credentials. URL expiry and environment lifetime are distinct; verify what judges will use and the actual submission deadline.
+Do not assume submit.sh covers all six categories simply because it uploads one file. Inspect its contents, inputs, naming, allowed file types, overwrite behavior, exit status and readback instructions. Preserve failed/partial-upload status; local script invocation alone is not successful delivery.
+Effect: revise any "judge reads laptop" language in M13/M15. Offline rechecker remains a reproducibility feature, not a substitute for S3 submission.
+
+C05 — Integrity: reuse supplied capability, add no crypto project.
+Guide says the supplied ledger is already tamper-evident and auditor questions include integrity. Masterclass excludes implementing signing/hashing/Merkle trees.
+Resolution: explain and inspect the supplied integrity mechanism through documented evidence/verification affordances; don't rebuild it. Distinguish documented property, configured mechanism and actually checked records. Tamper evidence does not prove source completeness, genuine actor identity, truthful measurement or correct control binding. Preserve the provided record/chain metadata when exporting, subject to exact guide format.
+Effect: M05/M06 retain source integrity provenance; M13 can answer the integrity question with inspected supplied evidence. M15 packages allowed verification material. No new hash-chain task or bonus claim is justified.
+
+C06 — Own-code backup and workshop content: permission is scoped.
+Guide /getting-started permits backing up participants' own code to Git. That does not grant permission to upload credentials, account exports, other teams' evidence or workshop materials covered by separate terms.
+Resolution: make own-code backup a permitted option with ignored secrets/output data and clearly scoped files. Do not extrapolate generic AWS materials terms into an absolute ban on authorized code backup, nor treat code-backup permission as blanket permission to publish all extracted content.
+No automatic push or external publication is part of the current extract/map/tasks request.
+
+3. Changes to release gates
+- Preserve minimum one complete control, preference for three, dated rules before assessed runs, named accepted pass/breach cases, six artifacts and <=120-second query.
+- Replace proposed C9 exact-match readiness with the guide-native clock-hour AgentCore metric contract. Approved alternative metrics require explicit tracked approval.
+- Add S3 delivery/readback gate, exact guide package format and official deadline. Local exports alone do not satisfy it.
+- Track ServiceNow requirement resolution separately from technical access and delivery evidence. Do not assert the requirement vanished; do not falsely count missing facilitator access as implemented integration.
+- Split bonus gates from baseline: PDP configurability does not unlock token admission. Maintain scope-specific capability status.
+- Add supplied-ledger integrity inspection as an explanation/provenance task, not an implementation project.
+
+4. Immediate tasks supported by these findings
+R-01 Save exact excerpts/revisions of /challenge-brief, /platform-contract, /servicenow-integration, submission instructions and /getting-started. Label screenshot/guide/observed/live evidence classes.
+R-02 Extract the complete C9 metric/window contract and update M08 baseline plus policy/schema/source tasks; retain old metric only as a conditional alternative.
+R-03 Submit the single AICT/human-loop scope question to the organizer through the user/authorized support route; log response, author/date and resulting integration acceptance criteria. This review does not authorize sending a message.
+R-04 Inventory actual supported records and correlation keys needed for C7/C16; confirm retry coverage and completeness, not merely sample traces.
+R-05 Inspect submit.sh and required S3 package/manifest format; create upload/readback acceptance checklist with no execution yet.
+R-06 Record fixed gateway/PDP versus editable participant code boundaries, permitted Cedar fields and any optional all-call hook. Move unsupported M10 build work out of baseline.
+R-07 Inspect supplied integrity verification/read/export behavior and add truthful query evidence.
+R-08 Re-estimate work around documented capabilities: core controls + NVIDIA case + six-artifact/S3 delivery first; approval-dependent metrics, custom prevention and ServiceNow stretch follow only when they satisfy actual organizer scope.
+
+5. Limits of this review
+The parent reports reading 61 workshop pages. This addendum uses only the specific supplied page findings, not an assertion that all 61 pages were independently reviewed here. No exact APIs, CloudWatch statistics, team bucket name, account ID, model route or enabled deployment service is invented. Earlier design remains proposed until the capability and execution tasks produce evidence.

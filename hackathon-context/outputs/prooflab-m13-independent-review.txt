@@ -1,0 +1,35 @@
+M13 INDEPENDENT AI DESIGN REVIEWS — 2026-10-04
+
+Reviewer1: /root/m01_source_review — official judge/tool requirements, evidence delivery, export and offline handoff.
+Reviewer2: /root/m02_contract_review — query scope, immutable inputs, profiles, authorization, workflow recovery, cache, cancellation and publication.
+Sources: actual .lavish/prooflab-walkthrough/m13-body.html draft, M13/M15 inventory, supplied masterclass query/two-minute/six-artifact requirements, current foundation and V4 NVIDIA/M11/M12 contracts.
+
+FINAL VERDICTS: ACCEPT / ACCEPT. Source reviewer found no required changes. Technical reviewer accepted the initial chapter and verified the added recovery and final cancellation clarification. No remaining material findings in reviewed scope. Design review only.
+
+Clarifications incorporated:
+- Client request/idempotency key is established before initial submission and bound to exact authenticated request/profile/scope plus durable query ID; same-key changed payload conflicts.
+- Durable original deadline, stage state/ownership and consumed budgets survive reconnect/process recovery; dispatch intent does not prove provider execution.
+- Ambiguous possible sends retain attempted-call budget and possible usage. Recover trustworthy results or degrade; do not silently repeat the remote model request.
+- Cancellation conditionally blocks new stage claims/scheduling. Already-claimed intent may physically send afterward and retains liability; browser disconnect is not confirmed server cancellation. No physical no-send or exactly-once provider guarantee is implied.
+
+Accepted source/judge rules:
+1. Runnable judge-selectable tool is distinct from explanatory HTML or a canned screen.
+2. Official two-minute answer plus supporting records is distinct from proposed workload-limited60-second fresh-model case.
+3. C9 run selection resolves all applicable windows and full populations; no silent subset narrowing.
+4. First view separates requirement result, dated rule/arithmetic, analysis completion, evidence sufficiency, operation/delivery, source freshness and exact provenance.
+5. Fresh investigation, recorded-case inspection and offline recheck have different success criteria and original/fresh model provenance.
+6. M15 owns six-artifact packaging, executable reference checker and rehearsals. Critical captured inputs must be locally resolvable; gaps do not substitute for them.
+7. Offline recheck verifies calculations over captured inputs, not source truth, current upstream state, fresh Nemotron work or reproducible LLM prose.
+8. Export-time authorization cannot remotely revoke a previously delivered copy; historical scope/audience limits remain explicit.
+
+Accepted technical rules:
+- Event interval, per-source captured vector and accepted-input revision are separate.
+- Complete required structured retrieval precedes bounded narrative selection; limits/omissions are visible.
+- All stages, queueing, validation and publication count toward the original deadline; no hidden extra model turn.
+- Cache matches profile, scope, source/input/software versions and current permissions/dependency validity.
+- Case manifest references coherent durable inputs; incomplete publication is not a published case.
+- Late revisions do not mix old prose with new numbers or reset budgets.
+- Planned offline/replay success is distinct from fallback after fresh-model failure.
+- Timed-out/cancelled investigator work retains possible usage, including governed subject scope where policy requires it.
+
+Primary-agent verification: SVG rendered and visually inspected; exported HTML IDs/anchors/local-asset embedding checked; current foundation copies synchronized. No production query, model, cancellation, cache, offline replay, browser rendering or latency test executed. Actual completed controls remain0/3.

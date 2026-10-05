@@ -1,0 +1,1496 @@
+[
+  {
+    "id": "T01",
+    "title": "Inventory the supplied telecom workflow and save workshop capability evidence",
+    "phase": "access",
+    "owner": "BOTH",
+    "component_ids": [
+      "M01.1",
+      "M01.2",
+      "M01.3",
+      "M01.4",
+      "M01.5",
+      "M01.6",
+      "M01.7",
+      "M01.8",
+      "M01.9",
+      "M01.10",
+      "M01.11",
+      "M01.12"
+    ],
+    "depends_on": [],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Authenticated AWS Workshop Studio and provided ServiceNow/telecom environment only; actual resource names, account/region and permissions must be read from the event guide.",
+    "steps": [
+      "Record customer, IT and network agent locations; digital-twin/tools; subject-agent model route; scenario switch; guardrails; telemetry and storage.",
+      "Record gateway A, gateway B and shared model gateway as separate roles; identify their actual products/interfaces without substituting AgentCore Gateway by name.",
+      "Create a source-cited capability sheet including identifiers, readable sources, accepted test scenarios and mutable hooks; exclude credentials.",
+      "Record displayed event dates and environment duration as separate facts; a72-hour environment duration does not establish a submission deadline."
+    ],
+    "done_when": [
+      "Each of the 12 supplied-system components has an observed location or explicit unavailable/unknown entry.",
+      "Account, region, resource scope and approved workflow entry are documented with dates.",
+      "No feature is marked verified solely because it appears on the architecture diagram."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Workshop guide and authenticated account were not inspected when this backlog was drafted; live walkthrough must await access."
+  },
+  {
+    "id": "T02",
+    "title": "Select permitted compute and record capability checks",
+    "phase": "access",
+    "owner": "A",
+    "component_ids": [
+      "M16.2"
+    ],
+    "depends_on": [
+      "T01"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Reuse permitted workshop runtime/worker first; Lambda, containers, scheduling and AgentCore are alternatives only if the guide and permissions confirm them.",
+    "steps": [
+      "Identify supported package installation, inbound hooks, outbound model/source access, background execution and filesystem/state limits.",
+      "Choose one minimal runtime for worker/investigator; record local-only fallbacks and effects on live claims.",
+      "Give each unverified capability an owner, test, consequence and current state."
+    ],
+    "done_when": [
+      "One deployment target is justified by workshop evidence, or live work is explicitly blocked.",
+      "Every required route has a permitted hosting/reachability plan.",
+      "Capability entries distinguish proposed, documented, exercised and unavailable."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Choosing unpermitted compute can consume the hackathon without producing an accepted integration."
+  },
+  {
+    "id": "T03",
+    "title": "Bind team identities and configure scoped access",
+    "phase": "access",
+    "owner": "A",
+    "component_ids": [
+      "M16.4",
+      "M03.1"
+    ],
+    "depends_on": [
+      "T01",
+      "T02"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Workshop-issued IAM/session and ServiceNow authorization; existing credential mechanisms only, no new identity service by default.",
+    "steps": [
+      "Load credentials through permitted configuration without committing or copying secret values into evidence.",
+      "Bind trusted team, point and source-instance context outside model/caller text.",
+      "Check allowed and denied team/source/record access and safe credential expiry handling."
+    ],
+    "done_when": [
+      "A permitted read succeeds and an unauthorized scoped access is denied without leaking record existence.",
+      "Credentials are absent from source, logs and exported fixtures.",
+      "Team prefixes are treated as names, not proof of tenant isolation."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Shared workshop accounts can appear isolated while readers, caches or exports remain overbroad."
+  },
+  {
+    "id": "T04",
+    "title": "Prove ServiceNow AICT assets and permitted finding/response capabilities",
+    "phase": "access",
+    "owner": "B",
+    "component_ids": [
+      "M14.1"
+    ],
+    "depends_on": [
+      "T01"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Provided ServiceNow AI Control Tower connection and permitted workflow APIs/UI; exact tables, endpoints and rights remain unverified.",
+    "steps": [
+      "Use the provided signed-in ServiceNow account for read-only capability discovery immediately; configured application credentials and integration permission tests follow T03. Do not wait for the compute decision to read the guide or inspect supplied assets.",
+      "Read actual team connection/assets and map all supplied agents.",
+      "Separately test permitted trace/run read access, finding route, recipient resolution, response readback and correction/update semantics.",
+      "Record exact route/schema/version behavior and any organizer-approved alternative; do not infer write rights from asset discovery."
+    ],
+    "done_when": [
+      "Asset readback is saved with target instance and team scope.",
+      "Finding, owner, response and trace capabilities each have independent observed evidence or a blocking gap.",
+      "Mandatory ServiceNow/human-loop scope has a feasible verified route or an explicit organizer dependency."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Inventory-only AICT participation does not establish alert delivery or the required human loop."
+  },
+  {
+    "id": "T05",
+    "title": "Prove the approved fast Nemotron endpoint with a minimal call",
+    "phase": "access",
+    "owner": "A",
+    "component_ids": [
+      "M11.1",
+      "M11.2"
+    ],
+    "depends_on": [
+      "T01",
+      "T02",
+      "T03"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Actual workshop-approved NVIDIA Nemotron route; Lightning is only a preferred label until exact endpoint/model is verified. No substitution with an unrelated public endpoint.",
+    "steps": [
+      "Resolve the approved endpoint, exact model identity/configuration and allowed hosting/data route.",
+      "Run a minimal authorized request; test response format, usage, provider request identity and enforceable output limits.",
+      "Record unknown provider fields honestly and choose the smallest working extraction profile."
+    ],
+    "done_when": [
+      "A real approved response and request provenance are available without exposing secrets.",
+      "Structured output behavior and failure/timeout behavior are measured on the actual route.",
+      "Endpoint access gaps block model completion claims; a model badge is insufficient."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Public NVIDIA documentation cannot prove workshop model entitlement or actual execution."
+  },
+  {
+    "id": "T06",
+    "title": "Create one shared package and versioned configuration",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M16.1",
+      "M16.8"
+    ],
+    "depends_on": [],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: One Python distribution with worker/query entry points; framework and exact supported version selected after T02, without new microservices.",
+    "steps": [
+      "Create modules for contracts, policy, sources, controls, validation, governance, query and scenarios.",
+      "Pin dependencies and schema/evaluator/prompt/model-profile versions in configuration.",
+      "Provide local development and package commands; retain revision history."
+    ],
+    "done_when": [
+      "A clean checkout installs and invokes package help.",
+      "Runtime reports exact package and configuration versions.",
+      "Tests and fixtures use the same shared contracts as eventual adapters."
+    ],
+    "status": "PLANNED",
+    "risk": "Separate ad hoc notebooks/scripts can silently diverge on IDs, thresholds and arithmetic."
+  },
+  {
+    "id": "T07",
+    "title": "Define canonical schemas and retry identities",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M03.2",
+      "M03.3",
+      "M03.4"
+    ],
+    "depends_on": [
+      "T06"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Typed Python records and JSON/JSONL using the workshop-compatible validation library; no schema registry service required.",
+    "steps": [
+      "Define run, action, attempt, observation, execution, usage, obligation, assessment and finding records.",
+      "Separate transport duplicates from new actual executions; encode attempt-to-execution cardinality as zero, one or many.",
+      "Declare provenance classes and source-scoped identifiers; reject changed payload reuse under an immutable request identity."
+    ],
+    "done_when": [
+      "Fixtures cover duplicate delivery, hidden retries and execution IDs reused across source namespaces.",
+      "Every persisted type has schema version, team and provenance fields.",
+      "Actual executions cannot be erased by deduplicating only on attempt ID."
+    ],
+    "status": "PLANNED",
+    "risk": "Conflating an attempted call, actual provider execution and observation undercounts usage."
+  },
+  {
+    "id": "T08",
+    "title": "Implement authoritative lifecycle and execution correlation",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M03.5",
+      "M03.6"
+    ],
+    "depends_on": [
+      "T07",
+      "T11"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Shared state repository through a small adapter; conditional updates if workshop permits concurrent live transitions.",
+    "steps": [
+      "Implement OPEN, ACTIONS_CLOSED and EVIDENCE_FINAL as separate transitions.",
+      "Map scoped source/provider identifiers to runs and attempts; preserve unmatched and conflicting assignments.",
+      "Record closure, expected sources, late-data cutoffs and correction lineage; do not let callers reset budget by choosing new IDs."
+    ],
+    "done_when": [
+      "Closing actions does not discard late usage or imply source finality.",
+      "A provider execution claimed by two runs is retained as a conflict, not charged twice.",
+      "Evidence finalization records either satisfied completion rules or explicit gaps."
+    ],
+    "status": "PLANNED",
+    "risk": "Local lifecycle state does not prove upstream dispatch stopped without an actual supported hook."
+  },
+  {
+    "id": "T09",
+    "title": "Freeze dated thresholds, measurement definitions and owners",
+    "phase": "foundation",
+    "owner": "B",
+    "component_ids": [
+      "M04.1",
+      "M04.2",
+      "M04.5"
+    ],
+    "depends_on": [
+      "T01",
+      "T06"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Versioned configuration and immutable policy records in the approved repository; JSON/YAML acceptable if reproducible.",
+    "steps": [
+      "Declare C7 event/timing scope, C9 accepted labels/baseline/windows and C16 accounting/population.",
+      "Record exact comparison boundaries, allowed exception counts/shares, rationale, owners and required evidence coverage.",
+      "Freeze the first bundle before scored runs; preserve original versions and dates."
+    ],
+    "done_when": [
+      "A reviewer can identify metric, denominator, threshold, allowance, source authority and owner for each claimed control.",
+      "Baseline and assessed scenarios are separated before evaluation.",
+      "Policies are dated and justified rather than inferred from observed results."
+    ],
+    "status": "PLANNED",
+    "risk": "Choosing thresholds or denominators after seeing outcomes invalidates pass/breach demonstrations."
+  },
+  {
+    "id": "T10",
+    "title": "Load pinned policy and explicit action-to-control mappings",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M04.3",
+      "M04.4",
+      "M04.6"
+    ],
+    "depends_on": [
+      "T07",
+      "T09"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Shared policy loader and cached immutable bundle; register reads stay outside each inference request.",
+    "steps": [
+      "Map declared actions/points/windows to applicable controls and responsibilities.",
+      "Pin the validated bundle at run/window creation; reject caller-selected weaker versions.",
+      "Separate selection expiry, active continuation deadline, hard cutoff, revocation and historical replay."
+    ],
+    "done_when": [
+      "Unmatched in-scope actions appear as mapping gaps.",
+      "Historical assessments load their original exact rule after later policy changes.",
+      "Updating a bundle cannot reset an existing run's spend or silently replace a frozen C9 baseline."
+    ],
+    "status": "PLANNED",
+    "risk": "A single expiry timestamp used for all purposes can incorrectly stop valid work or rewrite historical results."
+  },
+  {
+    "id": "T11",
+    "title": "Implement raw and canonical repositories with a portable local path",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M06.1",
+      "M06.2",
+      "M16.3"
+    ],
+    "depends_on": [
+      "T06",
+      "T07"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: S3/DynamoDB only if allowed; otherwise an approved existing store through the same contracts. SQLite is suitable for local/offline indexing, not a substitute for distributed admission state.",
+    "steps": [
+      "Preserve immutable captured raw versions and resolvable references.",
+      "Store canonical records and gaps with stable keys/version checks.",
+      "Implement repository interfaces and a local fixture backend; decide the permitted live backend from T02."
+    ],
+    "done_when": [
+      "A raw capture and corresponding canonical record survive restart and remain addressable by version.",
+      "Malformed/unmatched inputs can be retained without fabricating valid facts.",
+      "Repository choice and concurrency guarantees are documented."
+    ],
+    "status": "PLANNED",
+    "risk": "Mutable overwrite or unversioned references make prior answers impossible to reproduce."
+  },
+  {
+    "id": "T12",
+    "title": "Read and preserve gateway/telemetry sources safely",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M05.1",
+      "M05.4",
+      "M05.5",
+      "M02.8"
+    ],
+    "depends_on": [
+      "T01",
+      "T03",
+      "T11"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Existing gateway/OTEL/CloudWatch or other workshop telemetry reader, only where actually exposed; no additional event bus.",
+    "steps": [
+      "Implement scoped paginated pull with declared cursor semantics, filters and truncation handling.",
+      "Preserve recoverable raw pages before acknowledging durable receipt or advancing checkpoint.",
+      "Expose failed pages, expired cursors, unsupported schemas and uncertain completion."
+    ],
+    "done_when": [
+      "Crash after preservation before checkpoint replays without data loss.",
+      "Partial fetch is reported as partial rather than an empty successful result.",
+      "Source namespace, capture version, filters and collection status accompany evidence."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Reading all available pages does not establish upstream completeness."
+  },
+  {
+    "id": "T13",
+    "title": "Read ServiceNow evidence and preserve generated provenance",
+    "phase": "integration",
+    "owner": "B",
+    "component_ids": [
+      "M05.2"
+    ],
+    "depends_on": [
+      "T04",
+      "T03",
+      "T11"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Verified permitted ServiceNow evidence route; exact API/table and paging semantics must come from workshop access.",
+    "steps": [
+      "Capture authorized incident/notes/traces and delivery/response records with source versions or explicit local capture IDs.",
+      "Preserve authorship and whether text was generated by our investigator/governance flow.",
+      "Apply field-level redaction and source-scope permission checks before model context/export."
+    ],
+    "done_when": [
+      "A real permitted record is retrievable by stable captured reference.",
+      "Generated notes are not treated as independent corroboration.",
+      "Missing read permission remains a visible response/evidence gap."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "ServiceNow text can contain ambiguous identities or prompt injection, and is not automatically authoritative usage."
+  },
+  {
+    "id": "T14",
+    "title": "Build independent expected-work and source-authority manifests",
+    "phase": "foundation",
+    "owner": "B",
+    "component_ids": [
+      "M05.3"
+    ],
+    "depends_on": [
+      "T01",
+      "T09",
+      "T07"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Accepted organizer/orchestrator/run-ledger sources where available; explicit scoped fixture authorities for authorized tests.",
+    "steps": [
+      "Identify authorities for intended work, event slots, actual executions, usage and diagnostic labels separately.",
+      "Record expected events/pairs, sources, windows and eligible runs independently of surviving telemetry.",
+      "Preserve uncertainty when the platform cannot expose a required population."
+    ],
+    "done_when": [
+      "Removing an observed event does not remove its independent expected obligation.",
+      "A wholly missing stream/window can be represented and queried.",
+      "No control claims a complete population solely from what was collected."
+    ],
+    "status": "PLANNED",
+    "risk": "Unavailable independent populations may block completion of an affected control scope."
+  },
+  {
+    "id": "T15",
+    "title": "Parse and reconcile duplicates, conflicts, corrections and freshness",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M05.6",
+      "M05.7",
+      "M05.8",
+      "M05.9"
+    ],
+    "depends_on": [
+      "T07",
+      "T12",
+      "T14"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Deterministic Python parsers and repository transactions/conditional revisions as permitted.",
+    "steps": [
+      "Normalize structured fields, units, clocks and cumulative/incremental usage semantics.",
+      "Deduplicate identical observations while retaining changed-content conflicts and authoritative correction history.",
+      "Track per-source freshness, required coverage and unresolved identity/accounting gaps."
+    ],
+    "done_when": [
+      "A corrected total replaces the accepted previous total instead of adding to it.",
+      "Duplicate observations do not multiply an execution charge.",
+      "Collection lag, missing source, unusable field and conflicting authority remain separate states."
+    ],
+    "status": "PLANNED",
+    "risk": "Incorrect cumulative counter semantics can produce plausible but false cost totals."
+  },
+  {
+    "id": "T16",
+    "title": "Store evidence bindings, model proposals and versioned cases",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M06.3",
+      "M06.4",
+      "M06.5"
+    ],
+    "depends_on": [
+      "T11",
+      "T07"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Existing approved repositories; versioned tables/collections in the shared package, no graph database required.",
+    "steps": [
+      "Represent many-to-many fact/control/spec/scope bindings with exact record revisions.",
+      "Store candidate model assertions separately from accepted facts.",
+      "Persist assessment and case manifests only with resolvable required inputs or explicit gaps."
+    ],
+    "done_when": [
+      "One usage fact supports multiple controls without multiplying accounting rows.",
+      "Candidate extraction cannot enter authoritative calculations before validation.",
+      "Partial writes remain pending; published cases reference coherent durable versions."
+    ],
+    "status": "PLANNED",
+    "risk": "Fan-out joins and silent proposal promotion corrupt both arithmetic and explainability."
+  },
+  {
+    "id": "T17",
+    "title": "Build exact-scope retrieval and bounded narrative context selection",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M06.6",
+      "M06.7"
+    ],
+    "depends_on": [
+      "T15",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Exact indexes in the approved store plus optional local SQLite; simple lexical/context ranking first, embeddings only if justified and allowed.",
+    "steps": [
+      "Retrieve complete available obligations, records, unmatched inputs and gaps for a pinned scope.",
+      "Expose index lag, page limits and unavailable references.",
+      "Rank narrative excerpts for context without using top-k retrieval as the control denominator."
+    ],
+    "done_when": [
+      "A scope lookup returns explicit coverage metadata with the requested revision.",
+      "Records without an existing control binding remain discoverable.",
+      "Context truncation is disclosed independently of structured-evidence completeness."
+    ],
+    "status": "PLANNED",
+    "risk": "Semantic retrieval can omit decisive records if reused as the evidence population."
+  },
+  {
+    "id": "T18",
+    "title": "Connect the minimum supported gateway/handoff observation adapters",
+    "phase": "integration",
+    "owner": "A",
+    "component_ids": [
+      "M02.1",
+      "M02.2",
+      "M02.6"
+    ],
+    "depends_on": [
+      "T01",
+      "T03",
+      "T08",
+      "T10",
+      "T12",
+      "T15"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Permitted shared-model-gateway and gateway A hooks or read-only sources; blocking ability remains conditional.",
+    "steps": [
+      "Translate supported request/outcome/handoff payloads into canonical events and identities.",
+      "Implement emit with explicit durable versus best-effort acknowledgement.",
+      "Capture one actual end-to-end subject run using the selected supported integration; label observation-only boundaries honestly."
+    ],
+    "done_when": [
+      "An actual run connects at least the selected supported boundaries to canonical evidence.",
+      "Adapter metadata states what it can observe and what it can prevent.",
+      "Unsupported hooks do not lead to invented synchronous enforcement claims."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Platform access may expose only telemetry, requiring narrower monitoring claims."
+  },
+  {
+    "id": "T19",
+    "title": "Implement C16 whole-run actual token accounting first",
+    "phase": "control",
+    "owner": "A",
+    "component_ids": [
+      "M09.1",
+      "M09.2",
+      "M09.3",
+      "M09.4",
+      "M09.5"
+    ],
+    "depends_on": [
+      "T08",
+      "T09",
+      "T15",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Pure Python evaluator over accepted provider/gateway usage; reuse existing repository and query contracts.",
+    "steps": [
+      "Reconcile all governed executions across three agents and hidden retries.",
+      "Apply non-overlapping input/output/cache/reasoning accounting and sum once per execution.",
+      "Evaluate inclusive cap and interval exceptions; distinguish definitive breach from insufficient under-cap evidence."
+    ],
+    "done_when": [
+      "Complete 9600 versus cap10000 satisfies; complete10800 breaches by800 in labelled illustrative fixtures.",
+      "An accepted scoped subtotal above cap still proves breach despite unrelated gaps.",
+      "Missing usage or unresolved executions prevent a final under-cap pass; reservations never count as actual usage."
+    ],
+    "status": "PLANNED",
+    "risk": "Provider usage may omit hidden retries or finality, blocking reliable under-cap satisfaction."
+  },
+  {
+    "id": "T20",
+    "title": "Validate extraction schemas, spans, scope and authority",
+    "phase": "investigator",
+    "owner": "B",
+    "component_ids": [
+      "M12.1",
+      "M12.2",
+      "M12.3"
+    ],
+    "depends_on": [
+      "T07",
+      "T09",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Host-side typed validators over captured sources; no second LLM as truth authority.",
+    "steps": [
+      "Check exact source/span/version and normalization mappings for each proposal.",
+      "Reauthorize both ends of every relation and validate permitted scope/type.",
+      "Separate VERIFIED source quote, verified relation and operational fact; require declared authority/corroboration for the precise assertion."
+    ],
+    "done_when": [
+      "A valid quote with wrong meaning or negation cannot support an operational claim.",
+      "Similar incident names and forged IDs cannot create verified cross-run/team links.",
+      "REJECTED proposal means failed validation, not proof the underlying world claim is false."
+    ],
+    "status": "PLANNED",
+    "risk": "Exact text occurrence alone cannot establish entailment or source truth."
+  },
+  {
+    "id": "T21",
+    "title": "Manage accepted revisions and invalidate affected assessments",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M12.4",
+      "M12.5"
+    ],
+    "depends_on": [
+      "T16",
+      "T20",
+      "T10"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Conditional accepted-input revision publication in the approved state store; local fixture equivalent for tests.",
+    "steps": [
+      "Promote validated candidates atomically against their base revision; revalidate conflicts.",
+      "Track dependencies from inputs to runs/windows/populations/claims/caches and recompute only affected branches.",
+      "Preserve historical assertions and explicit baseline restatements; distinguish authority changes from access revocation."
+    ],
+    "done_when": [
+      "Concurrent corrections cannot publish mixed old/new accepted facts.",
+      "A parser/link correction can invalidate cases even when raw bytes are unchanged.",
+      "Frozen baseline corrections retain the original dated basis and explicit restatement."
+    ],
+    "status": "PLANNED",
+    "risk": "Stale cache or partial dependency invalidation can present an invalid proof as current."
+  },
+  {
+    "id": "T22",
+    "title": "Implement C7 event coverage and valid timing-pair evaluation",
+    "phase": "control",
+    "owner": "A",
+    "component_ids": [
+      "M07.1",
+      "M07.2",
+      "M07.3",
+      "M07.4",
+      "M07.5"
+    ],
+    "depends_on": [
+      "T09",
+      "T14",
+      "T15",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Pure Python evaluator over independent obligations and accepted event records.",
+    "steps": [
+      "Match expected events and build expected adjacent pairs from authoritative slots/order.",
+      "Check clock domain/epoch, precision and monotonicity before timing arithmetic.",
+      "Apply exact gaps and exception allowance; distinguish proven omission from collection lag and empty/unknown populations."
+    ],
+    "done_when": [
+      "An omitted middle event preserves both expected pairs instead of creating a shortcut pair.",
+      "The slide fixture with 11 events and ten gaps has one violation and10% share under the declared comparison.",
+      "Unmeasurable clocks or missing populations do not silently produce a pass."
+    ],
+    "status": "PLANNED",
+    "risk": "Cross-agent timestamps may not share an eligible clock, restricting meaningful timing assertions."
+  },
+  {
+    "id": "T23",
+    "title": "Establish C9 labels, scoring and frozen positive baseline",
+    "phase": "control",
+    "owner": "B",
+    "component_ids": [
+      "M08.1",
+      "M08.2",
+      "M08.3"
+    ],
+    "depends_on": [
+      "T01",
+      "T09",
+      "T14",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Organizer-accepted scenario labels and deterministic exact-match scorer; no model grading its own answers.",
+    "steps": [
+      "Freeze accepted labels, aliases, eligible cohort and baseline/evaluation split.",
+      "Map each canonical outcome once; score evidence-proven wrong/crash as zero and missing/unparseable evidence as unknown.",
+      "Compute a complete positive baseline with all required eligible outcomes."
+    ],
+    "done_when": [
+      "Scenario-switch availability is not treated as proof of ground-truth labels.",
+      "Baseline membership and scoring rules precede assessed cases.",
+      "Invalid/incomplete/zero baseline blocks relative-drop claims rather than dividing or substituting silently."
+    ],
+    "status": "PLANNED",
+    "risk": "Without accepted labels and comparable outcomes, C9 cannot be completed by plausible model narration."
+  },
+  {
+    "id": "T24",
+    "title": "Implement C9 windows, comparability, drift and exception population",
+    "phase": "control",
+    "owner": "B",
+    "component_ids": [
+      "M08.4",
+      "M08.5",
+      "M08.6",
+      "M08.7"
+    ],
+    "depends_on": [
+      "T23",
+      "T15",
+      "T10"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Shared scheduler/worker only if permitted; otherwise declared batch window closure over accepted run manifests.",
+    "steps": [
+      "Register expected windows and exact members before assessment.",
+      "Check dataset/cohort/model/prompt/tool and measurement compatibility.",
+      "Calculate relative drops before rounding and evaluate expected-window coverage and interval allowance separately."
+    ],
+    "done_when": [
+      "B=.900, M=.792 produces12% relative drop; M=.810 is exactly10% and follows the declared inclusive boundary.",
+      "Missing windows remain in the expected population.",
+      "An allowed violating-window share does not suppress an individual threshold-crossing alert obligation."
+    ],
+    "status": "PLANNED",
+    "risk": "Mixing incompatible cohorts can produce misleading apparent drift."
+  },
+  {
+    "id": "T25",
+    "title": "Create C16 findings first, then extend deterministic C9 alert intents",
+    "phase": "integration",
+    "owner": "B",
+    "component_ids": [
+      "M08.8",
+      "M14.2"
+    ],
+    "depends_on": [
+      "T04",
+      "T19",
+      "T16",
+      "T10"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Actual permitted ServiceNow workflow mapped through one governance adapter; no assumed table/API.",
+    "steps": [
+      "Start the shared permitted finding route with a measured C16 breach so actual governance delivery can be proved before C9 is complete. Extend the same mechanism to required C9 crossings after T24.",
+      "Create one stable required intent for every measured crossing, bound to control/spec/window/assessment and named authoritative recipient.",
+      "Assign immutable operation mutation revisions to exact payload, target, routing, recipient and content; duplicates reuse the same cause.",
+      "Allow validated cited explanation enrichment without making required alerts depend on Nemotron."
+    ],
+    "done_when": [
+      "The first C16 finding is independently ready for delivery; completion of the later C9 milestone is tracked separately and required before claiming C9 complete.",
+      "Repeated recomputation does not spam duplicate intents.",
+      "Owner/content change without assessment change creates a distinct operation revision.",
+      "Model text cannot authorize sending, select the recipient or alter the measured verdict."
+    ],
+    "status": "PLANNED",
+    "risk": "Idempotency keyed only by assessment revision can lose later route/content changes.",
+    "milestone_dependencies": {
+      "initial_C16_finding": [
+        "T04",
+        "T19",
+        "T16",
+        "T10"
+      ],
+      "C9_crossing_alerts": [
+        "T24"
+      ]
+    }
+  },
+  {
+    "id": "T26",
+    "title": "Deliver findings with bounded retries and verified remote readback",
+    "phase": "integration",
+    "owner": "B",
+    "component_ids": [
+      "M14.3",
+      "M14.4"
+    ],
+    "depends_on": [
+      "T25",
+      "T13",
+      "T03"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Verified ServiceNow receiver semantics with durable local outbox; remote idempotency/version checks only if actually supported.",
+    "steps": [
+      "Persist intent/outbox consistently or recover via explicit durable sweep.",
+      "Check intent validity/supersession before conditional dispatch claim; reconcile uncertain writes without blind repeated creates.",
+      "Read back target instance, correlation, intended mutation revision/content and named-recipient route; bound attempts and expose terminal gaps."
+    ],
+    "done_when": [
+      "Lost acknowledgement becomes OUTCOME_UNKNOWN until reconciled.",
+      "Remote ID or HTTP202 alone cannot mark intended content/recipient delivered.",
+      "Stale updates cannot silently overwrite accepted corrections; unsupported safe remote ordering remains unresolved."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Local deduplication or eventual empty lookup does not provide exactly-once remote creation."
+  },
+  {
+    "id": "T27",
+    "title": "Track human response, remediation and passing retests honestly",
+    "phase": "integration",
+    "owner": "B",
+    "component_ids": [
+      "M14.5",
+      "M14.6"
+    ],
+    "depends_on": [
+      "T26",
+      "T13"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Permitted ServiceNow actor/assignment/response and remediation records; workshop response coverage dictates supported states.",
+    "steps": [
+      "Retain recipient-at-delivery, reassignment and authoritative actor/action history.",
+      "Record actual acknowledgement/response or covered no-response as-of; distinguish missing visibility from silence.",
+      "Link authorized remediation closure to relevant passing retest; distinguish correction/withdrawal from remediation."
+    ],
+    "done_when": [
+      "Human reply is not made a hackathon completion prerequisite.",
+      "Performance BREACHED, alert DELIVERED, no response observed and remediation OPEN can coexist.",
+      "New passing run or policy version does not erase the original failure."
+    ],
+    "status": "PLANNED",
+    "risk": "Auto-generated notes or assignment changes can be mistaken for actual human action."
+  },
+  {
+    "id": "T28",
+    "title": "Build the first Nemotron evidence-extraction prompt and fixtures",
+    "phase": "investigator",
+    "owner": "B",
+    "component_ids": [
+      "M11.3",
+      "M11.4"
+    ],
+    "depends_on": [
+      "T05",
+      "T13",
+      "T20"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: One approved fast Nemotron model through T05; one-call extraction plus host template is the initial profile.",
+    "steps": [
+      "Request typed candidates, exact quotations/references, proposed links and explicit ambiguity.",
+      "Prepare note/usage contradiction, similar-ticket and prompt-injection fixtures with human-labelled expected support.",
+      "Use real captured source input for the first live extraction, preserving its provenance."
+    ],
+    "done_when": [
+      "Output validates against the host schema and links back to exact captures.",
+      "Unsupported links remain candidates rather than entering accepted facts.",
+      "The first usable vertical slice has a real approved model invocation, not just a stored prompt."
+    ],
+    "status": "PLANNED",
+    "risk": "More elaborate prompting cannot repair missing authoritative sources."
+  },
+  {
+    "id": "T29",
+    "title": "Add bounded corroboration and optional second-call composition",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M11.5",
+      "M11.6"
+    ],
+    "depends_on": [
+      "T28",
+      "T19",
+      "T21",
+      "T30",
+      "T31",
+      "T33"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: One approved Nemotron endpoint and host read tools; second composition call is within the same bounded core workflow, not a separate service.",
+    "steps": [
+      "Start with extraction plus deterministic rendering; add a second call only if composition of validated facts adds measured value.",
+      "Permit one bounded corroborating-read batch; validate/promote and recompute before composition.",
+      "Pass only final assessments, validated facts and labelled candidates to a constrained explanation-plan composer with no more tools or extraction."
+    ],
+    "done_when": [
+      "At most two model calls and six model-requested read invocations including pages occur per declared profile.",
+      "No hidden third call interprets newly retrieved prose.",
+      "All numeric verdicts and exact quotations are rendered from host-validated inputs."
+    ],
+    "status": "PLANNED",
+    "risk": "Agent loops and implicit SDK retries can break the deadline and make costs unpredictable."
+  },
+  {
+    "id": "T30",
+    "title": "Record assurance usage and enforce non-recursion/resource limits",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M16.5",
+      "M16.6"
+    ],
+    "depends_on": [
+      "T05",
+      "T07",
+      "T09",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Shared trace/usage repository and host-enforced wall-time/tool/token/concurrency limits; provider limits verified on actual route.",
+    "steps": [
+      "Record every model/tool attempt, provider identity, versions, usage, timings and uncertain outcome.",
+      "Declare subject versus assurance accounting scope; report subtotals and combined spend.",
+      "Stop automatic self-investigation; reconcile later included investigator usage in a deterministic later assessment."
+    ],
+    "done_when": [
+      "Timeouts/ambiguous calls retain potential cost instead of becoming zero.",
+      "An immutable case does not claim finality over its own still-running composition usage.",
+      "Budget exhaustion/closed-run rules cannot be bypassed to investigate a denied action."
+    ],
+    "status": "PLANNED",
+    "risk": "Self-accounting can recurse or undercount unless as-of cutoffs and policy inclusion are explicit."
+  },
+  {
+    "id": "T31",
+    "title": "Compose coherent control states and the C-FM-01 claim",
+    "phase": "investigator",
+    "owner": "B",
+    "component_ids": [
+      "M12.6",
+      "M12.7",
+      "M12.8"
+    ],
+    "depends_on": [
+      "T09",
+      "T16",
+      "T20"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Deterministic composer and constrained templates in the shared package.",
+    "steps": [
+      "Keep requirement verdict, safeguard operation, evidence sufficiency, analysis completion and control completion distinct.",
+      "Combine compatible required objective-level branches after their allowances, preserving exact run/window scope.",
+      "Validate explanation references/manifests and exclude known-invalid current proof."
+    ],
+    "done_when": [
+      "Any valid required branch breach makes the claim BREACHED even with other gaps.",
+      "No breach plus unknown/incompatible required branch yields NOT_ESTABLISHED, not SATISFIED.",
+      "Unavailable C7/C9 branches remain explicitly missing during the initial C16/model slice."
+    ],
+    "status": "PLANNED",
+    "risk": "Averaging child statuses or combining different snapshots can produce false all-green claims."
+  },
+  {
+    "id": "T32",
+    "title": "Implement explicit judge query profiles and scope resolution",
+    "phase": "foundation",
+    "owner": "A",
+    "component_ids": [
+      "M13.1",
+      "M13.2"
+    ],
+    "depends_on": [
+      "T08",
+      "T09",
+      "T16"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Local CLI first; optional small UI later over the same result contract. No public hosting required.",
+    "steps": [
+      "Accept explicit control/run/window/profile and a stable client query key before dispatch.",
+      "Distinguish fresh investigation, recorded-case inspection and offline recheck.",
+      "Resolve all applicable C9 windows/member runs and pin event interval, source vector and accepted-input revision."
+    ],
+    "done_when": [
+      "Ambiguous scope returns NEEDS_SCOPE without selecting the easiest subset.",
+      "Changed payload under an existing query identity is a conflict.",
+      "Recorded/cached analysis is labelled with its original model execution."
+    ],
+    "status": "PLANNED",
+    "risk": "Run-only selectors can omit multi-run window evidence and change the meaning of C9."
+  },
+  {
+    "id": "T33",
+    "title": "Implement exact read tools and durable query/deadline control",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M13.3",
+      "M13.4"
+    ],
+    "depends_on": [
+      "T17",
+      "T32",
+      "T30"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Host workflow state in the approved repository; durable stage ownership rather than new orchestration infrastructure.",
+    "steps": [
+      "Provide authorized list/get evidence tools for pinned complete available scope.",
+      "Persist original deadline, stage claims, read/model/token budgets and request identity.",
+      "On disconnect/crash/cancel, stop new claims conditionally; reconcile ambiguous work without redispatching blindly."
+    ],
+    "done_when": [
+      "Reconnect never resets elapsed time or grants a fresh model budget.",
+      "Already-claimed remote work remains potentially chargeable after cancellation.",
+      "Busy/oversize/degraded outcomes are explicit; no hidden queue or implicit inference retries."
+    ],
+    "status": "PLANNED",
+    "risk": "Local cancellation cannot guarantee an already-authorized provider send did not occur."
+  },
+  {
+    "id": "T34",
+    "title": "Render the evidence case with authorized cache, fallback and drill-down",
+    "phase": "investigator",
+    "owner": "A",
+    "component_ids": [
+      "M13.5",
+      "M13.6",
+      "M13.7",
+      "M13.8"
+    ],
+    "depends_on": [
+      "T29",
+      "T31",
+      "T33"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: CLI/portable HTML backed by shared case records; existing visual style if a UI is built.",
+    "steps": [
+      "Render fixed verdict/rule/formula/source/gap/delivery blocks plus validated cited explanation.",
+      "Key cache by permission scope, exact source and accepted revisions and all relevant versions; reauthorize retrieval/publication/export.",
+      "Support deterministic degraded fresh-analysis output and successful requested replay/recheck; expose bidirectional source links safely."
+    ],
+    "done_when": [
+      "A source/reference click resolves the exact authorized captured revision.",
+      "Model outage cannot change deterministic control arithmetic or masquerade as complete fresh model analysis.",
+      "Old prose cannot be attached to new numbers after a correction."
+    ],
+    "status": "PLANNED",
+    "risk": "Cached sensitive content or stale citations can bypass current permissions or invalidate proof."
+  },
+  {
+    "id": "T35",
+    "title": "Capture the first C16 pass/breach pair, then extend per control",
+    "phase": "validation",
+    "owner": "B",
+    "component_ids": [
+      "M15.1"
+    ],
+    "depends_on": [
+      "T01",
+      "T09",
+      "T19"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Actual workshop scenario controls or explicitly organizer-accepted replay/test mechanisms; no unauthorized fault injection.",
+    "steps": [
+      "Declare permitted scenario/run/window membership and provenance before execution; immediately capture a real or organizer-accepted C16 pass/breach pair once T19 is ready, without waiting for C7, C9 or the optional UI.",
+      "Extend the same runner with C7 named cases after T22 and C9 named windows after T24; record separate per-control milestone status rather than one all-or-nothing completion checkbox.",
+      "Attach actual ServiceNow delivery proof after T26 and a model-assisted case after T34 as separate end-to-end milestones; these enrich the already captured evidence.",
+      "Save expected outcomes, exact real identifiers and sources. Keep synthetic arithmetic fixtures separately labelled."
+    ],
+    "done_when": [
+      "The initial C16 milestone has named reproducible pass and genuine or organizer-accepted breach evidence with dated rules and actual identifiers.",
+      "Each later claimed completed control has its own independently checked pass/breach milestone; unfinished C7/C9 evidence cannot be concealed by the C16 result.",
+      "Governance and model-assisted integration milestones have separate actual evidence before those integration claims are made.",
+      "Simulation/replay is not presented as a live platform fault without organizer acceptance."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Safe live breach generation may require organizer-supported modes; invented failures do not satisfy completion.",
+    "milestone_dependencies": {
+      "initial_C16_pair": [
+        "T01",
+        "T09",
+        "T19"
+      ],
+      "C7_pair": [
+        "T22"
+      ],
+      "C9_pair": [
+        "T24"
+      ],
+      "end_to_end_governance_case": [
+        "T26"
+      ],
+      "model_assisted_case": [
+        "T34"
+      ]
+    }
+  },
+  {
+    "id": "T36",
+    "title": "Run the focused adversarial campaign across all required paths",
+    "phase": "validation",
+    "owner": "BOTH",
+    "component_ids": [
+      "M15.2"
+    ],
+    "depends_on": [
+      "T19",
+      "T22",
+      "T24",
+      "T27",
+      "T34"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Local fault fixtures plus only permitted live failure modes through the existing package.",
+    "steps": [
+      "Test missing streams/windows, duplicates, changed IDs, correction races and stale policy/cache.",
+      "Test injection, forged cross-scope links, wrong-meaning citations, model truncation/timeout and source permission change.",
+      "Test ambiguous ServiceNow write, stale operation, response visibility gap and restart recovery; optional admission tests run only if bonus implemented."
+    ],
+    "done_when": [
+      "Critical false VERIFIED links and unsupported numeric/verdict assertions are rejected.",
+      "Known breaches survive unrelated missing evidence.",
+      "Every observed defect has a correction/retest or a clearly scoped unresolved gap."
+    ],
+    "status": "PLANNED",
+    "risk": "A happy-path demo can conceal the exact failures judges ask about."
+  },
+  {
+    "id": "T37",
+    "title": "Build the C16 offline rechecker first, then extend C7/C9",
+    "phase": "validation",
+    "owner": "B",
+    "component_ids": [
+      "M15.3"
+    ],
+    "depends_on": [
+      "T09",
+      "T19"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Small separate reference implementation consuming exported accepted records; no model, live source or cloud dependency.",
+    "steps": [
+      "Implement independent C16 execution-dedup/accounting arithmetic first and run it on hand-checked fixtures immediately after T19; exercise actual named captures as the first T35 milestone arrives.",
+      "Extend the same checker to C7 expected coverage/pairs after T22 and C9 relative drop/allowance after T24; track each supported control separately.",
+      "Do not import production evaluator functions. Consume explicit accepted input manifests and preserve missing-evidence states.",
+      "Compare exact calculations with hand-checked boundary/duplicate/correction fixtures and then named captured cases."
+    ],
+    "done_when": [
+      "C16 accepted inputs can be independently recomputed before the other control evaluators are finished.",
+      "Every control claimed in a later package has its own passing reference-checker milestone; unsupported controls remain explicitly unsupported.",
+      "Changing an accepted input produces an explained result difference.",
+      "The report states that arithmetic agreement does not certify upstream truth."
+    ],
+    "status": "PLANNED",
+    "risk": "A wrapper around the main evaluator is not an independent recomputation.",
+    "milestone_dependencies": {
+      "initial_C16_checker": [
+        "T09",
+        "T19"
+      ],
+      "C7_checker": [
+        "T22"
+      ],
+      "C9_checker": [
+        "T24"
+      ],
+      "actual_named_cases": [
+        "T35"
+      ]
+    }
+  },
+  {
+    "id": "T38",
+    "title": "Evaluate extraction/link quality and model contribution",
+    "phase": "validation",
+    "owner": "B",
+    "component_ids": [
+      "M15.4"
+    ],
+    "depends_on": [
+      "T28",
+      "T29",
+      "T34"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Fixed held-out labelled evidence set and actual approved model profile; compare against structured retrieval/template baseline.",
+    "steps": [
+      "Freeze positive, negative, ambiguous, contradictory and injection cases not used to tune the final prompt.",
+      "Measure field/span correctness, verified-link precision, missed/unresolved links and unsupported assertions.",
+      "Compare validated coverage, latency/cost and navigation effort with and without Nemotron; report observed results only."
+    ],
+    "done_when": [
+      "Critical suite has zero false VERIFIED cross-team/cross-run links and zero unsupported numeric/verdict assertions before release.",
+      "All counts, sample sizes and failures are reported.",
+      "Claimed model value is supported by the comparison, or its role is narrowed."
+    ],
+    "status": "PLANNED",
+    "risk": "Small hackathon tests do not establish universal accuracy or production safety."
+  },
+  {
+    "id": "T39",
+    "title": "Benchmark full analysis, freshness, degraded behavior and costs",
+    "phase": "validation",
+    "owner": "B",
+    "component_ids": [
+      "M15.5"
+    ],
+    "depends_on": [
+      "T30",
+      "T34",
+      "T35",
+      "T38"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Measured real approved model and source route; local replay timings labelled separately.",
+    "steps": [
+      "Freeze at least20 held-out bounded scopes and repeat trials including missing/conflicting cases and size limits.",
+      "Measure arrival-to-publication, data-ready full analysis, source-to-index freshness, cold/warm/concurrent behavior and usage separately.",
+      "Report median/p95/max, sample count and complete-analysis rate; count unexpected fallbacks/errors as full-analysis failures."
+    ],
+    "done_when": [
+      "Official answer-and-records target of two minutes is rehearsed; own60-second full-analysis target is claimed only within the measured envelope.",
+      "At most1run or1window<=20runs,2000required structured records,20excerpts<=18000chars and verified model token caps are disclosed for the proposed profile.",
+      "Deliberate outage success is reported as correct degradation, not successful full Nemotron analysis."
+    ],
+    "status": "PLANNED",
+    "risk": "Fast partial or cached answers cannot substantiate a fresh full-analysis latency claim."
+  },
+  {
+    "id": "T40",
+    "title": "Export the portable six-artifact bundle and rebuild local indexes",
+    "phase": "release",
+    "owner": "A",
+    "component_ids": [
+      "M15.6"
+    ],
+    "depends_on": [
+      "T34",
+      "T35",
+      "T37",
+      "T49",
+      "T27"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: JSONL/JSON, dated documentation, packaged CLI/reference checker, local SQLite and portable diagram/HTML; no live network required for critical replay inputs.",
+    "steps": [
+      "After T49 resolves the permitted export boundary, export approved team-authored evidence and accepted/proposed/assessment/case/source manifests with exact locally resolvable permitted critical inputs; do not bulk-copy AWS lab source/data by default.",
+      "Package thresholds, runnable query, named cases, actual one-page architecture and gaps as six clearly indexed artifacts.",
+      "Rebuild exact local indexes from exports and exercise recorded-case inspection and offline recomputation in a clean directory.",
+      "Produce a first C16-only bundle as soon as its case/query/rechecker/governance/model milestones are ready; extend it with completed C7/C9 milestones later. Label unfinished controls explicitly rather than waiting to exercise packaging until all three are done."
+    ],
+    "done_when": [
+      "Every critical reference resolves inside the bundle.",
+      "Query/install instructions and package versions are included.",
+      "Snapshot/as-of limits, protected-field redaction and inability to learn later remote revocations are disclosed.",
+      "Every packaged source/data class is covered by the verified submission/export permission; unsupported export scope remains blocked and visible.",
+      "The first supported-control bundle is replayable before expanding scope; final contents never imply unimplemented controls are complete."
+    ],
+    "status": "PLANNED",
+    "risk": "AWS-provided materials may be restricted to the workshop account. Unresolved permission cannot be treated as an authorized export; external-only links or hidden dependencies also threaten reproducibility."
+  },
+  {
+    "id": "T41",
+    "title": "Validate release completeness and scope the final architecture honestly",
+    "phase": "release",
+    "owner": "BOTH",
+    "component_ids": [
+      "M15.7"
+    ],
+    "depends_on": [
+      "T27",
+      "T36",
+      "T38",
+      "T39",
+      "T40",
+      "T49"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Local manifest validator and manual cross-review against workshop rules; no additional platform.",
+    "steps": [
+      "Check all six artifacts, dated rules, capability evidence, actual model proof, ServiceNow proof and pass/breach cases.",
+      "Mark each control complete only when declared mechanism, measurements, named cases, query/recheck and export are present.",
+      "Redraw the one-page architecture to show implemented versus conditional/unavailable pieces and list consequential gaps."
+    ],
+    "done_when": [
+      "Completion score is an evidence-backed0\u20133 count, separate from pass rate or a subjective winning assessment.",
+      "Unimplemented optional features are absent from actual-operation claims.",
+      "Mandatory integration/model requirements are either demonstrated or explicitly unresolved."
+    ],
+    "status": "PLANNED",
+    "risk": "A polished design score must not be represented as percent implemented or probability of winning."
+  },
+  {
+    "id": "T42",
+    "title": "Rehearse the judge flow from a clean start",
+    "phase": "release",
+    "owner": "BOTH",
+    "component_ids": [
+      "M15.8"
+    ],
+    "depends_on": [
+      "T41"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: Packaged CLI/optional UI and exported bundle; actual approved live route only for the explicitly labelled fresh demo.",
+    "steps": [
+      "Alternate roles: one person selects unfamiliar scope/questions, the other opens exact evidence and explains formula/authority/limitations.",
+      "Demonstrate normal fresh analysis, a rejected false relation and deterministic model-outage behavior.",
+      "Time answer plus supporting records, record failures and re-run only affected fixes."
+    ],
+    "done_when": [
+      "Both participants can explain enforcement point, control, evidence binding, owner delivery and uncertainty.",
+      "Selected supported scopes meet the official timing requirement or the failure is disclosed.",
+      "Demo does not depend on a preselected cached answer being passed off as fresh."
+    ],
+    "status": "PLANNED",
+    "risk": "One rehearsed happy path may fail when judges choose different scope."
+  },
+  {
+    "id": "T43",
+    "title": "Add a second observation point or generic callback only if useful",
+    "phase": "bonus",
+    "owner": "A",
+    "component_ids": [
+      "M02.3",
+      "M02.4",
+      "M02.7"
+    ],
+    "depends_on": [
+      "T18",
+      "T34"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "PROPOSED / CONDITIONAL: Gateway B preferred if permitted; alternatively one declared tool boundary or authenticated read-only source. Generic callback optional.",
+    "steps": [
+      "Choose exactly one supported additional boundary based on evidence benefit and available time.",
+      "Reuse canonical contracts/control logic; authenticate/correlate any callback and retain duplicate safety.",
+      "Demonstrate portability with clear observation versus enforcement labels."
+    ],
+    "done_when": [
+      "Additional boundary contributes actual scoped records without a forked control engine.",
+      "Unimplemented alternative adapters are explicitly deferred.",
+      "Callback sender identity is not confused with proof of an actual human decision."
+    ],
+    "status": "PLANNED",
+    "risk": "Attempting every possible boundary can delay all completed controls."
+  },
+  {
+    "id": "T44",
+    "title": "Gate optional inline admission on provable bounds and bypass coverage",
+    "phase": "bonus",
+    "owner": "A",
+    "component_ids": [
+      "M02.5",
+      "M10.8"
+    ],
+    "depends_on": [
+      "T18",
+      "T19",
+      "T30",
+      "T41"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "PROPOSED / CONDITIONAL: Verified blocking model hook plus permitted atomic shared state; no strict prevention claim on telemetry-only access.",
+    "steps": [
+      "Verify every reachable model route, hidden retry and all counted input/output/reasoning usage can be conservatively bounded.",
+      "Define synchronous evaluate contract and unsupported/error behavior.",
+      "Stop this bonus if bypass, bound, finality or atomicity cannot be proved; retain completed accounting."
+    ],
+    "done_when": [
+      "Aggregate bound covers all permitted executions and the actual hook can prevent dispatch.",
+      "Contract differentiates per-control results from overall admission.",
+      "Unverified assumptions are visible; a post-run detector is not called strict prevention."
+    ],
+    "status": "PLANNED",
+    "risk": "An input estimate or output cap alone is not an upper bound on all billable executions."
+  },
+  {
+    "id": "T45",
+    "title": "Implement atomic optional admission and dispatch ownership",
+    "phase": "bonus",
+    "owner": "A",
+    "component_ids": [
+      "M10.1",
+      "M10.2",
+      "M10.3",
+      "M10.7"
+    ],
+    "depends_on": [
+      "T44",
+      "T08",
+      "T10",
+      "T11"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "PROPOSED / CONDITIONAL: Permitted transactional/conditional-write store, proposed DynamoDB if verified; minimal durable transition journal.",
+    "steps": [
+      "Reserve before ALLOW using finally settled actual F plus all unresolved full bounds H plus requested bound B<=cap.",
+      "Reuse exact transport duplicate attempts and reject changed content under reused identities.",
+      "Conditionally claim one dispatch owner against run/policy state; durably journal transitions before action."
+    ],
+    "done_when": [
+      "Concurrent requests cannot exceed the declared exposure bound under tested assumptions.",
+      "Crash/ambiguous dispatch retains liability and cannot blindly retry.",
+      "One local dispatch claim is never described as exactly-once provider execution."
+    ],
+    "status": "PLANNED",
+    "risk": "Atomic local claims do not fence a provider unless the remote interface supports the required semantics."
+  },
+  {
+    "id": "T46",
+    "title": "Implement optional settlement, cancellation and uncertain-outcome recovery",
+    "phase": "bonus",
+    "owner": "A",
+    "component_ids": [
+      "M10.4",
+      "M10.5",
+      "M10.6"
+    ],
+    "depends_on": [
+      "T45"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "PROPOSED / CONDITIONAL: Same permitted shared state; provider finality/no-upward-liability evidence required before release.",
+    "steps": [
+      "Release cancellation only after conditional proof dispatch could not be claimed.",
+      "Retain full bounds across provisional usage and unknown outcomes; settle only complete execution sets with verified final usage.",
+      "Stop new claims on closure/revocation and halt admission on accepted bound violation/upward-final correction; preserve historical liabilities."
+    ],
+    "done_when": [
+      "Provisional usage never prematurely frees capacity.",
+      "Already-claimed work may still physically send after closure and remains accounted.",
+      "Without finality evidence, the bound stays reserved for the run instead of being guessed away."
+    ],
+    "status": "PLANNED",
+    "risk": "Later provider correction can reveal an assumption failure; already spent tokens cannot be undone."
+  },
+  {
+    "id": "T47",
+    "title": "Add background extraction or natural-language scope planning only after core proof",
+    "phase": "bonus",
+    "owner": "B",
+    "component_ids": [
+      "M11.7",
+      "M11.8"
+    ],
+    "depends_on": [
+      "T38",
+      "T41"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "PROPOSED / CONDITIONAL: Same approved Nemotron route and shared workers; no new agent platform.",
+    "steps": [
+      "Profile whether pre-extracting notes improves measured latency/cost; deduplicate with explicit budgets and generated-text exclusions.",
+      "Optionally translate natural-language questions into proposed explicit scopes requiring host validation.",
+      "Retain explicit-selector baseline and prevent automatic investigation recursion."
+    ],
+    "done_when": [
+      "Background work is separately accounted and does not count as a fresh query model call.",
+      "Ambiguous scope is surfaced rather than silently narrowed.",
+      "Optional feature demonstrates a measured benefit without reducing control completion."
+    ],
+    "status": "PLANNED",
+    "risk": "Natural-language planning can select a favorable subset or create hidden unbounded work."
+  },
+  {
+    "id": "T48",
+    "title": "Profile additional NVIDIA model tiers only for an evidenced need",
+    "phase": "bonus",
+    "owner": "B",
+    "component_ids": [
+      "M11.9",
+      "M11.10",
+      "M11.11"
+    ],
+    "depends_on": [
+      "T05",
+      "T38",
+      "T41"
+    ],
+    "priority": "CONDITIONAL_BONUS",
+    "technology": "PROPOSED / CONDITIONAL: Workshop-approved Super, Nano Omni or Ultra only if actually available; names are preferred roles, not verified model IDs.",
+    "steps": [
+      "Use Super only as a profiled replacement composer or separately timed investigation.",
+      "Use Omni only when real authorized media evidence needs region/time-referenced extraction.",
+      "Use Ultra only for separately budgeted offline complex/adversarial work; do not chain all tiers into the core deadline."
+    ],
+    "done_when": [
+      "Each retained tier has actual execution proof and measured value over the core profile.",
+      "Media extractions remain proposals subject to source/span/scope validation.",
+      "Unavailable/unhelpful tiers are explicitly deferred with no new deployment."
+    ],
+    "status": "PLANNED",
+    "risk": "Adding models for branding can dilute the working submission and exceed latency/cost limits."
+  },
+  {
+    "id": "T49",
+    "title": "Resolve export/submission permissions and confirm the actual deadline",
+    "phase": "access",
+    "owner": "BOTH",
+    "component_ids": [
+      "M16.7"
+    ],
+    "depends_on": [
+      "T01"
+    ],
+    "priority": "CORE",
+    "technology": "PROPOSED / CONDITIONAL: workshop review/join terms, official submission instructions and organizer clarification through a user-authorized channel; no external message is sent by this task plan.",
+    "steps": [
+      "Capture a minimal source-cited capability/gap register with unknowns, owners, required checks and consequences; preserve documented versus exercised status.",
+      "Reconcile the displayed restriction on using AWS-provided materials outside the account with slide requirements for an evidence submission. Distinguish team-authored code/reports, approved exported evidence, lab source code, recordings and supplied data.",
+      "Prepare the exact clarification needed from organizers and obtain an answer through a permitted user-authorized route before restricted material is copied; do not infer permission from the existence of an export requirement.",
+      "Confirm submission cutoff, timezone, upload format and environment expiry separately. The displayed Oct4 2026 09:00 AM start has no visible timezone and a72-hour environment duration is not a confirmed submission deadline."
+    ],
+    "done_when": [
+      "An authoritative documented rule or organizer answer defines the allowed export/submission classes and destinations, with unresolved classes blocked.",
+      "A team-authored/approved-evidence packaging path is feasible; any critical evidence that cannot leave the account has an explicit accepted alternative or release gap.",
+      "Actual submission cutoff and timezone are recorded independently of account lifetime; no invented deadline is used.",
+      "No organizer message is sent without explicit user authorization."
+    ],
+    "status": "ACCESS_BLOCKED",
+    "risk": "Submission requirements and account-material restrictions may conflict in scope; exporting by assumption or treating environment duration as the deadline can invalidate the submission."
+  }
+]

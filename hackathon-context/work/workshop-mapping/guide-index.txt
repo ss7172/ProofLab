@@ -1,0 +1,62 @@
+|Trustworthy AI & Data Hackathon: Agentic Assurance
+/what-to-expect|Getting Started
+/environment-setup|Module 1: Know Your Environment
+/platform-access|Module 2: Platform Access
+/platform-access/open-ide|Open your IDE
+/platform-access/install-status|Check the install finished
+/platform-access/cluster-access|Connect to the cluster
+/platform-access/gateway-credential|Get your gateway credential
+/platform-access/api-surface|Learn the API surface
+/platform-access/amazon-q|Ask Amazon Q about AWS
+/platform-access/docs-tool|Call your first governed tool
+/prove-the-platform|Module 3: Platform Check
+/prove-the-platform/substrate|The substrate: ODA Canvas
+/prove-the-platform/resource-types|The declarative surface: resource types
+/prove-the-platform/control-plane|The control plane: MoDaaS operators
+/prove-the-platform/gateway|The perimeter: the governed gateway
+/prove-the-platform/isolation|The enforcement substrate: is isolation real?
+/prove-the-platform/evidence|The evidence lane
+/ai-native-oda-canvas|Module 4: The AI-Native ODA Canvas
+/ai-native-oda-canvas/what-modaas-does|What MoDaaS does
+/ai-native-oda-canvas/aws-services|The AWS services behind it
+/baseline-walkthrough|Module 5: Baseline Walkthrough
+/baseline-walkthrough/nemotron-models|The models you serve: NVIDIA Nemotron
+/baseline-walkthrough/declare|Declare three models
+/baseline-walkthrough/approve|Approve a model
+/baseline-walkthrough/call|Call the model through the governed door
+/baseline-walkthrough/guardrail|Watch the guardrail block an attack
+/controls-and-policies|Module 6: Controls, Policies & Ready-Made CRs
+/controls-and-policies/guardrails|The guardrail
+/controls-and-policies/cedar|Runtime Cedar policies
+/controls-and-policies/pause|Pause: the kill switch
+/controls-and-policies/governed-tool|Governed tools and records
+/controls-and-policies/ceiling|The ceiling: requests and tokens per account
+/reference-agents|Module 7: Reference Agents
+/reference-agents/setup|Set up the reference agents
+/reference-agents/run-and-read|Run and read the evidence
+/reference-agents/self-check|Self-check: three faults
+/reference-agents/swap-model|Swap the model, the governed way
+/reference-agents/kill-switch|Kill switch
+/agent-observability|Module 8: Agent Observability, What CloudWatch Sees
+/agent-observability/trace-spans|Trace a run through its spans
+/agent-observability/console-and-metrics|Console, trust hierarchy, and health metrics
+/build-your-own-agent|Module 9: Build Your Own Agent (Strands)
+/build-your-own-agent/kb-agent|Read the hackathon-helper agent
+/build-your-own-agent/build-agent|Build your own agent
+/build-your-own-agent/what-the-script-did|What the script did
+/build-your-own-agent/prove-the-governance|Prove the governance
+/digital-twin|Module 10: Network Digital Twin (MAVERIC)
+/digital-twin/setup|Set up, ask and feed the twin
+/digital-twin/recipes|Scenario recipes
+/digital-twin/governed-tool|The twin as a governed tool
+/servicenow-integration|Module 11: ServiceNow AI Control Tower
+/challenge-brief|The Challenge
+/challenge-brief/platform-contract|What the platform gives you
+/challenge-brief/control-16|Control 16 worked example
+/challenge-brief/evidence-cookbook|The evidence cookbook
+/choosing-a-model|Choosing a Model
+/network-tool-naming|Network Tool Naming
+/resources|Resources & How-To
+/resources/glossary|Glossary
+/resources/servicenow-docs|ServiceNow documentation set
+/cleanup|Cleanup

@@ -1,0 +1,26 @@
+M09 INDEPENDENT AI DESIGN REVIEW — 2026-10-04
+
+Reviewer: independent agent /root/m03_identity_review.
+Sources: current component inventory and Control16 foundation, supplied masterclass Control16 shared-model-gateway example (printed21), V4 assurance-model scope, actual M09 draft.
+Scope: conceptual accounting architecture, not live implementation or integration.
+
+FINAL VERDICT: ACCEPT after one required wording clarification; final corrected draft verified by the reviewer. No remaining material findings.
+
+Required correction (MEDIUM, applied):
+The original verdict paragraph could classify missing execution inventory as NOT_ASSESSED. For a selected eligible run, unknown inventory or an empty download must instead be INDETERMINATE unless accepted usage already proves breach. NOT_ASSESSED applies to no eligible/implemented selected assessment or a declared empty assessed population. An explicitly eligible, verified zero-execution run remains a separate case.
+
+Reviewed guardrails:
+1. Actual authoritative execution identity, including hidden retries; attempts/observations/bindings do not define the charge count.
+2. Non-overlapping input/output/cache/reasoning semantics; cumulative snapshots and parent/leaf overlap excluded.
+3. Partial breach proof requires accepted, scoped, deduplicated usage; unresolved source authority/run ownership cannot form a trusted lower bound.
+4. Under-cap pass requires resolved whole-run population and finality; observed-so-far totals and a closed database flag are insufficient.
+5. Independent expected run population for exception allowance, retaining unknown runs and disclosing missing denominator.
+6. Inclusive cap boundary and source FM-A9600/FM-B10800 arithmetic;800 overshoot and1/2=50% over-cap share against0% allowance.
+7. Late authoritative corrections revise assessments while preserving previous inputs/results.
+8. Investigator usage is recorded; pinned scope controls inclusion; combined usage avoids overlapping subtotals.
+9. M09 pure recomputation is distinct from M10 runtime state, reservations, settlement and prevention.
+10. A denied never-dispatched request is not an actual over-cap run; dispatched timeout does not establish zero usage.
+
+Primary-agent verification: 13 illustrative integer/Fraction arithmetic checks saved in work/walkthrough/m09-arithmetic-check.json; SVG rendered and visually inspected; exported HTML checked for internal links, IDs and local-asset embedding. Browser rendering not verified.
+
+Limitations: no actual source schema, provider endpoint, complete3-agent execution population, live gateway guarantee, ServiceNow integration or hackathon control completion established. Status remains design-only; no real Control16 demonstration occurred.

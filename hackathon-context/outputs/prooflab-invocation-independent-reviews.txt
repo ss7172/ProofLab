@@ -1,0 +1,98 @@
+THREE INDEPENDENT AI REVIEWS — INVOCATION CONTRACT
+
+Method: three AI reviewers, separate contexts with the same model configuration, did not consult one another. They reviewed the first draft against the supplied slide deck and transcript. Their reports below are preserved unchanged; findings are design risks, not observed runtime failures. No numerical scores were requested or assigned.
+
+Revision response: the final contract addresses ambiguous dispatch, exact request/budget binding, minimal recoverable journals, canonical attempt accounting, authenticated run lifecycle, multi-control decision composition, executable expected population, valid frozen policies, C7 timing and C9 window semantics, reproducible export/claim coverage, actual platform capability status and breach eligibility. The underlying workshop capabilities and all implementation tests remain unverified. The final contract was revised by the primary agent; these reports are not a claim that the reviewers tested or certified the revised implementation.
+
+INDEPENDENT INTERFACE REVIEW — PROOFLAB INVOCATION CONTRACT
+Reviewed outputs/prooflab-invocation-contract.txt and full slides, physical pages 12–15, 17, 19–26. No other reviewers' reports were consulted. This is a design review, not verification of implementation or workshop capabilities.
+
+Overall: the four transports, stateless evaluator/stateful coordinator separation, off-path register and ledger, and many-to-many evidence bindings fit the slides. The following material protocol gaps must be resolved before claiming safe inline enforcement.
+
+1. CRITICAL — Dispatch ownership does not establish exactly-once model execution.
+Section 6 says the gateway obtains ownership and “invokes the model once,” but the ownership state machine is absent. A gateway can crash after sending the request and before recording the result. Reclaiming an expired dispatch lease can then execute the same inference twice against one reservation. Holding the reservation alone does not prevent this.
+Fix: specify durable RESERVED -> DISPATCHING -> SETTLED/UNKNOWN transitions. Atomically claim dispatch once. Once DISPATCHING, a duplicate admission must return the existing state, not permission for another invocation. After an ambiguous crash, retain the reservation and mark UNKNOWN. Never redispatch that attempt unless verified downstream idempotency makes repetition safe. A deliberate fresh inference gets a new attempt and reservation. Replace “invokes once” with this conditional guarantee. Fencing tokens alone cannot stop an already-sent external request.
+
+2. HIGH — Reservation bounds and settlement need a stronger trust contract.
+The example accepts caller fields named verified_input_bound/enforced_output_bound. Their names do not prove that the exact downstream request satisfies them. A caller could change model, messages, tools, maximum output or accounting-relevant options after ALLOW. A “trusted usage consumer” can also receive untrusted or misattributed observations.
+Fix: the trusted gateway computes/validates bounds against the exact immutable request and enforceable model limits; bind admission to model/version, relevant accounting options and canonical request identity. Dispatch only that request. Authenticate source adapters and authorize their team, run, enforcement point and event types. Bind actual usage to the admitted provider attempt. If bounds or authoritative usage cannot be established, explicitly offer post-run detection rather than strict prevention. These are required abstract properties; available gateway/provider mechanisms remain unverified.
+
+3. HIGH — Close the state-to-evidence crash gap.
+The coordinator can commit ALLOW, DENY or settlement and crash before its asynchronous evidence emission. The current design does not identify how those facts are subsequently recovered. This can erase the very decision records Control 7 and the Control 16 test need.
+Fix: atomically retain the minimal decision/transition record, or an outbox pointer, with each relevant state transaction; export it asynchronously. Persist normalized incoming usage before acknowledging durable acceptance. Give every outcome, including DENY/ERROR, a recoverable identity where admission is operational. An unavailable admission store cannot promise durable ERROR capture: use adapter recovery and surface any remaining gap. This adds no synchronous rich ledger or ServiceNow write. Explicitly distinguish a durable receipt from a best-effort receipt.
+
+4. HIGH — Specify canonical accounting and contradictory usage handling.
+Transport event_id deduplication is insufficient: gateway and telemetry collectors can report the same provider attempt using different event IDs. Parent spans may repeat totals from child calls. First-arriving usage can also differ from a later authoritative report.
+Fix: settle once by authoritative (team, run, attempt), and separately deduplicate transport delivery by producer/event ID. Declare which source and model fields are authoritative. Never sum parent aggregate usage with leaf attempt usage. Conflicting assertions are retained and reconciled under a declared rule; do not silently accept the first value or settle twice. Corrections require versioned, auditable budget adjustments, with immediate admission stop if they expose an invariant failure.
+
+5. HIGH — Run lifecycle must participate in the admission transaction.
+The request contains a run_id, but the protocol does not require that the run is open, belongs to the authenticated team, and already has pinned rules. Closure can race with a new reservation, producing a premature full-run pass.
+Fix: include run status, owning scope and specification-bundle identity in the atomic reservation preconditions. Reject unknown, closed or mismatched runs. Distinguish ACTIONS_CLOSED from EVIDENCE_FINAL: pending/unknown attempts and late-data deadlines determine evidence finality. Query responses must identify observation time, processing completeness and whether the result is provisional. A closure marker alone is insufficient.
+
+6. MEDIUM — A multi-control invocation needs decision composition semantics.
+The mapping can select multiple controls, while the evaluate response exposes one control. That is adequate for today's sole admission Control 16, but not the claimed reusable interface.
+Fix: either declare evaluate single-control and make the adapter's composition explicit, or return an overall decision plus per-control decisions/specifications. State DENY/required-control ERROR precedence. Monitoring controls cannot block merely because they share an action. If another required gate denies after a reservation, cancel only a demonstrably undispatched reservation; otherwise retain it. Do not advertise generic multi-control admission before these semantics exist.
+
+These are protocol refinements, not reasons to add more public transports, microservices or cryptographic sealing. The current proposal appropriately treats AgentCore gateway hooks, storage entitlements and ServiceNow capabilities as integration checkpoints rather than established facts.
+
+
+Independent evidence and causality review
+
+Scope: invocation contract against physical slides 12–15, 17, 19–26. Design review only; no integration or test result is treated as implemented. The contract correctly distinguishes decisions from assessments, observations from bindings, and detected breaches from successful prevention. The following commitments remain underspecified enough to permit misleading results.
+
+1. HIGH — Completeness has no executable denominator contract (sections 3, 7, 11, 13).
+“Independently justified expected population” is necessary but does not specify how a dynamic three-agent execution creates it. An adapter and its telemetry can disappear together, leaving a plausible closed run. A start/end pair alone does not prove all intervening work was observed. Control7 may pass a truncated population; Control16 may omit bypassed calls.
+Fix: freeze event obligations by action type and phase, source coverage, and expected boundary send/receive pairs. Persist planned/dispatched work independently of the emitter where available; reconcile authoritative execution/usage inventories and scheduler expectations. Record source completion checkpoints, failed pagination, sampling, and unmatched/orphan events. Dynamic branches add durable obligations before execution. If no independent inventory exists, declare that gap and forbid a completeness-based SATISFIED result. Do not imply AWS/ServiceNow supplies such inventories until verified.
+
+2. HIGH — Transport deduplication does not prevent duplicate accounting across sources (sections 6–7).
+event_id handles redelivery, but gateway telemetry, provider usage and a pulled log can report the same actual call with different event IDs. Conversely, two real executions can share an erroneous propagated attempt ID. “Canonical source observation” does not define how either collision is resolved.
+Fix: distinguish observation identity (source + source record ID) from execution identity and accounting-entry identity. Declare authoritative usage sources and precedence; attach multiple corroborating observations to one usage entry. Conflicting token totals, reused execution IDs or mismatched run joins remain visible reconciliation conflicts. Never silently deduplicate two actual retries; never sum corroborating observations as separate calls. Authenticated producers may supply facts, but cannot reassign an already-bound attempt to another run.
+
+3. HIGH — “Invokes the model once” depends on an unverified downstream guarantee (section 6).
+A crash after the model receives a request but before acknowledgement leaves dispatch ownership and actual execution ambiguous. A lease or database transaction cannot atomically commit a remote inference. The retained reservation protects budget, but does not itself establish exactly-once execution.
+Fix: define RESERVED, DISPATCHING, OUTCOME_UNKNOWN and SETTLED transitions. Never redispatch an ambiguous attempt unless verified downstream idempotency makes that safe. An intentional retry gets a new attempt and reservation while the original liability remains. Reconcile both executions afterward. Describe duplicate suppression at the adapter boundary separately from downstream execution guarantees; list unavailable provider idempotency as a capability gap.
+
+4. HIGH — Frozen policy does not specify valid policy (sections 3–5).
+The proposal prevents callers choosing easier rules, but leaves unknown bundles, stale cached applicability maps, unsupported control versions and mid-run revocation undefined. A run could consistently use an obsolete policy and still appear compliant.
+Fix: pin an authorized bundle containing applicability-map version, specification contents, effective interval and supported evaluator version. Validate it before governed dispatch; missing, invalid or unsupported bundles produce ERROR and no governed dispatch. Declare whether runs finish under their pinned version or are stopped at a policy transition; implement any necessary revocation signal outside the register’s live request path. Historical assessments retain their original policy and separately disclose policy-validity failures. Never substitute the current specification during a historical query.
+
+5. MEDIUM — Control7 needs a precise timing population (sections 4, 7).
+Completeness and timing use different denominators. “Consecutive” is undefined with parallel branches, reordered ingestion, missing events or cross-host clocks. Excluding unknown intervals could improve a failing result.
+Fix: put coverage target, gap comparator, eligible ordered streams, exception allowance, clock/order basis and treatment of missing timestamps into the frozen C7 specification. Report expected/observed events and eligible/violating/unmeasurable gaps separately. Define zero-gap behavior; do not silently count it as a timing pass. Preserve missing intervals even when their duration cannot be measured.
+
+6. MEDIUM — Control9’s run answer can overstate attribution (sections 3, 7, 12).
+Window membership is explicit, but a run spanning several windows or none still has no answer rule. One window’s drift is not a measurement of each member run. Empty/missing windows and zero baselines also lack computation rules.
+Fix: declare expected windows, membership/eligibility, metric direction, minimum observations and valid baseline domain. A run query lists all applicable window assessments and reports a declared aggregate only when justified; otherwise label the result window-scoped. Missing measurements remain INDETERMINATE. Report measurement satisfaction, monitor operation and alert delivery separately; silence is an observed response state, not proof of delivery.
+
+7. MEDIUM — Offline reproducibility needs a complete assessment manifest (sections 7, 10–12).
+Fix: export exact policy/mapping/baseline/expected-inventory versions, evaluator/test version, raw observations and bindings, assessment cutoff, source-completion state and superseded revisions. Distinguish event-time scope from ingestion-time “as of.” Each assessment references its exact input set. Late evidence creates a new revision rather than changing what an earlier answer meant. These are reproducibility requirements; cryptographic sealing remains out of scope.
+
+
+INDEPENDENT REVIEW — DEPLOYMENT, PORTABILITY AND SUBMISSION
+Reviewed: outputs/prooflab-invocation-contract.txt
+Sources: full PDF physical pages 12–15, 17, 19–26; transcript-2 and transcript-3 hosting/model/judging passages; transcript-4 ServiceNow integration caveats. I did not read other reviewers’ reports. This is a design review, not runtime verification.
+
+Overall finding
+The proposed contract correctly distinguishes the five problems, five operating modes, five enforcement responsibilities and four transports. It correctly treats AgentCore Runtime and the workshop’s shared model gateway as different things; identifies interceptor support as conditional; keeps agents in the supplied AWS/ServiceNow environments; and separates a local query UI from cloud enforcement. Six artifacts and published judge questions are accurately represented. No critical deployment contradiction found. Resolve the following material ambiguities before presenting it as an implementation plan.
+
+1. MEDIUM — Local post-run minimum could be mistaken for the complete event submission.
+Section 10 says a local post-run tool can support the published minimum once it produces complete evidence. That is correct for the controls’ technical floor, but completeness alone does not satisfy the full event conditions: six artifacts, named pass/breach runs, predated specifications and the transcript’s mandatory ServiceNow AI Control Tower/human-loop integration still apply.
+Fix wording: “A local post-run checker can meet the control-evaluation floor; it does not waive the other submission artifacts, required agent/model environment or ServiceNow integration.” Keep auxiliary-service hosting conditional rather than implying that the organizers explicitly require every supporting executable to be cloud-hosted.
+
+2. MEDIUM — Nemotron eligibility needs a firmer statement than ‘agents and/or approved assurance agent’.
+Transcript-3 around offset 4,307 says valid solutions need Nemotron in their agents; transcript-2 around 2,234 says the supplied agents already use Nemotron. The current ‘and/or’ wording could invite replacing the governed agents’ models and assuming an optional assurance agent independently satisfies the rule. No such exception is established.
+Fix: “Retain and verify the supplied governed agents’ Nemotron usage. Use Nemotron for any custom agents as required by the workshop. The precise required agent scope/model variants must follow the workshop guidance; an optional proposer does not establish an exemption.” Include a model invocation source record in the integration checkpoint, not just asset discovery.
+
+3. MEDIUM — Claim scope and status need an explicit deliverable.
+The document explains per-control assessment but omits the slides’ management-claim result. Physical20 explicitly says a completed subset is partial coverage, not a pass. A dashboard showing only a green completed Control16 could mislead judges about C-FM-01.
+Fix: Add a claim manifest listing 7/9/16 and each branch’s assessment status/scope. If any required branch remains unassessed or indeterminate, the whole claim is not SATISFIED; a substantiated breach remains visible. Export this manifest with the evidence and show it in the query overview. Treat this as our implementation of the slide’s claim tree, not a seventh official artifact.
+
+4. MEDIUM — Extensibility is described, but verified support still needs an explicit inventory.
+Section 8 reasonably avoids building every possible adapter. Yet mentioning callback, static review, polling and out-of-band stopping can be read as implemented support unless capability status is recorded. Adapter availability depends on platform access; examples do not prove transport semantics.
+Fix: Maintain a compact adapter/mode capability matrix: proposed / fixture-tested / live-verified / unavailable; source, supported methods, authorization boundary, wait/timeout behavior and whether it can actually block. Demonstrate a real second point with shared evaluator/evidence code and adapter-only changes. Say “designed to accommodate” for unbuilt modes, not “supports all modes.”
+
+5. MEDIUM — Plan the actual breached-run artifact before hard prevention is enabled.
+The contract correctly distinguishes attempted from actual breaches, but it does not yet specify how the required named breach run will be obtained when Control16 successfully denies every over-budget dispatch.
+Fix: Prepare a permitted, clearly labelled observation-only assessed scenario or organizer-accepted recorded breach under the same predeclared threshold, and separately demonstrate the live preventive run. Preserve provenance and confirm eligibility of any replay; a denied attempt alone is not the required evidence of actual overspend. Do not secretly disable safeguards or change thresholds to manufacture a result.
+
+No further review required merely for stylistic changes. These issues can be fixed through explicit wording, submission metadata and integration gates; they do not require another runtime or a larger architecture.

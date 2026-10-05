@@ -1,0 +1,297 @@
+PROOFLAB V4 — COMPLETE COMPONENT INVENTORY
+
+Purpose: name the parts before tracing the story. This is the logical decomposition of the architecture already proposed, not123 separately deployed services and not a new implementation plan. The 16 groups and their123 subcomponents share one assurance package wherever practical. No live integrations are demonstrated; actual completed controls remain0/3.
+
+Labels:
+Provided = described in the workshop; access and actual behavior still require verification.
+Build = our proposed application code/module/contract, not necessarily a service.
+Configure = adapt an existing platform, endpoint or repository capability if enabled.
+Optional = deferred extension or conditional bonus; not needed for the first complete implementation of the three control tests.
+Mixed items explicitly say when only their interface or polished variant is optional. 'Minor component' means a subcomponent, not low importance.
+
+PHYSICAL DEPLOYMENT, SEPARATE FROM LOGICAL GROUPS
+1. Provided telecom workflow in ServiceNow/AWS with its existing tools, gateways and model route.
+2. One ProofLab Python distribution: source adapters and ingestion/assessment worker; query/investigator entry point; shared controls, policies, validation and export modules. These entry points can share a permitted host; they do not require one service per module.
+3. Optional permitted in-path admission hook/wrapper and transactional run/attempt state for preventive Control16.
+4. Judge client: local CLI and optional HTML UI, with authenticated cloud access or a portable offline bundle.
+5. External platform dependencies: approved NVIDIA endpoint, ServiceNow governance, allowed compute and storage. DynamoDB/S3 are conditional mappings; SQLite is the local query index. Calling Nemotron does not require us to deploy model weights or GPUs.
+
+MAJOR AND MINOR COMPONENTS
+
+M01. TELECOM FAULT-RESOLUTION WORKFLOW
+Purpose: The business system whose behavior we assess.
+Receives: A permitted customer fault request and account/network context.
+Produces: Fault-resolution actions, diagnoses, handoffs and model calls.
+Runs/lives: Provided ServiceNow and AWS agent environments.
+  M01.1 [Provided; Provided system/service] Customer / ticket agent — Receives the customer problem and starts the service workflow.
+  M01.2 [Provided; Provided system/service] IT triage agent — Investigates account and service context.
+  M01.3 [Provided; Provided system/service] Network investigation agent — Investigates the network problem and returns a diagnosis.
+  M01.4 [Provided; Provided system/service] Network digital twin — Provides the supplied network investigation/simulation capability.
+  M01.5 [Provided; Provided system/service] Business data and tools — Customer/account/service records and network tools used by the subject agents.
+  M01.6 [Provided; Provided system/service] Subject-agent Nemotron inference — The approved NVIDIA models used by the provided agents; distinct from our investigator.
+  M01.7 [Provided; Provided system/service] Gateway A — Provided customer-to-IT handoff role; its product/interface must be verified.
+  M01.8 [Provided; Provided system/service] Gateway B — Provided IT-to-network handoff role; separate from our optional second-point adapter.
+  M01.9 [Provided; Provided system/service] Shared model gateway — The supplied model-invocation routing/enforcement role; not assumed identical to gateway A/B or AWS AgentCore Gateway.
+  M01.10 [Provided; Provided system/service] Supplied input/output guardrails — Provided checks around prompts and answers; actual placement/rules require verification and do not replace C7/C9/C16.
+  M01.11 [Provided; Provided system/service] Supplied scenario switch — Selects available lab situations; its presence alone does not establish accepted ground-truth labels.
+  M01.12 [Provided; Provided system/service] Supplied telemetry collector and storage — Existing OpenTelemetry collection/storage keeps what arrives; our M05 readers/reconciliation and M06 evidence workspace are distinct responsibilities.
+
+M02. ENFORCEMENT POINTS AND PLATFORM ADAPTERS
+Purpose: Connect existing action boundaries to our common contracts.
+Receives: An action about to occur, an observed event or a later result.
+Produces: Normalized evaluation requests, decisions, observations and receipts.
+Runs/lives: Thin wrappers/hooks or readers at verified workshop integration points.
+  M02.1 [Build; Module/function] Shared model-gateway adapter — Connects model requests and outcomes to control evaluation and recording; a blocking hook is conditional.
+  M02.2 [Build; Module/function] Gateway A handoff adapter — Observes the declared customer-to-IT boundary using permitted hooks or sources; implement only the selected supported integration.
+  M02.3 [Build; Module/function] Gateway B handoff adapter — Preferred second-point target, conditional on access. Use a permitted tool boundary or honestly labelled read-only source if needed; no requirement to implement every adapter.
+  M02.4 [Build; Module/function] Declared tool-boundary adapter — Captures request/outcome events only for declared, supported tools; an alternative boundary adapter rather than an obligation to integrate every tool.
+  M02.5 [Build; Interface contract] Synchronous evaluate contract — Returns per-control decisions and an overall result when a verified blocking hook supports optional inline admission; the contract is not proof the hook exists.
+  M02.6 [Build; Interface contract] Event emit contract — Accepts observations and explicitly reports durable versus best-effort receipt.
+  M02.7 [Build; Interface contract] Later-verdict/result callback contract — Correlates authenticated, duplicate-safe delayed verdicts/results such as deferred human decisions; a generic callback demonstration is optional.
+  M02.8 [Build; Interface contract] Source pull contract — Reads paginated source records and completion information. Query is separate in M13.
+
+M03. IDENTITY, SCHEMAS AND RUN LIFECYCLE
+Purpose: Give every record an unambiguous meaning and place in the workflow.
+Receives: Authenticated context and source identifiers.
+Produces: Stable run/action/attempt identities and versioned lifecycle records.
+Runs/lives: Shared Python contracts and lifecycle modules.
+  M03.1 [Build; Module/function] Authenticated team / point context — Binds records and operations to the authorized team and enforcement point.
+  M03.2 [Build; Module/function] Canonical record schemas — Defines versions, field types, enums and provenance classes for shared records.
+  M03.3 [Build; Module/function] Run / action / attempt identifiers — Links the whole fault-resolution run to intended actions and proposed attempts; an attempt may never dispatch, while actual provider executions are reconciled separately.
+  M03.4 [Build; Module/function] Retry identity rules — Distinguishes a genuine new execution from duplicate delivery of the same request.
+  M03.5 [Build; Module/function] Run lifecycle manager — Opens runs, closes new actions and records evidence finalization or unresolved gaps.
+  M03.6 [Build; Module/function] Provider/source correlation — Maps team/source-instance-scoped identifiers to canonical identities without guessing; preserves multiple actual executions, unmatched records and conflicting run assignments.
+
+M04. POLICY REGISTER AND CONTROL APPLICABILITY
+Purpose: Own the dated rules independently of the code that evaluates them.
+Receives: Declared scope, justified limits, owners and measurement definitions.
+Produces: An immutable policy bundle pinned to the assessed run or window.
+Runs/lives: Versioned configuration/data loaded by shared policy code; no separate service required.
+  M04.1 [Build; Module/function] Versioned policy bundle store — Holds immutable dated specifications and effective intervals.
+  M04.2 [Build; Configuration/data] Threshold / allowance declarations — Records metric limits, allowed exceptions, measurement basis, rationale and owner.
+  M04.3 [Build; Module/function] Action-to-control mapping — Declares which controls apply to each action or enforcement point.
+  M04.4 [Build; Module/function] Policy loader and pinning — Validates and loads the applicable bundle before work; avoids per-call register queries.
+  M04.5 [Build; Configuration/data] Measurement and completion definitions — References accepted baselines, source rules, eligibility and required evidence coverage.
+  M04.6 [Build; Configuration/data] Policy change / revocation rules — Preserves historical rules; distinguishes new-run selection expiry, pinned continuation/deadline, hard cutoff and authenticated revocation at supported points.
+
+M05. EVIDENCE ACQUISITION AND RECONCILIATION
+Purpose: Bring heterogeneous source records into a trustworthy common form.
+Receives: Gateway/OTEL/CloudWatch records, ServiceNow records and independent expected-work sources.
+Produces: Raw preserved inputs, normalized observations, reconciled usage and source gaps.
+Runs/lives: Ingestion/assessment worker and source adapters.
+  M05.1 [Build; Module/function] Gateway / telemetry readers — Read available gateway, OTEL and CloudWatch source records.
+  M05.2 [Build; Module/function] ServiceNow evidence reader — Reads permitted notes, records, traces and delivery information; distinct from outbound M14.
+  M05.3 [Build; Module/function] Independent expected-work adapter — Obtains obligations, expected sources and ordered event slots from an accepted authority.
+  M05.4 [Build; Module/function] Pagination / cursor / checkpoint tracker — Tracks source scope, pages, cursor semantics and errors; advances recovery checkpoints only after recoverable preservation. Page exhaustion alone does not prove completeness.
+  M05.5 [Build; Module/function] Raw preservation and receipt handling — Preserves source/capture versions before durable receipt; retains malformed inputs and exposes any lost/unrecorded input.
+  M05.6 [Build; Module/function] Deterministic source parsers — Translate reliable structured fields, identifiers, timestamps, units and accounting semantics.
+  M05.7 [Build; Module/function] Duplicate and identity reconciler — Recognizes identical duplicate content and corroborating observations without extra charges; changed content under one ID remains visible for resolution.
+  M05.8 [Build; Module/function] Authority / conflict / correction handling — Retains disagreements, late data and versioned authoritative corrections.
+  M05.9 [Build; Module/function] Source completeness and freshness tracking — Records missing sources, lag and unproven populations; checkpoints alone do not prove completeness.
+
+M06. SHARED EVIDENCE WORKSPACE
+Purpose: Keep the evidence, relationships and results in one queryable place.
+Receives: Raw records and the outputs of ingestion, validation, tests and model investigation.
+Produces: Versioned facts, bindings and source references for queries and export.
+Runs/lives: Logical repositories/tables; conditional S3 and transactional-store mapping, plus local SQLite index.
+  M06.1 [Build; Logical repository/index] Raw-source repository — Stores immutable source copies and resolvable references.
+  M06.2 [Build; Logical repository/index] Canonical fact repositories — Stores runs, attempts, observations, obligations, usage and windows.
+  M06.3 [Build; Logical repository/index] Evidence-binding tables — Represents versioned many-to-many links between exact fact revisions, controls, specifications and assessed scopes without multiplying usage charges.
+  M06.4 [Build; Logical repository/index] Proposal storage — Keeps model-extracted facts and candidate links separate from verified facts.
+  M06.5 [Build; Logical repository/index] Assessment / case repositories — Stores control results, findings, investigation records, source/input manifests and case revisions with resolvable input references.
+  M06.6 [Build; Logical repository/index] Exact scope indexes — Serves available exact run/action/attempt/window inputs and explicit gaps at selected revisions; exposes pagination/index lag without claiming upstream completeness.
+  M06.7 [Build; Logical repository/index] Contextual relevance index — Ranks narrative context for the model; it never defines a control denominator.
+
+M07. CONTROL 7 IMPLEMENTATION — EVENT RECORDING
+Purpose: Test whether the declared events were recorded and their timing meets the rule.
+Receives: Independent obligations, observed events, expected adjacent pairs and the pinned C7 rule.
+Produces: Coverage and timing measures, exceptions, sufficiency and a control assessment.
+Runs/lives: Pure control-test functions in the shared assurance package.
+  M07.1 [Build; Module/function] Event coverage evaluator — Matches observations to the independently expected population.
+  M07.2 [Build; Module/function] Expected timing-pair builder — Uses authoritative order/slots; missing events do not remove expected pairs.
+  M07.3 [Build; Module/function] Clock / epoch eligibility checks — Prevents invalid timing across unrelated clocks, discontinuities, backwards timestamps or insufficient precision; affected expected pairs remain unmeasurable.
+  M07.4 [Build; Module/function] Gap and exception evaluator — Computes measured timing gaps, violating shares and bounds when justified.
+  M07.5 [Build; Module/function] Missing / empty population handling — Retains missing streams and unknown denominators; distinguishes source-proven deadline omissions from collection lag, and never automatically passes an empty population.
+
+M08. CONTROL 9 IMPLEMENTATION — PERFORMANCE DRIFT
+Purpose: Test a meaningful measured performance change and raise alerts for threshold crossings.
+Receives: Accepted labels, canonical outcomes, a frozen baseline, expected windows and the C9 rule.
+Produces: Window assessments, run-to-window links, missingness and alert intents.
+Runs/lives: Scenario/measurement modules and a scheduled assessment entry point.
+  M08.1 [Build; Configuration/data] Accepted scenario and label manifest — Defines ground truth, eligibility, cohort and baseline/assessment split.
+  M08.2 [Build; Module/function] Canonical outcome mapping and scorer — Scores each eligible canonical diagnosis once with fixed aliases/deadlines; separates source-proven wrong outcomes from missing or unparseable evidence.
+  M08.3 [Build; Module/function] Frozen baseline builder — Requires a valid positive baseline and all required eligible outcomes.
+  M08.4 [Build; Module/function] Window scheduler and membership — Registers expected windows and their scenario/run membership before assessment.
+  M08.5 [Build; Module/function] Comparability checker — Checks dataset, cohort, model/prompt/tool versions and measurement compatibility.
+  M08.6 [Build; Module/function] Drift calculator — Computes the declared relative change for each fully measured comparable window; applies the exact boundary before display rounding.
+  M08.7 [Build; Module/function] Window coverage and allowance evaluator — Separately assesses missing windows and the allowed share of violating windows.
+  M08.8 [Build; Module/function] Threshold-crossing alert creator — Creates an alert intent for each measured crossing; M14 handles delivery.
+
+M09. CONTROL 16 IMPLEMENTATION — TOKEN ACCOUNTING
+Purpose: Test actual token spend for the complete declared run.
+Receives: Authoritative execution inventory, reconciled usage and the pinned cap/allowance rule.
+Produces: Actual spend, exceptions, evidence sufficiency and an assessment.
+Runs/lives: Pure accounting/control-test functions; required independently of optional prevention.
+  M09.1 [Build; Module/function] Whole-run execution population — Establishes all governed actual executions, including hidden retries; retains unresolved work and whole-run finality gaps.
+  M09.2 [Build; Module/function] Usage accounting rules — Pins source authority and non-overlapping input/output/cache/reasoning and counter semantics; separates actual usage from reservations.
+  M09.3 [Build; Module/function] Actual usage aggregator — Sums each accepted execution once; excludes duplicate observations, binding fan-out and overlapping parent or cumulative totals.
+  M09.4 [Build; Module/function] Cap / exception evaluator — Compares each run with its inclusive cap and evaluates exceptions over the independently fixed eligible population.
+  M09.5 [Build; Module/function] Missing-usage sufficiency evaluator — Accepted scoped subtotal can prove breach; complete resolved whole-run evidence is required for an under-cap pass; missing inventory is not zero.
+
+M10. OPTIONAL INLINE ADMISSION COORDINATOR
+Purpose: Prevent a bounded model call from overspending when verified hooks and bounds permit it.
+Receives: An authenticated exact model request, run state, policy and trustworthy token bound.
+Produces: An admission decision, reservation and recoverable state transitions.
+Runs/lives: Optional in-path entry point with transactional durable state.
+  M10.1 [Optional; Module/function] Atomic capacity reservation — Checks available exposure and reserves it before ALLOW.
+  M10.2 [Optional; Module/function] Request identity / idempotency guard — Returns the existing attempt for transport duplicates and rejects changed request content.
+  M10.3 [Optional; Module/function] Dispatch ownership guard — Claims dispatch ownership once against the atomic run/policy state; distinguishes authorization from the later physical send.
+  M10.4 [Optional; Module/function] Proved-undispatched cancellation — Releases a reservation only when dispatch is ruled out.
+  M10.5 [Optional; Module/function] Settlement and correction handler — Retains provisional bounds; releases only after full execution-set finality and applies accepted corrections once; upward final corrections halt admission.
+  M10.6 [Optional; Module/function] Unknown-outcome and closure recovery — Preserves ambiguous liabilities; closure stops new admissions/claims while pre-close authorized sends remain possible.
+  M10.7 [Optional; Module/function] Minimal transition journal / outbox — Durably records coordination transitions; rich evidence export remains asynchronous.
+  M10.8 [Optional; Module/function] Bound / bypass / hidden-retry checks — Verifies aggregate request bounds, all model routes and retry coverage before claiming strict prevention.
+
+M11. NEMOTRON EVIDENCE INVESTIGATOR
+Purpose: Interpret unstructured evidence and assemble a useful cited explanation.
+Receives: A scoped evidence snapshot, selected narratives and deterministic assessment references.
+Produces: Extracted statements, candidate links, corroboration requests and an explanation plan.
+Runs/lives: Custom orchestration in the permitted environment, calling the approved workshop Nemotron endpoint/gateway path.
+  M11.1 [Build; Module/function] Approved model API adapter — Calls the actual permitted endpoint and records request/provider identifiers and model configuration.
+  M11.2 [Configure; Model configuration] Primary fast Nemotron profile — Lightning is preferred, subject to verified availability and capability.
+  M11.3 [Build; Configuration/data] Extraction prompt and output schema — Requests exact quoted source statements, typed values and explicit ambiguity.
+  M11.4 [Build; Module/function] Candidate-link and contradiction extractor — Proposes relationships and identifies conflicting accounts without inventing operational truth.
+  M11.5 [Build; Module/function] Corroborating-read request planner — Proposes one bounded read batch for host execution and deterministic corroboration; new semantic extraction cannot create a hidden third call.
+  M11.6 [Build; Module/function] Cited explanation-plan composer — Organizes validated revision-pinned references without tools or new extraction; host renders fixed facts and verdicts.
+  M11.7 [Optional; Module/function] Optional background extraction — Pre-extracts notes with separate deduplication/budgets and self-extraction exclusions.
+  M11.8 [Optional; Module/function] Optional natural-language scope planner — Translates a question into a proposed scope; the baseline uses explicit selectors.
+  M11.9 [Optional; Model configuration] Optional Super profile — Supports profiled complex composition or separately timed investigation.
+  M11.10 [Optional; Model configuration] Optional Nano Omni profile — Extracts relevant real media evidence with region/time references.
+  M11.11 [Optional; Model configuration] Optional Ultra profile — Supports offline complex investigation or adversarial planning.
+
+M12. EVIDENCE VALIDATION AND ASSESSMENT COMPOSITION
+Purpose: Determine what can be accepted as evidence and keep control results consistent with it.
+Receives: Model proposals, source records, accepted-input revisions and control assessments.
+Produces: Verified/rejected/unresolved proposals and a consistent claim assessment.
+Runs/lives: Deterministic host modules, shared by the worker and query path.
+  M12.1 [Build; Module/function] Schema / source / span validator — Checks typed proposals, exact source versions/spans and declared normalization mappings; text occurrence alone is not entailment.
+  M12.2 [Build; Module/function] Scope and relationship validator — Reauthorizes both ends of a proposed link and checks permitted relations.
+  M12.3 [Build; Module/function] Authority and corroboration checker — Validates the precise assertion under scoped authority/corroboration rules; distinguishes source statements, relations and operational facts.
+  M12.4 [Build; Module/function] Proposal promotion / revision manager — Records specific validation outcomes and coherent accepted-input revisions; preserves history and scoped/effective authority changes.
+  M12.5 [Build; Module/function] Affected-control reassessment trigger — Invalidates/recomputes affected run, window, population and claim dependencies; frozen baseline corrections require explicit restatement.
+  M12.6 [Build; Module/function] Shared assessment-state composer — Keeps requirement verdict, safeguard operation and evidence sufficiency separate.
+  M12.7 [Build; Module/function] C-FM-01 claim composer — Combines required objective-level branches for a compatible declared run/window scope after their allowances; completion remains separate.
+  M12.8 [Build; Module/function] Explanation and consistency validator — Checks templates/references and coherent durable source/input/assessment manifests; excludes known-invalid current proof and labels hypotheses.
+
+M13. JUDGE QUERY AND CASE ASSEMBLY
+Purpose: Deliver an inspectable case within the bounded query workflow.
+Receives: Explicit control/run/window selection or a separately validated optional natural-language scope.
+Produces: A cited case, explicit analysis status and reproducible source/calculation views.
+Runs/lives: Query/investigation entry point plus a local CLI; optional HTML client.
+  M13.1 [Build; Module/function] Judge CLI and optional UI — Accepts explicit scope/profile and stable query identity; distinguishes fresh investigation, recorded-case inspection and offline recheck.
+  M13.2 [Build; Module/function] Scope resolver and snapshot catalog — Resolves full applicable run/window scope and pins event interval, source vector and accepted-input revision; mutable reads cannot silently enter.
+  M13.3 [Build; Module/function] Deterministic case loader / read tools — Provides authorized exact retrieval and bounded list_evidence/get_evidence tools.
+  M13.4 [Build; Module/function] Bounded workflow and deadline controller — Owns durable query/stage claims, original deadline/budgets, duplicate recovery, cancellation liabilities and coherent publication timing.
+  M13.5 [Build; Module/function] Permission-aware query cache — Keys cached results by current authorization, exact scope, source snapshot, accepted-input revision and software/policy versions; labels reused model provenance.
+  M13.6 [Build; Module/function] Constrained case renderer — Renders exact assessment values and source quotes from the validated explanation plan.
+  M13.7 [Build; Module/function] Deterministic fallback and status handler — Separates requested replay/recheck success from degraded fresh analysis, scope limits and evidence insufficiency.
+  M13.8 [Build; Module/function] Source and relationship explorer — Navigates from verdicts to exact captured inputs and from records to typed links, candidates and gaps, reauthorizing pinned drill-downs.
+
+M14. SERVICENOW GOVERNANCE AND HUMAN OVERSIGHT
+Purpose: Connect measured findings to actual platform records and accountable people.
+Receives: Control-generated alert/finding intents and optional validated explanatory material.
+Produces: Remote record IDs, delivery state, named owners and remediation/retest links.
+Runs/lives: Provided ServiceNow AICT/workflow plus our permitted connector and delivery code.
+  M14.1 [Configure; Configuration/integration] Team-scoped AICT connection / asset registration — Verifies authorized team connection/assets and separately records trace and finding-route capabilities; naming prefixes do not establish isolation.
+  M14.2 [Build; Module/function] Permitted finding / alert route — Maps deterministic findings and immutable content/routing mutations to a verified authorized workflow; model explanations remain optional.
+  M14.3 [Build; Module/function] Delivery outbox and bounded retries — Preserves required intents, checks dispatch validity, bounds attempts and reconciles ambiguous writes using verified receiver semantics; remains off inference and publication paths.
+  M14.4 [Build; Module/function] Remote ID / status readback — Verifies instance, correlation, intended content revision and named-recipient route; separates acknowledgement, uncertain outcome and dated delivery.
+  M14.5 [Build; Module/function] Owner and human-response tracking — Preserves authoritative recipient/reassignment/actor history and distinguishes covered no-response observations from response uncertainty.
+  M14.6 [Build; Module/function] Remediation and passing-retest linkage — Links real remediation closure to the relevant passing retest and authorized closure; separates authoritative correction/withdrawal while retaining history.
+
+M15. VALIDATION CAMPAIGN AND SUBMISSION PACKAGING
+Purpose: Prove behavior and produce the required reproducible submission.
+Receives: Authorized scenarios, actual source/model runs, declared rules and exported evidence.
+Produces: Test results, benchmark measurements and the six-artifact bundle.
+Runs/lives: Local/test commands and worker/export modules using the same shared package.
+  M15.1 [Build; Module/function] Pass / breach scenario runner — Executes predeclared permitted pass/breach cases with independently expected results, actual IDs and explicit live/replay/fixture provenance.
+  M15.2 [Build; Module/function] Adversarial failure campaign — Challenges missing inputs, conflicts, races, injection, outages and access; retains original failures, fixes and relevant retests.
+  M15.3 [Build; Module/function] Independent arithmetic rechecker — Independently recomputes formulas from captured inputs and frozen rules without calling production evaluators; shared-source authority/completeness remain limitations.
+  M15.4 [Build; Module/function] Model extraction / link quality evaluation — Uses case-grouped held-out references to measure quote/fact/link quality, recall, abstention, coverage and model-versus-template value.
+  M15.5 [Build; Module/function] Latency / freshness / cost benchmark — Measures full fresh/replay/offline outcomes and separate source freshness; retains failures, usage uncertainty and the20-scope repeated-trial readiness gate.
+  M15.6 [Build; Module/function] Bundle exporter and offline index rebuild — Stages a coherent audience-authorized snapshot with critical local inputs, versioned derivatives and a clean offline index rebuild.
+  M15.7 [Build; Module/function] Manifest and release validator — Checks the six usable artifacts, exact release versions, accepted cases and required integrations/tests; readiness stays separate from control satisfaction.
+  M15.8 [Build; Module/function] Judge rehearsal runner — Records two judge-selected answer-and-record rehearsals, profiles, timing, failures and any operator help.
+
+M16. SHARED PLATFORM, SECURITY AND OPERATIONAL SUPPORT
+Purpose: Host the small deployment and make its capabilities, permissions and own behavior visible.
+Receives: Approved workshop resources, configured identities and runtime state.
+Produces: Operational entry points, safe storage access, capability status and assurance telemetry.
+Runs/lives: Cross-cutting configuration and modules, not an additional large platform.
+  M16.1 [Build; Module/function] Shared Python distribution and entry points — Packages adapters, worker, query/investigator and optional admission code together.
+  M16.2 [Configure; Configuration/integration] Approved compute/runtime configuration — Maps the investigator and workers to permitted workshop hosting; exact capabilities remain unverified.
+  M16.3 [Configure; Configuration/integration] State/object/index repository adapters — Conditional mapping to DynamoDB for atomic state, S3 for raw/export objects and SQLite for offline indexing.
+  M16.4 [Configure; Configuration/integration] Authentication, authorization and credential configuration — Enforces team isolation and permitted source/model access outside LLM control.
+  M16.5 [Build; Module/function] Assurance-job trace and usage records — Records model/tool calls, versions, timings and failures. Shows separate subject/assurance subtotals and combined spend; policy scope determines inclusion.
+  M16.6 [Build; Module/function] Non-recursion and operational limits — Prevents automatic investigation of the investigator and respects bounded resource policies.
+  M16.7 [Build; Module/function] Capability and gap register — Tracks proposed/tested/verified/unavailable source features, owners and unresolved effects.
+  M16.8 [Build; Module/function] Version/configuration provenance — Pins model/prompt/schema/evaluator/package settings and preserves revision history.
+
+DATA RECORDS — OBJECTS STORED BY COMPONENTS, NOT EXTRA SERVICES
+D01. PolicyBundle — Dated rules, owners, versions and applicability.
+D02. Run — The whole subject workflow and its lifecycle.
+D03. Attempt — One identified intended execution/admission attempt and its lifecycle; it may be reserved, denied, cancelled or never dispatched. Actual provider executions/charges are separately reconciled.
+D04. Obligation — An independently expected event/action requirement.
+D05. Observation — An actually received source record.
+D06. UsageEntry — An authoritative reconciled model-execution charge.
+D07. EvidenceBinding — A link from evidence to control/specification/run or window.
+D08. Window — A registered C9 assessment batch and its member runs.
+D09. Assessment — The calculation, exceptions, sufficiency and control verdict.
+D10. Alert / Finding — Delivery, ownership and remediation state around a finding.
+D11. Snapshot / SourceCheckpoint — The frozen source versions and declared acquisition/completeness state.
+D12. AcceptedInputRevision — The particular accepted facts/bindings used by an assessment.
+D13. ExtractedFact — A model-proposed cited statement and its validation status.
+D14. LinkProposal — A proposed relationship and corroboration or rejection.
+D15. EvidenceCase — The cited presentation around assessments and unresolved context.
+D16. InvestigationRun — The investigator’s own model/tool activity, budget and timings.
+
+INTERFACES — PROPOSED CONTRACTS, NOT EXISTING VENDOR API CLAIMS
+evaluate: Synchronous enforcement decision. Owner: M02.
+emit: Observation submission and receipt. Owner: M02.
+callback: Correlated later-result receipt. Owner: M02.
+pull: Source pagination and completion. Owner: M02.
+query: Judge-facing scope request. Owner: M13.
+open_case: Host opens a scoped snapshot. Owner: M13.
+list_evidence: Authorized bounded source search/list. Owner: M13.
+get_evidence: Authorized exact record/excerpt reading. Owner: M13.
+submit_candidates: Host handles model proposal output. Owner: M12.
+assess_controls: Host runs authoritative control calculations. Owner: M07–M09 / M12.
+assemble_case: Host renders the validated case. Owner: M13.
+This appendix repeats interfaces already listed under their owning groups; it does not add services. Record types likewise describe repository contents, not extra running modules.
+Four enforcement transports are evaluate/emit/callback/pull; query is the judge contract. The six investigator contracts include fixed host operations and bounded read tools. Only baseline list_evidence/get_evidence retrieval is model-requested; host stages are not an unrestricted agent loop. SDK and sidecar describe placement, not a fifth transport.
+
+THE SIX OUTPUT ARTIFACTS — DELIVERABLES, NOT RUNTIME COMPONENTS
+1. Exported evidence, including the investigator’s actual inputs/outputs and validations.
+2. Dated threshold specifications and supporting model/configuration policy.
+3. Runnable test/query tool and reproduction instructions.
+4. Actual named passing/breaching cases and their provenance.
+5. One-page diagram matching what was implemented.
+6. Known-gap list with owners and effects on the claims.
+
+TRACING ROADMAP
+A. Prepare the rules and permitted platform: M04 + M16.
+B. Follow one live fault-resolution workflow: M01 -> M03 -> M02, with M10 only when preventive enforcement is implemented.
+C. Follow its records into the evidence workspace: M05 -> M06. Acquisition runs alongside the subject workflow.
+D. Assess the controls: M07/M08/M09 -> M12; M14 delivers applicable findings asynchronously. C9 has scheduled windows, not only per-run calls.
+E. Answer a judge: M13 -> M11 -> M12 -> affected control reassessment -> M13; source versions and accepted-input revisions stay explicit.
+F. Independently reproduce and submit: M15, using the same accepted records and calculations.
+These are separate views of concurrent workflows, not one serial request through all16groups.
+
+FIRST STORY BEAT — BEFORE ANY CONTROL DECISION
+Illustration only, not an actual run: a customer reports that their mobile data service has stopped working. The supplied ServiceNow customer/ticket agent (M01.1) receives or is triggered by the permitted fault request. It has a business case/ticket identity and context. It is part of the subject being assessed; it is not our evidence investigator.
+Before the first governed action, the trusted lifecycle integration (M03) creates or resolves the canonical run identity, for example FM-001, under the authorized team and the predeclared policy bundle (M04). A ticket identifier and a fault-resolution run identifier are different records; one ticket can have multiple runs. Expected work is registered/reconciled through M05's independent source, not invented later from surviving logs.
+The next component to dissect is M01: the three subject agents and their handoffs. Then we follow the first model request through M02 and examine exactly where a control is invoked. This inventory deliberately does not skip ahead into a full execution trace.
+
+SOURCE AND STATUS
+Inventory of outputs/prooflab-nvidia-architecture.txt (V4 amendment) plus outputs/prooflab-detailed-architecture.txt (control/runtime foundation). V4 takes precedence over earlier optional-model priority. Model investigation is core to our chosen V4 product; inline prevention, extra model tiers, background extraction, natural-language planning and polished UI are optional.
+No database, queue, model tier, microservice or cloud entitlement is added merely by listing a logical responsibility. Exact source payloads, permissions, thresholds and endpoint capabilities remain workshop verification tasks.

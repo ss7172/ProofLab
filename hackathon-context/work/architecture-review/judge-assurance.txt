@@ -1,0 +1,68 @@
+INDEPENDENT SIMULATED JUDGE 1 — ASSURANCE AND EVIDENCE CREDIBILITY
+
+Basis: review brief v1 and source PDF pages 14–15 and 19–26. I did not consult other judges. This evaluates design proposals, not demonstrated submissions. Every proposal currently has zero implemented controls and no demonstrated readiness. My scores are an equally weighted, internal design comparison; they are not organizer points or a prediction of winning.
+
+RANKING
+1. B — Three-control verification service: 23/30
+2. C — ProofLab active assurance: 21/30
+3. A — One-control post-run reconciler: 19/30
+
+SHARED SCORECARD (0–5 per axis)
+Axis                                      A     B     C
+1. Control coverage potential              2     4     4
+2. Evidence credibility / judge query      4     4     4
+3. Architecture correctness / portability  3     4     4
+4. Demonstrable differentiation / bonus    1     4     5
+5. Integration feasibility                 4     3     2
+6. Two-person event delivery               5     4     2
+TOTAL                                    19    23    21
+
+The evidence scores are deliberately equal. C inherits B's evidence protections; an LLM choosing experiments does not make source records more complete or their provenance more trustworthy. None earns a 5 for evidence while population discovery, actual telemetry fields, source access, and the query workflow remain unverified. Architecture scores also do not assume the shared gateway can actually be intercepted. A's narrow design is credible but offers less evidence that it can generalize to scheduled windows or a second enforcement point.
+
+WHY THIS ORDER
+B directly pursues the strongest published priorities: completed branches of the claim, a reproducible two-minute answer, then actual inline decisions, adversarial tests, and a second enforcement point. A fixed adversarial suite is sufficient for the published adversarial bonus if it actually exposes a failure and preserves the result. Adaptive LLM testing has no separately published scoring category. B therefore gives the team more time to make the source-to-verdict chain real.
+
+C has the highest differentiation potential, and its constraint that agents cannot set policy or pronounce findings is sound. The investigator/challenger mechanism is nevertheless an additional system requiring its own permissions, episode records, model usage accounting, failure handling, and convincing evidence of usefulness. The two-person team could spend its scarce integration window demonstrating clever test selection while its third control remains unassessable. C ranks above A because it can evidence substantially more of the claim if delivered, but below B because the added work does not directly increase completed control coverage or evidence sufficiency.
+
+A is a credible fallback with the clearest delivery path. One complete, honest control qualifies; a partial three-control implementation does not outrank it merely by having more boxes. Its current limitation is strategic: the published axis 1 places two completed controls ahead of one, so a correctly delivered B should beat a correctly delivered A.
+
+TOP THREE REJECTION RISKS FOR C, AND REQUIRED FIXES
+
+1. The evidence population is asserted rather than independently established.
+   Fatal case: both the expected-event list and observed records are produced from the same surviving spans. Dropping an entire attempt then reduces both populations and leaves a false 100% coverage or under-cap result. A close marker alone does not prove that every agent and every retry passed through the producer. A clone/remove-record demo only proves how the checker behaves given a manifest; it cannot validate the manifest's completeness in the real system.
+   Required fix: before implementation expands, document one source-authority map for each control. It must name the in-scope population, its expected-ID producer, why that producer sees all applicable actions, the observed-record source, identifiers, clock/order assumptions, late-arrival deadline, and any bypasses. Show at least one real cross-agent run where an independently justified attempt inventory reconciles with actual input/output usage. Exercise a missing whole attempt, duplicate delivery, conflicting usage, and cross-run mislink. Use INDETERMINATE whenever the inventory cannot support completeness; a known lower bound exceeding the cap can still prove BREACHED. The portable export must include expected IDs and raw-source references, not just normalized totals. A second implementation validates arithmetic, not source truth or institutional independence.
+
+2. A convincing demo can accidentally demonstrate a different claim from the one being scored.
+   Fatal cases: presenting a denied over-budget request as an actual over-cap run; presenting a passing drift alert as satisfied production performance; presenting a synthetic or edited export as a real platform incident; or computing C9 against a baseline tuned after assessed results. These cases can make a technically correct tool produce a misleading governance narrative.
+   Required fix: give every artifact an explicit provenance class (live subject run, authorized test run, replay, or counterfactual export), and keep those classes visible in the query result. Separate governed behavior, control operation, and evidence sufficiency in each result. A blocked request may show prevention working while spend remains within cap; it is not the required actual spend breach. Plan named passing and breaching assessed scenarios under unchanged, predeclared thresholds, and verify with organizers what sanctioned replay is accepted if live enforcement prevents the relevant breach. For C9, pin labels, held-out scenario corpus, metric rationale, baseline measurement, comparable window membership, observation limit, violating-window allowance, and expected-window coverage before assessment. Label a synthetic corpus honestly and limit the claim to that corpus. If credible labels or a baseline are unavailable, do not promote disagreement or an LLM opinion into accuracy: leave C9 NOT_ASSESSED. Export the alert's named recipient and pending/silent state; a human answer is not required.
+
+3. The optional assurance agents consume the time needed for scored, external evidence.
+   Fatal case: ProofLab successfully narrates hypotheses, but ServiceNow findings remain local mock objects, the second point is a slide, the query requires its author to explain missing joins, or the team cannot export both named runs before judging. Local findings and adaptive suggestions do not establish AICT integration or end-to-end control completion.
+   Required fix: make B an executable release gate, not an architectural ancestor. First complete Control 16, a real ServiceNow link or finding capability with verified read-back, the six required artifacts, and a stranger-operated query. Add Control 7 using the same identifiers and expected inventory; add Control 9 only when its measurement basis is defensible. Freeze and rehearse these before adding adaptive testing. Implement one bounded Nemotron test proposer initially, selecting from a small catalog of already authorized tests; the deterministic scheduler approves scope and executes, and validators alone determine findings. A separate challenger is optional only after measured benefit. Record model/version, chosen test, rationale, authorization, executed actions, episode limits, separate probe spend, and resulting evidence. Kill the optional loop when it threatens artifact or rehearsal completion. If ServiceNow supports inventory only, report inventory integration precisely and preserve the finding-delivery gap.
+
+RECOMMENDED FINAL SCOPE
+Ship B as the submission's backbone: a single normalized evidence envelope, versioned frozen specifications, stateless evaluators, deterministic control tests, explicit unknown states, a judge query, and offline export/recomputation. Keep an atomic reservation coordinator separate from the evaluator. Claim prevention only after verifying complete in-path interception, enforceable output bounds, input accounting, exact-once settlement semantics, and safe handling of unknown outcomes. Otherwise deliver honest post-run Control 16.
+
+Delivery order: complete 16; then 7; then 9 only if credible labels/baseline/windows exist. In parallel establish the real team-scoped ServiceNow path. Add a live gateway decision or a working second event/tool adapter only when the hooks actually exist. A fixed, executed adversarial suite should cover the accounting race, lost/duplicate records, incorrect run linkage, missing windows, and drift, with failed originals preserved and fixes proven by new runs.
+
+After those gates, add one visible Nemotron episode: it examines an actual evidence gap, chooses an allowed discriminating experiment, and obtains an executed result that the deterministic core validates. This retains C's distinctive idea without committing to two reasoning agents or a general attack platform. If time is short, cut the adaptive layer before cutting evidence reconciliation, third-party query rehearsal, or required artifacts. Never state that all three controls are complete when only two are evidenced.
+
+WHAT WOULD CHANGE MY RANKING
+C would move above B after demonstrating all of B's end-to-end deliverables and a bounded adaptive episode that discovers a reproducible, consequential defect missed by the fixed suite, then preserves the failing run and passes a new-run retest. It must do so without degrading completeness, consuming subject-run budgets invisibly, or turning the query into an LLM-dependent answer. The additional mechanism needs observable benefit, not just an impressive conversation.
+
+A would move above either larger approach if it alone supplies the dated specification, real expected-call inventory across all three agents and retries, actual usage evidence, named pass/breach runs, an independently usable query, and the gap list by the cutoff. Completed evidence outranks unimplemented reach.
+
+SOURCE GROUNDING
+PDF 14–15: one invocation contract, stateless evaluator, register off the path, race-safe reserve/commit, different timing modes; sealing explicitly out of scope.
+PDF 19–22: three control branches, expected-event coverage distinct from gap timing, usage across all agents/retries, relative drift against frozen comparable windows, missing data not zero, detection does not erase a breach.
+PDF 23, 25–26: one completed control minimum; extra completed controls prioritized; real inline/adversarial/second-point bonuses; two-minute records-backed query; six mandatory artifacts; no required human reply, but recipient and silence recorded; no crypto or slide-deck work needed.
+
+REVISION CHECK
+V2 addresses my principal recommendations: B is the release core; adaptive testing becomes one bounded optional proposer; expected populations require source authority; provenance is explicit; denied attempts remain distinct from breaches; C9 needs defensible labels and frozen comparable windows; external findings require read-back. Offline recomputation is correctly distinguished from validating source truth. These changes materially improve the proposal. My numerical ranking above applies only to V1.
+
+Remaining material issues:
+1. The trust boundary is still unproven until actual workshop access exists. Make the first exit gate a real three-agent/retry run reconciled against a justified inventory, with raw-source references and one independent query. A manifest contract alone cannot pass that gate. Confirm organizer acceptance of any replay/synthetic breach before treating it as a required assessed run.
+2. C9's final specification must explicitly require a positive baseline for relative-drop calculation, define eligible/excluded scenarios and missing-label handling, and justify threshold/sample choices before assessed results. Otherwise the ratio or denominator can silently change the claim. Existing minimum-sample and missing-window provisions are good but do not settle these definitions.
+3. Verify how mandatory Nemotron and AICT requirements are satisfied. The statement that supplied subject agents use required models needs actual configuration evidence; if team-owned Nemotron use is mandatory, an optional proposer cannot be the only planned compliance path.
+
+No remaining conceptual objection to the revised design, subject to these checks. None of the revisions constitutes implemented evidence or readiness.

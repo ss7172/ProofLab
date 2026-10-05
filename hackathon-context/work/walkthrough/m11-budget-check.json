@@ -1,0 +1,45 @@
+{
+  "provenance": "PROPOSED_BUDGET_ARITHMETIC_ONLY",
+  "model_called": false,
+  "latency_measured": false,
+  "stage_budgets": [
+    {
+      "name": "host_admit_load",
+      "start_seconds": 0,
+      "end_seconds": 8,
+      "duration_seconds": 8
+    },
+    {
+      "name": "model_extract",
+      "start_seconds": 8,
+      "end_seconds": 25,
+      "duration_seconds": 17
+    },
+    {
+      "name": "host_validate_assess",
+      "start_seconds": 25,
+      "end_seconds": 34,
+      "duration_seconds": 9
+    },
+    {
+      "name": "model_compose",
+      "start_seconds": 34,
+      "end_seconds": 48,
+      "duration_seconds": 14
+    },
+    {
+      "name": "host_render",
+      "start_seconds": 48,
+      "end_seconds": 53,
+      "duration_seconds": 5
+    },
+    {
+      "name": "publication_reserve",
+      "start_seconds": 53,
+      "end_seconds": 60,
+      "duration_seconds": 7
+    }
+  ],
+  "total_proposed_seconds": 60,
+  "illustrative_overshoot_tokens": 800
+}

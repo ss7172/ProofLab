@@ -1,0 +1,40 @@
+M15 INDEPENDENT AI DESIGN REVIEWS — 2026-10-04
+
+Reviewer 1: /root/m01_source_review — source requirements, judging, completion and six-artifact fit.
+Reviewer 2: /root/m02_contract_review — scenarios, adversarial coverage, independent rechecker, version coherence and release gates.
+Reviewer 3: /root/m03_identity_review — model evaluation, benchmark semantics, export authorization and provenance.
+Actual reviewed artifact: .lavish/prooflab-walkthrough/m15-body.html, against the supplied slides/transcript and current M11–M14/foundation contracts.
+
+FINAL VERDICTS: ACCEPT / ACCEPT / ACCEPT. All material findings addressed and verified in the actual chapter. Conceptual design acceptance only; no test campaign or empirical performance result is established.
+
+Required clarifications incorporated:
+1. MEDIUM — Restore the previously declared readiness gate: at least20 frozen held-out scoped queries with repeated predeclared trials, and every required case/trial completing the full declared analysis within60seconds before claiming the bounded target. Normal errors/fallbacks stay failures. Identified by the technical and model reviewers; both verified the correction.
+2. MEDIUM — Fresh model execution is distinct from source freshness. A new model-assisted investigation can analyze an older pinned snapshot; disclose its age/cutoff/lag and any unmet requested source-freshness criterion without calling the execution a replay. Identified and verified by the model reviewer; technical reviewer also accepted the correction.
+
+Source/judging review: ACCEPT without required changes.
+- Minimum one completed control; three is our target.
+- Predeclared dated rules, actual pass/breach evidence under the same applicable rule, six usable artifacts, two rehearsals and answer+records within2minutes are official requirements.
+- Offline rechecker, clean-client/independent-selector rehearsal, manifest/release statuses and60second model target are proposed additions.
+- Test PASS, control SATISFIED/BREACHED, control completion, management-claim composition and submission readiness are distinct.
+- Fixtures/replay/copied-export attacks cannot silently become accepted live runs; prevention DENY is not a spend breach.
+- Every claimed control needs end-to-end evidence, including complete C9 window membership; two convenient run names are not blanket coverage.
+- Required model/environment/AICT participation remains distinct from optional tiers/bonuses; actual human reply is not required.
+- Critical gaps block affected claims; actual evidenced breaches can belong in a ready honest submission.
+
+Technical review: final ACCEPT.
+- Freeze scenarios, independent expected outcomes and provenance before execution; retain fixed populations and original failures/retests.
+- Separate arithmetic implementation reads per-execution/event/window inputs and frozen rules rather than production evaluator totals. Shared decoding/authority/completeness limitations are explicit.
+- Immutable as-of export, critical local references, clean index rebuild, known invalidation checks and dependency coherence support reproducibility.
+- Required-test failures block affected claims; optional failures only narrow appropriate capability claims and cannot hide a core bug or excluded run.
+- Exact release READY status is distinct from successful file generation and full-claim satisfaction.
+
+Model/export review: final ACCEPT.
+- Group related cases and near-duplicates within one split; tuning invalidates untouched held-out claims for that cohort.
+- Source-reviewed labels are independent of host acceptance/generated text. Score quotes, typed facts and links separately; report raw/accepted output, recall, abstention, coverage and explicit denominators.
+- Zero accepted proposals yields undefined precision, not100%.
+- Fresh/replay/offline and deliberate resilience outcomes remain separate; normal failures and unresolved usage are retained.
+- Onward export requires audience/field/attachment authorization, not merely source read access. Exclude credentials and unauthorized customer data.
+- Redacted derivatives retain versions, remapped references/citation coordinates and required inputs. Unshareable critical evidence remains a readiness gap.
+- Offline copies establish historical reproduction, not current upstream truth or automatic later revocation.
+
+Primary-agent verification: SVG rendered and visually inspected; portable HTML IDs/anchors/local-asset embedding checked; current text mirrors synchronized; inventory remains16 major groups/123 subcomponents/16 record types/11 contracts. No browser-rendering verification, control campaign, live integration, model benchmark, offline recheck or timed judge rehearsal performed. Actual completed controls remain0/3.

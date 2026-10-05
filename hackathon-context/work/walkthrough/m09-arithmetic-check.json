@@ -1,0 +1,19 @@
+{
+  "provenance": "SYNTHETIC_ARITHMETIC_CHECK_ONLY",
+  "runtime_tested": false,
+  "checks": {
+    "source_pass": true,
+    "source_breach": true,
+    "source_overshoot": true,
+    "source_over_cap_share": true,
+    "inclusive_boundary": true,
+    "four_execution_total": true,
+    "missing_execution_subtotal": true,
+    "corrected_total": true,
+    "inclusive_category_total": true,
+    "exposure_example": true,
+    "settled_example": true,
+    "equal_counts_distinct_executions": true,
+    "population_bounds": true
+  }
+}

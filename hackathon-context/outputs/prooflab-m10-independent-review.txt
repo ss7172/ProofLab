@@ -1,0 +1,33 @@
+M10 INDEPENDENT AI DESIGN REVIEWS — 2026-10-04
+
+Reviewer1: /root/m02_contract_review — full coordinator contract, failure and concurrency reasoning.
+Reviewer2: /root/m03_identity_review — independent focused audit of settlement finality, unresolved exposure and closure timing.
+Sources: supplied masterclass Control16/gateway and optional-prevention scope, current foundation and inventory, actual .lavish/prooflab-walkthrough/m10-body.html draft.
+
+FINAL VERDICTS: ACCEPT / ACCEPT. Full reviewer verified both final wording corrections. Focused reviewer accepted actual draft's finality and closure sections. No remaining material findings in the reviewed design.
+
+Substantive preliminary findings incorporated:
+1. Releasing a bound on the first usage report is unsafe. A later upward correction or hidden execution can consume recycled capacity even within the original bound. The revised contract retains each unresolved admission's full aggregate bound and settles only after complete execution-set resolution and verified final usage/no remaining upward liability. Without trustworthy finality, apparent savings are not reused during the run.
+2. Durable dispatch ownership and a remote send are separate operations. Closure stops new admission/dispatch claims but cannot revoke an already-claimed send. A worker may physically send after closure under pre-close authorization. No exactly-once provider or physical no-send-after-close guarantee is asserted.
+
+Final wording corrections applied:
+MEDIUM: ERROR/PENDING was replaced by ERROR decision with resolution pending to preserve the ALLOW/DENY/ERROR contract; uncertainty authorizes no send.
+LOW: After invalidated bound/finality assumptions, existing liabilities remain recorded/held and authorized work may still complete. Halting new admissions cannot undo an overshoot or guarantee the cap for already-authorized work.
+
+Reviewed design details:
+- Atomic capacity check plus reservation/run version/transition commit before ALLOW.
+- F finally settled actual plus H full unresolved bounds; provisional actual is not double-added.
+- Exact-request idempotency, conflicts, stable denial and same-identity ambiguous-commit recovery.
+- One recorded dispatch claim; cancellation excludes a winning claim atomically.
+- Unknown sends and lease expiry preserve liability; no blind provider retry.
+- Aggregate bound spans all counted categories and reachable SDK/provider executions.
+- Full finality before settlement; versioned idempotent correction; above-bound usage and upward final correction halt new admissions and expose assumption failure.
+- Durable minimal coordination journal, asynchronous rich evidence export and visible pending/gaps.
+- Verified route, credentials, state and bypass coverage required before prevention claims.
+- M09 actual accounting remains distinct; a denied request is not an actual over-cap demonstration.
+
+Consistency updates: current foundation and M10 inventory refined; earlier M02, M03 and M09 examples clarified for final settlement and authorization-versus-send timing. Historical review reports were preserved.
+
+Primary-agent verification: 12 illustrative arithmetic checks in work/walkthrough/m10-arithmetic-check.json; hand-authored SVG rendered and visually inspected; exported HTML IDs/anchors/embedded assets checked. These are document/arithmetic checks, not coordinator concurrency or crash tests. Browser rendering not verified.
+
+Unverified: actual workshop hook, provider bound/finality/idempotency, transactional backend, complete3-agent inference coverage, hidden retry behavior, bypass restrictions, hosting permissions and live evidence flow. Actual implemented control completion remains0/3.

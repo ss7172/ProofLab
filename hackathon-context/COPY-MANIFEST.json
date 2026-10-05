@@ -1,0 +1,1719 @@
+{
+  "copied_at": "2026-10-04T20:33:45.931144+00:00",
+  "source_workspace": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20",
+  "destination": "/Users/satyabratsrikumar/firstmate-homes/TrustworthyAI/TrustworthyAI-iFabric/hackathon-context",
+  "copied_files": 284,
+  "copied_bytes": 18974466,
+  "verification": "Each destination file SHA-256 equals source SHA-256",
+  "omitted": [
+    ".DS_Store",
+    "__pycache__",
+    "*.pyc"
+  ],
+  "files": [
+    {
+      "path": "outputs/claude-hackathon-context.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/claude-hackathon-context.txt",
+      "bytes": 332430,
+      "sha256": "70cf815d822dcac080af26d1f3c0e1616b09ec2ef70a4cf2c311c1b47ef58bf2"
+    },
+    {
+      "path": "outputs/claude-hackathon-handoff/claude-hackathon-context.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/claude-hackathon-handoff/claude-hackathon-context.txt",
+      "bytes": 332430,
+      "sha256": "70cf815d822dcac080af26d1f3c0e1616b09ec2ef70a4cf2c311c1b47ef58bf2"
+    },
+    {
+      "path": "outputs/claude-hackathon-handoff/prooflab-handoff-independent-reviews.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/claude-hackathon-handoff/prooflab-handoff-independent-reviews.txt",
+      "bytes": 28041,
+      "sha256": "f3eb24e0c4d4031f3624c538a07f727f91c73f95f92a251392e18969be9f36d8"
+    },
+    {
+      "path": "outputs/claude-hackathon-handoff/prooflab-handoff-validation.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/claude-hackathon-handoff/prooflab-handoff-validation.json",
+      "bytes": 902,
+      "sha256": "1e84f6a74bc15515402ad5338de0a921c509c97c2bb038898d7bf4f87a1c104f"
+    },
+    {
+      "path": "outputs/claude-hackathon-handoff/prooflab-workshop-components.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/claude-hackathon-handoff/prooflab-workshop-components.json",
+      "bytes": 98074,
+      "sha256": "7509483f508ae06bf94e07aa4d8865cd78b037243bf0e6bb9da591e9e982a6f4"
+    },
+    {
+      "path": "outputs/claude-hackathon-handoff/prooflab-workshop-handoff.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/claude-hackathon-handoff/prooflab-workshop-handoff.html",
+      "bytes": 139954,
+      "sha256": "504cec069f968fb74b1224d81b84c519a657cba84a514ccb3115d6b2b9eba96d"
+    },
+    {
+      "path": "outputs/claude-hackathon-handoff/prooflab-workshop-sources.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/claude-hackathon-handoff/prooflab-workshop-sources.json",
+      "bytes": 17851,
+      "sha256": "bc9efae5a30c0aa8c907d7bfd3d00162035c33b0ca4a25e5acae178a4c4de508"
+    },
+    {
+      "path": "outputs/claude-hackathon-handoff/prooflab-workshop-tasks.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/claude-hackathon-handoff/prooflab-workshop-tasks.json",
+      "bytes": 129489,
+      "sha256": "6c124b2f1848eb355be753d635e98b3ee4b5c47fe5179d88b741ce5c5fa0990f"
+    },
+    {
+      "path": "outputs/claude-hackathon-handoff.zip",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/claude-hackathon-handoff.zip",
+      "bytes": 205320,
+      "sha256": "18a485c262c1e342ee239b71a05adb2d69fb78c75fc7853ca7a6392a78d8e39a"
+    },
+    {
+      "path": "outputs/hackathon-astra-master-prompt.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/hackathon-astra-master-prompt.txt",
+      "bytes": 20427,
+      "sha256": "c4db4018ab7290e76117463d4c3e5698f26e30e0c2b6602c1c6b06a8aea9f8a4"
+    },
+    {
+      "path": "outputs/hackathon-initial-plan.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/hackathon-initial-plan.html",
+      "bytes": 21895,
+      "sha256": "9d4c3740354254960402119bc04dda24682836ccdc8d50d81487683822dce78d"
+    },
+    {
+      "path": "outputs/prooflab-architecture-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-architecture-walkthrough.html",
+      "bytes": 406514,
+      "sha256": "d264d395aa4c7e0e45339f830910e39ae3d2e3163bf897bb11e5ccfb840a013b"
+    },
+    {
+      "path": "outputs/prooflab-architecture.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-architecture.html",
+      "bytes": 38041,
+      "sha256": "a1c342e4865b7235adfddc57ca1a7908b4c3520be72ed50aef179b29b304b67a"
+    },
+    {
+      "path": "outputs/prooflab-architecture.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-architecture.txt",
+      "bytes": 15510,
+      "sha256": "7c2f5a8ddf1d33fa0d1792c4e3696135d8ab5c4790f5f122863e98ed69d816ef"
+    },
+    {
+      "path": "outputs/prooflab-completion-review.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-completion-review.html",
+      "bytes": 89382,
+      "sha256": "cb69c2896700260f8912e8ef37427f0cb9177c43ce47e655901dea2e459b7b82"
+    },
+    {
+      "path": "outputs/prooflab-completion-reviews.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-completion-reviews.txt",
+      "bytes": 48221,
+      "sha256": "731fcfdb728e4e71e90f437ecbf39cf9d04cf850b8df90b070bce444bb02f0bd"
+    },
+    {
+      "path": "outputs/prooflab-completion-scorecard.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-completion-scorecard.json",
+      "bytes": 3330,
+      "sha256": "70fd538f5e06dbf242afb2659d9ce52ca865afe498b8564c2244663dd6a5bc9b"
+    },
+    {
+      "path": "outputs/prooflab-component-inventory.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-component-inventory.html",
+      "bytes": 97934,
+      "sha256": "27d65d35f4c7a038433c16e0cb7ba33ddab3ed3d71c179dd502e6532f092f0bb"
+    },
+    {
+      "path": "outputs/prooflab-component-inventory.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-component-inventory.json",
+      "bytes": 48233,
+      "sha256": "486d2e9d5e1546968127f5dbec99acd6b582445b6c5feceb18d151b446208a97"
+    },
+    {
+      "path": "outputs/prooflab-component-inventory.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-component-inventory.txt",
+      "bytes": 36044,
+      "sha256": "59fb839a1abc7e050c08db51b8abd28046260f17fe9058be9b179b537f5bb393"
+    },
+    {
+      "path": "outputs/prooflab-detailed-architecture.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-detailed-architecture.txt",
+      "bytes": 69711,
+      "sha256": "741427a0f4229151abcb2a510a03a56fab34b58a3b81ccaa64fc3174ebdb24a1"
+    },
+    {
+      "path": "outputs/prooflab-handoff-independent-reviews.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-handoff-independent-reviews.txt",
+      "bytes": 28041,
+      "sha256": "f3eb24e0c4d4031f3624c538a07f727f91c73f95f92a251392e18969be9f36d8"
+    },
+    {
+      "path": "outputs/prooflab-handoff-validation.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-handoff-validation.json",
+      "bytes": 902,
+      "sha256": "1e84f6a74bc15515402ad5338de0a921c509c97c2bb038898d7bf4f87a1c104f"
+    },
+    {
+      "path": "outputs/prooflab-independent-judges.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-independent-judges.txt",
+      "bytes": 53567,
+      "sha256": "1fba6dcd52346c5d61561a4a5c384c494cafa09b4fb5a3d049452acd53e0ef4e"
+    },
+    {
+      "path": "outputs/prooflab-invocation-contract.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-invocation-contract.html",
+      "bytes": 34789,
+      "sha256": "51f5102dd32db2ca10d8abe71818ff4de84422861c2eb18d34771544cc54ab81"
+    },
+    {
+      "path": "outputs/prooflab-invocation-contract.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-invocation-contract.txt",
+      "bytes": 29482,
+      "sha256": "b837ba73f9564fcb25ee6b5b1eb5ef49110ad8976450edd1499a558f783c57c1"
+    },
+    {
+      "path": "outputs/prooflab-invocation-independent-reviews.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-invocation-independent-reviews.txt",
+      "bytes": 18571,
+      "sha256": "8e89337e1f8224882489605d36c9426e378f29763f2a32b0f4a8cbfb5d9475e8"
+    },
+    {
+      "path": "outputs/prooflab-m01-flow.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m01-flow.svg",
+      "bytes": 4914,
+      "sha256": "77c666a66962d598caa73653651fae55b13e73614f6219f447ea80640dfb07d3"
+    },
+    {
+      "path": "outputs/prooflab-m02-flow.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m02-flow.svg",
+      "bytes": 6863,
+      "sha256": "5c7ea33fd1c0ef4f1594c15b5e3de675294258e99d87e8c2ec5f63008699f6ff"
+    },
+    {
+      "path": "outputs/prooflab-m02-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m02-walkthrough.html",
+      "bytes": 26608,
+      "sha256": "fee1e6d1c618abc0ca230c4783ea1805d8b8c81f99e81b6b0eb22b474f29b561"
+    },
+    {
+      "path": "outputs/prooflab-m03-identity.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m03-identity.svg",
+      "bytes": 7354,
+      "sha256": "c65457e703fb1effdc20366b1bc4277a0047f8d10a7c9285ca34af79fb47485d"
+    },
+    {
+      "path": "outputs/prooflab-m03-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m03-independent-review.txt",
+      "bytes": 1655,
+      "sha256": "8841436761c2ba41e5e25ff1ffad4dce0315f5ee344d9dac9f5164653c7c84e8"
+    },
+    {
+      "path": "outputs/prooflab-m03-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m03-walkthrough.html",
+      "bytes": 30769,
+      "sha256": "8e043a6a31f2bd0921a507abd308e261c0f04ae650528a1cf669d91623ee1cca"
+    },
+    {
+      "path": "outputs/prooflab-m04-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m04-independent-review.txt",
+      "bytes": 1720,
+      "sha256": "2374f416fa270f8b4ffe613d8a3e31bf91fd61c4d880bd88ceb0877f152aceab"
+    },
+    {
+      "path": "outputs/prooflab-m04-policy.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m04-policy.svg",
+      "bytes": 6465,
+      "sha256": "6a697ef74fe2c3274bdd9d846aec6135ee5fb1edd1b7a26d42eeb6c7b4008121"
+    },
+    {
+      "path": "outputs/prooflab-m04-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m04-walkthrough.html",
+      "bytes": 30307,
+      "sha256": "7dcea240aea6fe4a0738ca996328cd68cc461690eb71ad1032b2a4203bc78763"
+    },
+    {
+      "path": "outputs/prooflab-m05-acquisition.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m05-acquisition.svg",
+      "bytes": 6389,
+      "sha256": "d488dbe636d612be1f4282b64181b6125b30fec68a56e6bfb0cfa8694ed03b00"
+    },
+    {
+      "path": "outputs/prooflab-m05-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m05-independent-review.txt",
+      "bytes": 2135,
+      "sha256": "1164f1be09ba1f8d20cb3c23280fd4e674dbc45a9fe4593a110ca2f958b22d5d"
+    },
+    {
+      "path": "outputs/prooflab-m05-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m05-walkthrough.html",
+      "bytes": 29982,
+      "sha256": "69689930287c8b8156c569934ce68808886f3c0b9d40c22ffbeb8feef5df3d92"
+    },
+    {
+      "path": "outputs/prooflab-m06-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m06-independent-review.txt",
+      "bytes": 1799,
+      "sha256": "a76b26f0e9568113d94132960e2e522a2d43c79cbc59b1ea3ae0d84c4762798b"
+    },
+    {
+      "path": "outputs/prooflab-m06-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m06-walkthrough.html",
+      "bytes": 30182,
+      "sha256": "3f5aed0e5d4b432a17f058fe04b1da89b0896a69b2dd9b0ed0d0945b49fbfa3d"
+    },
+    {
+      "path": "outputs/prooflab-m06-workspace.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m06-workspace.svg",
+      "bytes": 6278,
+      "sha256": "98193a78704a91e0d6d197299ba397895dec1f68a1c30c6add464d72b2efbd77"
+    },
+    {
+      "path": "outputs/prooflab-m07-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m07-independent-review.txt",
+      "bytes": 2146,
+      "sha256": "fbdc334f9c40a4de97a5b7ffdf99103d2260f3a735e4cda85be30cdbd514769b"
+    },
+    {
+      "path": "outputs/prooflab-m07-tests.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m07-tests.svg",
+      "bytes": 6507,
+      "sha256": "f736537ae91455753d0d59da5c29499d96c8924f112a5059e2805324bf954177"
+    },
+    {
+      "path": "outputs/prooflab-m07-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m07-walkthrough.html",
+      "bytes": 28605,
+      "sha256": "aacf07fb5fa24fac2a41cd8bddf13808a81a58e647fcdbbd30ee28e9192a76a4"
+    },
+    {
+      "path": "outputs/prooflab-m08-drift.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m08-drift.svg",
+      "bytes": 7469,
+      "sha256": "a0459aaeb6be6dec267ceda4f9ee267f76a81faf243101dde5b8d4ba4514eb61"
+    },
+    {
+      "path": "outputs/prooflab-m08-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m08-independent-review.txt",
+      "bytes": 2384,
+      "sha256": "1c4982cc63a44e718d64f39f97b1e5c71dc9535172a11c2be94db1e1e33e56c7"
+    },
+    {
+      "path": "outputs/prooflab-m08-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m08-walkthrough.html",
+      "bytes": 30982,
+      "sha256": "6e900b1da20b8fb02ec246e4db26357f71cb9dd006ed0f5e3fd6e484c224668d"
+    },
+    {
+      "path": "outputs/prooflab-m09-accounting.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m09-accounting.svg",
+      "bytes": 4932,
+      "sha256": "360f0dab389853ba159dc1014a25ca44bcd7c016c040a52a36608cb9aed30214"
+    },
+    {
+      "path": "outputs/prooflab-m09-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m09-independent-review.txt",
+      "bytes": 2742,
+      "sha256": "ec1e54e5e594ab45d6151bfd986011127f7900528caed694d0c4cc93bfb06712"
+    },
+    {
+      "path": "outputs/prooflab-m09-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m09-walkthrough.html",
+      "bytes": 31944,
+      "sha256": "aaaded0615dc747eccffc78a47735da0d1e304e174c3c62fef96efccbaa4cb66"
+    },
+    {
+      "path": "outputs/prooflab-m10-admission.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m10-admission.svg",
+      "bytes": 5441,
+      "sha256": "87094983c1a708ae4dbf80ff83813032f0009f9e45c1e394afbb0f7fb1605aae"
+    },
+    {
+      "path": "outputs/prooflab-m10-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m10-independent-review.txt",
+      "bytes": 3704,
+      "sha256": "09b44998143f6938c951d0252828711de216a4ac0951c57b60495edb7d553382"
+    },
+    {
+      "path": "outputs/prooflab-m10-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m10-walkthrough.html",
+      "bytes": 32891,
+      "sha256": "c4d6c509c4baca5908f3281e82fc2d0c2e76f30241a233e4c18116d86c7ddbfe"
+    },
+    {
+      "path": "outputs/prooflab-m11-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m11-independent-review.txt",
+      "bytes": 4226,
+      "sha256": "89ad8d9a0acffe473b0a0c16fddcc3ea7461ea5b6f89e3ac0f167a3584d50ca5"
+    },
+    {
+      "path": "outputs/prooflab-m11-investigator.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m11-investigator.svg",
+      "bytes": 5968,
+      "sha256": "ceff29af6370fa0ac09c6eaacbcb069fbbb5a5446a5dca752edcca659732588c"
+    },
+    {
+      "path": "outputs/prooflab-m11-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m11-walkthrough.html",
+      "bytes": 38220,
+      "sha256": "65424e92795fcdd08f8b963260c70ad519549a160d47a733e697f2c5564f4e12"
+    },
+    {
+      "path": "outputs/prooflab-m12-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m12-independent-review.txt",
+      "bytes": 4330,
+      "sha256": "f88d77dd86ae88445e0679f04d0b554bad4408eba142a6018c3515a0f6ad0513"
+    },
+    {
+      "path": "outputs/prooflab-m12-validation.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m12-validation.svg",
+      "bytes": 6601,
+      "sha256": "492e51896324d0dca934931b730f7f4cfd4601b91a134c4d5911145ae279f9fb"
+    },
+    {
+      "path": "outputs/prooflab-m12-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m12-walkthrough.html",
+      "bytes": 37991,
+      "sha256": "02a2ecf52b3dbdd874a0b42e133e6c2ae4fd13ba54da3996b5b01584a9973c82"
+    },
+    {
+      "path": "outputs/prooflab-m13-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m13-independent-review.txt",
+      "bytes": 3835,
+      "sha256": "811241314199d3ab1b62a3c0191fb836d1ccf7d1bd0ee0573c094a38544e840d"
+    },
+    {
+      "path": "outputs/prooflab-m13-query.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m13-query.svg",
+      "bytes": 5139,
+      "sha256": "10c9ae4d2ccb9c6fbea5d3fadfbb64deebe3818b43ff2c7de176618ba5a4fa63"
+    },
+    {
+      "path": "outputs/prooflab-m13-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m13-walkthrough.html",
+      "bytes": 36953,
+      "sha256": "5eac500c67236d078ab1fcd64d1577b9adb9f9c1a68370cf6a3cea157497c8c7"
+    },
+    {
+      "path": "outputs/prooflab-m14-governance.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m14-governance.svg",
+      "bytes": 6847,
+      "sha256": "a88fcc85a4c24dfd3fdea6bbe3730ea17202b3ab494de1b082912cdeb4d876c6"
+    },
+    {
+      "path": "outputs/prooflab-m14-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m14-independent-review.txt",
+      "bytes": 3960,
+      "sha256": "c6ea2b5f89b75503c4a12c1081a2fa20e053d3de4dfc598466ff2a8ba5698a12"
+    },
+    {
+      "path": "outputs/prooflab-m14-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m14-walkthrough.html",
+      "bytes": 38676,
+      "sha256": "6b779db226b173a5904a0c2a958f51fdb9bb270223e77e6898dbfc5e3f3b5905"
+    },
+    {
+      "path": "outputs/prooflab-m15-independent-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m15-independent-review.txt",
+      "bytes": 4774,
+      "sha256": "9acfb1b81417554f6c08255ad7d6da0d93744ce54acb2bff9f3775ad5dd38ed8"
+    },
+    {
+      "path": "outputs/prooflab-m15-validation.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m15-validation.svg",
+      "bytes": 7036,
+      "sha256": "2610a106b497832c4b5c306b051227ad0973b5cdf4f3d14944a32ccd25507c32"
+    },
+    {
+      "path": "outputs/prooflab-m15-walkthrough.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-m15-walkthrough.html",
+      "bytes": 46231,
+      "sha256": "e4d2ad47496236b559258411f288232809619719c95e5f99e9d4ad4a65d1eb92"
+    },
+    {
+      "path": "outputs/prooflab-nvidia-architecture.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-nvidia-architecture.txt",
+      "bytes": 37032,
+      "sha256": "bdb5d385aaea7e2dc1a76f50b35c85c20cd3080eab9328b88a796f1468f43d9a"
+    },
+    {
+      "path": "outputs/prooflab-nvidia-independent-reviews.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-nvidia-independent-reviews.txt",
+      "bytes": 37584,
+      "sha256": "cfbf24251655fd5b77a8b1d7370aa7e09f94540341ffdb51cf95a734213c2b4b"
+    },
+    {
+      "path": "outputs/prooflab-nvidia-one-page-architecture.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-nvidia-one-page-architecture.svg",
+      "bytes": 11105,
+      "sha256": "eb177ab287cad3295f4ac86ffce1e7d978fef6ad8a34e0a7bdc47d51ee418222"
+    },
+    {
+      "path": "outputs/prooflab-nvidia-review.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-nvidia-review.html",
+      "bytes": 68435,
+      "sha256": "6af45b0b8e6a7f633cd1e369154d4f134eaad6ca9b90ad14b25e28f72a34c82e"
+    },
+    {
+      "path": "outputs/prooflab-one-page-architecture-v3.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-one-page-architecture-v3.svg",
+      "bytes": 10045,
+      "sha256": "33bcf38239717dba6bbab50eee1bf8ada99887d345e44e4aa028c81047661989"
+    },
+    {
+      "path": "outputs/prooflab-one-page-architecture.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-one-page-architecture.svg",
+      "bytes": 11105,
+      "sha256": "eb177ab287cad3295f4ac86ffce1e7d978fef6ad8a34e0a7bdc47d51ee418222"
+    },
+    {
+      "path": "outputs/prooflab-workshop-components.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-workshop-components.json",
+      "bytes": 98074,
+      "sha256": "7509483f508ae06bf94e07aa4d8865cd78b037243bf0e6bb9da591e9e982a6f4"
+    },
+    {
+      "path": "outputs/prooflab-workshop-handoff.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-workshop-handoff.html",
+      "bytes": 139954,
+      "sha256": "504cec069f968fb74b1224d81b84c519a657cba84a514ccb3115d6b2b9eba96d"
+    },
+    {
+      "path": "outputs/prooflab-workshop-sources.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-workshop-sources.json",
+      "bytes": 17851,
+      "sha256": "bc9efae5a30c0aa8c907d7bfd3d00162035c33b0ca4a25e5acae178a4c4de508"
+    },
+    {
+      "path": "outputs/prooflab-workshop-tasks.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/outputs/prooflab-workshop-tasks.json",
+      "bytes": 129489,
+      "sha256": "6c124b2f1848eb355be753d635e98b3ee4b5c47fe5179d88b741ce5c5fa0990f"
+    },
+    {
+      "path": "work/architecture-review/architecture-v2.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/architecture-v2.txt",
+      "bytes": 13941,
+      "sha256": "9beedee2b2f440268feb4bb6d99d10097df35129f81b298fd86d8ba5b6bab5c7"
+    },
+    {
+      "path": "work/architecture-review/artifact-script.js",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/artifact-script.js",
+      "bytes": 4326,
+      "sha256": "9513f6fe3db0d82a963e11cae14bfe244e0f36c507428178c8df3d163487eed6"
+    },
+    {
+      "path": "work/architecture-review/brief.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/brief.txt",
+      "bytes": 10176,
+      "sha256": "a14be954bb3cb49ed2b7cce6d4bfcbf2076ef5c960f02e16a08ab6abe3e04119"
+    },
+    {
+      "path": "work/architecture-review/invocation-contract-v1.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/invocation-contract-v1.txt",
+      "bytes": 22002,
+      "sha256": "d2ad44e7bc29f3dcae29c5453324b16e71be850587f7e354414db5aced13f592"
+    },
+    {
+      "path": "work/architecture-review/invocation-review-deployment.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/invocation-review-deployment.txt",
+      "bytes": 5108,
+      "sha256": "b1b49d239386aa20e7fbe753ba238d61fee807d3de3cbf7dd107bfa270082a82"
+    },
+    {
+      "path": "work/architecture-review/invocation-review-evidence.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/invocation-review-evidence.txt",
+      "bytes": 6307,
+      "sha256": "d1f8ff7e62cb2a9df0f1e40fa5358030cf6e0e66fedf2cf17f700c31e8c77f01"
+    },
+    {
+      "path": "work/architecture-review/invocation-review-interface.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/invocation-review-interface.txt",
+      "bytes": 6115,
+      "sha256": "c33af1c6672e1b4895c8ada3a7625e6cf28bc6ee2cda6ee10b9e4fd5010f247c"
+    },
+    {
+      "path": "work/architecture-review/invocation-script.js",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/invocation-script.js",
+      "bytes": 5517,
+      "sha256": "183865c7340e68d176f435a8ba80a1da9acacf980b2a52cd61f9eb6f74ab9293"
+    },
+    {
+      "path": "work/architecture-review/invocation-slide.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/invocation-slide.png",
+      "bytes": 236288,
+      "sha256": "07032ad6b3f6cdde108b231ea8010bb8c8557b709462299b846b1bc2a4e1c2ab"
+    },
+    {
+      "path": "work/architecture-review/judge-architecture.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/judge-architecture.txt",
+      "bytes": 16665,
+      "sha256": "d73716f60fb4bdfe5c08de3d171e0a12f9ba5d6bf1ec0aac4db2e20abb6492c3"
+    },
+    {
+      "path": "work/architecture-review/judge-assurance.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/judge-assurance.txt",
+      "bytes": 12514,
+      "sha256": "dabf00878028c50c651c4194c4ad5215d3098ddd3ee6ee67b4c5a0eba110942c"
+    },
+    {
+      "path": "work/architecture-review/judge-delivery.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/architecture-review/judge-delivery.txt",
+      "bytes": 13360,
+      "sha256": "bfa074c2c871f4adaa445b05ca5b038f96a948d7e0ba453d940b84425f17ea4a"
+    },
+    {
+      "path": "work/completion-audit/architecture-final.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/architecture-final.png",
+      "bytes": 248942,
+      "sha256": "ec7e852780c950458acc7e69b0fbca93ad5e1cdcd186d898f7afb423a4675755"
+    },
+    {
+      "path": "work/completion-audit/architecture.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/architecture.png",
+      "bytes": 246821,
+      "sha256": "274cf685175cd8d4cf3139f55d84cdc67fe63fc4bd51ed50c47b94d7bba34932"
+    },
+    {
+      "path": "work/completion-audit/architecture.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/architecture.svg",
+      "bytes": 10045,
+      "sha256": "33bcf38239717dba6bbab50eee1bf8ada99887d345e44e4aa028c81047661989"
+    },
+    {
+      "path": "work/completion-audit/baseline-delivery.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/baseline-delivery.txt",
+      "bytes": 6160,
+      "sha256": "9bf2c1817dca1a46a0f0f4b6e42a3222bfed70db98166f49bb971ce000536465"
+    },
+    {
+      "path": "work/completion-audit/baseline-evidence.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/baseline-evidence.txt",
+      "bytes": 6500,
+      "sha256": "5fa44e3ffb4d499c0ec26f23ac93f5340b295a83a1184b19a51da0fb11c16004"
+    },
+    {
+      "path": "work/completion-audit/baseline-interface.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/baseline-interface.txt",
+      "bytes": 6935,
+      "sha256": "2e53d3c0dee143dda1a0ec581b213e39cc3bfb5a3e0d6aa2027fb8c79046b32b"
+    },
+    {
+      "path": "work/completion-audit/build_report.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/build_report.py",
+      "bytes": 36277,
+      "sha256": "c72821bceff743163b2320c75c397131ba8500fba29f9dce676f0a54e9e352f7"
+    },
+    {
+      "path": "work/completion-audit/detailed-architecture-v1.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/detailed-architecture-v1.txt",
+      "bytes": 34862,
+      "sha256": "4345e273318f3acf135fe5e03d3de3f387e58f7f8ee0edb5c5e4dda0fcefbce8"
+    },
+    {
+      "path": "work/completion-audit/detailed-architecture-v2.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/detailed-architecture-v2.txt",
+      "bytes": 35545,
+      "sha256": "fdf32347c4ffa1ad8cc022b09fe66e5a86ff56c07d8f10deb7c2d8fd685e5a80"
+    },
+    {
+      "path": "work/completion-audit/detailed-architecture-v3.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/detailed-architecture-v3.txt",
+      "bytes": 38675,
+      "sha256": "a7fefa05948bbba5f409e7c9aa55caa3a397f53d91070b41c29fbbd6a98b998b"
+    },
+    {
+      "path": "work/completion-audit/judging-slide.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/judging-slide.png",
+      "bytes": 191785,
+      "sha256": "a93636c36f7397a8ec0fc0bed44f32abdf694f164f581be409b78d3bb97e679d"
+    },
+    {
+      "path": "work/completion-audit/report-interaction.js",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/report-interaction.js",
+      "bytes": 617,
+      "sha256": "4d0e81f9d5f91f08b8ee3c0217c6fea15880b2d9ddfa0ca2e6517a618d611ff2"
+    },
+    {
+      "path": "work/completion-audit/revised-delivery.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/revised-delivery.txt",
+      "bytes": 7930,
+      "sha256": "87a90e70111958f9eb193b3f06e519547ae816542b1cd950ba083eb69a0467df"
+    },
+    {
+      "path": "work/completion-audit/revised-evidence.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/revised-evidence.txt",
+      "bytes": 8083,
+      "sha256": "01775450b259a1b1aca966fc7dc46fe1c94399ce0aab4b319d6251b51b13bdd6"
+    },
+    {
+      "path": "work/completion-audit/revised-interface.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/revised-interface.txt",
+      "bytes": 7472,
+      "sha256": "a6683e3e3a0356f1b836ce80d96f8609bcaa4eee6f5e387081148dde45a89043"
+    },
+    {
+      "path": "work/completion-audit/scorecard.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/completion-audit/scorecard.txt",
+      "bytes": 3323,
+      "sha256": "a1a92d7a7c68073a2315318a0dce4932bb7ff3032fe6539b1d706f8623aa80f5"
+    },
+    {
+      "path": "work/component-inventory/build_inventory.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/component-inventory/build_inventory.py",
+      "bytes": 29119,
+      "sha256": "9489f2cd3e634b28f9f49f8ad5f944825c14dc71cd7f5c2863a73a616cf1389e"
+    },
+    {
+      "path": "work/component-inventory/interaction.js",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/component-inventory/interaction.js",
+      "bytes": 1528,
+      "sha256": "66fa4277a199a8908ea46879fdd72184c10dee5cd6413af48fedec92d514cc0c"
+    },
+    {
+      "path": "work/component-inventory/inventory.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/component-inventory/inventory.json",
+      "bytes": 48232,
+      "sha256": "237994b8a407c3cc6a307b73e9c8f9b0aceaf2e61b69f20de35f53b24f219f71"
+    },
+    {
+      "path": "work/component-inventory/render_inventory.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/component-inventory/render_inventory.py",
+      "bytes": 20515,
+      "sha256": "eb833c4af3083ed2cc6d5863e07a7466d9b611561a8b6271d5ed86a8cfc18328"
+    },
+    {
+      "path": "work/component-inventory/review-clarity.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/component-inventory/review-clarity.txt",
+      "bytes": 1758,
+      "sha256": "8761a1fcadd9c54e60180269a985e868970f59c1631b52c8e6d7a0d532fa6457"
+    },
+    {
+      "path": "work/component-inventory/review-controls.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/component-inventory/review-controls.txt",
+      "bytes": 1795,
+      "sha256": "4ecf85640c3fcbbcf0ab5dbb7858a6af3fd82db4c8a625e0fbb9f73542f8c53f"
+    },
+    {
+      "path": "work/hackathon-sources/contact-1.jpg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/contact-1.jpg",
+      "bytes": 124279,
+      "sha256": "68ed2abf47542b15ea846a9f743c0264c7cbd4109aff59ea8172f836ced15d0a"
+    },
+    {
+      "path": "work/hackathon-sources/contact-2.jpg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/contact-2.jpg",
+      "bytes": 125305,
+      "sha256": "4e0899d71ab89b3db372dae37e0287df66b6d8ddd19f3e35968ffe443b0838d0"
+    },
+    {
+      "path": "work/hackathon-sources/contact-3.jpg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/contact-3.jpg",
+      "bytes": 124146,
+      "sha256": "1f3aaa804e059855628f55c2f19c4c8827c7f47005f10bca5d0fefe841cfd1f5"
+    },
+    {
+      "path": "work/hackathon-sources/render.log",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/render.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "work/hackathon-sources/slide-01.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-01.png",
+      "bytes": 351496,
+      "sha256": "99b1ab6ef1a39732b6d5b079f049f8dbbacd3824446e064c0f190416c41f0684"
+    },
+    {
+      "path": "work/hackathon-sources/slide-02.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-02.png",
+      "bytes": 104605,
+      "sha256": "f26e5a7d9137c90083c9b824c4d5e6bbd7c4b877484b66736df3618ee789b77d"
+    },
+    {
+      "path": "work/hackathon-sources/slide-03.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-03.png",
+      "bytes": 365341,
+      "sha256": "a11d108ecc01f29dc01282dbfda5d73b7f1354f994643aa3654c6ffe3e3d85f3"
+    },
+    {
+      "path": "work/hackathon-sources/slide-04.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-04.png",
+      "bytes": 120988,
+      "sha256": "34c3904a54c0b21acb3d755b486789d017196c8abd1ee2856f538a676e4bbe00"
+    },
+    {
+      "path": "work/hackathon-sources/slide-05.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-05.png",
+      "bytes": 160222,
+      "sha256": "ab2dfd9f10c7d4c467e8ec4520c7307901e55142b2f063e7c6abaa05aa236e18"
+    },
+    {
+      "path": "work/hackathon-sources/slide-06.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-06.png",
+      "bytes": 202912,
+      "sha256": "218387452c2b35799f1e29aa20457a5a121711176497d24f51a14842a1b98118"
+    },
+    {
+      "path": "work/hackathon-sources/slide-07.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-07.png",
+      "bytes": 233782,
+      "sha256": "01eb7c524dc7f2d115ceca225bd2ef9faac720f82b916f6be11eff2639021d86"
+    },
+    {
+      "path": "work/hackathon-sources/slide-08.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-08.png",
+      "bytes": 184764,
+      "sha256": "03adb327e3a1fb98b219ee7d21f9661cccbdcd74cad099d48a6770684fedc9e8"
+    },
+    {
+      "path": "work/hackathon-sources/slide-09.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-09.png",
+      "bytes": 169451,
+      "sha256": "ce31e436f3566044af28180e6a7f760cc8546acadd56340ebc2c1ebef5745152"
+    },
+    {
+      "path": "work/hackathon-sources/slide-10.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-10.png",
+      "bytes": 223545,
+      "sha256": "ff9137b292ee734897cf93b6460702710acd246b1a1d4985f49f8956a5400adb"
+    },
+    {
+      "path": "work/hackathon-sources/slide-11.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-11.png",
+      "bytes": 386301,
+      "sha256": "a007f3eb92a7417b359c6aaa576055bdebfa07ec7cc1109008d30198ff6e1292"
+    },
+    {
+      "path": "work/hackathon-sources/slide-12.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-12.png",
+      "bytes": 168585,
+      "sha256": "1f31eced4565171f43faa12ec7fa7b39e733e8b42fdd51aae08aee075b633120"
+    },
+    {
+      "path": "work/hackathon-sources/slide-13.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-13.png",
+      "bytes": 202035,
+      "sha256": "3751465e92af2b1849bdb301a49199e4154cab3b6ddb396650484f935b8b7c4c"
+    },
+    {
+      "path": "work/hackathon-sources/slide-14.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-14.png",
+      "bytes": 236296,
+      "sha256": "a2b0917022a86245b2f3e3f53191d7fd02598b2103a8b2ecdd9d9e6ca0a07e5d"
+    },
+    {
+      "path": "work/hackathon-sources/slide-15.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-15.png",
+      "bytes": 189743,
+      "sha256": "76066022f6b45596211e7c9849f7b30547e8a1fa5c511e46723f7eee1605c6ae"
+    },
+    {
+      "path": "work/hackathon-sources/slide-16.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-16.png",
+      "bytes": 361154,
+      "sha256": "60fd852e9dafbd4a281f019ca84eaa27f023dc24d4ba43880361c8ee30d4d7b2"
+    },
+    {
+      "path": "work/hackathon-sources/slide-17.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-17.png",
+      "bytes": 148986,
+      "sha256": "493efbb392e89b17909c45fa89ca91006cc88c1d71d9056bdb57fbe711eeb282"
+    },
+    {
+      "path": "work/hackathon-sources/slide-18.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-18.png",
+      "bytes": 339453,
+      "sha256": "3e880eb60e1bce43f5ef5852b4b41eefa0c9ac8941d1f9947a824543a8c0376e"
+    },
+    {
+      "path": "work/hackathon-sources/slide-19.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-19.png",
+      "bytes": 165128,
+      "sha256": "abd44f1bb5335a6aeeaa69c574007445ab05df79c1470ba364cd77363b453683"
+    },
+    {
+      "path": "work/hackathon-sources/slide-20.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-20.png",
+      "bytes": 198822,
+      "sha256": "e14dd67aa99c385243c811a1641bed81fdf2ec227fd88f14366c26f6ad8dbb1a"
+    },
+    {
+      "path": "work/hackathon-sources/slide-21.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-21.png",
+      "bytes": 245306,
+      "sha256": "472659421cdf5c460ea35ecdbc0e71d393e34a3336ba40da9a9e264ba1e9be64"
+    },
+    {
+      "path": "work/hackathon-sources/slide-22.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-22.png",
+      "bytes": 160904,
+      "sha256": "f1843da597c2509924257406c0169c72963770110e1261351b8ef3a1bbccb37d"
+    },
+    {
+      "path": "work/hackathon-sources/slide-23.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-23.png",
+      "bytes": 243675,
+      "sha256": "3902049f9a21d0a45ece288cc82552d7ee436f82cf49d96ff366fb721e4288eb"
+    },
+    {
+      "path": "work/hackathon-sources/slide-24.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-24.png",
+      "bytes": 389317,
+      "sha256": "48f4265d84af5ae866ebea64572d1a78e71ec13291ccd11fd086ea501ccad7ce"
+    },
+    {
+      "path": "work/hackathon-sources/slide-25.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-25.png",
+      "bytes": 191777,
+      "sha256": "d1b8ba04afc4f32cc4d560f36837ac421ff4f9cd5d693331614c23735a5884fc"
+    },
+    {
+      "path": "work/hackathon-sources/slide-26.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-26.png",
+      "bytes": 218433,
+      "sha256": "69b43e2347a8e868d8954028b1cc07457e63f863a0c91e869835ed9cbe37983a"
+    },
+    {
+      "path": "work/hackathon-sources/slide-27.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slide-27.png",
+      "bytes": 103066,
+      "sha256": "15eab1a1348436ba3b94a7fb411ba51a64e003d9eef44a58a70fa9b32b28a11b"
+    },
+    {
+      "path": "work/hackathon-sources/slides-extracted.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/slides-extracted.txt",
+      "bytes": 28844,
+      "sha256": "88ef4e4bcf1e8b9b25a5c652d930f7f5eea27335c56574fd5f4435ab80f15dbb"
+    },
+    {
+      "path": "work/hackathon-sources/transcript-1.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/transcript-1.txt",
+      "bytes": 16000,
+      "sha256": "d5b9691c916f1f921e7dce1b3b1081d6bc3152de03b543720f5fae8bdc70cf76"
+    },
+    {
+      "path": "work/hackathon-sources/transcript-2.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/transcript-2.txt",
+      "bytes": 16000,
+      "sha256": "a793488956e7dc67cd6c45879bae721ebdea4b6054b0a32256e33d28d0a811a9"
+    },
+    {
+      "path": "work/hackathon-sources/transcript-3.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/transcript-3.txt",
+      "bytes": 16000,
+      "sha256": "abf2775867a18c19cc4c21f922683fa6bc9e0c382c8fe3dc0f98fad491777f8f"
+    },
+    {
+      "path": "work/hackathon-sources/transcript-4.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/transcript-4.txt",
+      "bytes": 16000,
+      "sha256": "22c2c8a030c5ece296029359eeaa227c502c9a064a32e63bef2e77a958c3df1d"
+    },
+    {
+      "path": "work/hackathon-sources/transcript-5.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/hackathon-sources/transcript-5.txt",
+      "bytes": 10408,
+      "sha256": "41b3932e2925e4f653a72bca477c8047e1ea382b437571c29348dd2278212fcc"
+    },
+    {
+      "path": "work/nvidia-review/architecture-final.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/architecture-final.png",
+      "bytes": 373447,
+      "sha256": "8120cbaab98948a218d6a2749cb98b59b7d3b9b6dd89ea9d4151f679598cc721"
+    },
+    {
+      "path": "work/nvidia-review/architecture.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/architecture.png",
+      "bytes": 372335,
+      "sha256": "e9fd618b2696648a0e4869b0671c70c3494053f4c30086814d5c1419e02e0f76"
+    },
+    {
+      "path": "work/nvidia-review/architecture.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/architecture.svg",
+      "bytes": 11105,
+      "sha256": "eb177ab287cad3295f4ac86ffce1e7d978fef6ad8a34e0a7bdc47d51ee418222"
+    },
+    {
+      "path": "work/nvidia-review/build_artifacts.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/build_artifacts.py",
+      "bytes": 25384,
+      "sha256": "0b9043dc9318c8f88327267c5964224dd150a4ddd2c7b117b068eb3e8007b063"
+    },
+    {
+      "path": "work/nvidia-review/evidence-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/evidence-review.txt",
+      "bytes": 11865,
+      "sha256": "4e051c4e20c149d96b685422a5987a4a3fc3345b28ce119b4b8ea9352975b3df"
+    },
+    {
+      "path": "work/nvidia-review/interaction.js",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/interaction.js",
+      "bytes": 506,
+      "sha256": "1edc95d58a498dcdb17522e16e4d62d49ea9575b1752e6a743dd79bc26bd7ea6"
+    },
+    {
+      "path": "work/nvidia-review/model-delivery-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/model-delivery-review.txt",
+      "bytes": 13324,
+      "sha256": "53f2cdac140b508520f919c534e77714112dc6ef71f34e06be66d2cb56d6f060"
+    },
+    {
+      "path": "work/nvidia-review/nvidia-architecture-v1.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/nvidia-architecture-v1.txt",
+      "bytes": 22376,
+      "sha256": "c3e58e2cdf6cc8de6f2c6712315f2389d49acfa81f007ac7216d2dfe1b632994"
+    },
+    {
+      "path": "work/nvidia-review/nvidia-architecture-v2.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/nvidia-architecture-v2.txt",
+      "bytes": 27999,
+      "sha256": "d972f13c93a5c5d7d11f8247e2ec11eb50afff7ea3b828e6a405dad0463abd12"
+    },
+    {
+      "path": "work/nvidia-review/nvidia-transcript-excerpts.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/nvidia-transcript-excerpts.txt",
+      "bytes": 16872,
+      "sha256": "e7f6d9804026b3203f9c2af46a19a871a6c7aec20cc47641082e11ecb4d6d97a"
+    },
+    {
+      "path": "work/nvidia-review/refine_spec.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/refine_spec.py",
+      "bytes": 12689,
+      "sha256": "7f8c914ad3ecc1f0a4b4f5c93a7d5b03cd21f6ec6bda0dae4fd2db293d5eb9af"
+    },
+    {
+      "path": "work/nvidia-review/runtime-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/nvidia-review/runtime-review.txt",
+      "bytes": 11010,
+      "sha256": "73879c614910f24b1ca7d08f8924f0a99cd0f1eb62f31f7bff0e8635e95fa646"
+    },
+    {
+      "path": "work/walkthrough/build_m01.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m01.py",
+      "bytes": 10368,
+      "sha256": "a85bf71426002e007e73d8d37b492d7f384ac10c1ad18812ae0116fadd9f343f"
+    },
+    {
+      "path": "work/walkthrough/build_m02.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m02.py",
+      "bytes": 2643,
+      "sha256": "a42cd632a0148543e1577a70d9445cf0a7a09188fc8061c51d0eef8c5eefabf1"
+    },
+    {
+      "path": "work/walkthrough/build_m03.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m03.py",
+      "bytes": 2311,
+      "sha256": "ae64e30c20cf0529caa462caefcc72b21d937ac3a7cb6c31e01cac187ab3fe26"
+    },
+    {
+      "path": "work/walkthrough/build_m04.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m04.py",
+      "bytes": 2324,
+      "sha256": "55e3bcf31f5225bf14516658540e102b44fd8dfa2bd7e9d0324b55096818347c"
+    },
+    {
+      "path": "work/walkthrough/build_m05.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m05.py",
+      "bytes": 2197,
+      "sha256": "42c7a972785ac555f4d949c50f882c473faf8e9b3eee2afb82f894a779c75220"
+    },
+    {
+      "path": "work/walkthrough/build_m06.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m06.py",
+      "bytes": 2157,
+      "sha256": "8a59091175ab8f5b5a9d9a3ae8e5309b5cb3d31fd8d269658e7a4904d84fb030"
+    },
+    {
+      "path": "work/walkthrough/build_m07.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m07.py",
+      "bytes": 2130,
+      "sha256": "e58c6ff2ae6b58fab349dae81a221c69d929eabc8d09439fbdc292ab0ae5b2ba"
+    },
+    {
+      "path": "work/walkthrough/build_m08.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m08.py",
+      "bytes": 2197,
+      "sha256": "a05fd90c28442f45a5a50d35c6723fd86a91a53c381c0e112f38ac27ec9a2622"
+    },
+    {
+      "path": "work/walkthrough/build_m09.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m09.py",
+      "bytes": 2230,
+      "sha256": "9a13bc8991a746a50ea49faf84b5e9243e8584e3995f433c11f6e47e9fb12d31"
+    },
+    {
+      "path": "work/walkthrough/build_m10.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m10.py",
+      "bytes": 2235,
+      "sha256": "ccc13aed84c98036c4fd3d57748b4aced4b2d66e0ae48bacb1eb7617bb38949d"
+    },
+    {
+      "path": "work/walkthrough/build_m11.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m11.py",
+      "bytes": 2286,
+      "sha256": "ef6eb95fe0e429bb129ecbccd1c24f53461da024508f297dd2d2f8243afd78ab"
+    },
+    {
+      "path": "work/walkthrough/build_m12.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m12.py",
+      "bytes": 2218,
+      "sha256": "5e4b1e7ad02f3116dfb0d9e5532b1f4688e9d5945ee509d4a678457595f190b8"
+    },
+    {
+      "path": "work/walkthrough/build_m13.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m13.py",
+      "bytes": 2134,
+      "sha256": "35ae92e716b54ebe309c8718ee2999d9825e279ed5799f6c22d89fe225d95b50"
+    },
+    {
+      "path": "work/walkthrough/build_m14.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m14.py",
+      "bytes": 2164,
+      "sha256": "663b876630ac936a6ff31343667f4a694cf596f0959782d671feb42eacf464c3"
+    },
+    {
+      "path": "work/walkthrough/build_m15.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/build_m15.py",
+      "bytes": 2199,
+      "sha256": "4197cb43f70519d22994c93ab85b0b21e86351a95a4099dbea152a21517451e4"
+    },
+    {
+      "path": "work/walkthrough/interaction.js",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/interaction.js",
+      "bytes": 243,
+      "sha256": "1cf26b4e01859e19f2c1ea09a70c7d40ef83d4fef6e7833478d174217884c310"
+    },
+    {
+      "path": "work/walkthrough/m01-flow.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m01-flow.png",
+      "bytes": 106457,
+      "sha256": "82548437ed1bb223cb73ded71e276ee1abc602435fc395c5e0adbf9aea0b274e"
+    },
+    {
+      "path": "work/walkthrough/m02-flow.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m02-flow.png",
+      "bytes": 159506,
+      "sha256": "e22d9a7db9d2fef7ae37bd5b20ce1abcfee04d40142a0b7fc00d039bb503ec04"
+    },
+    {
+      "path": "work/walkthrough/m03-identity.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m03-identity.png",
+      "bytes": 190161,
+      "sha256": "96c25909d69ed5715924ea8ee51eec3924a32412649b98c5ea2464861f501cc9"
+    },
+    {
+      "path": "work/walkthrough/m04-policy.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m04-policy.png",
+      "bytes": 176187,
+      "sha256": "050c5e47e5316d57464c8c17b838fa7fdf1f7bfca69b5aec68e5af2e666f09f7"
+    },
+    {
+      "path": "work/walkthrough/m05-acquisition.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m05-acquisition.png",
+      "bytes": 184972,
+      "sha256": "0bd3792f588336e893b141ea4e8602b1dbc0fd20c06d85140b0def79220aecd6"
+    },
+    {
+      "path": "work/walkthrough/m06-workspace.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m06-workspace.png",
+      "bytes": 195300,
+      "sha256": "0e48e24c69efc88da62453d53e37c69c1861458db9ad10cd3c09a59f4f2afea6"
+    },
+    {
+      "path": "work/walkthrough/m07-arithmetic-check.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m07-arithmetic-check.json",
+      "bytes": 514,
+      "sha256": "109f1e8516b139b020422134b736e92ed07744ad52358a6af9c75081fd91ff37"
+    },
+    {
+      "path": "work/walkthrough/m07-tests.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m07-tests.png",
+      "bytes": 150778,
+      "sha256": "f3099f4d1eab04e5d49b6ed6b1b78de381da5a2c919c0ec26e400663aebeb141"
+    },
+    {
+      "path": "work/walkthrough/m08-arithmetic-check.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m08-arithmetic-check.json",
+      "bytes": 612,
+      "sha256": "4379dcfabf4f2651f0533fcd5da674711b91be75d86c7573d72bdd8249317c61"
+    },
+    {
+      "path": "work/walkthrough/m08-drift.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m08-drift.png",
+      "bytes": 172039,
+      "sha256": "e993419dfc6fdf149738b2d0d6c62f84f5d07ac1e6202adb25e7b7ed91643109"
+    },
+    {
+      "path": "work/walkthrough/m09-accounting.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m09-accounting.png",
+      "bytes": 219838,
+      "sha256": "91b6549ce349e3e525dd82bff87a51f86e7f8defbab1a5eb74f07ef7af38d33d"
+    },
+    {
+      "path": "work/walkthrough/m09-arithmetic-check.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m09-arithmetic-check.json",
+      "bytes": 525,
+      "sha256": "f474477e4ee9b1c68402ae0c7d640b4f39c0f04bb4cd45520d512ab58a076a12"
+    },
+    {
+      "path": "work/walkthrough/m10-admission.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m10-admission.png",
+      "bytes": 209476,
+      "sha256": "3c9f238e18e3803729d6c026aef4e4f70bf77770f7f80a899201f0d8bfc167cd"
+    },
+    {
+      "path": "work/walkthrough/m10-arithmetic-check.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m10-arithmetic-check.json",
+      "bytes": 698,
+      "sha256": "d60be83884cca30701968c6941988aaa44f995f943bd665b6f4db7c608108291"
+    },
+    {
+      "path": "work/walkthrough/m11-budget-check.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m11-budget-check.json",
+      "bytes": 961,
+      "sha256": "b4ac5a5677690bb9fe65d65010e82dc9cdfdc8a38d184d5e08974662b8d98469"
+    },
+    {
+      "path": "work/walkthrough/m11-investigator.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m11-investigator.png",
+      "bytes": 294102,
+      "sha256": "667ac61891a13e9950b3e0dcfd39ff05d04f64cbe8c9035d8fd1d203d88195eb"
+    },
+    {
+      "path": "work/walkthrough/m12-validation.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m12-validation.png",
+      "bytes": 263226,
+      "sha256": "207b0ff8d26e4e30f62bf051d7f68f4a2d3d133b83e163c4a3549f7f804841cf"
+    },
+    {
+      "path": "work/walkthrough/m13-query.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m13-query.png",
+      "bytes": 258421,
+      "sha256": "0cb258843fe2341579eaf29257507feca9b563d369aeccee387b8aa22ddbd14e"
+    },
+    {
+      "path": "work/walkthrough/m14-governance.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m14-governance.png",
+      "bytes": 294355,
+      "sha256": "2e6339787d122025cb485ce775b80678772000a370ed68b565dbe8f288dfd0ed"
+    },
+    {
+      "path": "work/walkthrough/m15-validation.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/walkthrough/m15-validation.png",
+      "bytes": 256783,
+      "sha256": "4a70cad0276c3acbf306625c247fbd1512d2b4284d7c02e1512e7e87379f1da5"
+    },
+    {
+      "path": "work/workshop-mapping/access-observations.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/access-observations.json",
+      "bytes": 1222,
+      "sha256": "a77f85b2827c899240a55792cedde4881f189494f00a619aa8dbe6a088631c3f"
+    },
+    {
+      "path": "work/workshop-mapping/build_handoff.py",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/build_handoff.py",
+      "bytes": 26047,
+      "sha256": "5a4b8595d261b68e2898d720008bd087bba392fdaf51710790762c51acda5913"
+    },
+    {
+      "path": "work/workshop-mapping/claude-delivery-plan.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/claude-delivery-plan.txt",
+      "bytes": 12436,
+      "sha256": "73d4b33b1210714d333f042fec599c29e9bdebff46c876eb6b7a4142082af48c"
+    },
+    {
+      "path": "work/workshop-mapping/claude-reference-links.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/claude-reference-links.txt",
+      "bytes": 10385,
+      "sha256": "ced459538c8a6fad78aa4a569d3f7c28277e69a1a1804477e68fdc80163713ac"
+    },
+    {
+      "path": "work/workshop-mapping/claude-source-authority.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/claude-source-authority.txt",
+      "bytes": 19934,
+      "sha256": "108517966bebc138a6857bfa121adfc178ce649b535e032c5e0d5f7d410bd23a"
+    },
+    {
+      "path": "work/workshop-mapping/claude-technical-contracts.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/claude-technical-contracts.txt",
+      "bytes": 47826,
+      "sha256": "732451c56322358ea9ca34dd1698e86031cf1aaa4de8c996db56308840dd21d2"
+    },
+    {
+      "path": "work/workshop-mapping/claude-workshop-notes.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/claude-workshop-notes.txt",
+      "bytes": 40608,
+      "sha256": "04fdca5a52ad4c6046a612eb535c4d6b52a48b87c24f90fa7f284035a05213f0"
+    },
+    {
+      "path": "work/workshop-mapping/guide-index.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/guide-index.txt",
+      "bytes": 3402,
+      "sha256": "44b5cfdc98d22298a76af9d40d2335aef9cbe3709f9e3be9a330807c220bdf17"
+    },
+    {
+      "path": "work/workshop-mapping/handoff-inline-check.js",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/handoff-inline-check.js",
+      "bytes": 558,
+      "sha256": "5065ff51f15388d846968fd582197945f3fba291e68c2ddf40d2402f948cb9c3"
+    },
+    {
+      "path": "work/workshop-mapping/handoff-review-summary.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/handoff-review-summary.txt",
+      "bytes": 2390,
+      "sha256": "dd1eb3f9e8b9e11e9dfff09cc42952b708187e595717041d11693b84137f18c0"
+    },
+    {
+      "path": "work/workshop-mapping/provisional-map.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/provisional-map.json",
+      "bytes": 39860,
+      "sha256": "3a8a3680c89fd73308faef38a0ce313fa88b1297bc5313d99e091912274f5418"
+    },
+    {
+      "path": "work/workshop-mapping/requirements-final-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/requirements-final-review.txt",
+      "bytes": 6099,
+      "sha256": "78c692c6794d6cb1f9d78746c9a93656987f353ce429caef1476898415c4d989"
+    },
+    {
+      "path": "work/workshop-mapping/requirements-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/requirements-review.txt",
+      "bytes": 14193,
+      "sha256": "7e6033a35cc83e99ea72eac36b542c9f8ca1b51a1e4c10c0efd400b4f67756f1"
+    },
+    {
+      "path": "work/workshop-mapping/task-candidates.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/task-candidates.json",
+      "bytes": 65945,
+      "sha256": "dacd2f2d296d8f8cf166577716ad9dd0d1c91a35bb7c4d903124fae9926ec8dc"
+    },
+    {
+      "path": "work/workshop-mapping/task-final-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/task-final-review.txt",
+      "bytes": 10014,
+      "sha256": "2bc519ee4d376a9acb35ca2ce879e541e38d8312fe580afdcc21d7617b0b1864"
+    },
+    {
+      "path": "work/workshop-mapping/technology-final-review.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/technology-final-review.txt",
+      "bytes": 9017,
+      "sha256": "f818ede6de8130be38e093db4daa35c7dfd8ddc806e76c8e3f91ad3a97a85608"
+    },
+    {
+      "path": "work/workshop-mapping/workshop-conflicts.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/workshop-conflicts.txt",
+      "bytes": 11909,
+      "sha256": "bada25fd70cdde2d9460a71708b5907f17780f86b61d4269f4714c04ea143786"
+    },
+    {
+      "path": "work/workshop-mapping/workshop-flow.png",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/workshop-flow.png",
+      "bytes": 71358,
+      "sha256": "70d8b4b8de36ab17984d2c24cce04eb548c784219c53c372ba6b8238accc40ca"
+    },
+    {
+      "path": "work/workshop-mapping/workshop-flow.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/workshop-flow.svg",
+      "bytes": 2586,
+      "sha256": "1d3f4d5cd5d3e63628e726cf03055a77d9c6a152e9359c19f0565f00c6798ff7"
+    },
+    {
+      "path": "work/workshop-mapping/workshop-map.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/workshop-map.json",
+      "bytes": 116494,
+      "sha256": "44d609583e255bd01bde964458fab3bf4b2b8e7c7cc7f7f27a161cab807d9ec3"
+    },
+    {
+      "path": "work/workshop-mapping/workshop-task-plan.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/work/workshop-mapping/workshop-task-plan.json",
+      "bytes": 129489,
+      "sha256": "6c124b2f1848eb355be753d635e98b3ee4b5c47fe5179d88b741ce5c5fa0990f"
+    },
+    {
+      "path": ".lavish/hackathon-start/index.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/hackathon-start/index.html",
+      "bytes": 21878,
+      "sha256": "fa3913defa57cf4e352f82fb6308cc7dca4d73b2b928a459f7392766d957823d"
+    },
+    {
+      "path": ".lavish/prooflab-architecture/body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-architecture/body.html",
+      "bytes": 32357,
+      "sha256": "ae7e2665990a1ada7ad19664cb0cde46f76df3e5802c6ba3f524391357b18d4d"
+    },
+    {
+      "path": ".lavish/prooflab-architecture/index.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-architecture/index.html",
+      "bytes": 38016,
+      "sha256": "5b1662dedcf3add070e3b3755cb06535cf6045b538112ec931e0b499d580d32e"
+    },
+    {
+      "path": ".lavish/prooflab-completion/index.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-completion/index.html",
+      "bytes": 75724,
+      "sha256": "5da15227ddba8388e31453f5bb059d8934ccf99b108dcaf83e94f37aace87f27"
+    },
+    {
+      "path": ".lavish/prooflab-completion/prooflab-completion-reviews.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-completion/prooflab-completion-reviews.txt",
+      "bytes": 48221,
+      "sha256": "731fcfdb728e4e71e90f437ecbf39cf9d04cf850b8df90b070bce444bb02f0bd"
+    },
+    {
+      "path": ".lavish/prooflab-completion/prooflab-completion-scorecard.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-completion/prooflab-completion-scorecard.json",
+      "bytes": 3330,
+      "sha256": "70fd538f5e06dbf242afb2659d9ce52ca865afe498b8564c2244663dd6a5bc9b"
+    },
+    {
+      "path": ".lavish/prooflab-completion/prooflab-detailed-architecture.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-completion/prooflab-detailed-architecture.txt",
+      "bytes": 69711,
+      "sha256": "741427a0f4229151abcb2a510a03a56fab34b58a3b81ccaa64fc3174ebdb24a1"
+    },
+    {
+      "path": ".lavish/prooflab-completion/prooflab-one-page-architecture.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-completion/prooflab-one-page-architecture.svg",
+      "bytes": 10045,
+      "sha256": "33bcf38239717dba6bbab50eee1bf8ada99887d345e44e4aa028c81047661989"
+    },
+    {
+      "path": ".lavish/prooflab-components/index.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-components/index.html",
+      "bytes": 97934,
+      "sha256": "27d65d35f4c7a038433c16e0cb7ba33ddab3ed3d71c179dd502e6532f092f0bb"
+    },
+    {
+      "path": ".lavish/prooflab-components/prooflab-component-inventory.json",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-components/prooflab-component-inventory.json",
+      "bytes": 48233,
+      "sha256": "486d2e9d5e1546968127f5dbec99acd6b582445b6c5feceb18d151b446208a97"
+    },
+    {
+      "path": ".lavish/prooflab-components/prooflab-component-inventory.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-components/prooflab-component-inventory.txt",
+      "bytes": 36044,
+      "sha256": "59fb839a1abc7e050c08db51b8abd28046260f17fe9058be9b179b537f5bb393"
+    },
+    {
+      "path": ".lavish/prooflab-invocation/body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-invocation/body.html",
+      "bytes": 29919,
+      "sha256": "8caa342163534bb864510ac0eb40098b7d18e83e139dd2eb2ba06d1173fa12ff"
+    },
+    {
+      "path": ".lavish/prooflab-invocation/index.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-invocation/index.html",
+      "bytes": 34779,
+      "sha256": "014b44201b2706a27c649480971fb79b977bc20ba640785ab857315bcbbd1020"
+    },
+    {
+      "path": ".lavish/prooflab-nvidia/index.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-nvidia/index.html",
+      "bytes": 53614,
+      "sha256": "6bb987e66979fb222df5fb408c536dd289a532640d7dc03caf0da469dc2ee390"
+    },
+    {
+      "path": ".lavish/prooflab-nvidia/prooflab-nvidia-architecture.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-nvidia/prooflab-nvidia-architecture.txt",
+      "bytes": 37032,
+      "sha256": "bdb5d385aaea7e2dc1a76f50b35c85c20cd3080eab9328b88a796f1468f43d9a"
+    },
+    {
+      "path": ".lavish/prooflab-nvidia/prooflab-nvidia-independent-reviews.txt",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-nvidia/prooflab-nvidia-independent-reviews.txt",
+      "bytes": 37584,
+      "sha256": "cfbf24251655fd5b77a8b1d7370aa7e09f94540341ffdb51cf95a734213c2b4b"
+    },
+    {
+      "path": ".lavish/prooflab-nvidia/prooflab-nvidia-one-page-architecture.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-nvidia/prooflab-nvidia-one-page-architecture.svg",
+      "bytes": 11105,
+      "sha256": "eb177ab287cad3295f4ac86ffce1e7d978fef6ad8a34e0a7bdc47d51ee418222"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/index.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/index.html",
+      "bytes": 280418,
+      "sha256": "dc32da546f89b33c56504aa2a6599e70a59f8522b1f1e402f7852bfb2920c868"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m01-flow.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m01-flow.svg",
+      "bytes": 4914,
+      "sha256": "77c666a66962d598caa73653651fae55b13e73614f6219f447ea80640dfb07d3"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m02-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m02-body.html",
+      "bytes": 11468,
+      "sha256": "6d5b584f402cf2ce3a178401e745cf338cb9ea620125031305e80a90587d3b76"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m02-flow.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m02-flow.svg",
+      "bytes": 6863,
+      "sha256": "5c7ea33fd1c0ef4f1594c15b5e3de675294258e99d87e8c2ec5f63008699f6ff"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m02.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m02.html",
+      "bytes": 17418,
+      "sha256": "f8608586bfa5e4c9d3197ba08422431e2261fa05f563dd3b5e35c9417b6611f5"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m03-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m03-body.html",
+      "bytes": 14744,
+      "sha256": "fd5b99aa564458c6b6e3ee91f567708b453da74d398c2dbdf19e4432da2b66b7"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m03-identity.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m03-identity.svg",
+      "bytes": 7354,
+      "sha256": "c65457e703fb1effdc20366b1bc4277a0047f8d10a7c9285ca34af79fb47485d"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m03.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m03.html",
+      "bytes": 20927,
+      "sha256": "95c0507df40135e3fe5a2649b6dd094064926d9ed30bc21642daca5cbebe0ab8"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m04-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m04-body.html",
+      "bytes": 15384,
+      "sha256": "279afcc8637f5505e328ffcfae12ced48e8237c9335377bdb46842ac7e704632"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m04-policy.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m04-policy.svg",
+      "bytes": 6465,
+      "sha256": "6a697ef74fe2c3274bdd9d846aec6135ee5fb1edd1b7a26d42eeb6c7b4008121"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m04.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m04.html",
+      "bytes": 21655,
+      "sha256": "353ada5024385f96d061e48c516e156f7df173e2c2f08e6e66e9cfb5ad1ccb3f"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m05-acquisition.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m05-acquisition.svg",
+      "bytes": 6389,
+      "sha256": "d488dbe636d612be1f4282b64181b6125b30fec68a56e6bfb0cfa8694ed03b00"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m05-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m05-body.html",
+      "bytes": 15142,
+      "sha256": "f4198282ce84d8839081c4c3eac3c99bdd65a0a945424595d6a8c9379b2f06d0"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m05.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m05.html",
+      "bytes": 21435,
+      "sha256": "419e5a5de0abb64be56da9b96e8c5f07e568f9da8a5913ab4f50777eaefa398a"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m06-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m06-body.html",
+      "bytes": 15525,
+      "sha256": "5b612b4635cc27e7c43365d8f7aaa8602cce4ce97322d5bb2e5d044467f118f2"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m06-workspace.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m06-workspace.svg",
+      "bytes": 6278,
+      "sha256": "98193a78704a91e0d6d197299ba397895dec1f68a1c30c6add464d72b2efbd77"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m06.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m06.html",
+      "bytes": 21785,
+      "sha256": "def8c8ee71d4ac152108829377360a7d8b85bada1a6bb4262e9bf813482a2912"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m07-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m07-body.html",
+      "bytes": 13649,
+      "sha256": "985ec399c0f73b9e6e50b96f83ccf9982265eeab31bca82322d415386fd9fb94"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m07-tests.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m07-tests.svg",
+      "bytes": 6507,
+      "sha256": "f736537ae91455753d0d59da5c29499d96c8924f112a5059e2805324bf954177"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m07.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m07.html",
+      "bytes": 19888,
+      "sha256": "82e775295929c3fc7291c85f56b22fe1aa26678676f9342b7cd5de2bd207b4e5"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m08-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m08-body.html",
+      "bytes": 14669,
+      "sha256": "5f80fa47105aa3aa3ad03b92b84021f6a6df67fd88e68575567da74993d671a7"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m08-drift.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m08-drift.svg",
+      "bytes": 7469,
+      "sha256": "a0459aaeb6be6dec267ceda4f9ee267f76a81faf243101dde5b8d4ba4514eb61"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m08.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m08.html",
+      "bytes": 20981,
+      "sha256": "932f866a80f9bdf21f6fdc805dc197d7ac431456c216e4c3d01405d1888cb7ca"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m09-accounting.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m09-accounting.svg",
+      "bytes": 4932,
+      "sha256": "360f0dab389853ba159dc1014a25ca44bcd7c016c040a52a36608cb9aed30214"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m09-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m09-body.html",
+      "bytes": 19006,
+      "sha256": "fc00ba805f9c155ddaa4445603d4649d92d53b4ebd41ddfb85e58c25570f492a"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m09.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m09.html",
+      "bytes": 25336,
+      "sha256": "6589bb6011d45f55cd618925b5bab055194f112b5850a7f8b63e60102d87a66f"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m10-admission.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m10-admission.svg",
+      "bytes": 5441,
+      "sha256": "87094983c1a708ae4dbf80ff83813032f0009f9e45c1e394afbb0f7fb1605aae"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m10-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m10-body.html",
+      "bytes": 19272,
+      "sha256": "ad79c65a42be3b9a74d8315a7d154bf6e189e6d13c017f21e5ce55bba27cf5c1"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m10.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m10.html",
+      "bytes": 25610,
+      "sha256": "407e60ad8eb9e87ab00f09b49365d5e40668ab707762bdd83915904bc8f65045"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m11-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m11-body.html",
+      "bytes": 23854,
+      "sha256": "96f00d8afa5846cc454200cfab37379df9821121abaf7c3d1c3ad419f901914d"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m11-investigator.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m11-investigator.svg",
+      "bytes": 5968,
+      "sha256": "ceff29af6370fa0ac09c6eaacbcb069fbbb5a5446a5dca752edcca659732588c"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m11.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m11.html",
+      "bytes": 30238,
+      "sha256": "f33b922e8fcaebdbb972825fed1c729b148a2524b7cd1a5ef67edb604d8f245b"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m12-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m12-body.html",
+      "bytes": 22837,
+      "sha256": "1397eb267d159f99cbafac333dab8653a80700816a651f49d031bb99aabe988d"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m12-validation.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m12-validation.svg",
+      "bytes": 6601,
+      "sha256": "492e51896324d0dca934931b730f7f4cfd4601b91a134c4d5911145ae279f9fb"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m12.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m12.html",
+      "bytes": 29155,
+      "sha256": "f6dd8f4450afdb5b20b069e2d945752745b8cda9d60881323bcfb8d86325a7cf"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m13-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m13-body.html",
+      "bytes": 23823,
+      "sha256": "f203c43aa2244d15fd282ef56dafd356ab55a41e4e17587bf7cfdd9e5157f8d0"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m13-query.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m13-query.svg",
+      "bytes": 5139,
+      "sha256": "10c9ae4d2ccb9c6fbea5d3fadfbb64deebe3818b43ff2c7de176618ba5a4fa63"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m13.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m13.html",
+      "bytes": 30072,
+      "sha256": "361e0cdb612c55e5cd579f78c4d77d558a65c638a26ee4f9e31a9ccff2ba4754"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m14-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m14-body.html",
+      "bytes": 23252,
+      "sha256": "d2c380887b7bbda7a766a92f56eb4e4afc036a9f9a6279e011fe244f1efa7764"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m14-governance.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m14-governance.svg",
+      "bytes": 6847,
+      "sha256": "a88fcc85a4c24dfd3fdea6bbe3730ea17202b3ab494de1b082912cdeb4d876c6"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m14.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m14.html",
+      "bytes": 29516,
+      "sha256": "e4421bbdf0b80ad9aada0cb7d877baeaefb68927982f470036906c80ffb31861"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m15-body.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m15-body.html",
+      "bytes": 30516,
+      "sha256": "74618602c4a7d550eeb56763d2f195a5ce3546e5c460f2312f036e2f5044e83f"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m15-validation.svg",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m15-validation.svg",
+      "bytes": 7036,
+      "sha256": "2610a106b497832c4b5c306b051227ad0973b5cdf4f3d14944a32ccd25507c32"
+    },
+    {
+      "path": ".lavish/prooflab-walkthrough/m15.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-walkthrough/m15.html",
+      "bytes": 36815,
+      "sha256": "676f0f05bbec5f42d6e488175daf0ea57bd07bcd4ab2b57ace3e688d3d2b5d7a"
+    },
+    {
+      "path": ".lavish/prooflab-workshop-handoff/index.html",
+      "source": "/Users/satyabratsrikumar/Documents/Codex/2026-10-01/we-x20/.lavish/prooflab-workshop-handoff/index.html",
+      "bytes": 139935,
+      "sha256": "c0786176290bc955081404389f1a5be4baea6218dcb8f99bdf238664a331e277"
+    },
+    {
+      "path": "sources/Immersion-Day-slides.pdf",
+      "source": "/Users/satyabratsrikumar/Downloads/Trustworthy AI  Hackathon developer masterclass Immersion Day slides.pdf",
+      "bytes": 949783,
+      "sha256": "133cca3b8f45969e0d92a2199b51d38455a7d5ba20f712b485732024594a5b2a"
+    },
+    {
+      "path": "sources/Hackathon-meeting-transcript.txt",
+      "source": "/Users/satyabratsrikumar/Downloads/Hackathon meeting transcript (1).txt",
+      "bytes": 74414,
+      "sha256": "3d020502d00c4c2e62b3988ec29de9cf28a461a3d4b53d317f9c851eaf781a36"
+    },
+    {
+      "path": "sources/User-pasted-master-brief.txt",
+      "source": "/Users/satyabratsrikumar/.codex/attachments/6053eead-b750-4e2c-87a8-3bc56965431e/Pasted text.txt",
+      "bytes": 20564,
+      "sha256": "d59080b1b85be71619bb49e25d61657c82e8a078a3bd90ce50cbf2fe7d7b1ca3"
+    }
+  ]
+}

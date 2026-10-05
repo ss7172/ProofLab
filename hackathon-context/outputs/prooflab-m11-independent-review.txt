@@ -1,0 +1,38 @@
+M11 INDEPENDENT AI DESIGN REVIEWS — 2026-10-04
+
+Reviewer1: /root/m01_source_review — workshop/model fit, legitimate LLM value and source interpretation.
+Reviewer2: /root/m02_contract_review — host authority, tool/runtime limits, versioning, failures and assurance usage.
+Sources: supplied masterclass/transcript context; current V4 NVIDIA architecture; M11-M13 inventory; actual .lavish/prooflab-walkthrough/m11-body.html draft. Primary agent also opened NVIDIA NIM function-calling1.15.0 and structured-generation1.14.0 documentation for conditional generic capability, not workshop availability.
+
+FINAL VERDICTS: ACCEPT / ACCEPT. No remaining material findings in the actual draft. These are conceptual reviews, not empirical model or latency evaluations.
+
+Preliminary technical gaps incorporated into draft and current foundation:
+1. Cache identity includes accepted_input_revision as well as raw-source snapshot; validated links/parser corrections can change accepted facts without new raw bytes. Cache access is reauthorized, and reused model provenance is not evidence of a fresh invocation.
+2. If the budget policy includes investigator calls in the subject scope, an immutable as-of case cannot account for its own later/in-flight composition usage. Required liabilities remain explicit; later usage enters a deterministic assessment revision, without recursive investigation, exclusion of required spend or closed-run/admission bypass.
+
+Minor wording polish from source reviewer (LOW, applied):
+The worked note establishes what its source says only AFTER source/span validation; extraction alone is not that proof.
+
+Source/model-fit conclusions:
+- Nemotron requirement and supplied-agent usage are distinct from our custom investigator and preferred Lightning profile.
+- Public model names/tool features do not establish exact lab IDs, permissions, extraction quality or latency.
+- Official judge retrieval requirement is120seconds; proposed whole-case target is60seconds under a declared envelope.
+- SQL handles exact joins/counts; model value is cited narrative extraction, relationship proposals, conflicting statements and explanation.
+- Required structured inputs are exhaustive; narrative ranking/omissions are separate and cannot establish full evidence coverage.
+- Illustrative source FM-B10800/cap10000 is separated from invented note/attempt examples.
+- Note relevance does not prove actual execution, cost or causal explanation.
+- Optional Super/Omni/Ultra roles do not require4 deployed models. Setup screenshots/recordings are not assessed-run telemetry.
+
+Technical conclusions:
+- Host supplies authorization, scope, frozen versions, policy, fixed verdict calculations and rendering.
+- Call1 returns proposals plus at most one bounded read batch. Host corroborates deterministically. Call2 composes validated references without tools/new extraction; no hidden third semantic pass.
+- Source statements, operational facts and hypotheses remain distinct. Valid JSON/resolving citations/LLM agreement do not establish operational truth.
+- Accepted-input changes trigger reassessment before composition; case/plan/assessment revisions agree.
+- Queueing, validation and publication count in the deadline; character budgets do not guarantee token budgets.
+- Oversized/unfinished stages and model failures are partial/degraded, never selectively passing control results or successful fresh model cases.
+- Scoped capabilities, reauthorization and escaped rendering limit untrusted-evidence effects; prompt instructions alone are insufficient.
+- Timed-out calls retain possible usage; no automatic recursive model analysis of assurance traces.
+
+Verification performed by primary agent: proposed stage budgets sum to60seconds; illustrative overshoot is800tokens. SVG rendered/visually inspected; exported HTML IDs/anchors/embedded assets checked. Source copies synchronized. Browser rendering not verified.
+
+Unverified: real approved endpoint/model request, actual output schema/tool support and token limits, model data-routing approval, held-out extraction precision/recall, complete source ingestion, any measured latency/ablation, and ServiceNow/workshop integration. Actual completed controls remain0/3.

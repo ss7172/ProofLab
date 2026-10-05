@@ -1,0 +1,36 @@
+M14 INDEPENDENT AI DESIGN REVIEWS — 2026-10-04
+
+Reviewer 1: /root/m01_source_review — workshop source requirements and governance fit.
+Reviewer 2: /root/m02_contract_review — durable intents, delivery recovery, ordering, readback and closure.
+Reviewer 3: /root/m03_identity_review — authorization, actor/recipient identity, evidence linkage and generated provenance.
+Reviewed artifact: .lavish/prooflab-walkthrough/m14-body.html, against the supplied slides/transcript and current architecture contracts.
+
+FINAL VERDICTS: ACCEPT / ACCEPT / ACCEPT. All identified material design findings addressed and verified in the actual chapter. These are independent AI design reviews, not vendor certification or proof of working integration.
+
+Initial required corrections:
+1. MEDIUM — A key consisting of finding + assessment revision + operation kind could collide when an owner/routing change or explanatory enrichment occurs without a new assessment. Add immutable mutation revision bound to exact payload, target, recipient, routing and content revisions. Repeated processing of the same cause resolves one operation; identical retries preserve identity and body. Delivery reviewer and identity reviewer identified this issue.
+2. MEDIUM — A queued operation must check accepted assessment/intent validity and supersession before its conditional dispatch claim. Proven unclaimed obsolete operations can be superseded; already-claimed/unknown work retains possible sends and requires reconciliation/correction. Later passing windows cannot erase earlier valid crossing obligations. No physical no-send-after-invalidation guarantee. Identified by delivery reviewer.
+
+Source review: ACCEPT without required changes.
+- AI Control Tower and the human loop remain required; exact routes/APIs/tables and permissions require actual workshop verification.
+- Team naming, asset discovery, trace integration and finding delivery are separate facts; team prefixes do not establish tenant isolation.
+- Every measured C9 crossing requires its alert independently of interval tolerance.
+- An actual human reply is out of scope. Covered silence and unknown response visibility are distinct.
+- Remediation closure requires relevant passing retest; authoritative correction/withdrawal is a separate disposition.
+- Performance BREACHED, alert DELIVERED, no observed response and remediation OPEN can coexist.
+
+Delivery review: ACCEPT after verifying both corrections.
+- Assessment/intent durability is atomic where supported or recovered by an explicit durable sweep with visible lag.
+- Ambiguous writes are unresolved, not automatically failed; local dedupe or empty eventual lookup cannot prove safe remote creation retry.
+- Remote version semantics or held unresolved ordering are needed; local serialization alone cannot exclude stale writes.
+- Readback verifies actual target, correlation, intended revision/content and recipient. Remote ID/HTTP202 alone is insufficient.
+- Notification delivery, human reading/response and closure have separate evidence.
+
+Identity/provenance review: ACCEPT after verifying mutation identity.
+- Policy/routing and authoritative identities determine recipients; model/note content cannot authorize messages.
+- Callback sender authentication alone does not prove the human actor. Preserve authoritative actor/action/record version.
+- Keep recipient-at-delivery and reassignment history.
+- Preserve many-to-many control/spec/scope bindings without collapsing distinct obligations.
+- Generated investigator/finding text remains derived on readback and is not independent operational corroboration.
+
+Primary-agent verification: diagram rendered and visually inspected; portable HTML structure/anchors/embedded assets checked; current text mirrors synchronized. No browser-rendering verification or live AICT connection, ServiceNow write, notification, human response, remediation or retest performed. Actual completed controls remain 0/3.

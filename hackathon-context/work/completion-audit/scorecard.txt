@@ -1,0 +1,35 @@
+INDEPENDENT DESIGN AUDIT — COMMON SCORECARD
+User asks: review proposed architecture for completion, prescribed controls, deliverables and winning rubric; work out detailed architecture; score completion and winning. Prior user explicitly requested multiple independent reviewers and edge cases. Review separately without other reviewers' outputs.
+
+Sources: outputs/prooflab-architecture.txt + outputs/prooflab-invocation-contract.txt (together current baseline); work/hackathon-sources/slides-extracted.txt. Newly dragged single page is now the judging rubric (physical25, printed27), NOT the earlier invocation slide. Root has checked it. Source constraints: one completed control minimum, then2 then3 order field; quality decides within field; extras separate similar teams. Mandatory6 artifacts (p26), gateway/control contract (12–15), controls(19–22), models/AICT from transcript. Team2, starting fresh, Claude users, recordings/docs only; no verified cloud hooks/data. No implemented controls or actual runs found. This is an architecture task, not authorization to deploy or manufacture evidence.
+
+Two INTERNAL scorecards; neither is official weighting or winning probability. Each criterion rated integer0–4:
+0 absent or contradictory;
+1 intent/box only;
+2 partially specified with material unresolved design choices;
+3 implementable proposal with explicit dependencies and acceptance checks;
+4 precise, coherent/reviewable design with scenarios and acceptance details, still NOT runtime verification.
+Compute points weight*rating/4; total/100. Report criterion ratings and totals. Do not inflate scores merely because text is longer or root made revisions. Workshop assumptions can keep ratings below4. Do not silently change weights or axes.
+
+DESIGN COMPLETENESS (how fully implementation is specified; not percent built):
+D1 Control7 scope/coverage/timing/denominators 12
+D2 Control9 meaningful metric/baseline/window/alert 16
+D3 Control16 accounting/admission/recovery 16
+D4 Invocation/runtime/immutable specifications 12
+D5 Evidence/source authority/claim rollup 12
+D6 Deployment/ServiceNow/model/data integration 12
+D7 Six deliverables/judge query/provenance scenarios 12
+D8 Two-person delivery plan/dependency gates 8
+TOTAL100
+
+WINNING-POTENTIAL DESIGN SCORE (conditional competitiveness of plan, not demonstrated readiness):
+W1 Credible path to3 completed controls 32
+W2 Reliable independent2-minute query 16
+W3 Correct portable architecture 16
+W4 Verifiable evidence and honest failures 16
+W5 Live inline + executed adversarial + secondpoint 12
+W6 Deliverable within2-person event constraints 8
+TOTAL100
+This composite helps prioritize only. Actual official rank remains gated/ordered by completed control count, then quality, then bonuses; no paper score substitutes. Report actual state separately:0/3 completed controls demonstrated, no judge-ready submission evidenced. A hypothetical fully delivered target is conditional, not current completion.
+
+Your initial job: score BASELINE, identify3–5 most consequential gaps and exact changes needed to make detailed architecture implementable. Check source fidelity and limitations. Save own report to assigned file. Max900 words. Do not inspect other reports. Later root will give revised architecture for independent rescoring under same rubric.

@@ -1,0 +1,19 @@
+{
+  "provenance": "SYNTHETIC_ARITHMETIC_CHECK_ONLY",
+  "runtime_tested": false,
+  "concurrency_tested": false,
+  "checks": {
+    "first_reservation_fits": true,
+    "second_concurrent_bound_does_not_fit": true,
+    "provisional_report_does_not_change_exposure": true,
+    "final_settlement_reduces_exposure": true,
+    "early_release_counterexample": true,
+    "counterexample_breaches": true,
+    "counterexample_stays_within_first_bound": true,
+    "partial_actual_plus_residual_matches_held_bound": true,
+    "non_recycling_rejects_extra_1000": true,
+    "inclusive_capacity_boundary": true,
+    "proved_unsent_cancellation_restores_capacity": true,
+    "above_bound_known_exposure": true
+  }
+}

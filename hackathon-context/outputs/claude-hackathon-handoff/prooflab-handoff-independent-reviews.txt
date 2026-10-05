@@ -1,0 +1,224 @@
+Three separate reviewer agents reviewed the handoff from different perspectives:
+1. Requirements/source authority: accepted. Checked original slides/transcript against the extracted workshop context, required deliverables, architecture questions, rubric and unresolved requirement conflicts. It did not independently browse every authenticated guide page.
+2. Technology/contracts: accepted. Checked the current 16/123 map, model aliases and live approval gates, actual deployment order, available telemetry, C9 semantics, storage/credential boundaries and conditional features.
+3. Delivery/task plan: accepted. Checked two-person sequencing, early C16/Nemotron work, early hourly-baseline collection, six artifacts, all 123 component assignments, ordinary and milestone dependencies and conditional governance gates.
+
+Resolved review findings: no mandatory human reply; S2 improvement clearly sequenced after required controls; Nemotron starts early; current model approval checked for every alias; lifecycle approval separated from runtime readiness; CodeBuild/ECR precede generated AgentConfig/operator deployment; IDE SQLite supports the proposed facts/checkpoints/outbox; discarded collector traces are never a baseline X-Ray source; exact C9 latency/Error rules replace legacy accuracy assumptions; hourly baseline collection does not wait for the full evidence repository.
+
+Automated document checks: 62 unique guide pages; 16 major/123 minor component IDs; 50 tasks (43 core, 7 conditional bonuses); every minor ID assigned once; start and milestone dependency graphs acyclic; no core start dependency on a bonus; all implementation/runtime statuses remain unimplemented/unverified; JSON parses; selected credential/account-ID patterns absent. The primary text includes conditional gates and milestone dependencies, so Claude does not require the optional JSON companions.
+
+Review acceptance applies to documentation and implementation planning. It is not completed software, an official judging score or a probability of winning. Actual controls remain 0/3 until implemented and evidenced. Linked starter code/PDFs/external reference pages still need targeted reading during implementation. The human overview uses the existing ProofLab visual style; its diagram was rendered and inspected and its inline JavaScript syntax checked. Full interactive browser behavior was not tested.
+
+========================================================================
+requirements-final-review.txt
+========================================================================
+FINAL REQUIREMENTS / SOURCE-AUTHORITY REVIEW
+Date: 2026-10-04
+Artifact: outputs/claude-hackathon-context.txt. Initial review inspected the 2,490-line / 35,155-word draft; targeted correction verification was performed against the regenerated final primary.
+Reviewer: independent requirements/source reviewer. No runtime tests or browser actions performed.
+
+VERDICT
+ACCEPTED within the reviewed scope. No remaining critical mandatory-scope contradiction found. All three component-map findings below were corrected and verified in the regenerated primary. No open requirement-review finding remains; explicit organizer/access questions remain accurately documented as unresolved rather than claimed complete.
+
+RESOLVED FINDINGS — FINAL TARGETED VERIFICATION
+R1 — M06 storage contradiction (medium clarity/implementation risk).
+RESOLVED. The old offline-only restriction is removed. M06 now describes IDE-host SQLite normalized facts/checkpoints/transactional outbox and a separately generated offline index, with neither treated as distributed admission state. Durability/restart verification remains required.
+
+R2 — M05 already-read documentation labelled forthcoming (low).
+RESOLVED. The obsolete "forthcoming" wording is removed. M05/M16 now require runtime verification of the already documented per-runtime AgentCore CloudWatch source, schema/scope/permissions/completeness; no runtime proof is inferred from having read documentation.
+
+R3 — M09 X-Ray source wording (medium clarity/implementation risk).
+RESOLVED. M09 names surviving audit-store/gateway CloudWatch/separate AgentCore CloudWatch sources and explicitly excludes X-Ray as C16 execution/usage evidence under the current collector limit. M05/M07/M16 broad mapping assertions were also corrected to preserve this distinction.
+
+CORRECTIONS VERIFIED
+- Human reply is explicitly not required; named recipient/delivery/response-or-bounded-silence remain distinct.
+- Nemotron case begins early on the first complete C16 slice; its <=60-second target is separate from official <=120-second judging and is unmeasured.
+- S2 improvement is optional differentiation; score-run.py sample grades are neither team results nor the control judging rubric.
+- One completed control is the minimum; three is the chosen ambition. Completion is distinct from green requirement verdicts.
+- Exact five architecture topics and six incident auditor questions are present and separated from six deliverables/evidence fields.
+- Rubric has three axes and counts0/1/2/3; no invented official numeric weights or win probability.
+- AICT requirement conflict is unresolved with facilitator/organizer route; no assumed private ServiceNow instance, auto-waiver or runtime-delivery claim.
+- C9 baseline now uses AgentCore Latency Average ms / Errors Sum count per runtime clock-hour; accuracy/twin alternatives require acceptance; zero/no-traffic/missing/window/denominator distinctions remain.
+- All actual model aliases replace Lightning planning; Omni/Ultra are excluded; conflicting approval snapshots require actual state/readiness verification.
+- Lifecycle approval, provisioning/runtime readiness, serving and registry projection are separate.
+- Fixed PDP/gateway custom-code prohibition and absent token state keep M10 conditional/deferred. Account100RPM/2.5M tokens/hour is separate from C16 run cap; per-agent1RPS mistake is corrected.
+- Specific discarded collector/X-Ray warnings override generic overview, with separate AgentCore CloudWatch source explained.
+- Official team S3 submission/readback, six-artifact archive inspection, presigned-URL handling and export-scope conflict are explicit.
+- Submission cutoff is not inferred from account lifetime or old slide weekday prose; current organizer confirmation remains open.
+- Original slides' illustrative numeric examples are labelled illustrative, not real team runs or mandatory threshold values.
+- Supplied integrity capability is reused; custom cryptographic work remains out of scope; integrity does not prove completeness.
+
+DEFINED DOCUMENTATION-COMPLETENESS SCORE
+20 of20 review criteria met for this source/requirements handoff checklist after verifying R1–R3 corrections. This measures the defined documentation coverage/consistency checklist only; it is not a guarantee of exhaustive factual perfection, code completion, runtime assurance, official judging score or probability of winning.
+Checklist: (1) source precedence/provenance; (2) control set/minimum; (3) six required steps; (4) six artifacts; (5) five architecture questions; (6) six auditor questions; (7) rubric without invented weights; (8) dated freeze/rationale; (9) actual named pass/breach proof; (10) two-minute query/rehearsal; (11) current C9 contract; (12) bounded actual NVIDIA role; (13) AICT conflict; (14) human-response scope; (15) permissions/runtime placement; (16) official submission/export; (17) deadline uncertainty; (18) preventive-bonus boundary; (19) documented-versus-executed status; (20) internally consistent current component mapping.
+
+TESTED SCOPE AND LIMITS
+Directly compared the original extracted PDF requirements and transcript clarifications with the primary draft's introductory workshop notes, source-authority chapter, implementation sequence, control/model/governance rules and current component map. Targeted searches checked old assumptions, exact references, mandatory/optional language and model/approval/runtime wording. Cross-checked parent-extracted workshop facts available in this task and the current workshop-map/task artifacts. This is not an independent reread of all62 authenticated workshop pages, all downloaded starter source, all external documents or every one of the35,155 words. Newly documented guide details outside those sources are not independently certified here. No deployment, model call, source query, test run, control completion, S3 upload or ServiceNow delivery was verified.
+Final recheck was deliberately limited to the three correction targets and adjacent source-mapping wording; it was not a new expansive audit of unrelated regenerated text.
+
+========================================================================
+technology-final-review.txt
+========================================================================
+INDEPENDENT TECHNOLOGY REVIEW — CLAUDE HANDOFF
+Date: 2026-10-04
+Reviewer: workshop_technology_map subagent
+
+FINAL VERDICT: ACCEPTED AS A DOCUMENTED IMPLEMENTATION PLAN. All four requested consistency corrections are resolved in the regenerated primary handoff and component JSON. This is not runtime verification or confirmation of completed controls.
+
+Initial review requested narrow consistency corrections; the findings below are retained as review history.
+
+Scope inspected:
+- outputs/claude-hackathon-context.txt: technology summary, deployment/access/source sections, embedded contracts and targeted complete task/component sections concerning C9, models, storage, approvals, admission and evidence.
+- outputs/prooflab-workshop-components.json: all 16 groups and 123 minor component records, task IDs, dispositions, runtime-verification flags and guide URLs.
+- work/workshop-mapping/claude-technical-contracts.txt: complete current technical contracts.
+- work/workshop-mapping/workshop-map.json and guide-index.txt: documented mapping and exact guide locators.
+This is an independent consistency/engineering review, not another authenticated reading of all 62 source guide pages. No runtime checks, model calls, IAM modifications, deployments, evidence uploads or ServiceNow writes were performed.
+
+INITIAL FINDINGS — ALL RESOLVED IN REGENERATED SNAPSHOT
+
+F01 — RESOLVED (initial severity MEDIUM): a task reintroduces fixed approval assumptions.
+Primary T05 step5 says “helper/30B bootstrap approval and ordinary9B/Super participant attestation are distinct.” That retains the older one-page snapshot as a fixed split, contradicting the corrected statement that /baseline-walkthrough/declare and /choosing-a-model disagree. T29 technology and T48 technology also call the alias list “approved” as a class, although approval must be read live.
+Correction: refer to documented supported text aliases; inspect each selected ModelConfig’s current lifecycle/attestation, required permitted approval and provisioning/serving evidence. Do not require attesting 9B if already approved or assume30B is ready. Nano9B can remain the preferred profile, with an actually approved working alternative when needed.
+
+F02 — RESOLVED (initial severity MEDIUM): minor M16.3 retains the old storage plan.
+Generated component M16.3 still says conditional DynamoDB for atomic state, S3 raw/export and SQLite offline indexing. The current chosen baseline is permissioned IDE raw files + SQLite facts/checkpoints/transactional outbox, then submit.sh to team S3; no pod credentials/public-S3 assumption.
+Correction: update this minor purpose to the current baseline, with any DynamoDB/alternate worker a later explicit permitted choice. SQLite is not only an offline index. This prevents an implementer following the minor inventory from building the obsolete database-first branch.
+
+F03 — RESOLVED (initial severity LOW): minor M05.1 uses generic “OTEL” source wording.
+The generated minor says “Read available gateway, OTEL and CloudWatch source records.” Group-level warnings are correct, but the minor can be read as directing an adapter to the discarded collector pipeline.
+Correction: explicitly name surviving gateway/PDP/audit-store sources and separate per-runtime AgentCore CloudWatch spans; say collector trace export is unavailable. Preserve runtime verification/completeness gate.
+
+F04 — RESOLVED (initial severity LOW): minor M08.6 describes only relative change.
+The revised C9 design includes higher-is-worse Latency Average and a predeclared absolute Errors Sum rule when baseline is zero. The minor still says “Computes the declared relative change...”
+Correction: describe declared metric comparison: relative latency increase where valid, absolute error-count threshold where declared; preserve exact boundaries and zero-baseline handling. Do not imply every C9 metric is a lower-is-worse relative score.
+
+SUPPORTING-FILE CORRECTIONS APPLIED BY THIS REVIEWER
+- M06 adjustment now permits IDE SQLite facts/checkpoints/outbox and a separate offline index; it no longer says SQLite is offline-only.
+- M05/M16 now say separate AgentCore CloudWatch spans are already documented/read, with runtime permissions/schema/completeness still unverified.
+- M09 no longer lists X-Ray as a surviving C16 observation path; current collector trace export is explicitly absent.
+- C9 remaining-proof text now treats Errors Sum as documented count, not an undecided count/rate choice; a rate is separately declared only with an accepted denominator.
+- Matching technical-contract text now makes the IDE SQLite role and distinct documented AgentCore span path explicit.
+The parent regenerated the primary/component artifacts after consuming these patches. This reviewer verified the resulting task/component text without editing the primary handoff or its generator.
+
+CORRECTED/ACCEPTED DESIGN AREAS
+- C9 defaults to AWS/Bedrock-AgentCore Name/Operation/Resource, Latency Average milliseconds and Errors Sum count, period3600; score-run.py remains separate diagnostic grading. UTC closed-hour boundaries are declared, empty data is not zero, baseline-zero rules and full timestamp/unit/dimension provenance are retained.
+- M11.10 Omni and M11.11 Ultra are CUT_CURRENT_EVENT. No hidden implementation dependency on unsupported families was found. Lightning is historical wording only; actual9B/30B/Super aliases govern implementation.
+- Phase is lifecycle evidence, not sufficient readiness. Approved/provisioned/runtime READY/reachable execution are distinguished. TMF639 projection failure is not equated with serving failure.
+- Build order is new-agent.sh -> CodeBuild ARM64 -> ECR -> generated/applied AgentConfig -> required approval -> operator-managed AgentCore Runtime. No custom AgentConfig-triggered build or direct participant AgentCore creation is required.
+- Permissioned IDE collector/SQLite path, absent pod AWS credentials/public-S3 access, and bounded evidence payload/authorized read-tool bridge to AgentCore are explicit.
+- Actual Nemotron invocation metadata/usage/quality/latency are required. Cached answers, badges and fixture-only prompts do not meet the model gate.
+- C7 expected slots/pairs, C16 whole-run execution population and C9 expected hours are independent of received observations. Header fragmentation, retries, corrections, pagination and uncertain outcomes remain visible. Many-to-many binding joins do not multiply token charges.
+- Fixed gateway/PDP prohibits custom code/token admission; M10 minor items remain DEFERRED_UNSUPPORTED_INLINE_HOOK. Cedar access policy, table availability and delayed pause are not claimed as per-run atomic prevention.
+- Human-loop/AICT conflict stays open with facilitator dependence; actual recipient/delivery/response evidence is distinct from asset discovery and operator attestation. Missing response access is not silence.
+- Account-wide100RPM/2.5M tokens/hour includes helpers, with all controlled callers coordinated; no3-agent1RPS safe-throughput claim.
+- Actual control implementation remains0/3; no runtime verification fabricated.
+
+STRUCTURAL CHECKS PASSED
+- Exactly16 ordered major IDs M01–M16.
+- Exactly123 unique minor IDs retained.
+- Every minor maps to a valid T01–T50 task ID.
+- Every group/minor runtime_verified value is false.
+- All generated component source URLs resolve to a suffix present in guide-index.txt.
+
+LIMITS
+This review checks implementation instructions and mapping consistency. It cannot establish access, source completeness, field semantics, real model response quality/latency, accepted breach provenance or winning probability. Runtime gates and organizer decisions remain implementation work. Final correction verification is complete for F01–F04. No new architecture rewrite or remaining documentation blocker was identified within this review scope.
+
+FINAL CORRECTION VERIFICATION
+- T05 now treats guide approval snapshots as conflicting and requires current selected-alias approval/attestation/dependency/route readiness; no fixed bootstrap-versus-participant split. T29/T48 say supported aliases with explicit live approval/readiness gates.
+- M16.3 now specifies initial IDE SQLite facts/checkpoints/outbox plus raw files, team S3 submission and separately verified roles for any distributed store; no pod inheritance of IDE credentials.
+- M05.1 now separates gateway/PDP logs from AgentCore CloudWatch spans/metrics and explicitly excludes the discarded collector/X-Ray path. Current M05/M07/M16 group mappings likewise contain no broad X-Ray availability claim.
+- M08.6 now includes higher-is-worse latency, predeclared absolute Errors-count rule for zero baseline and validated denominator requirement for any rate.
+- Regenerated structure remains16 major groups/123 minor components, with all runtime_verified flags false.
+
+No unresolved critical or medium findings remain in the reviewed documentation. Runtime/source/gov-access gaps correctly remain open implementation gates.
+
+========================================================================
+task-final-review.txt
+========================================================================
+FINAL TASK/HANDOFF REVIEW — 2026-10-04
+
+FINAL REVIEW STATUS — ACCEPTED FOR DOCUMENTATION / IMPLEMENTATION PLANNING
+Final primary reviewed: outputs/claude-hackathon-context.txt.
+Latest supporting source reviewed: work/workshop-mapping/workshop-task-plan.json and claude-delivery-plan.txt.
+This acceptance concerns the completed planning/handoff, not runtime implementation, cloud permissions, control performance or submission acceptance. Actual completed controls remain0/3.
+
+All three earlier findings are fixed in the generated primary:
+- Nemotron follows the first C16 evidence path early, with C9 baseline/governance work in parallel.
+- Required governance records a named recipient and observed response OR adequately observed silence; actual reply/remediation is not fabricated or made mandatory.
+- S2 improvement is explicitly optional differentiation after required controls.
+
+Final two-person delivery review:
+- A owns starter/source/C16/C7/investigator/query integration; B owns frozen rules/C9 baseline/validation/governance clarification and independent arithmetic. Both cross-review/rehearse. These are work assignments, not estimates proving that50 tasks fit in the event.
+- First C16 package and model-assisted query can proceed without C7/C9 or an unavailable ServiceNow instance. Final governance obligation remains an authoritative organizer gate.
+- T23 now starts preserved hourly baseline capture after T01/T09/T14 without waiting for T16's full proposal/case repository. T16 remains a later canonical-binding milestone. This avoids losing clock-hours while A builds the workspace.
+- Current model readiness is checked for every alias. T05/T29/T48 and the delivery plan no longer assume a fixed helper/30B bootstrap-approved versus ordinary9B/Super split. Supported alias documentation is not entitlement or runtime readiness.
+- Six artifact categories are explicit: evidence, dated thresholds, runnable query/control test, named pass/breach cases, actual one-page architecture and gaps. The independent checker belongs inside these categories rather than becoming an invented seventh official requirement.
+- S3 upload/readback and temporary URL handling remain the official delivery path; a local package is not submission proof.
+
+Mechanical source checks passed after final corrections:
+50 unique task IDs;43 CORE and7 CONDITIONAL_BONUS;123 original minor component IDs covered exactly once across16 major groups; no missing dependency IDs; no cycle across ordinary plus milestone dependencies; no CORE task depends on BONUS through either dependency type; all runtime_verified=false and implementation_status=NOT_IMPLEMENTED.
+Early C16 package ancestry excludes C7/C9 and blocked ServiceNow tasks. Early model case ancestry excludes C7/C9. Early C9 capture ancestry excludes the full T16 workspace.
+
+Publication note:
+The parent must regenerate the published JSON/HTML/ZIP from the latest supporting files after the final alias-readiness and early-baseline corrections. Primary prose was not edited by this reviewer. Parent owns final artifact synchronization and HTML checks; this review does not claim browser/runtime verification.
+
+Reviewer: /root/workshop_task_plan
+Reviewed: claude-workshop-notes.txt against workshop-task-plan.json, claude-delivery-plan.txt, the existing architecture contracts and the parent's reported authenticated guide findings.
+Scope: independent consistency/implementation review. This reviewer did not independently browse all62 workshop pages, inspect the downloadable starter source or execute workshop commands. All platform functionality remains DOCUMENTED, not runtime verified.
+
+INITIAL VERDICT (RESOLVED): three wording corrections were required in the parent handoff. The final primary file now includes all three fixes; see the final review status below.
+
+INITIAL PARENT HANDOFF FINDINGS — ALL FIXED IN FINAL PRIMARY
+1. REQUIRED / MEDIUM — Early core investigator sequencing.
+Location: READ THIS FIRST, “How to use this handoff with Claude”, item3.
+Current text places the bounded Nemotron investigator after C16, C7 and C9. This conflicts with the accepted task dependencies and the user's core model-assisted evidence requirement.
+Recommended replacement:
+“Complete the first C16 pass/breach evidence slice, then immediately add the bounded Nemotron case while the other teammate starts C9 hourly baseline collection and governance clarification. Extend C7/C9 in parallel and complete required governance before final release.”
+Reason: T28–T34 and the initial T40 C16 package deliberately do not wait for all three controls or an unavailable ServiceNow connector.
+
+2. REQUIRED / HIGH — Do not turn a real human reply into an objective.
+Location: OBJECTIVE AND PRODUCT, first paragraph.
+“demonstrate a real owner response/remediation when ... permits it” can be read as a mandatory human-answer/closure milestone. The masterclass explicitly excludes requiring a human to answer.
+Recommended replacement:
+“record the required alert, actual named recipient, verified delivery where the accepted integration permits it, and either the observed response or accurately bounded silence; link real remediation and passing retests only when they occur.”
+Reason: a named recipient plus sufficient evidence of no response is a valid observable result. Missing response visibility remains unknown. Do not make a human reply or remediation closure necessary to finish a technically complete control.
+
+3. REQUIRED / MEDIUM — Keep S2 improvement an optional differentiator.
+Location: OBJECTIVE AND PRODUCT, first paragraph.
+The standalone imperative “Improve ... S2 behavior” makes the stretch agent change appear coequal with completion of the three assurance controls.
+Recommended replacement:
+“After the required evidence/control slice is complete, improve the reference agents' ambiguous S2 behavior if time permits, preserving S1/S3 regressions.”
+Reason: taskT50 is explicitly CONDITIONAL_BONUS and follows release validation. The handoff should not cause two novice participants to spend the critical path rewriting agents before producing the six artifacts.
+
+ALREADY CORRECTED IN THIS REVIEW
+- claude-delivery-plan.txt now shows the actual custom-agent creation order:
+  new-agent.sh -> CodeBuild/ECR image -> generated/applied AgentConfig -> legitimate review/approval -> operator-provisioned AgentCore Runtime.
+  It no longer implies that AgentConfig is created first to trigger the documented image build.
+- Stage1 explicitly freezes applicable rules and the baseline/treatment protocol before any assessed run/window. Permitted exploratory/calibration runs are labelled exploratory and excluded from submitted assessed cases; no retrospective dating.
+- T02 was aligned with the same actual custom-agent order and image/generation/readiness evidence.
+- T09 now explicitly records the pre-assessment freeze/exploratory distinction.
+- T23/T24 now explicitly pin AWS/Bedrock-AgentCore, exact Name/Operation/Resource dimensions, Latency Average milliseconds, Errors Sum count, period3600 and closed UTC clock hours. Full timestamps, pagination, units, query identity, coverage/late-data rules and zero-baseline handling remain required.
+- The documented Cedar label is spelled app.kubernetes.io/part-of=modaas-pdp; the separate policy-id annotation remains as stated in the observed guide.
+- The task plan retains all123 original subcomponent IDs; no new platform asset has been invented as an M-number.
+
+C7/C9 BASIS CHECK
+T22 is C7 event coverage/timing over independently expected events with clock eligibility and actual CR/PDP/audit/CloudWatch evidence. It does not require scenario labels as drift ground truth.
+T23 andT24 use the current operational C9 contract. The scenario scorer is explicitly separate; higher latency is worse, Errors Sum is not a rate, zero baseline is not divided, and missing/current-hour metrics are not healthy zero values.
+Parent handoff sectionG correctly states the current C9 basis and explains that pre-runtime failures can increment Errors without agent spans. Do not regress to the old diagnostic-accuracy examples during implementation.
+Freeze a baseline collection protocol before collecting assessed data, then freeze accepted baseline values before treatment windows. Do not claim a historical example was assessed under a register written later.
+
+OTHER ACCEPTED POINTS
+- All three reference agents are correctly placed on AgentCore; earlier ServiceNow customer-agent placement is retained as a discrepancy.
+- Actual kinds are ModelConfig, ToolConfig and AgentConfig; model aliases are not CR kinds.
+- Custom gateway/PDP code is excluded. The team Cedar ConfigMap is a narrow documented protected-namespace exception, not a blanket mutation right or a fabricated extra approval requirement.
+- Effective tool-name policy composition, missing attributes and absent per-agent PDP identity are exposed.
+- Shared account quota arithmetic includes helper/investigator calls and rejects3x1RPS=180RPM.
+- No durable collector exporter, lagging conditions and registry-projection failures remain gaps rather than fabricated source completeness.
+- The investigator receives bounded evidence via actual invocation payload/read tools; it does not magically read IDE SQLite/files.
+- ServiceNow absent/optional-guide versus mandatory-transcript remains an explicit gate with possible authoritative waiver; independent C16 work proceeds meanwhile.
+- Judge S3 readback, exact six artifact categories, temporary bearer URL secrecy and permitted export scope remain intact.
+- Unsupported M10 prevention, Omni and Ultra are excluded from core implementation.
+- No numerical winning probability is asserted.
+
+VERIFICATION LIMIT
+These findings are a document/task review. No cloud command, agent deployment, model call, scenario run, actual hour collection, ServiceNow write or S3 submission was performed. Guide example scores, propagation times and policy states are not this team's test results.

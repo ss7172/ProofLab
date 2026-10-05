@@ -1,0 +1,1729 @@
+[
+  {
+    "component_id": "M01",
+    "name": "Telecom fault-resolution workflow",
+    "role": "The supplied three-zone business system whose event recording, diagnostic performance and whole-run token spend we assess.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: ServiceNow customer/ticket agent, AWS IT triage agent and AWS network investigation agent; Gateway A and Gateway B connect zones (slides PDF page 17).",
+      "SUPPLIED-SOURCE CLAIM: shared model gateway, input/output guardrails, OpenTelemetry collector/storage, NVIDIA digital twin and scenario switch (slides PDF page 17).",
+      "SUPPLIED-SOURCE CLAIM: AI Native ODA Canvas is an experimental partner/open-source platform running on EKS using AWS services; it is not itself an AWS service (transcript).",
+      "SUPPLIED-SOURCE CLAIM: approved NVIDIA Nemotron model family is used by subject agents; exact deployed endpoint/model identifiers require verification."
+    ],
+    "proposed_build": [
+      "Retain the supplied subject workflow and inventory its actual agent, gateway, tool, model and telemetry identities.",
+      "Capture one authorized complete three-zone fault-resolution run before modifying agents.",
+      "Separate business handoff gateways, the shared model-routing role and any AgentCore Gateway product instance; do not assume they are the same.",
+      "Record supplied guardrails/scenario switches as capabilities, not as completed C7/C9/C16 controls or accepted ground-truth labels."
+    ],
+    "interfaces_in": [
+      "Authorized customer fault request and account/service context",
+      "Permitted scenario selection"
+    ],
+    "interfaces_out": [
+      "M02 action/handoff/model boundaries",
+      "M05 source telemetry, results and actual model usage",
+      "M08 independently accepted scenario outcomes"
+    ],
+    "proof_needed": [
+      "Actual team-scoped resource/agent inventory",
+      "Successful three-zone run with correlatable root run and handoff identities",
+      "Actual model invocation route and model identifiers",
+      "Collector/source locations and permitted access",
+      "Digital-twin/scenario capabilities and label authority, if used"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M01",
+      "work/hackathon-sources/slides-extracted.txt:54",
+      "work/nvidia-review/nvidia-transcript-excerpts.txt:5",
+      "work/nvidia-review/nvidia-transcript-excerpts.txt:17"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "EKS runs the AI Native ODA Canvas, three MoDaaS operators (ModelConfig, ToolConfig, AgentConfig), Cedar PDP and agentgateway.",
+      "AgentCore Runtime hosts all agents through AgentConfig reconciliation; operators create the runtime resources.",
+      "Bedrock serves NVIDIA Nemotron serverlessly through ModelConfig and an approved governed model alias.",
+      "Shared modaas-agw covers all three zones. AgentCore Gateway is the MCP/tool layer behind modaas-agw, not a substitute label for the shared gateway.",
+      "AgentCore Gateway exposes Lambda tools configured by ToolConfig with provider agentCoreGateway.",
+      "The event has exactly three documented text aliases: nemotron-super-120b \u2192 nvidia.nemotron-super-3-120b (baseline for all agents); nemotron-nano-9b \u2192 nvidia.nemotron-nano-9b-v2 (fast profile); nemotron-nano-3-30b \u2192 nvidia.nemotron-nano-3-30b (middle profile).",
+      "Approval snapshots conflict: /baseline-walkthrough/declare shows 30B/helper Approved and ordinary 9B/Super Reviewing; /choosing-a-model shows 9B Approved and other aliases Reviewing. Inspect current per-alias state and required permitted approval workflow; no universal default approval is established.",
+      "Omni is outside this text-only event; Ultra is unavailable here. Earlier Lightning-family planning is superseded by actual workshop aliases.",
+      "CURRENT-BUILD OVERRIDE: the OTEL collector trace pipeline has no durable exporter and discards spans. Nothing from this pipeline reaches X-Ray; Cockpit Trace is empty. This specific current-build contract overrides the broad aws-services observability overview; any separate AgentCore CloudWatch span path needs independent verification.",
+      "The Oct 3 ceiling guide documents AgentgatewayPolicy modaas-ceiling at 100 requests/minute and 2,500,000 tokens/hour across the account, including helper calls; gateway CloudWatch log group is /aws/modaas/gateway."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/nemotron-models",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/governed-tool",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/declare",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/choosing-a-model",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/build-your-own-agent/build-agent",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/build-your-own-agent/what-the-script-did",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Discover actual supplied agents, AgentConfig/ModelConfig/ToolConfig status and governed model alias without exposing credentials.",
+      "Run the documented baseline once and verify root run ID plus traceparent propagate across all actual zones; known missing headers may fragment traces.",
+      "Verify actual ServiceNow business-workflow involvement against the guide statement that all canvas agents run on AgentCore; do not silently erase the source difference.",
+      "Verify available digital twin/scenario tooling and accepted outcome authority if the earlier diagnostic extension is retained.",
+      "Inspect current approval/status for each actual subject/helper ModelConfig alias; guide baseline description does not establish current live readiness."
+    ],
+    "architecture_adjustments": [
+      "Refine the earlier AWS/ServiceNow hosting diagram around actual runtime inventory; the guide documents AgentCore hosting for canvas agents, while the supplied slides put the customer agent in ServiceNow.",
+      "Keep EKS as platform/operator/gateway substrate and AgentCore as agent runtime.",
+      "Use approved Nemotron alias through ModelConfig/shared governance path, not direct Bedrock calls.",
+      "Do not draw OTEL\u2192X-Ray as a working durable trace path in the current actual-deployment diagram."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M02",
+    "name": "Enforcement points and platform adapters",
+    "role": "Translate supported workshop boundaries into common evaluation, recording, delayed-result and source-read contracts.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: the lab has a shared model gateway, Gateway A/B and agent/tool boundaries; actual extension interfaces are not specified by the slides.",
+      "SUPPLIED-SOURCE CLAIM: workshop describes Kubernetes configuration for models/tools and examples of launching agents on AgentCore through AI Native ODA Canvas.",
+      "PROPOSED CONDITIONAL MAPPING: supported wrapper/hook or AgentCore Gateway interceptor if the actual event path and permissions are verified; tool interception alone does not establish model-call visibility.",
+      "PROPOSED CONDITIONAL MAPPING: authenticated read-only source adapter when no writable hook exists; label observation rather than prevention."
+    ],
+    "proposed_build": [
+      "Implement thin shared-model, selected handoff and permitted tool adapters around one shared control/evidence package.",
+      "Define our own evaluate, emit, callback and pull contracts; these names are proposed application interfaces, not asserted vendor APIs.",
+      "Keep M13 query separate from four enforcement/source transports.",
+      "Route events using the pinned applicability map; recording/monitoring do not become blocking merely because they share a request.",
+      "Attempt a second point only through a permitted integration; keep actual adapter differences visible."
+    ],
+    "interfaces_in": [
+      "M01 action/request/result boundary",
+      "M03 authenticated team/run/action/attempt context",
+      "M04 pinned applicability and policy"
+    ],
+    "interfaces_out": [
+      "M10 optional synchronous admission request/decision",
+      "M05 normalized observations and durable/best-effort receipts",
+      "M03 authenticated delayed-result correlation",
+      "M13 read-only source data through M05/M06"
+    ],
+    "proof_needed": [
+      "Exact boundary product and deployed path",
+      "Hook/write permissions and supported authentication",
+      "Complete model-request coverage or explicitly partial scope",
+      "Real send/receive pair and permitted failure at second point",
+      "Blocking behavior, bypasses and callback semantics if claimed"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M02",
+      "outputs/prooflab-detailed-architecture.txt:21",
+      "outputs/prooflab-detailed-architecture.txt:32",
+      "outputs/prooflab-detailed-architecture.txt:142",
+      "work/nvidia-review/nvidia-transcript-excerpts.txt:17"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "The shared modaas-agw path is fixed; custom gateway/PDP code is not permitted. Cedar policy in a ConfigMap is the documented extension point.",
+      "Custom code in AgentCore can observe actions. This does not by itself prove an unbypassable pre-inference enforcement point.",
+      "ToolConfig provider agentCoreGateway creates/links MCP Lambda tools through AgentCore Gateway behind modaas-agw.",
+      "Run ID and traceparent headers connect records, but documented missing-header fragmentation must be detected.",
+      "API group is oda.tmforum.org/v1beta1. Model service is port 8081 /v1/chat/completions; tool service is port 8080 /mcp/<alias>; discover actual destinations through status.endpoint.",
+      "Gateway TLS port 8443 is available. Protected namespaces impose component write scope; do not infer blanket cluster mutation permission.",
+      "Existing four-policy checks are not reliable evidence after the new modaas-ceiling policy; enumerate actual policy resources/status.",
+      "Observed guide pause/stop propagation is about 15 seconds and resume about 50 seconds; these are observations, not an instantaneous denial contract."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/platform-access/api-surface",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Read actual Cedar policy schema, resource/action names, allowed edit scope, reload behavior and decision evidence.",
+      "Identify supported observation hooks in custom AgentCore code and distinguish observation from enforced denial.",
+      "Verify exact model and tool path coverage, headers, correlation and denied-action records.",
+      "Prove a second supported point reuses the shared contracts without inventing gateway plugin permissions.",
+      "Read documented authenticated endpoint usage and protected namespace/component rules before configuring adapters.",
+      "Enumerate actual AgentgatewayPolicy objects, status and decision logs before using legacy checks."
+    ],
+    "architecture_adjustments": [
+      "Replace speculative custom shared-gateway/Lambda interceptor plan with permitted Cedar configuration plus agent observation adapters.",
+      "Keep evaluate/emit/callback/pull as our application contracts; map only those actually supported by the guide.",
+      "Do not treat tool MCP interception as full model-call accounting or atomic admission.",
+      "Use actual discovered endpoints and specified authentication/TLS route rather than invented public API or port mappings.",
+      "Instrument only permitted alternative observation paths; no mutation of fixed gateway/PDP code to repair telemetry.",
+      "Distinguish propagated pause from synchronous per-request atomic admission."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M03",
+    "name": "Identity, schemas and run lifecycle",
+    "role": "Keep subject runs, intended actions, proposed attempts, actual executions and source observations distinct and unambiguously scoped.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: existing agents and OpenTelemetry emit evidence, but exact run/trace/usage schemas have not been proven.",
+      "PROPOSED BUILD: versioned Python schemas and lifecycle modules, independent of hosting product.",
+      "PROPOSED CONDITIONAL MAPPING: permitted transactional/conditional-write store for shared lifecycle state; DynamoDB is a candidate, not an entitlement."
+    ],
+    "proposed_build": [
+      "Bind authenticated team/point context outside the LLM and reject spoofed scopes.",
+      "Define run/action/attempt/observation/execution identities, source namespaces and immutable revision references.",
+      "Model an attempt as zero, one or several actual provider executions; account hidden retries and retain unmatched/conflicting identities.",
+      "Implement OPEN, ACTIONS_CLOSED and EVIDENCE_FINAL distinctly; late facts remain recordable.",
+      "Prevent agent-chosen identifiers or new policy versions from resetting an existing whole-run budget."
+    ],
+    "interfaces_in": [
+      "M02 authenticated boundary context",
+      "M05 raw scoped source identifiers",
+      "M04 pinned policy"
+    ],
+    "interfaces_out": [
+      "Canonical versioned records for M05\u2013M14",
+      "Run state and identity checks for M10",
+      "Explicit unresolved identity conflicts for M06/M12/M13"
+    ],
+    "proof_needed": [
+      "Real cross-zone root-run correlation",
+      "Identifier uniqueness boundaries by account/region/instance/provider",
+      "Retry versus duplicate delivery examples",
+      "Authoritative run open/close events",
+      "Store concurrency and authorized ownership semantics"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M03",
+      "outputs/prooflab-detailed-architecture.txt:45",
+      "outputs/prooflab-m03-independent-review.txt"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "Documented run identity uses run ID plus traceparent; missing headers can fragment traces.",
+      "The AWS Agent Registry operator writes status.registryRecordId; this is an asset/registry identity, not a provider execution ID.",
+      "AgentConfig/ModelConfig/ToolConfig status fields identify platform resources; actual payloads remain unprobed.",
+      "Participant/IDE role may create team-prefixed tables; exact store behavior and table prefix conventions must be followed.",
+      "oda.tmforum.org/v1beta1 custom-resource status includes discovered endpoints. Phase is lifecycle evidence; Conditions can lag up to two minutes. Readiness separately requires provisioned state, AgentCore runtime READY and an authorized reachable-serving probe.",
+      "TMF639Projected=False is a known baseline condition caused by operator egress lacking port 8639, not a serving failure. TMF639 inventory holds ODAComponents rather than every AI asset."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/platform-access/api-surface",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Inspect real trace/run/execution identifiers and verify namespace/uniqueness and header propagation.",
+      "Keep registryRecordId, runtime ARN/resource identity, run ID, action, attempt and provider execution distinct.",
+      "Confirm authoritative lifecycle/completion signals and actual retry semantics.",
+      "Verify permitted table type/transaction APIs if used for shared state.",
+      "Distinguish runtime serving identity/readiness, registry identity and ODAComponent inventory projection in observed resource state."
+    ],
+    "architecture_adjustments": [
+      "Add a documented header-propagation diagnostic and explicit orphan/fragment handling.",
+      "Use registryRecordId for asset relationship mapping only; do not use it as per-run or billing evidence.",
+      "Do not block working model/agent paths merely because TMF639Projected=False; record the documented projection limitation separately."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M04",
+    "name": "Policy register and control applicability",
+    "role": "Declare dated measurement rules, scope, ownership and limits before assessed work and pin them without per-call register lookups.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE REQUIREMENT: dated thresholds, observation limit, exception tolerance, measurement basis and named owner (slides PDF pages 19 and 23).",
+      "PROPOSED BUILD: immutable versioned configuration and shared Python validation/loading.",
+      "PROPOSED CONDITIONAL MAPPING: versioned object storage such as S3; a local exported policy copy is sufficient for replay but does not establish cloud availability."
+    ],
+    "proposed_build": [
+      "Declare C7 expected-event/timing rules, C9 accepted metric/baseline/window rules and C16 accounting/cap rules.",
+      "Freeze action-to-control applicability and exact policy/evaluator/baseline references before assessed runs.",
+      "Keep policy register off the inference path; pass an authorized pinned bundle to evaluators.",
+      "Distinguish new-run selection expiry, active-run continuation, hard cutoff, authenticated revocation and historical replay.",
+      "Record source authority, completion and correction rules as policy inputs rather than model-generated judgments."
+    ],
+    "interfaces_in": [
+      "Declared scope and owners",
+      "Accepted source/label/accounting capabilities from M16 gates",
+      "Approved threshold rationale"
+    ],
+    "interfaces_out": [
+      "Pinned policy bundle to M02/M03/M07\u2013M10",
+      "Historical exact versions for M12/M13/M15"
+    ],
+    "proof_needed": [
+      "Actual versioned threshold document dated before test runs",
+      "Named owner and justified metric/limit/allowance",
+      "Accepted baseline/label and usage-accounting rules",
+      "Historical rule retention and no post-hoc threshold switching"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M04",
+      "outputs/prooflab-detailed-architecture.txt:47",
+      "work/hackathon-sources/slides-extracted.txt:61",
+      "work/hackathon-sources/slides-extracted.txt:73"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "Cedar policies supplied through ConfigMap govern the fixed PDP/gateway; arbitrary PDP code is not permitted.",
+      "ModelConfig approval/governed alias is the supported model authorization path.",
+      "The platform contract documents authoritative gateway input/output token and cost records and hourly AgentCore latency/error monitoring inputs.",
+      "ModelConfig approval/participant attestation must be checked on the selected alias. /baseline-walkthrough/declare and /choosing-a-model show conflicting approval snapshots, so current state\u2014not model size or a page default\u2014determines required permitted approval steps.",
+      "The Oct 3 ceiling guide documents AgentgatewayPolicy modaas-ceiling at 100 requests/minute and 2,500,000 tokens/hour across the account, including helper calls; gateway CloudWatch log group is /aws/modaas/gateway."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/nemotron-models",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/declare",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/choosing-a-model",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Read exact control specification format, Cedar namespace/action semantics and supported constraints.",
+      "Freeze workshop-aligned C7/C9/C16 thresholds before assessed runs and identify named owners.",
+      "Verify whether policy decisions can consume spend state, and do not assume this creates atomic cap enforcement.",
+      "Define source authority/completion and C9 metric denominators/windows explicitly.",
+      "Capture applicable current attestation and approval state before selecting inference alias; do not assume previously approved alias grants rights to another.",
+      "Verify active ceiling policy value/version and scope through live read-only inspection; documented defaults can change."
+    ],
+    "architecture_adjustments": [
+      "Keep the dated control-spec register separate from Cedar access policy; they serve distinct purposes.",
+      "Cedar policy acceptance is not evidence that the control evaluator or measurement tests have executed.",
+      "Prioritize documented latency/errors for C9 before retaining proposed diagnosis exact-match scoring.",
+      "Keep platform account-wide hourly/rate ceilings distinct from our dated whole-run C16 cap and C9 thresholds.",
+      "Do not assume the platform ceiling implements our per-run accounting or prevents concurrent overshoot under our own rule."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M05",
+    "name": "Evidence acquisition and reconciliation",
+    "role": "Preserve authorized source records, reconcile identities and usage, and expose missing or conflicting evidence without inventing completeness.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: provided OpenTelemetry collector and storage keep what arrives; this is not proof that every expected action was observed.",
+      "SUPPLIED-SOURCE CLAIM: AWS and ServiceNow environments expose traces/evidence; exact read APIs and entitlement require workshop verification.",
+      "PROPOSED CONDITIONAL MAPPING: gateway/OTEL/CloudWatch readers and permitted ServiceNow readers; CloudWatch availability is not established by the slides alone.",
+      "PROPOSED BUILD: deterministic source adapters in the shared worker package, reusing the supplied transport rather than adding a new event bus."
+    ],
+    "proposed_build": [
+      "Preserve raw pages/records before durable receipt or advancing recovery checkpoints.",
+      "Read independent expected-work, actual execution and diagnostic-label sources instead of deriving populations from surviving logs.",
+      "Normalize structured fields and source namespaces; deduplicate identical observations without dropping distinct actual executions.",
+      "Retain malformed data, missing pages, schema errors, conflicts and authoritative corrections.",
+      "Track pagination, freshness, index coverage and upstream completeness separately; page exhaustion alone is insufficient."
+    ],
+    "interfaces_in": [
+      "M01/M02 source records",
+      "M03 identities",
+      "M04 authority/accounting/completion rules",
+      "M14 delivery and response observations"
+    ],
+    "interfaces_out": [
+      "M06 raw captures, accepted facts, revision lineage and source checkpoints",
+      "M07 obligations/events",
+      "M08 labels/outcomes/window coverage",
+      "M09 execution population/usage"
+    ],
+    "proof_needed": [
+      "Actual source endpoints and minimum field payloads",
+      "Read permissions, cursor/update/finality semantics and retention",
+      "Independent expected action/execution/window inventories",
+      "Duplicate, late correction and missing-page fixtures",
+      "Cross-zone usage reconciliation with actual retries"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M05",
+      "outputs/prooflab-detailed-architecture.txt:59",
+      "outputs/prooflab-nvidia-architecture.txt:20",
+      "work/hackathon-sources/slides-extracted.txt:54"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "CloudWatch gateway logs and separately instrumented AgentCore per-runtime spans/metrics are documented sources. CloudTrail provides API/discovery audit evidence. The current gateway collector has no durable X-Ray trace path.",
+      "The token-gated audit-store uses a 1 Gi gp3-backed volume.",
+      "Gateway input/output token usage and cost are designated authoritative by the platform contract.",
+      "Run ID plus traceparent is required for correlation; missing-header fragmentation is a known issue.",
+      "A team evidence S3 bucket is documented and its dashboard output link was observed.",
+      "The ledger service exposes port 8080 /timeline?cid= and /records?cid= for correlation-scoped reads; actual service destinations come from status.endpoint.",
+      "CURRENT-BUILD OVERRIDE: the OTEL collector trace pipeline has no durable exporter and discards spans. Nothing from this pipeline reaches X-Ray; Cockpit Trace is empty. This specific current-build contract overrides the broad aws-services observability overview; any separate AgentCore CloudWatch span path needs independent verification.",
+      "Documented gateway CloudWatch log source is /aws/modaas/gateway; its actual record fields, retention and population remain unprobed.",
+      "Components pods lack AWS credentials and public S3 access is blocked; IDE credentials are not inherited by pods."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/servicenow-integration",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/platform-access/api-surface",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/governed-tool",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/agent-observability/trace-spans",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Read actual audit-store protocol, token acquisition/storage, page/filter schema and allowed source access.",
+      "Probe raw payloads, identifiers, timestamp precision, usage semantics and finality.",
+      "Measure retention/capacity behavior of 1 Gi audit-store and copy permitted records before loss; no assumption it is permanent archive.",
+      "Verify available CloudWatch and CloudTrail source filters, permissions, lag, pagination and declared completeness. X-Ray cannot be a baseline dependency under the current collector limit.",
+      "Identify expected-work/execution inventory independent of observed telemetry.",
+      "Verify correlation ID semantics, authentication, response/pagination schema, timestamp/usage fields and retention for timeline/records.",
+      "Verify audit-store and gateway-log durability separately from discarded OTEL spans.",
+      "The separate per-runtime AgentCore CloudWatch span path is documented/read in /agent-observability/trace-spans; verify actual runtime permissions, full source schema, query scope and retention before claiming it supplies complete traces."
+    ],
+    "architecture_adjustments": [
+      "Map baseline readers to audit-store, gateway/PDP records and the separate AgentCore CloudWatch span/metric path. Use CloudTrail only for its AWS API/discovery role; no presumed X-Ray gateway source.",
+      "Use team S3 as durable exported evidence landing location after verifying exact permitted writes.",
+      "Do not equate X-Ray sampling, CloudTrail asset discovery or exhausted audit pages with complete run coverage.",
+      "Implement documented ledger reader before speculative unrelated log APIs; ledger endpoint existence still does not prove completeness.",
+      "Remove OTEL/X-Ray trace pipeline as a presumed durable evidence source.",
+      "Plan explicit acquisition gap until audit-store/gateway records and any separate AgentCore path prove the required event population.",
+      "Do not treat empty Cockpit Trace as proof no agent executed."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M06",
+    "name": "Shared evidence workspace",
+    "role": "Store exact source versions, typed facts, many-to-many control bindings, proposals, assessments and cases in a queryable shared workspace.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: workshop telemetry has collector/storage; that supplied store is distinct from our normalized evidence workspace.",
+      "PROPOSED CONDITIONAL MAPPING: S3 for raw/policy/export objects and DynamoDB or another permitted transactional store for shared facts/state; not confirmed resources.",
+      "PROPOSED LOCAL MAPPING: SQLite index rebuilt from JSONL export for offline judge queries.",
+      "PROPOSED BUILD: exact indexes plus a bounded narrative-relevance index; no separate graph database or vector database required."
+    ],
+    "proposed_build": [
+      "Implement repository adapters for raw captures, facts, bindings, proposals, assessments and cases.",
+      "Bind evidence to exact control/specification/scope/revision while charging a provider execution only once.",
+      "Separate accepted-input revision from raw snapshot so parser or validated-link corrections invalidate dependent results.",
+      "Include unbound/unmatched inputs and explicit gaps in exact scope retrieval; semantic top-k never defines a denominator.",
+      "Require durable resolvable referenced versions before publishing; make critical export inputs available locally."
+    ],
+    "interfaces_in": [
+      "M05 source and fact revisions",
+      "M11 model proposals",
+      "M12 validation/accepted revisions",
+      "M07\u2013M10 assessments/transitions",
+      "M14 delivery records"
+    ],
+    "interfaces_out": [
+      "M11 bounded context",
+      "M12 exact dependency inputs",
+      "M13 scope/snapshot queries",
+      "M15 reproducible export"
+    ],
+    "proof_needed": [
+      "Permitted object/state/index resources and isolation",
+      "Conditional writes or transactions where needed",
+      "Reference resolution and snapshot consistency",
+      "Rebuildable offline index",
+      "No duplicate charging after many-to-many binding joins"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M06",
+      "outputs/prooflab-detailed-architecture.txt:26",
+      "outputs/prooflab-detailed-architecture.txt:67"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "The workshop provides a token-gated audit-store on 1 Gi gp3 storage and a team S3 evidence bucket.",
+      "Participant/IDE permissions allow creating team-prefixed tables; direct IAM modification remains denied.",
+      "Actual dashboard outputs include the IDE, Cockpit and teamEvidenceBucket in us-east-1; only output availability has been observed.",
+      "Ledger timeline and raw record queries are correlation-scoped through cid; these are source-read APIs rather than our normalized workspace schemas.",
+      "CURRENT-BUILD OVERRIDE: the OTEL collector trace pipeline has no durable exporter and discards spans. Nothing from this pipeline reaches X-Ray; Cockpit Trace is empty. This specific current-build contract overrides the broad aws-services observability overview; any separate AgentCore CloudWatch span path needs independent verification."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/platform-access/api-surface",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/governed-tool",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Verify bucket policy, region, allowed prefixes, encryption, object versioning and retrieval permissions as exposed by the workshop.",
+      "Confirm exact table API and allowed conditional/transaction operations before mapping to DynamoDB.",
+      "Confirm audit-store API/retention and preserve immutable capture identity independent of mutable platform logs.",
+      "Prove exact reference resolution and offline rebuild from allowed exports.",
+      "Preserve original correlation IDs and raw source records before conversion/indexing.",
+      "Demonstrate an authorized durable capture/readback path for every critical claimed evidence type."
+    ],
+    "architecture_adjustments": [
+      "S3 is now workshop-documented rather than merely a proposed product, but our raw/fact/case schemas remain custom work.",
+      "Use IDE-host SQLite for normalized facts, checkpoints and transactional outbox in the initial single-host implementation; generate a separate portable offline query index from authorized exports. Neither local use is distributed admission state.",
+      "Avoid treating limited audit-store capacity as the final immutable evidence repository.",
+      "Require raw records to be copied from a verified surviving source into team evidence S3; no reference may rely on discarded collector spans.",
+      "Initial proposed storage execution is permissioned IDE scraper + raw files + SQLite facts and transactional outbox, followed by documented submit.sh to team S3. Do not assume EKS pod AWS credentials or public S3 reachability."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M07",
+    "name": "Control 7 implementation \u2014 event recording",
+    "role": "Evaluate independently expected event coverage and eligible adjacent-event timing against the dated C7 specification.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CONTROL: AIA-LOG-001, expected-event recording across three zones and gap measurement.",
+      "SUPPLIED-SOURCE INPUT: provided telemetry may supply observations; it cannot alone define events that failed to reach it.",
+      "PROPOSED BUILD: stateless Python evaluator over M06 facts, reused by worker, CLI and export checker."
+    ],
+    "proposed_build": [
+      "Match observations to independently defined expected event slots.",
+      "Build timing pairs from authoritative sequence/pair inventory; retain missing middle events and expected pairs.",
+      "Validate clock domain, epoch, precision and monotonicity before subtraction.",
+      "Calculate coverage, gap violations and declared exception allowance separately.",
+      "Distinguish proven omission from ingestion lag, known breach with gaps from unsupported pass, and empty/unassessed populations."
+    ],
+    "interfaces_in": [
+      "M04 C7 specification",
+      "M05/M06 independent obligations, observations and source coverage",
+      "M03 scope/clock/source identities"
+    ],
+    "interfaces_out": [
+      "M12 C7 assessment with measures, exceptions and sufficiency",
+      "M06 evidence bindings",
+      "M13/M15 reproducible calculation inputs"
+    ],
+    "proof_needed": [
+      "Accepted independent expected-event inventory",
+      "Clock basis suitable for the chosen gap limit",
+      "Actual passing and accepted breaching cases",
+      "Dropped-event test with unchanged denominator",
+      "Threshold freeze time and supported full declared scope"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M07",
+      "outputs/prooflab-detailed-architecture.txt:75",
+      "work/hackathon-sources/slides-extracted.txt:61",
+      "work/hackathon-sources/slides-extracted.txt:70"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "The contract documents run ID/traceparent propagation and known trace fragmentation if a header is missing.",
+      "Audit-store, gateway/PDP records and separate AgentCore CloudWatch spans are candidate event sources with distinct semantics. No durable gateway collector/X-Ray export is provided in this build.",
+      "AgentCore custom code may observe events; fixed gateway/PDP code cannot be modified.",
+      "CURRENT-BUILD OVERRIDE: the OTEL collector trace pipeline has no durable exporter and discards spans. Nothing from this pipeline reaches X-Ray; Cockpit Trace is empty. This specific current-build contract overrides the broad aws-services observability overview; any separate AgentCore CloudWatch span path needs independent verification."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/governed-tool",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Define independently expected event slots and accepted ordered pairs for the actual workshop flow.",
+      "Obtain source timestamps/clock precision sufficient for the chosen gap threshold.",
+      "Establish how missing trace headers and sampled/missing traces affect coverage rather than silently splitting runs.",
+      "Execute accepted pass/breach cases and prove no observed-only denominator.",
+      "Show how every expected event can be captured despite the discarded trace path, or disclose the remaining incomplete branch."
+    ],
+    "architecture_adjustments": [
+      "Build C7 first on documented events and custom agent observations; do not claim access to unavailable gateway instrumentation.",
+      "Treat header fragmentation as a first-class adversarial/coverage case.",
+      "Retain full expected-work and missing-evidence logic; documented logging is not completed C7.",
+      "Treat non-exported spans as a documented C7 completeness obstacle, not just source lag.",
+      "Scope C7 to independently expected records observable through verified surviving sources or implement permitted custom-agent recording before claiming coverage."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M08",
+    "name": "Control 9 implementation \u2014 performance drift",
+    "role": "Score comparable diagnostic windows against a frozen baseline and create a routed alert for each measured threshold crossing.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CONTROL: AIA-ARC-006, measured drift/performance relative to frozen baseline with named owner.",
+      "SUPPLIED-SOURCE CLAIM: lab scenario switch and digital twin exist; neither alone establishes accepted ground-truth labels.",
+      "PROPOSED BUILD: deterministic scorer/window evaluator with permitted scheduled worker; no scheduler or Lambda entitlement presumed.",
+      "PROPOSED METRIC: exact-match diagnostic score on accepted labels, subject to workshop acceptance and available outcomes."
+    ],
+    "proposed_build": [
+      "Freeze labelled baseline/scorer/cohort/window membership and source rules before assessed cases.",
+      "Keep absent measurements UNKNOWN; assign zero only for supported wrong/crashed outcomes under declared rules.",
+      "Measure relative drop, window coverage and interval violation allowance independently.",
+      "Create idempotent alert intents for every measured crossing, even where aggregate tolerance allows it.",
+      "Track alert delivery through M14 separately from whether diagnostic performance breached.",
+      "Preserve historical baseline/assessment; corrections require explicit restatement rather than retroactive silent replacement."
+    ],
+    "interfaces_in": [
+      "M04 baseline/metric/window specification",
+      "M05/M06 accepted labels and canonical outcomes",
+      "Independent expected windows and run membership"
+    ],
+    "interfaces_out": [
+      "M12 window/interval assessments",
+      "M14 deterministic named-owner alert intents",
+      "M06 run-to-window relationships and missing-data records"
+    ],
+    "proof_needed": [
+      "Accepted label authority and meaningful metric",
+      "Complete positive frozen baseline",
+      "Comparable held-out scenario windows",
+      "Actual passing and accepted breaching window",
+      "Permitted schedule and named recipient route",
+      "Missing-data versus measured-crossing behavior"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M08",
+      "outputs/prooflab-detailed-architecture.txt:92",
+      "work/hackathon-sources/slides-extracted.txt:70",
+      "outputs/prooflab-nvidia-architecture.txt:68"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "The platform contract identifies hourly AgentCore Latency/Errors for C9.",
+      "The documented C9 path is not score-run.py diagnosis scoring.",
+      "CloudWatch is the documented platform metric/observability service for this monitoring path.",
+      "The Oct 3 ceiling guide documents AgentgatewayPolicy modaas-ceiling at 100 requests/minute and 2,500,000 tokens/hour across the account, including helper calls; gateway CloudWatch log group is /aws/modaas/gateway.",
+      "Exact metric contract in /agent-observability/console-and-metrics: namespace AWS/Bedrock-AgentCore; dimension names Name, Operation, Resource; Latency Average at 3600 seconds in ms; Errors Sum at 3600 seconds. Actual dimension values, baseline and source finality remain to verify."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/agent-observability/console-and-metrics",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Use documented AWS/Bedrock-AgentCore namespace with Name/Operation/Resource dimensions, Latency Average ms and Errors Sum count at 3600 seconds; verify actual dimension values, complete expected windows, source lag/finality and configured query.",
+      "Errors Sum is documented count; verify minimum sample/comparability rules. Any separately declared error-rate extension requires an accepted aligned invocation denominator.",
+      "Freeze baseline, comparison direction, comparable cohort and missing/no-traffic semantics before assessed windows.",
+      "Confirm whether an hourly window can be produced within available event time and whether accepted replay/fixture windows are allowed.",
+      "Verify every measured crossing creates a named-owner alert through an actually permitted route.",
+      "Verify actual hourly latency/error source is independent of discarded OTEL pipeline."
+    ],
+    "architecture_adjustments": [
+      "Replace the initial exact-match diagnostic-score baseline plan with the documented hourly latency/error control path for the first implemented C9 slice.",
+      "Keep score-run.py or digital-twin label scoring as separately approved alternative/extension, not a required dependency for documented C9.",
+      "Preserve mathematical distinction between lower-is-worse score and higher-is-worse latency/error metrics; do not reuse score-drop formula blindly.",
+      "Keep performance measurement cohort comparable under the account-wide throttle; separate injected/application errors from rate limiting where the specification requires it.",
+      "Use full metric result including timestamps, units, pagination/status and sample count/Invocations where available; values-only extraction is inadequate evidence. Proposed closed UTC hours/configuration treatment must be frozen before assessed windows. Errors Sum is count, never a rate without denominator."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M09",
+    "name": "Control 16 implementation \u2014 token accounting",
+    "role": "Reconcile actual input/output token consumption across all subject agents and actual retries for the declared whole run.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CONTROL: ACN-COST-001 whole-run spend cap using input plus output tokens across three agents and retries.",
+      "SUPPLIED-SOURCE CLAIM: every model call crosses a shared gateway; coverage and authoritative usage fields still need a live probe.",
+      "PROPOSED BUILD: pure deterministic accounting evaluator using accepted execution/usage records; independent of optional M10 prevention."
+    ],
+    "proposed_build": [
+      "Establish actual execution population independently and reconcile authoritative usage once per scoped execution.",
+      "Declare non-overlapping input/output/cache/reasoning semantics; do not sum parent totals and child usage.",
+      "Replace accepted cumulative corrections instead of adding them; retain source conflicts and revisions.",
+      "Require complete resolved population for a final under-cap pass; a trustworthy deduplicated in-scope subtotal above cap can establish breach despite other gaps.",
+      "Record separate subject/assurance and combined spend; actual declared policy decides inclusion of investigator calls."
+    ],
+    "interfaces_in": [
+      "M04 cap/accounting/allowance policy",
+      "M05/M06 authoritative execution inventory and usage",
+      "M03 canonical scope",
+      "M16 investigator usage"
+    ],
+    "interfaces_out": [
+      "M12 actual-spend assessment, sufficiency and exceptions",
+      "M13/M15 arithmetic and source references",
+      "M10 accepted final usage/correction information when prevention enabled"
+    ],
+    "proof_needed": [
+      "Complete all-zone inference route and execution inventory",
+      "Real retry and duplicate-source examples",
+      "Provider usage identity/finality and accounting semantics",
+      "Actual passing and accepted over-cap case",
+      "Declared investigator-budget inclusion policy"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M09",
+      "outputs/prooflab-detailed-architecture.txt:106",
+      "work/hackathon-sources/slides-extracted.txt:61",
+      "outputs/prooflab-nvidia-architecture.txt:65"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "Gateway input/output token usage and cost are authoritative according to the platform contract.",
+      "Shared modaas-agw covers all three zones and Bedrock Nemotron access uses approved ModelConfig alias.",
+      "Audit-store, gateway CloudWatch records and the separately documented AgentCore CloudWatch spans are candidate surviving observation paths, subject to actual scope and retention. The current collector exports no durable traces to X-Ray; do not use X-Ray as C16 execution/usage evidence.",
+      "Baseline subject agents use the documented nemotron-super-120b alias; gateway accounting must identify actual alias/model execution, including approved helper/investigator calls if governed policy includes them.",
+      "The Oct 3 ceiling guide documents AgentgatewayPolicy modaas-ceiling at 100 requests/minute and 2,500,000 tokens/hour across the account, including helper calls; gateway CloudWatch log group is /aws/modaas/gateway."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/nemotron-models",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/agent-observability/trace-spans",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Capture a real complete run plus retry and identify each authoritative execution/usage row.",
+      "Verify input/output fields are non-overlapping totals, revisions/cumulative semantics and finality.",
+      "Confirm complete routing/expected execution population and treatment of fragmented trace IDs.",
+      "Declare whether assurance model calls share or have a separate governed run/budget; expose combined usage.",
+      "Keep token-cap and monetary-cost evaluation separate unless the declared specification explicitly uses both.",
+      "Verify actual alias-to-model IDs in recorded execution/usage and preserve alias configuration version.",
+      "Verify recorded usage for throttled/denied versus actually executed requests and preserve no-execution distinction."
+    ],
+    "architecture_adjustments": [
+      "Use documented gateway usage authority as the accounting baseline rather than assuming provider/log parity.",
+      "Preserve whole-run and duplicate/correction logic; documented authority does not prove complete population.",
+      "Record cost as an additional field without changing official token accounting into an undocumented currency control.",
+      "Distinguish account aggregate rate/token enforcement from authoritative per-execution usage and our per-run token verdict.",
+      "Include helper/investigator usage in platform-ceiling load planning even when subject C16 policy uses separate assurance subtotals."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M10",
+    "name": "Optional inline admission coordinator",
+    "role": "Provide the prevention bonus only when a verified model hook, complete bypass control, trustworthy usage bounds and transactional state support it.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: shared model gateway is described as a place for budget decisions/halting; precise supported blocking mechanism is unverified.",
+      "PROPOSED CONDITIONAL MAPPING: allowed gateway function/wrapper plus transactional repository, with DynamoDB a candidate only.",
+      "PROPOSED BUILD: shared Python reservation/dispatch/settlement state machine; S3 or offline SQLite is not a substitute for shared atomic admission state."
+    ],
+    "proposed_build": [
+      "Atomically admit only when finally settled spend plus full unresolved liabilities plus new trustworthy bound fits the cap.",
+      "Pin exact request identity, claim dispatch ownership once and journal minimal transitions durably.",
+      "Keep ambiguous send liability; do not blindly redispatch after timeout or lease expiry.",
+      "Release only provably undispatched cancellations or verified-final complete settlements, not provisional usage.",
+      "Retain hidden-retry liability and halt new admission on bound/finality premise failures.",
+      "Disable prevention claims if any gate fails; preserve M09 accounting/detection work."
+    ],
+    "interfaces_in": [
+      "M02 authenticated evaluate request",
+      "M03 authoritative run/attempt state",
+      "M04 pinned bound/policy rules",
+      "M09 accepted settlement/correction information"
+    ],
+    "interfaces_out": [
+      "M02 ALLOW/DENY/ERROR decision",
+      "M06 transition journal and reservations",
+      "M16 prevention-capability/failure status"
+    ],
+    "proof_needed": [
+      "Actual synchronous model-dispatch hook",
+      "Output/reasoning/input bound enforcement covering all retries",
+      "No uncontrolled bypass route",
+      "Atomic reservation/dispatch/closure behavior",
+      "Provider idempotency and finality if relied upon",
+      "Concurrency, lost-response and upward-correction tests"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M10",
+      "outputs/prooflab-detailed-architecture.txt:110",
+      "outputs/prooflab-detailed-architecture.txt:142",
+      "outputs/prooflab-m10-independent-review.txt"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "Custom gateway/PDP code is prohibited; Cedar policy ConfigMap is the fixed gateway extension path.",
+      "AgentCore custom code can observe actions, but guide evidence so far does not establish an atomic pre-model reservation interface.",
+      "Team-prefixed table creation is allowed, but a table alone does not create an unbypassable gateway budget transaction.",
+      "Pause/stop propagation observed around 15 seconds; resume around 50 seconds. This does not provide instantaneous race-free per-call prevention."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Obtain explicit supported enforcement contract for stateful token admission or mark strict prevention unavailable.",
+      "Verify trustworthy full request/output/reasoning/retry bound and complete route coverage.",
+      "Verify gateway decision behavior with mutable spend facts, concurrency and state updates if such functionality is documented.",
+      "Do not deploy custom gateway/PDP handler or create direct AgentCore infrastructure to implement an assumed hook.",
+      "Any prevention claim requires actual enforced request boundary; observed pause timing alone is insufficient."
+    ],
+    "architecture_adjustments": [
+      "Reclassify earlier custom reservation-at-gateway design as conditional/not currently supported by extracted contract.",
+      "A Cedar access decision or custom-agent observation is not evidence of strict concurrent spend prevention.",
+      "Prioritize complete M09 accounting; propose any preventive bonus only after facilitators identify a permitted actual hook.",
+      "Do not implement strict per-run cap claims by treating platform pause as immediate cancellation.",
+      "Keep already-authorized/in-flight calls and liabilities visible during propagation."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M11",
+    "name": "Nemotron Evidence Investigator",
+    "role": "Use the approved NVIDIA model to extract source statements, propose evidence relationships and assemble a cited explanation within bounded orchestration.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: Nemotron family options are described as Lightning/fast, Omni/multimodal, Super and Ultra; transcript labels and sizes are not verified deployment IDs.",
+      "SUPPLIED-SOURCE REQUIREMENT: valid custom agents must use approved Nemotron models in the permitted environment.",
+      "PROPOSED CONDITIONAL MAPPING: custom Strands/AgentCore workshop deployment calling existing approved gateway/endpoints, subject to exact guide and permission verification.",
+      "PROPOSED DEFAULT: one fast approved text-model profile; optional Super, Omni or Ultra only after measured need and access, not four new deployments.",
+      "NO ASSUMPTION: public NVIDIA NIM endpoints, new GPU hosting, external uploads or an exact model ID are not authorized/available merely because public documentation exists."
+    ],
+    "proposed_build": [
+      "Implement approved API adapter, schema-bound extraction and bounded read-plan/composition prompts.",
+      "Store exact source-span statements and candidate links separately from accepted facts; a quote is not proof its operational assertion is true.",
+      "Use one-call extraction plus host template initially, or at most two profiled model calls under the same deadline; limit read calls/concurrency/context/tokens.",
+      "Forbid model authority over thresholds, routing, sending, finding closure or telecom changes.",
+      "Expose deterministic fallback with degraded status and record actual model IDs/call IDs/usage.",
+      "Use optional multimodal extraction only for actual media needs; extra model families are cut before completed controls."
+    ],
+    "interfaces_in": [
+      "M13 exact authorized scope/snapshot and bounded request budget",
+      "M06 selected narratives and deterministic assessment references",
+      "M16 approved model route and credentials"
+    ],
+    "interfaces_out": [
+      "M12 proposals, spans, candidate links and explanation plan",
+      "M13 validated narrative material",
+      "M16 assurance usage/trace records"
+    ],
+    "proof_needed": [
+      "Exact approved endpoint and model ID/version",
+      "Actual invocation with request/response metadata and usage",
+      "JSON/tool/output-limit capabilities",
+      "Permitted evidence routing and source authorization",
+      "Held-out extraction/link quality",
+      "Measured workload latency rather than presumed one-minute completion"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M11",
+      "outputs/prooflab-nvidia-architecture.txt:9",
+      "outputs/prooflab-nvidia-architecture.txt:47",
+      "outputs/prooflab-nvidia-architecture.txt:89",
+      "work/nvidia-review/nvidia-transcript-excerpts.txt:20"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "Approved Nemotron inference is serverless through Bedrock, onboarded by ModelConfig with governed alias.",
+      "All custom canvas agents deploy to AgentCore Runtime through AgentConfig/operator reconciliation.",
+      "CodeBuild/ECR build artifacts inside the workshop account; participant/IDE can start builds.",
+      "Direct Bedrock invocation and direct AgentCore resource creation are denied for participant role.",
+      "ToolConfig with provider agentCoreGateway connects permitted Lambda MCP tools through AgentCore Gateway behind modaas-agw.",
+      "The event has exactly three documented text aliases: nemotron-super-120b \u2192 nvidia.nemotron-super-3-120b (baseline for all agents); nemotron-nano-9b \u2192 nvidia.nemotron-nano-9b-v2 (fast profile); nemotron-nano-3-30b \u2192 nvidia.nemotron-nano-3-30b (middle profile).",
+      "Approval snapshots conflict: /baseline-walkthrough/declare shows 30B/helper Approved and ordinary 9B/Super Reviewing; /choosing-a-model shows 9B Approved and other aliases Reviewing. Inspect current per-alias state and required permitted approval workflow; no universal default approval is established.",
+      "Omni is outside this text-only event; Ultra is unavailable here. Earlier Lightning-family planning is superseded by actual workshop aliases.",
+      "The Oct 3 ceiling guide documents AgentgatewayPolicy modaas-ceiling at 100 requests/minute and 2,500,000 tokens/hour across the account, including helper calls; gateway CloudWatch log group is /aws/modaas/gateway.",
+      "Build/deploy sequence: new-agent.sh -> CodeBuild ARM64 -> ECR -> generated AgentConfig -> required approval -> operator provisioning of AgentCore Runtime. No AgentConfig-triggered CodeBuild step is implied."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/nemotron-models",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/platform-access/api-surface",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/declare",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/choosing-a-model",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/build-your-own-agent/build-agent",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/build-your-own-agent/what-the-script-did",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Read exact AgentConfig/ModelConfig/ToolConfig examples, image build process and the documented aliases and their current approval states.",
+      "Verify actual Nemotron model ID/version exposed by alias, structured-output/tool support, maximum output and usage fields.",
+      "Execute one permitted investigator request with source-scoped read tools and actual trace/usage evidence.",
+      "Benchmark one-call extraction/template path before adding optional second model call or alternate profiles.",
+      "Validate permitted source data routing and separate assurance-run policy.",
+      "Inspect current approval/provisioning/serving for 9B,30B/helper and benchmark an actually approved working path using real evidence; no default approval or 20-second/60-second latency assumed.",
+      "Verify whether selected model adapter exposes strict JSON/tool options and token accounting under the governed service endpoint.",
+      "Measure alias-specific request/token load under current account policy with permitted bounded calls."
+    ],
+    "architecture_adjustments": [
+      "Use the governed alias rather than direct Bedrock or public NIM calls.",
+      "Use new-agent.sh -> CodeBuild ARM64 -> ECR -> generated AgentConfig -> required approval -> operator provisioning of AgentCore Runtime; AgentConfig does not start CodeBuild, and direct AgentCore creation remains prohibited.",
+      "Replace the old Lightning profile with a measured approved 9B or 30B text profile; helper Super can serve a permitted pilot if current state allows it.",
+      "Remove Omni and Ultra from this event delivery backlog; preserve only as superseded historical planning context in original comparison fields.",
+      "Use oda.tmforum.org/v1beta1 ModelConfig status.endpoint and documented port 8081 /v1/chat/completions behind the governed access path; exact model identifiers are now documented, invocation behavior is still unverified.",
+      "Budget helper/investigator traffic in the shared account rate/token ceiling.",
+      "Add global scheduling/rate control across subject plus assurance calls; one request/second for each of three agents is 180 RPM and exceeds documented 100 RPM before helper traffic.",
+      "Record and surface throttled model cases separately from correct completed model analysis.",
+      "AgentCore cannot read IDE-local evidence files automatically: provide a bounded authorized invocation payload or explicitly authorized read tools. Strands GatewayModel must omit empty tools: [] where the gateway rejects it while preserving legitimate nonempty tool definitions."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M12",
+    "name": "Evidence validation and assessment composition",
+    "role": "Promote only supported evidence, propagate accepted revisions and compose consistent control/claim results independently of LLM confidence.",
+    "existing_technology_candidates": [
+      "PROPOSED BUILD: deterministic Python validators, revision/dependency manager and assessment composer.",
+      "PROPOSED CONDITIONAL MAPPING: same permitted transactional fact store as M06; no separate validation service or second judging LLM required.",
+      "SUPPLIED-SOURCE CLAIM STRUCTURE: C-FM-01 has three control branches; architecture must bind records to rule and scope."
+    ],
+    "proposed_build": [
+      "Validate schema, source occurrence, exact span, scope, relationship and field-specific authority separately.",
+      "Preserve CANDIDATE/REJECTED/VERIFIED types; ID mention does not establish canonical ownership or causal truth.",
+      "Publish accepted-input revisions conditionally and invalidate affected assessments/caches after corrections.",
+      "Keep satisfaction, control operation, evidence sufficiency, analysis completeness and implementation completeness distinct.",
+      "Compose only compatible required branch results; no averaging and no red window automatically treated as aggregate breach when declared allowances permit it.",
+      "Prevent old prose from being mixed with new calculations; publish coherent as-of cases or explicit pending state."
+    ],
+    "interfaces_in": [
+      "M11 proposals/explanation plan",
+      "M06 raw/canonical source versions",
+      "M04 authority and policy rules",
+      "M07\u2013M09 control assessments"
+    ],
+    "interfaces_out": [
+      "M06 accepted revision and validation trail",
+      "Reassessment triggers for affected M07\u2013M09 scopes",
+      "M13 consistent case/claim result",
+      "M14 finding correction/withdrawal intents where supported"
+    ],
+    "proof_needed": [
+      "False citation/negation/cross-team/cross-run tests",
+      "Atomic revision conflict handling",
+      "Correction dependency coverage",
+      "Compatible claim scope and allowance logic",
+      "No unsupported numeric/verdict assertions in displayed model explanation"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M12",
+      "outputs/prooflab-nvidia-architecture.txt:25",
+      "outputs/prooflab-detailed-architecture.txt:129",
+      "outputs/prooflab-m12-independent-review.txt"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "Platform supplies Cedar/model/tool governance and authoritative gateway usage, but model-proposal validation and claim composition remain our own modules.",
+      "CloudTrail-backed asset discovery is distinct from evidence that an execution occurred or a fact is true.",
+      "Agent registry status.registryRecordId is available for asset linkage, not operational-fact promotion by itself."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/servicenow-integration",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Map actual source authority by field and scope from real guide payloads.",
+      "Validate candidate run/trace/asset links without treating a shared registry ID as proof of same execution.",
+      "Update C9 formula and result composition for documented higher-is-worse latency/error metrics.",
+      "Run correction, unsupported-quote and cross-scope adversarial tests against actual schemas."
+    ],
+    "architecture_adjustments": [
+      "Retain deterministic host validation outside model and Cedar policy decisions.",
+      "Add explicit asset-discovery versus execution-evidence distinction to typed fact schema.",
+      "Reassess current case examples once workshop-specific C9 and usage contracts are frozen."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M13",
+    "name": "Judge query and case assembly",
+    "role": "Resolve an explicit control/run/window question to an inspectable, cited, reproducible case with honest scope, freshness and completion status.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE REQUIREMENT: judge asks a control/window question and gets answer plus records within two minutes.",
+      "PROPOSED BUILD: local Python CLI and optional HTML client over the same query/case contracts.",
+      "PROPOSED CONDITIONAL MAPPING: permitted cloud query worker plus authenticated evidence downloads; local offline SQLite serves exported cases.",
+      "PROPOSED PERFORMANCE TARGET: fresh Nemotron-assisted case within 60 seconds for a declared bounded workload; not an official requirement or measured result."
+    ],
+    "proposed_build": [
+      "Resolve exact scope; C9 run questions expand to all relevant declared windows, without choosing only a favorable subset.",
+      "Pin per-source snapshot vector and accepted-input revision; retrieve exact required inputs and explicit gaps.",
+      "Persist client/query identity, original deadline, stage ownership and budgets before model work; reconnect does not reset them.",
+      "Separate fresh-model, recorded-case and offline-recheck profiles; cache hits do not claim a new model execution.",
+      "Render first-view verdict/rule/calculation/source coverage/delivery state with drill-down citations and relationship explorer.",
+      "Recheck authorization on reads, cache reuse, publication and export; cancellation stops new claims but cannot guarantee already-claimed remote work was unsent."
+    ],
+    "interfaces_in": [
+      "Explicit judge scope/profile",
+      "M06 exact records and checkpoints",
+      "M11 bounded model analysis",
+      "M12 validated assessments",
+      "M14 delivery state"
+    ],
+    "interfaces_out": [
+      "Cited case and separate status dimensions",
+      "Source/calculation/relationship views",
+      "M15 exportable case manifest and benchmark timings"
+    ],
+    "proof_needed": [
+      "Real selected-scope end-to-end query",
+      "Two-minute answer plus supporting records",
+      "Measured 60-second profile if claimed",
+      "Cancellation/reconnect/timeout/idempotency tests",
+      "Permission-aware cache behavior",
+      "Offline critical-reference resolution without cloud/model dependency"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M13",
+      "outputs/prooflab-nvidia-architecture.txt:47",
+      "outputs/prooflab-m13-independent-review.txt",
+      "work/hackathon-sources/slides-extracted.txt:73"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "Documented IDE/Cockpit and team evidence bucket output links are available; no new query endpoint has been verified.",
+      "Workshop region observed in dashboard outputs is us-east-1.",
+      "Audit-store is token-gated and evidence can be exported to the team S3 bucket.",
+      "Custom model-backed query agent must use the approved ModelConfig alias and AgentConfig deployment path.",
+      "Cockpit Trace is empty because collector spans are discarded, not because the query found a complete empty run."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/nemotron-models",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Verify authorized CLI/IDE query access, source snapshot/read APIs and exact S3 download/export path.",
+      "Resolve run-to-hourly-metric-window mappings for C9 without inventing run-specific performance measures.",
+      "Prove actual scoped query and citations within official two-minute demonstration limit.",
+      "Measure proposed 60-second full model case separately from replay/cache/offline paths.",
+      "Retain token confidentiality in CLI UI, source views and exported artifacts."
+    ],
+    "architecture_adjustments": [
+      "Use existing workshop IDE/runtime/bucket infrastructure; no public API or tunnel is assumed.",
+      "Make metric window and asset/run identity distinctions visible to judges.",
+      "Documented Cockpit visibility does not replace our runnable query/evidence product.",
+      "Report the actual approved alias/model profile used, not a generic Lightning badge; measure profile latency and model failure separately.",
+      "Use the evidenced surviving source in citations and disclose missing source provenance.",
+      "Bound concurrency globally with helper/subject workloads rather than per-query-only limits."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M14",
+    "name": "ServiceNow governance and human oversight",
+    "role": "Connect deterministic findings to actual authorized platform records and named people, retaining delivery, response, correction and remediation history.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE REQUIREMENT: ServiceNow AI Control Tower and human-loop integration are required; transcript corrects optional-looking wording.",
+      "SUPPLIED-SOURCE CLAIM: ServiceNow AICT and sandbox are distinct products reached using the same provided link/login.",
+      "SUPPLIED-SOURCE CLAIM: AICT provides AI governance and ServiceNow agents can connect with the AWS environment; exact table/API/route entitlements are unverified.",
+      "PROPOSED BUILD: team-scoped connector, deterministic finding adapter and durable outbox in the shared worker/store; no assumed native kill switch."
+    ],
+    "proposed_build": [
+      "Verify team-prefixed asset connection/readback, trace/run visibility and finding route separately.",
+      "Map measured control intents into the actual permitted schema with named recipient and exact evidence/spec/scope references.",
+      "Use stable logical finding identities plus immutable operation revisions for content/recipient changes; revalidate queued intents before dispatch.",
+      "Bound retries and reconcile ambiguous remote writes; do not equate HTTP acceptance or an ID with verified correct-record delivery.",
+      "Read back correct instance, correlation, intended revision and recipient; retain reassignment/deletion/history.",
+      "Record actual response or covered no-response-as-of observations; lack of read access is UNKNOWN, not silence.",
+      "Link genuine remediation closure to relevant passing retest and authorized closure; authoritative correction/withdrawal is a distinct disposition preserving original history."
+    ],
+    "interfaces_in": [
+      "M08 and other declared deterministic finding intents",
+      "M12 corrected assessment disposition",
+      "Optional validated M11 explanatory material",
+      "Authorized owner/recipient mapping"
+    ],
+    "interfaces_out": [
+      "Actual remote IDs/readback and delivery state to M05/M06/M13",
+      "Response/silence/uncertainty observations",
+      "Remediation/retest/correction links"
+    ],
+    "proof_needed": [
+      "Actual AICT asset discovery/readback",
+      "Permitted route/table/API and write/read scope",
+      "Remote idempotency/correlation/update-order semantics",
+      "Named human recipient and observable response channel",
+      "Lost-response/duplicate/stale-update tests",
+      "Actual external finding with dated readback; no human reply is required by hackathon"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M14",
+      "outputs/prooflab-detailed-architecture.txt:145",
+      "outputs/prooflab-m14-independent-review.txt",
+      "work/nvidia-review/nvidia-transcript-excerpts.txt:20",
+      "work/nvidia-review/nvidia-transcript-excerpts.txt:23",
+      "work/hackathon-sources/slides-extracted.txt:73"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "The ServiceNow AICT integration stack is optional and absent by default; facilitator setup is required.",
+      "AICT discovery covers AgentCore runtimes, Bedrock agents and SageMaker models; it does not discover EKS pods, MCP tools, guardrails or ModelConfig call identities.",
+      "CloudTrail is the guide\u2019s discovery-proof source.",
+      "A provided escalate-to-incident.py human escalation route is described as stretch in the guide, conflicting with the earlier transcript\u2019s required AICT/human-loop language.",
+      "TMF639 contains ODAComponents, not every AI asset; TMF639Projected=False in the baseline is documented as operator egress-port 8639 limitation, not proof an agent stopped serving."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/servicenow-integration",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Facilitator confirmation of required submission scope and actual AICT stack availability; resolve guide/transcript priority explicitly.",
+      "Verify real connection/discovery of team AgentCore runtime and CloudTrail evidence before claiming AICT integration.",
+      "Read escalate-to-incident.py schema, route, credentials, permissions, receiver idempotency and readback semantics.",
+      "Identify named recipient and permitted response channel; do not fabricate delivery/acknowledgement.",
+      "Keep unmapped EKS/MCP/guardrail/ModelConfig identities explicitly outside native discovery rather than silently claiming inventory completeness."
+    ],
+    "architecture_adjustments": [
+      "Add prerequisite task for facilitator-enabled AICT stack; do not spend time creating an assumed participant-controlled stack.",
+      "Map documented runtime inventory to M14.1, separate from custom control evidence and M14.2 finding delivery.",
+      "Treat escalate-to-incident.py as candidate permitted route to inspect, not proof that our durable delivery contract is implemented.",
+      "Keep required-versus-stretch conflict visible until organizer resolution; do not resolve it by assumption.",
+      "Keep TMF639 ODA inventory, AWS Agent Registry and AICT-native discovered assets as separate systems with separate scope/readback evidence."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M15",
+    "name": "Validation campaign and submission packaging",
+    "role": "Prove the claimed implemented behavior through actual or accepted cases and deliver a reproducible six-artifact submission.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE REQUIREMENT: passing/breaching cases, dated rules, queryable evidence and honest gaps; minimum one completed control, three full set.",
+      "SUPPLIED-SOURCE ALLOWANCE: NVIDIA Nemotron may support adversarial testing, but generated attacks or synthetic evidence are not automatically accepted live control cases.",
+      "PROPOSED BUILD: shared Python scenario/test/export commands, independent arithmetic rechecker and local JSONL/SQLite/HTML bundle.",
+      "PROPOSED OPTIONAL TOOLING: bounded model-assisted test selection only after fixed tests and completed core controls."
+    ],
+    "proposed_build": [
+      "Run dated authorized pass/breach scenarios with provenance classes and actual identifiers.",
+      "Exercise missing records, duplicates, conflicts, hidden retries, races, late corrections, prompt injection, permission changes and platform/model outages.",
+      "Evaluate extraction/link correctness on held-out labelled cases and compare structured-only versus model-assisted investigation.",
+      "Measure full-case latency, degraded availability, source freshness and token cost separately; do not label fallback a successful full model case.",
+      "Export six artifacts: evidence, dated thresholds, runnable query tool, named pass/breach runs, actual one-page architecture and gaps.",
+      "Rebuild offline indexes and recheck arithmetic from packaged critical inputs; this proves reproducibility rather than source truth.",
+      "Rehearse a judge-chosen scope and validate every claimed completed control before bonuses."
+    ],
+    "interfaces_in": [
+      "M01 authorized scenarios",
+      "M04 frozen rules",
+      "M06/M12 accepted evidence and assessments",
+      "M11 actual model traces",
+      "M13 cases/timings",
+      "M14 delivery proof",
+      "M16 capability/gap register"
+    ],
+    "interfaces_out": [
+      "Six-artifact release bundle",
+      "Test/evaluation/benchmark results",
+      "Claimed-control completion checklist",
+      "Recorded rehearsal failures and gaps"
+    ],
+    "proof_needed": [
+      "Actual end-to-end cases for each claimed control",
+      "Organizer acceptance where breached-case provenance is not live",
+      "Clean-client offline recheck",
+      "Critical citations and inputs packaged locally",
+      "Measured judge timing and model benefit",
+      "Final diagram matching actual deployment"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M15",
+      "outputs/prooflab-detailed-architecture.txt:159",
+      "outputs/prooflab-detailed-architecture.txt:182",
+      "outputs/prooflab-nvidia-architecture.txt:77",
+      "work/hackathon-sources/slides-extracted.txt:73"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "Workshop documents token-gated audit-store, team evidence S3 bucket, hourly AgentCore C9 metrics, governed Nemotron calls and provided escalation script.",
+      "Actual resource outputs are IDE, Cockpit and teamEvidenceBucket in us-east-1, but no runtime checks have executed.",
+      "AICT native discovery intentionally excludes several platform object classes; release claims must reflect that scope.",
+      "CURRENT-BUILD OVERRIDE: the OTEL collector trace pipeline has no durable exporter and discards spans. Nothing from this pipeline reaches X-Ray; Cockpit Trace is empty. This specific current-build contract overrides the broad aws-services observability overview; any separate AgentCore CloudWatch span path needs independent verification.",
+      "The Oct 3 ceiling guide documents AgentgatewayPolicy modaas-ceiling at 100 requests/minute and 2,500,000 tokens/hour across the account, including helper calls; gateway CloudWatch log group is /aws/modaas/gateway."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/servicenow-integration",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/nemotron-models",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/governed-tool",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Execute actual setup/baseline/source probes before labelling any test LIVE_VERIFIED.",
+      "Create accepted pass/breach scenarios using documented control inputs and preserve threshold dates.",
+      "Include header-fragmentation, audit-store capacity/lag, usage duplicates and fixed-PDP permission tests.",
+      "Measure actual Nemotron case quality/latency and gate optional profiles.",
+      "Export and independently reopen six artifacts with critical source inputs locally resolvable.",
+      "Resolve AICT/human-rail scope conflict and document any facilitator dependency in gaps.",
+      "Rehearse query/evidence flow without relying on Cockpit Trace."
+    ],
+    "architecture_adjustments": [
+      "Prioritize documented paths and actual resource constraints in the task backlog.",
+      "Revise old diagnostic-score examples before describing them as workshop C9 implementation.",
+      "Final diagram must show EKS operators/gateway, AgentCore agents/tool gateway, Bedrock governed alias, audit-store and actual optional AICT status.",
+      "Cut Omni/Ultra from this event plan and benchmark actual 9B/30B/helper aliases; remove performance claims derived from the old Lightning label.",
+      "Record lifecycle phase separately from provisioned/runtime READY/reachable-serving readiness; expose lagging Conditions and TMF639 projection gaps without equating them to serving failure.",
+      "Add explicit trace-export gap, policy-drift and account-wide throttle scenarios to the validation/release plan.",
+      "Do not count absent X-Ray spans or old four-policy output as successful integration evidence.",
+      "Record pause/resume observations as measured lab behavior, not a guaranteed latency/atomicity property."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  },
+  {
+    "component_id": "M16",
+    "name": "Shared platform, security and operational support",
+    "role": "Host a small permitted deployment, enforce scope and credentials outside the model, and make capabilities, limitations and assurance usage visible.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: team AWS Workshop Studio sandbox, EKS-based AI Native ODA Canvas and AgentCore deployment examples; actual account/session/resources require verification.",
+      "SUPPLIED-SOURCE CLAIM: provided ServiceNow AICT/sandbox and approved NVIDIA model access; credential and permission details are not in the planning artifacts.",
+      "PROPOSED DEPLOYMENT: one Python distribution with a small number of entry points, permitted agent/runtime/worker hosting and local judge CLI.",
+      "PROPOSED CONDITIONAL CHOICES: Lambda or permitted container/scheduler, DynamoDB atomic state and S3 objects; none is a confirmed entitlement.",
+      "PROPOSED LOCAL CHOICE: SQLite only for offline index/query; no laptop localhost or public tunnel in the live inference path."
+    ],
+    "proposed_build": [
+      "Perform read-only capability inventory and targeted authorized probes before choosing compute/storage/gateway mappings.",
+      "Enforce team/source/model authorization and permitted data routes outside LLM control; keep credentials out of prompts and exports.",
+      "Track PROPOSED, FIXTURE_TESTED, LIVE_VERIFIED or UNAVAILABLE per capability with dated evidence, owner and impact.",
+      "Record assurance-job model/tool usage, errors, versions and timings separately from subject runs and show combined spend.",
+      "Prevent recursive investigation of investigator traces and apply bounded concurrency, reads, tokens and wall time.",
+      "Pin code/configuration/model/prompt/schema/evaluator versions and retain operational gaps.",
+      "If no hook/store exists, remove prevention bonus; if sources or mandatory AICT/Nemotron access remain unavailable, surface the specific dependency rather than claiming completion."
+    ],
+    "interfaces_in": [
+      "Authenticated workshop account/session and permitted resources",
+      "Organizer constraints",
+      "Configuration and versioned package",
+      "Runtime state from all modules"
+    ],
+    "interfaces_out": [
+      "Approved runtime/storage/network/credential adapters",
+      "Capability and gap register for all components",
+      "Assurance trace/usage records",
+      "Release provenance and support diagnostics"
+    ],
+    "proof_needed": [
+      "Actual account/region/session expiry and team scope",
+      "Permitted compute, state, object storage and outbound connectivity",
+      "Exact deployed AgentCore/EKS/canvas resources and roles",
+      "Credential distribution without secret leakage",
+      "Team isolation and denied-access tests",
+      "Approved Nemotron route and AICT permissions",
+      "Observed operational resource limits"
+    ],
+    "source_refs": [
+      "outputs/prooflab-component-inventory.json#M16",
+      "outputs/prooflab-detailed-architecture.txt:20",
+      "outputs/prooflab-detailed-architecture.txt:140",
+      "outputs/prooflab-nvidia-architecture.txt:64",
+      "work/nvidia-review/nvidia-transcript-excerpts.txt:17",
+      "work/nvidia-review/nvidia-transcript-excerpts.txt:23"
+    ],
+    "capability_state": "UNVERIFIED",
+    "workshop_documented": [
+      "EKS hosts ODA/MoDaaS operators, Cedar PDP and agentgateway; agents are operator-provisioned AgentCore Runtime resources.",
+      "ModelConfig governs Bedrock Nemotron alias, ToolConfig governs Lambda MCP tools through AgentCore Gateway, and AgentConfig governs agent runtime creation.",
+      "AWS Agent Registry operator writes status.registryRecordId.",
+      "Participant/IDE role can read resources, start CodeBuild builds and create team-prefixed Lambda functions and tables; direct Bedrock/AgentCore creation and IAM writes are denied.",
+      "CodeBuild/ECR build in the workshop account; gateway logs and separate AgentCore CloudWatch spans/metrics provide documented observation paths. CloudTrail records API/discovery actions. Current gateway collector traces do not reach X-Ray.",
+      "Actual dashboard outputs observed: IDE, Cockpit, teamEvidenceBucket; region us-east-1. Runtime checks not yet executed.",
+      "Token-gated audit-store has 1 Gi gp3 storage; team S3 evidence bucket provided. AICT stack absent by default and facilitator-enabled.",
+      "Custom resources use oda.tmforum.org/v1beta1; status.endpoint discovers actual model/tool/ledger endpoints. Gateway TLS is available on 8443.",
+      "Phase is lifecycle evidence; Conditions can lag two minutes. Readiness also needs provisioned state, runtime READY and reachable-serving probes. TMF639Projected=False is a known egress-port 8639 projection issue distinct from serving health.",
+      "Protected namespaces and component scopes constrain writes; exact permitted paths must follow the guide.",
+      "This text-only event documents Super 120B, Nano 9B v2 and Nano 3 30B; Omni/Ultra are not available event delivery choices.",
+      "CURRENT-BUILD OVERRIDE: the OTEL collector trace pipeline has no durable exporter and discards spans. Nothing from this pipeline reaches X-Ray; Cockpit Trace is empty. This specific current-build contract overrides the broad aws-services observability overview; any separate AgentCore CloudWatch span path needs independent verification.",
+      "The Oct 3 ceiling guide documents AgentgatewayPolicy modaas-ceiling at 100 requests/minute and 2,500,000 tokens/hour across the account, including helper calls; gateway CloudWatch log group is /aws/modaas/gateway."
+    ],
+    "guide_refs": [
+      {
+        "guide_section": "/ai-native-oda-canvas/aws-services",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/challenge-brief/platform-contract",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/servicenow-integration",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/nemotron-models",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/platform-access/api-surface",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/governed-tool",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/controls-and-policies/ceiling",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/baseline-walkthrough/declare",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/choosing-a-model",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/build-your-own-agent/build-agent",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/build-your-own-agent/what-the-script-did",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      },
+      {
+        "guide_section": "/agent-observability/trace-spans",
+        "entry_url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+        "evidence_level": "PARENT_EXTRACTED_AUTHENTICATED_GUIDE",
+        "runtime_verified": false
+      }
+    ],
+    "remaining_proof": [
+      "Run documented non-mutating platform readiness checks and record actual deployed versions/resource health.",
+      "Verify exact participant/team prefix permissions, table service/API, build path and artifact locations.",
+      "Capture credential handling rules without persisting secrets, account IDs, tokens or sign-in invitation values in planning outputs.",
+      "Verify approved configuration-edit scope and operator status/reconciliation feedback.",
+      "Determine remaining workshop lifetime and actual submission deadline separately from environment duration.",
+      "Confirm AICT facilitator prerequisite and unavailable-feature escalation path.",
+      "Capture actual phase/status.endpoint and model attestation state without recording credentials.",
+      "Verify the already documented separate AgentCore CloudWatch span route at runtime and record exact available source scope; do not infer that the discarded collector pipeline works.",
+      "Confirm permissions for any telemetry repair; do not change collector/gateway/PDP based only on desired architecture."
+    ],
+    "architecture_adjustments": [
+      "Use configuration/operator workflow rather than direct platform resource creation.",
+      "Constrain optional compute/store choices to permissions actually documented; Lambda/team tables now have guide support but exact runtime use remains untested.",
+      "Add capability states DOCUMENTED versus LIVE_VERIFIED rather than treating opened links as deployment proof.",
+      "Retain least-privilege team isolation, independent policy authority and assurance non-recursion.",
+      "Readiness matrix must separate operator phase, serving success, discovery/registry projection and human governance delivery.",
+      "Highest-priority platform gap: current OTEL traces are not durably exported. Preserve broad overview as superseded context, not available technology.",
+      "Implement a global request/token scheduler or conservative coordinated rate limit across all team agent/helper traffic; do not follow stale per-agent 1 RPS advice.",
+      "Read actual current AgentgatewayPolicy resources and status rather than assuming four historical policy checks.",
+      "Baseline proposed collector/store runs in permissioned IDE with raw files/SQLite/outbox; components pods have no AWS credentials and public S3 is blocked. Verify any alternate runtime role/data bridge before deployment."
+    ],
+    "documentation_state": "WORKSHOP_DOCUMENTED",
+    "verification_note": "Guide mappings supplied from parent authenticated workshop extraction on 2026-10-04. Resource links are documented/observed only; runtime probes have not executed. Original candidate/proposed fields preserve pre-workshop comparison, not current implementation authority."
+  }
+]

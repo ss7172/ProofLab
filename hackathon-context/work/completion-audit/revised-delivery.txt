@@ -1,0 +1,56 @@
+INDEPENDENT REVISED REVIEW — PLATFORM AND TWO-PERSON DELIVERY
+Reviewed: work/completion-audit/detailed-architecture-v2.txt, using the unchanged common scorecard in work/completion-audit/scorecard.txt. Supporting context: supplied slides/transcript and the prior baseline documents. No other reviewer’s report was consulted. I checked the v1-to-v2 changes: explicit admission-error obligations and atomic closure/dispatch coordination. They improve clarity without changing these ratings. Ratings assess a proposed design, not executed software.
+
+DESIGN COMPLETENESS (rating0–4; weighted points)
+D1 Control7 scope/coverage/timing/denominators: 3/4 ×12 =9
+D2 Control9 metric/baseline/window/alert: 3/4 ×16 =12
+D3 Control16 accounting/admission/recovery: 4/4 ×16 =16
+D4 Invocation/runtime/immutable specifications: 4/4 ×12 =12
+D5 Evidence/source authority/claim rollup: 4/4 ×12 =12
+D6 Deployment/ServiceNow/model/data integration: 3/4 ×12 =9
+D7 Six deliverables/query/provenance scenarios: 4/4 ×12 =12
+D8 Two-person delivery plan/dependency gates: 3/4 ×8 =6
+TOTAL: 88/100 (baseline69/100; +19).
+
+WINNING-POTENTIAL DESIGN (same axes/weights)
+W1 Credible path to3 completed controls: 3/4 ×32 =24
+W2 Reliable independent two-minute query: 4/4 ×16 =16
+W3 Correct portable architecture: 4/4 ×16 =16
+W4 Verifiable evidence/honest failures: 4/4 ×16 =16
+W5 Live inline/adversarial/second point: 3/4 ×12 =9
+W6 Two-person event feasibility: 2/4 ×8 =4
+TOTAL: 85/100 (baseline62/100; +23).
+
+ACTUAL STATE AND OFFICIAL RANKING
+0/3 completed controls demonstrated; no judge-ready submission evidenced. These internal design scores are neither percent built nor probability of winning. The official ordering remains number of end-to-end completed controls first, quality next, bonuses afterward. The plan’s three-control target is conditional; two completed controls plus a missing C9 branch remain a two-control submission regardless of an85/100 design score.
+
+WHY SCORES IMPROVED
+The revision adds implementation decisions and acceptance conditions, not merely detail: canonical keys and records; a concrete C7 obligation taxonomy and timing denominators; a C9 scenario/scoring/window contract; a transaction-level admission/recovery state machine; explicit deployment branches; a six-artifact release manifest and readiness validator; scenario-specific pass/breach/missingness gates; and owner/cutoff planning. These address the original review’s five major gaps.
+
+C7 remains3 because independent source authority for the proposed obligations and actual clock/source mappings are not settled. C9 remains3 because the chosen benchmark’s authorized labels, scenario execution and meaningful cohort/sample basis still determine whether it is implementable in the workshop. D6 remains3 because compute/hooks/network/ServiceNow capabilities await the environment. W5 is3 because live prevention and a running second point have a defined route but conditional prerequisites. D8 improves for assigned roles and explicit cut lines; W6 stays2 because these changes clarify a demanding workload without proving that two novice implementers can complete it in the available interval.
+
+THREE REMAINING MATERIAL RISKS
+
+1. HIGH — Three-control eligibility still depends on evidence outside the team’s control.
+A complete source census across three zones and retries, usable independent expected-work records, accepted C9 labels/cohorts and a real ServiceNow route may not be available. The design correctly refuses to turn this into a pass. That honesty protects quality but cannot replace completed-control count.
+Required next action: turn first-session probes into recorded acceptance examples with real field mappings, permissions and source IDs. Timebox organizer resolution. The90-minute block should produce a decision and evidence samples, not be treated as a promise that every integration is solved. Set an explicit latest decision time for the three-control path; if accepted C9 input cannot be established then, plan and present the two-control ceiling honestly.
+
+2. HIGH — RoleB is a delivery bottleneck, and the contingency still concentrates too much work.
+RoleB owns benchmark construction, baseline/window execution, ServiceNow, query/export, release and the independently implemented rechecker. Meanwhile RoleA’s inline state machine can absorb the remainder of the event. Both are critical-path workloads, especially for a team starting fresh with Claude skills.
+Concrete revision: after RoleA closes C7/C16 accounting, prioritize assistance on query/export/rechecker and case execution before inline admission. Keep the judge CLI as the only required UI. Treat admission as a bounded final increment only after a complete three-control bundle exists, rather than whenever A’s local tasks finish. Name artifact owners and make the first release bundle executable on Day1, so packaging does not become a final-night project. This is an effort-allocation correction, not a request for another component.
+
+3. MEDIUM — Authorized breached cases and data export rights are release dependencies, not demo details.
+The architecture now distinguishes actual breaches, successful prevention and copied-export challenges correctly. However, genuine C7 loss/drift degradation/overspend cases require accepted scenario provenance; a beautifully functioning denial or synthetic fixture cannot substitute automatically. Likewise, offline reproducibility needs the actual raw inputs to be permitted and available for export.
+Concrete revision: obtain an explicit per-control case/provenance acceptance decision and inspect one sample export early, alongside threshold freeze. Record any missing/redacted critical source as a reproduction limitation. Verify actual source-reference resolution in a clean offline rehearsal. If no eligible breach or essential evidence export exists, keep the release NOT_READY for that claimed control rather than relabel a fixture as assessed evidence.
+
+No fundamental contradiction found between local/cloud deployment, four transports, five operating modes, AgentCore versus the shared model gateway, or the six official artifacts. The remaining risks require workshop facts, effort allocation and executed acceptance evidence; additional architecture prose alone will not eliminate them.
+
+FINAL V3 CHECK
+Reviewed work/completion-audit/detailed-architecture-v3.txt independently against the same scorecard. The explicit artifact owners, transfer of export/rechecker/shared-case work to A before inline work, full claimed-control release gate before bonuses, and end-of-Day1 eligibility decision materially improve delivery feasibility. Baseline completeness, empty denominators, independent expected timing pairs, per-window alerts, dispatch/closure races and hidden-retry fixtures also strengthen reviewability.
+
+Final design-completeness ratings D1–D8: 3,3,4,4,4,3,4,3. Total remains88/100.
+Final winning-potential ratings W1–W6: 3,4,4,4,3,3. Total87/100. Only W6 changes, from2 to3 (+2 weighted points), because the identified release bottleneck and bonus-priority problem now have concrete ownership and cut lines. These are still internal design scores, not percent implemented or win odds.
+
+No remaining must-fix contradiction found in the deployment/submission scope of this review. Two facts still gate the target: actual independent source/label/ServiceNow capability, and eligible breach cases with exportable critical inputs. The early decision gates cannot guarantee those facts. If they fail, report the reduced completed-control count and corresponding claim coverage honestly; do not preserve a three-control headline using fixtures.
+
+Current demonstrated state remains0/3 controls, with no live certification. After implementation begins, assess completion from accepted runs, release validation and timed independent queries—not further architecture revisions.

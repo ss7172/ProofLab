@@ -1,0 +1,78 @@
+INDEPENDENT SIMULATED JUDGE 3 — DELIVERY AND DEMO DIFFERENTIATION
+
+This is an independent design review, not an official judging result or a prediction of winning. I reviewed the common brief and the source slides, especially PDF pages 14–15 and 19–26. I did not consult other judges. The event conditions are two participants comfortable using Claude, starting without code or confirmed live access, with 4–6 October available. All three approaches currently have 0 implemented controls and no demonstrated readiness. The numbers below rate proposals, not working submissions.
+
+COMMON INTERNAL SCORECARD
+Each axis is 0–5, equally weighted for this comparison only. These /30 totals are not organizer points. Higher delivery scores mean a more credible chance of finishing a judgeable submission under the stated constraints; access remains unverified even for A.
+
+                                        A       B       C
+1. Control coverage potential           2       5       5
+2. Evidence credibility/query           4       4       4
+3. Architecture correctness/portability 4       4       4
+4. Demonstrable differentiation/bonus   1       4       4
+5. Integration feasibility              4       3       2
+6. Two-person event delivery            5       4       2
+TOTAL /30                              20      24      21
+RANK                                    3       1       2
+
+RANKING AND REASONS
+
+1 — B: Best expected event submission. It aims at the three controls that determine the field, retains inspectable evidence, and can demonstrate concurrency prevention, sabotage, and portability without making the demo depend on an LLM. It deserves the strongest delivery score among the designs covering multiple controls because its additional tests can be added incrementally to the same core. This is still conditional: access, expected-event sources, and a meaningful labelled drift corpus are not solved by choosing an architecture. Three controls must be earned, not asserted. Its scheduled window and event adapter also help show the design is not confined to the request path.
+
+2 — C: Strongest story concept, but its extra moving parts do not yet earn extra differentiation credit over B. The organizer rewards adversarial testing; the source material does not award a separate premium for an adaptive attack planner. A fixed test that exposes a true evidence defect is more persuasive than two agents discussing which scripted test to run. C's bounds and deterministic authority are good design, but add orchestration, model access, evaluation, latency, cost attribution, and demo failure surfaces. Its design inherits B's coverage potential; its chance of actually finishing all of that is lower. I rank it narrowly ahead of A because it can cover more of the stated claim, provided its optional layer is genuinely cuttable.
+
+3 — A: A credible submission floor, with the best delivery odds. It could beat incomplete B or C in real judging. However, the official rubric explicitly puts a completed second control ahead of a single-control entry, and A deliberately leaves those branches unanswered. After a sound Control 16 exists, a Control 7 reconciler sharing its event inventory is a better next investment than polishing A indefinitely. A is the checkpoint and recovery plan, not the intended ambitious finish.
+
+No proposal receives full evidence or architecture marks: the independence of the expected inventory, practical completeness of telemetry, and portability across actual APIs are still assumptions. Claude fluency helps implementation speed, but cannot grant permissions, generate missing real labels, establish a baseline retrospectively, or prove all three agents and retries crossed an observed boundary.
+
+WHY THE SOURCE MATERIAL FAVORS THIS ORDER
+
+PDF page 25 says Axis 1 orders the field by controls completed end to end; quality decides the winner; extras separate tied teams. PDF page 23 places a second and third completed control ahead of continuous compliance, adversarial testing, and another enforcement point in its rough bonus ordering. Pages 14–15 require a stateless evaluator and off-path register/telemetry, with a reusable contract. Pages 21–22 require real reconciliation, comparable frozen-baseline windows, and explicit missingness. Page 26 says missing mandatory artifacts cannot be scored. None of those criteria require two adaptive agents. The most differentiated demonstrable outcome is a judge selecting an uncomfortable run and receiving a defensible answer rapidly, including why a result cannot be known.
+
+C: THREE PRINCIPAL REJECTION RISKS AND CONCRETE FIXES
+
+1. The attractive agent loop consumes the hours needed for scored controls and artifacts.
+A demo could reach investigator -> challenger -> hypothesis while the inventory, dated baseline, real ServiceNow write, breach run, or export remains unfinished. That would be a polished proposal with little to score.
+Required fix: make the B core a release gate. Before adding C, produce the six mandatory artifacts for Control 16; then complete Control 7; then attempt Control 9 only with credible reference labels and comparable windows. Validate the mandatory ServiceNow/AICT path in parallel from the first event session. Agents receive no independent build budget until the selected controls can already be queried and exported. Reserve the final event session before the confirmed cutoff for freeze, export, and rehearsal. If time contracts, remove adaptive selection before removing a completed control or its evidence.
+
+2. The adaptive agents are theatrical and their alleged advantage cannot be demonstrated.
+Selecting 'retry burst' from seven known cases is not automatically better than running the seven cases. An impressive natural-language explanation is not a novel failure discovery or proof of improved assurance.
+Required fix: use one small bounded Nemotron orchestration module, with investigator and challenger as optional logical roles, not a new multi-service system. It selects at most two safe catalog actions per episode and must attach observed evidence IDs and an explicit hypothesis to each selection. Deterministic execution and verdict remain mandatory. Record selection time, probe tokens, actions, reproduced defect, and whether the next action actually changed in response to the first result. Compare against a fixed catalog order under the same action budget on a small held-out set of fault injections. Only claim an adaptive advantage if the saved trace demonstrates one. If it does not, call it an experimental assisted test selector and keep the deterministic adversarial log as the scoring evidence. Do not trade a third control for this experiment.
+
+3. The headline claims exceed what the environment permits or what the evidence establishes.
+A proxy that sees only some calls cannot enforce the run cap. A list inferred from the same surviving logs cannot prove no records went missing. Synthetic fault labels cannot establish production accuracy drift. An AICT inventory screenshot cannot establish delivery of a finding. A denied overspend attempt is not an actual breached run.
+Required fix: create a capability checklist backed by actual calls and payloads at event start: all-agent/retry visibility, request interception, enforceable output bound, input count, expected-event producer, end markers, available drift labels/windows, and the actual team-scoped ServiceNow target. Attach each capability to the claims it enables. If interception is absent, retain post-run verification and label prevention unimplemented. If labels are synthetic, label the corpus and replay clearly; make no operational accuracy claim. Show a permitted real breach or clearly identified provided/replay breach separately from the blocked attempt. Preserve the original failure after a new passing retest. Demonstrate the actual ServiceNow record and its evidence link if write support exists; otherwise show durable pending delivery and an explicit integration gap.
+
+RECOMMENDED AMBITIOUS, ACHIEVABLE FINAL SCOPE
+
+Build B, with C as a small detachable experiment. The intended result is three deterministic controls sharing one evidence envelope, one compact judge explorer, offline export/recomputation, one verified ServiceNow/AICT route, and a small adversarial suite. Make Control 16 the first fully completed slice. Extend its instrumentation into Control 7 with an independently justified expected list and precisely defined eligible gaps. Add Control 9 only after a labelled fixed corpus, baseline, and comparable-window schedule are established before assessed runs. Make historical threshold versions immutable for query purposes.
+
+Use two delivery tracks: participant one owns runtime adapters, token collection and the optional atomic gate; participant two owns the verified AICT/ServiceNow path, query/export surface, required artifacts and test scenarios. Review the evidence schema together before separating. Both should be able to drive the judge query by the final session. Additional agent-assisted coding should support these tracks, not increase their number.
+
+After this core is complete, the next ambition is one live inline budget decision, if the actual hook and bounds permit it; then a running second enforcement point using the same contract. Keep fixed adversarial tests regardless of adaptive work. Add the bounded Nemotron selector only when it can produce one concrete hypothesis -> safe execution -> evidence-backed failure -> changed next test trace without jeopardizing completion. This supports meaningful required Nemotron use if confirmed by the event instructions, while avoiding any claim that the slides alone mandate adaptive agents.
+
+A disciplined demo has three short beats: (1) judge-selected control/run, verdict, denominator, dated rule and source records; (2) a real allowed attempt rejected inline, or an honestly labelled post-run failure if interception is unavailable; (3) one evidence attack on a labelled cloned export, explicit uncertainty or coverage breach, plus the original failure and new-run retest. Drift can be a separate comparable assessed window. Show the ServiceNow finding and named alert recipient where available. Leave the formal two-minute query allowance intact; confirm total presentation time rather than assuming it.
+
+The acceptance criterion is not 'the animation ran.' An unfamiliar person must be able to open the exported evidence, reproduce the chosen result, identify the unclosed gap, and distinguish a measured breach from an attempted breach, missing measurement, or synthetic experiment.
+
+WHAT WOULD CHANGE MY RANK
+
+C moves above B only if it first demonstrates B's complete control coverage and required integration, then shows adaptive choice finding a distinct defect faster or with fewer allowed tests than the same-budget fixed baseline on held-out scenarios, with no loss of query reliability or artifacts. One cherry-picked transcript is weak evidence; a small complete evaluation table with all outcomes is more convincing.
+
+A moves above B/C in actual-submission ranking if it is complete and inspectable while either larger proposal has no complete control, cannot answer the judge query, or lacks mandatory artifacts. If access only supports one verified control, its smaller scope also becomes the sensible implementation choice.
+
+B loses its lead if Control 9 is merely invented data presented as real accuracy, Control 7 has no defensible expected denominator, or the cross-agent token inventory remains unproven. A nominal three-control interface is not three completed controls.
+
+REVISION CHECK — ARCHITECTURE V2
+
+The revision materially addresses my three principal objections: B is now the core; adaptive work is gated behind completion; source authority, provenance, real remote readback, and attempted-versus-actual breaches are explicit. This check does not rescore V1.
+
+Remaining material delivery risks:
+
+1. The opening 'submission core' still includes three controls, live enforcement, a second point, AICT, offline checking, and a UI. That remains ambitious for two people without access. Make the distinction between required integration/control evidence and conditional bonuses explicit: CLI first; UI optional; inline gate and second point may be deferred when their hooks are absent or their work would displace a completed control. Keep the architecture reusable even when only one adapter runs.
+
+2. Control 9 can fail its prerequisite late. Resolve dataset availability and organizer acceptance of any simulated corpus during the first access session, with an explicit go/no-go checkpoint. Predeclare the final-session feature freeze relative to the confirmed cutoff. “Add 9 if ground truth exists” needs a deadline to avoid consuming the rehearsal buffer.
+
+3. The demo target contains too many beats for an assumed short presentation. Prepare a compact default path plus judge-selectable evidence details; rehearse the two-minute query separately, from a fresh start and exported data. A useful adaptive discrepancy earns a concrete demonstration, but proving superiority still needs an equal-budget fixed-test comparison; otherwise describe only the observed result.
+
+These are scope and execution fixes. No separate challenger service or broader agent system is needed.

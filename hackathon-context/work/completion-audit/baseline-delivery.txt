@@ -1,0 +1,53 @@
+INDEPENDENT BASELINE REVIEW — PLATFORM AND TWO-PERSON DELIVERY
+Reviewed together: outputs/prooflab-architecture.txt and outputs/prooflab-invocation-contract.txt, against work/completion-audit/scorecard.txt; PDF physical12–15,17,19–26 and relevant supplied transcript constraints. No other reviewer’s report was consulted.
+
+SCORES (internal design rubric, not official marks or completion percentage)
+Ratings are integers0–4; points = weight × rating /4.
+
+DESIGN COMPLETENESS
+D1 Control7 scope/coverage/timing/denominators: 3/4 ×12 =9
+D2 Control9 metric/baseline/window/alert: 2/4 ×16 =8
+D3 Control16 accounting/admission/recovery: 3/4 ×16 =12
+D4 Invocation/runtime/immutable specifications: 4/4 ×12 =12
+D5 Evidence/source authority/claim rollup: 3/4 ×12 =9
+D6 Deployment/ServiceNow/model/data integration: 2/4 ×12 =6
+D7 Six deliverables/query/provenance scenarios: 3/4 ×12 =9
+D8 Two-person delivery plan/dependency gates: 2/4 ×8 =4
+TOTAL: 69/100.
+
+WINNING-POTENTIAL DESIGN
+W1 Credible path to3 completed controls: 2/4 ×32 =16
+W2 Reliable independent two-minute query: 3/4 ×16 =12
+W3 Correct portable architecture: 3/4 ×16 =12
+W4 Verifiable evidence/honest failures: 3/4 ×16 =12
+W5 Live inline/adversarial/second point: 2/4 ×12 =6
+W6 Two-person event feasibility: 2/4 ×8 =4
+TOTAL: 62/100.
+
+ACTUAL STATE
+0/3 completed controls demonstrated. No judge-ready submission evidenced. The scores describe the specificity and conditional competitiveness of a proposal. They do not mean69% implemented or62% likely to win. The official rubric orders by completed-control count, then quality, then bonuses; a polished partial architecture cannot compensate for missing end-to-end controls.
+
+WHY THESE RATINGS
+The invocation contract is unusually explicit: policy pinning, adapters versus transports, multi-control decision composition, stateless evaluators, authenticated producers, recovery, source/evidence separation, incomplete-evidence verdicts and historical revisions. Platform identities are honestly conditional; local UI and actual cloud enforcement are separated. Mandatory ServiceNow, Nemotron, six artifacts and actual-versus-attempted breaches are retained. These prevent conceptual errors but do not themselves resolve the workshop’s specific interfaces, evidence authority or the team’s execution budget.
+
+FIVE CONSEQUENTIAL GAPS AND EXACT DESIGN CHANGES
+
+1. HIGH — The C9 path remains conditional on a dataset the team does not yet have.
+The candidate diagnostic metric is meaningful but lacks a concrete scenario/label contract, executable baseline procedure, comparable-window membership plan and a known path to authorized degradation. This threatens the third completed control and therefore official rank.
+Change: specify a benchmark manifest schema (scenario_id, immutable ground-truth fault_id, eligibility, expected window), result schema and deterministic scoring function; define baseline collection/freeze and separate scored-window procedures; assign an early timeboxed gate for workshop labels and replay/scenario permissions. Write the fallback decision explicitly: accepted reference corpus within declared scope or honest NOT_ASSESSED—never substitute self-confidence. Numeric thresholds remain selected and dated from justified pre-assessment work, not invented as final here.
+
+2. HIGH — C7 and C16 depend on unverified source coverage and correlation.
+A good expected-population protocol exists, but no actual producer/source pairing establishes what can be counted independently across ServiceNow, both AWS agents and retries. C16 cannot become strictly preventive without accounting bounds and an actual full-coverage hook.
+Change: add a per-platform integration worksheet with concrete required fields, source authority, joins, read/modify permissions, completion markers and adapter acceptance sample. Define a first end-to-end acceptance trace including one genuine retry. A failure to prove gateway coverage moves C16 to honest post-run detection; a failure to prove the usage population blocks a satisfied result. Keep admission as a bonus after this gate, not the first large implementation investment.
+
+3. HIGH — The two-person plan lacks task ownership, effort caps and integration cut lines.
+Day-level sequencing does not allocate the substantial admission state machine, independent checker, three controls and ServiceNow work between two Claude-using beginners.
+Change: assign PersonA evidence/controls/query and PersonB source adapters/ServiceNow; define shared schema freeze, daily merge checkpoints and explicit hours reserved for six artifacts and rehearsals. Cut optional UI/adaptive agent first, then inline/second-point bonuses if prerequisites fail. Preserve control completeness and platform obligations. Add a stop-spending-time criterion for unavailable APIs instead of repeated speculative integration work.
+
+4. MEDIUM — Submission production is specified as a list, not a repeatable release.
+Change: design one bundle command that emits the six named artifacts plus a machine-readable manifest, versions and source inventory; define a clean-machine offline query/recheck procedure with expected exit statuses. Provide acceptance scenarios for each claimed control’s pass/breach/missing data, including judged run-to-C9-window lookup. Time two fresh-start, randomly selected queries before freeze.
+
+5. MEDIUM — Platform capability discovery lacks deployable fallback packaging.
+Change: specify the allowed runtime as a decision gate, with a primary approved cloud package and a read-only export/query package that shares evaluators. Enumerate the minimal networking/authentication path; record AICT asset discovery, trace association and actual alert status separately. If finding APIs fail, use a permitted documented integration alternative only; an inventory record is not a finding. No invented endpoints, public tunnels or third-party hosting assumptions.
+
+These changes can materially improve design completeness without adding components. Actual competitiveness still depends on live source availability, passing acceptance runs and the six delivered artifacts.

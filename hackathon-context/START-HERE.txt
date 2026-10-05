@@ -1,0 +1,25 @@
+START HERE — TRUSTWORTHY AI HACKATHON CONTEXT
+
+Give Claude this self-contained file first:
+  outputs/claude-hackathon-context.txt
+
+Human overview:
+  outputs/prooflab-workshop-handoff.html
+
+Optional bundle and structured companions:
+  outputs/claude-hackathon-handoff.zip
+  outputs/prooflab-workshop-tasks.json
+  outputs/prooflab-workshop-components.json
+  outputs/prooflab-workshop-sources.json
+  outputs/prooflab-handoff-independent-reviews.txt
+
+What was copied:
+  outputs/ — all generated deliverables, earlier architectures, walkthroughs and diagrams.
+  work/ — source extraction, supporting research, independent reviews, generators and validation records.
+  .lavish/ — editable HTML source artifacts and diagrams.
+  sources/ — original user-provided slides, meeting transcript and pasted master brief.
+  COPY-MANIFEST.json — complete copied-file inventory with SHA-256 verification.
+
+The current workshop-grounded handoff supersedes older conflicting assumptions in historical architecture files. Start with outputs/claude-hackathon-context.txt directly; earlier output files and any previously extracted bundle folders are retained for history. Referenced absolute paths in older documents identify their original locations; all current handoff content and companion files are here.
+
+This is a context/documentation transfer, not implementation or deployment. Runtime completion remains as stated in the handoff. Existing repository Git metadata was preserved. Operating-system .DS_Store and Python cache files were omitted. No new credential was collected.

@@ -1,0 +1,56 @@
+REVISED DESIGN — INDEPENDENT EVIDENCE/COMPLETION AUDIT
+
+Reviewed detailed-architecture-v2.txt against the unchanged common scorecard, with the invocation contract as supporting detail. Inspected v2’s atomic closure/dispatch and admission.error corrections. No other reviewers’ reports consulted. This scores v2 as supplied, before any subsequent corrections.
+
+DESIGN COMPLETENESS
+Criterion | Weight | Rating /4 | Points
+D1 Control7 scope/coverage/timing/denominators | 12 | 3 | 9
+D2 Control9 metric/baseline/window/alert | 16 | 3 | 12
+D3 Control16 accounting/admission/recovery | 16 | 3 | 12
+D4 Invocation/runtime/immutable specifications | 12 | 3 | 9
+D5 Evidence/source authority/claim rollup | 12 | 3 | 9
+D6 Deployment/ServiceNow/model/data integration | 12 | 3 | 9
+D7 Six deliverables/query/provenance scenarios | 12 | 4 | 12
+D8 Two-person delivery plan/dependency gates | 8 | 3 | 6
+TOTAL: 78/100; baseline was 63/100.
+
+WINNING-POTENTIAL DESIGN
+Criterion | Weight | Rating /4 | Points
+W1 Credible path to three completed controls | 32 | 3 | 24
+W2 Reliable independent two-minute query | 16 | 4 | 16
+W3 Correct portable architecture | 16 | 3 | 12
+W4 Verifiable evidence and honest failures | 16 | 3 | 12
+W5 Inline/adversarial/second enforcement point | 12 | 3 | 9
+W6 Deliverable within two-person constraints | 8 | 3 | 6
+TOTAL: 79/100; baseline was 65/100.
+
+ACTUAL STATE
+0/3 completed controls demonstrated; no judge-ready submission evidenced. These internal design scores are neither official points nor winning probabilities. Actual rank still depends first on completed controls, then quality and bonuses. No hypothetical delivered-target score is assigned.
+
+WHY RATINGS CHANGED
+C7 now has obligations, expected-pair denominators, unknown bounds and concrete adversarial cases. C9 specifies labels, scoring, baseline separation, windows, formula and missingness. Named roles and capability probes give the integration plan explicit acceptance gates. The six artifacts now have contents and a release validator; planned case names are clearly separated from actual run IDs. Independent offline queries have a concrete interface and two fresh-start acceptance rehearsals. Version2 resolves the run-closure/dispatch contradiction and explicitly records admission errors. These are substantive design gains. C16, invocation, evidence and bonus ratings remain unchanged because their principal strengths were already present and important unknowns persist.
+
+THREE REMAINING MATERIAL RISKS
+
+1. HIGH — Baseline missingness contradicts the scoring rule; empty denominators still need guards.
+Section5 says missing outcomes are UNKNOWN, “not0 and not excluded,” but computes baseline B as the mean of known scores with unspecified required coverage. If baseline coverage below100% is permitted, this excludes unknown cases and can inflate B. This is a must-fix contradiction. Simplest correction: require all eligible baseline outcomes to be known, compute B=correct/eligible_count, and invalidate the baseline while any required outcome is unknown. If incomplete baselines are desired, define interval arithmetic and propagate uncertainty into drift instead of taking the observed-only mean.
+Also specify E=0 for C7 coverage and zero expected windows for C9 aggregates as NOT_ASSESSED, with no division performed. P=0 is already handled. State that alert generation occurs for each measured window crossing D, even when an interval’s allowed violating-window fraction is nonzero; interval satisfaction and threshold detection are different outputs. Add fixtures for partial baseline, empty populations, and a tolerated but correctly alerted window. Actual N, distribution, timeout and thresholds appropriately remain pre-assessment decisions; illustrative ten-case arithmetic is not sample justification.
+
+2. MEDIUM — C7’s timing bounds require an independently reconstructible pair population.
+The K/P to (K+U)/P bounds are sound only when expected pairs P are known. Obligations contain causal parents and sources, while producer sequence/clock domain currently live in observations. If an entire observation disappears, its stream and predecessor/successor pair membership must not be reconstructed solely from surviving telemetry. Add expected stream identity and predecessor/sequence slots to the obligation contract, or an authoritative ordered expected-pair inventory. Declare how alternative terminal outcomes occupy the same required slot. If pair membership or sequence coverage is unknown, report an unproven timing denominator rather than calculated bounds. Test a missing middle event and missing whole stream: the first must retain both expected adjacent pairs, and the second must not improve timing coverage. This is a specification gap, not an assertion that the proposed formula is intrinsically wrong.
+
+3. HIGH — Three-control completion still rests on unverified external evidence and accepted scope.
+Neither a schema nor a source-authority map creates an independent expected population, all-zone provider usage, accepted ground-truth labels, or writable ServiceNow workflow. Fixed-batch C9 can be a defensible disclosed benchmark, but cannot silently stand for all production drift. The revision correctly gates these and avoids inventing capability. Execute the probes first and preserve their raw evidence; require organizer resolution of benchmark/breach eligibility before scored runs. A named gap cannot substitute for completion. RoleB also owns labels/windows, ServiceNow, export/query and rechecking: if access work expands, reassign one concrete package to A or cut bonuses early. The explicit two-control ceiling and freeze buffers are appropriate safeguards, not proof of capacity.
+
+RELEASE AND CLAIM CHECK
+The aggregate truth rules now correctly preserve permitted exceptions, distinguish operation from requirement satisfaction, and prevent unknown populations from producing tolerant passes. Historical failures survive corrections/retests. The release contract correctly requires actual accepted cases, unchanged dated rules and real artifact contents. Its final validation should explicitly ensure missing critical source inputs block the affected claimed control, while disclosed noncritical gaps remain exportable. No live, adversarial or portability bonus is earned by these planned scenarios alone.
+
+FINAL V3 CHECK — DESIGN ONLY
+
+Independently checked detailed-architecture-v3.txt against v2. The targeted corrections are coherent: baseline requires every eligible outcome and uses correct/eligible_count; empty populations avoid division; C7 independently identifies expected streams/order/pairs and forbids bounds with unknown membership; missing middle events preserve both pairs; per-window alerts remain separate from aggregate allowances. Added fixtures cover these cases. Critical missing inputs now block claimed completion, and release work is explicitly redistributed. No remaining contradiction found in these targeted corrections.
+
+Final same-rubric design completeness: 81/100. D1 increases from3 to4 because its timing population and algorithm are now precisely specified with missing-event acceptance cases. D2–D8 remain3,3,3,3,3,4,3 respectively. Final conditional winning-potential design: 79/100; W1–W6 remain3,4,3,3,3,3. These supersede the v2 totals above; weights are unchanged.
+
+Remaining material dependencies: independently authoritative all-zone observations and usage; accepted diagnostic corpus, justified sample/threshold policy and genuine breach eligibility; verified deployment/ServiceNow permissions and execution within the event budget. Explicit failure paths improve the architecture but do not resolve those dependencies. Control9 remains below4 because its actual measurement basis and sample justification await accepted data. Other unchanged ratings retain the limitations described above.
+
+Actual demonstrated completion remains0/3, with no judge-ready submission evidenced. This final check certifies neither live behavior nor source truth and assigns no winning probability.

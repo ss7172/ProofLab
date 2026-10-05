@@ -1,0 +1,498 @@
+[
+  {
+    "id": "W01",
+    "title": "Trustworthy AI & Data Hackathon: Agentic Assurance",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W02",
+    "title": "Getting Started",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/what-to-expect",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W03",
+    "title": "Module 1: Know Your Environment",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/environment-setup",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W04",
+    "title": "Module 2: Platform Access",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W05",
+    "title": "Open your IDE",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/open-ide",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W06",
+    "title": "Check the install finished",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/install-status",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W07",
+    "title": "Connect to the cluster",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/cluster-access",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W08",
+    "title": "Get your gateway credential",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/gateway-credential",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W09",
+    "title": "Learn the API surface",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/api-surface",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W10",
+    "title": "Ask Amazon Q about AWS",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/amazon-q",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W11",
+    "title": "Call your first governed tool",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/platform-access/docs-tool",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W12",
+    "title": "Module 3: Platform Check",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/prove-the-platform",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W13",
+    "title": "The substrate: ODA Canvas",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/prove-the-platform/substrate",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W14",
+    "title": "The declarative surface: resource types",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/prove-the-platform/resource-types",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W15",
+    "title": "The control plane: MoDaaS operators",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/prove-the-platform/control-plane",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W16",
+    "title": "The perimeter: the governed gateway",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/prove-the-platform/gateway",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W17",
+    "title": "The enforcement substrate: is isolation real?",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/prove-the-platform/isolation",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W18",
+    "title": "The evidence lane",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/prove-the-platform/evidence",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W19",
+    "title": "Module 4: The AI-Native ODA Canvas",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/ai-native-oda-canvas",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W20",
+    "title": "What MoDaaS does",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/ai-native-oda-canvas/what-modaas-does",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W21",
+    "title": "The AWS services behind it",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/ai-native-oda-canvas/aws-services",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W22",
+    "title": "Module 5: Baseline Walkthrough",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W23",
+    "title": "The models you serve: NVIDIA Nemotron",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough/nemotron-models",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W24",
+    "title": "Declare three models",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough/declare",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W25",
+    "title": "Approve a model",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough/approve",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W26",
+    "title": "Call the model through the governed door",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough/call",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W27",
+    "title": "Watch the guardrail block an attack",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/baseline-walkthrough/guardrail",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W28",
+    "title": "Module 6: Controls, Policies & Ready-Made CRs",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W29",
+    "title": "The guardrail",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/guardrails",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W30",
+    "title": "Runtime Cedar policies",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/cedar",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W31",
+    "title": "Pause: the kill switch",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/pause",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W32",
+    "title": "Governed tools and records",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/governed-tool",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W33",
+    "title": "The ceiling: requests and tokens per account",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/controls-and-policies/ceiling",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W34",
+    "title": "Module 7: Reference Agents",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W35",
+    "title": "Set up the reference agents",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/setup",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W36",
+    "title": "Run and read the evidence",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/run-and-read",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W37",
+    "title": "Self-check: three faults",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/self-check",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W38",
+    "title": "Swap the model, the governed way",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/swap-model",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W39",
+    "title": "Kill switch",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/reference-agents/kill-switch",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W40",
+    "title": "Module 8: Agent Observability, What CloudWatch Sees",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W41",
+    "title": "Trace a run through its spans",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/trace-spans",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W42",
+    "title": "Console, trust hierarchy, and health metrics",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/agent-observability/console-and-metrics",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W43",
+    "title": "Module 9: Build Your Own Agent (Strands)",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W44",
+    "title": "Read the hackathon-helper agent",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/kb-agent",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W45",
+    "title": "Build your own agent",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/build-agent",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W46",
+    "title": "What the script did",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/what-the-script-did",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W47",
+    "title": "Prove the governance",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/build-your-own-agent/prove-the-governance",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W48",
+    "title": "Module 10: Network Digital Twin (MAVERIC)",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/digital-twin",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W49",
+    "title": "Set up, ask and feed the twin",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/digital-twin/setup",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W50",
+    "title": "Scenario recipes",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/digital-twin/recipes",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W51",
+    "title": "The twin as a governed tool",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/digital-twin/governed-tool",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W52",
+    "title": "Module 11: ServiceNow AI Control Tower",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/servicenow-integration",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W53",
+    "title": "The Challenge",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W54",
+    "title": "What the platform gives you",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/platform-contract",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W55",
+    "title": "Control 16 worked example",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/control-16",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W56",
+    "title": "The evidence cookbook",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/challenge-brief/evidence-cookbook",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W57",
+    "title": "Choosing a Model",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/choosing-a-model",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W58",
+    "title": "Network Tool Naming",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/network-tool-naming",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W59",
+    "title": "Resources & How-To",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/resources",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W60",
+    "title": "Glossary",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/resources/glossary",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W61",
+    "title": "ServiceNow documentation set",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/resources/servicenow-docs",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  },
+  {
+    "id": "W62",
+    "title": "Cleanup",
+    "url": "https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop/cleanup",
+    "state": "AUTHENTICATED_GUIDE_READ",
+    "read_date": "2026-10-04",
+    "runtime_verified": false
+  }
+]

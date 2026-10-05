@@ -1,0 +1,1158 @@
+{
+  "version": "V4 inventory",
+  "scope": "Logical decomposition of the current proposed architecture; not a new services deployment plan.",
+  "groups": [
+    {
+      "id": "M01",
+      "name": "Telecom fault-resolution workflow",
+      "purpose": "The business system whose behavior we assess.",
+      "receives": "A permitted customer fault request and account/network context.",
+      "produces": "Fault-resolution actions, diagnoses, handoffs and model calls.",
+      "location": "Provided ServiceNow and AWS agent environments.",
+      "items": [
+        {
+          "id": "M01.1",
+          "name": "Customer / ticket agent",
+          "purpose": "Receives the customer problem and starts the service workflow.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.2",
+          "name": "IT triage agent",
+          "purpose": "Investigates account and service context.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.3",
+          "name": "Network investigation agent",
+          "purpose": "Investigates the network problem and returns a diagnosis.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.4",
+          "name": "Network digital twin",
+          "purpose": "Provides the supplied network investigation/simulation capability.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.5",
+          "name": "Business data and tools",
+          "purpose": "Customer/account/service records and network tools used by the subject agents.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.6",
+          "name": "Subject-agent Nemotron inference",
+          "purpose": "The approved NVIDIA models used by the provided agents; distinct from our investigator.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.7",
+          "name": "Gateway A",
+          "purpose": "Provided customer-to-IT handoff role; its product/interface must be verified.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.8",
+          "name": "Gateway B",
+          "purpose": "Provided IT-to-network handoff role; separate from our optional second-point adapter.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.9",
+          "name": "Shared model gateway",
+          "purpose": "The supplied model-invocation routing/enforcement role; not assumed identical to gateway A/B or AWS AgentCore Gateway.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.10",
+          "name": "Supplied input/output guardrails",
+          "purpose": "Provided checks around prompts and answers; actual placement/rules require verification and do not replace C7/C9/C16.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.11",
+          "name": "Supplied scenario switch",
+          "purpose": "Selects available lab situations; its presence alone does not establish accepted ground-truth labels.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        },
+        {
+          "id": "M01.12",
+          "name": "Supplied telemetry collector and storage",
+          "purpose": "Existing OpenTelemetry collection/storage keeps what arrives; our M05 readers/reconciliation and M06 evidence workspace are distinct responsibilities.",
+          "status": "Provided",
+          "kind": "Provided system/service"
+        }
+      ]
+    },
+    {
+      "id": "M02",
+      "name": "Enforcement points and platform adapters",
+      "purpose": "Connect existing action boundaries to our common contracts.",
+      "receives": "An action about to occur, an observed event or a later result.",
+      "produces": "Normalized evaluation requests, decisions, observations and receipts.",
+      "location": "Thin wrappers/hooks or readers at verified workshop integration points.",
+      "items": [
+        {
+          "id": "M02.1",
+          "name": "Shared model-gateway adapter",
+          "purpose": "Connects model requests and outcomes to control evaluation and recording; a blocking hook is conditional.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M02.2",
+          "name": "Gateway A handoff adapter",
+          "purpose": "Observes the declared customer-to-IT boundary using permitted hooks or sources; implement only the selected supported integration.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M02.3",
+          "name": "Gateway B handoff adapter",
+          "purpose": "Preferred second-point target, conditional on access. Use a permitted tool boundary or honestly labelled read-only source if needed; no requirement to implement every adapter.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M02.4",
+          "name": "Declared tool-boundary adapter",
+          "purpose": "Captures request/outcome events only for declared, supported tools; an alternative boundary adapter rather than an obligation to integrate every tool.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M02.5",
+          "name": "Synchronous evaluate contract",
+          "purpose": "Returns per-control decisions and an overall result when a verified blocking hook supports optional inline admission; the contract is not proof the hook exists.",
+          "status": "Build",
+          "kind": "Interface contract"
+        },
+        {
+          "id": "M02.6",
+          "name": "Event emit contract",
+          "purpose": "Accepts observations and explicitly reports durable versus best-effort receipt.",
+          "status": "Build",
+          "kind": "Interface contract"
+        },
+        {
+          "id": "M02.7",
+          "name": "Later-verdict/result callback contract",
+          "purpose": "Correlates authenticated, duplicate-safe delayed verdicts/results such as deferred human decisions; a generic callback demonstration is optional.",
+          "status": "Build",
+          "kind": "Interface contract"
+        },
+        {
+          "id": "M02.8",
+          "name": "Source pull contract",
+          "purpose": "Reads paginated source records and completion information. Query is separate in M13.",
+          "status": "Build",
+          "kind": "Interface contract"
+        }
+      ]
+    },
+    {
+      "id": "M03",
+      "name": "Identity, schemas and run lifecycle",
+      "purpose": "Give every record an unambiguous meaning and place in the workflow.",
+      "receives": "Authenticated context and source identifiers.",
+      "produces": "Stable run/action/attempt identities and versioned lifecycle records.",
+      "location": "Shared Python contracts and lifecycle modules.",
+      "items": [
+        {
+          "id": "M03.1",
+          "name": "Authenticated team / point context",
+          "purpose": "Binds records and operations to the authorized team and enforcement point.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M03.2",
+          "name": "Canonical record schemas",
+          "purpose": "Defines versions, field types, enums and provenance classes for shared records.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M03.3",
+          "name": "Run / action / attempt identifiers",
+          "purpose": "Links the whole fault-resolution run to intended actions and proposed attempts; an attempt may never dispatch, while actual provider executions are reconciled separately.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M03.4",
+          "name": "Retry identity rules",
+          "purpose": "Distinguishes a genuine new execution from duplicate delivery of the same request.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M03.5",
+          "name": "Run lifecycle manager",
+          "purpose": "Opens runs, closes new actions and records evidence finalization or unresolved gaps.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M03.6",
+          "name": "Provider/source correlation",
+          "purpose": "Maps team/source-instance-scoped identifiers to canonical identities without guessing; preserves multiple actual executions, unmatched records and conflicting run assignments.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M04",
+      "name": "Policy register and control applicability",
+      "purpose": "Own the dated rules independently of the code that evaluates them.",
+      "receives": "Declared scope, justified limits, owners and measurement definitions.",
+      "produces": "An immutable policy bundle pinned to the assessed run or window.",
+      "location": "Versioned configuration/data loaded by shared policy code; no separate service required.",
+      "items": [
+        {
+          "id": "M04.1",
+          "name": "Versioned policy bundle store",
+          "purpose": "Holds immutable dated specifications and effective intervals.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M04.2",
+          "name": "Threshold / allowance declarations",
+          "purpose": "Records metric limits, allowed exceptions, measurement basis, rationale and owner.",
+          "status": "Build",
+          "kind": "Configuration/data"
+        },
+        {
+          "id": "M04.3",
+          "name": "Action-to-control mapping",
+          "purpose": "Declares which controls apply to each action or enforcement point.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M04.4",
+          "name": "Policy loader and pinning",
+          "purpose": "Validates and loads the applicable bundle before work; avoids per-call register queries.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M04.5",
+          "name": "Measurement and completion definitions",
+          "purpose": "References accepted baselines, source rules, eligibility and required evidence coverage.",
+          "status": "Build",
+          "kind": "Configuration/data"
+        },
+        {
+          "id": "M04.6",
+          "name": "Policy change / revocation rules",
+          "purpose": "Preserves historical rules; distinguishes new-run selection expiry, pinned continuation/deadline, hard cutoff and authenticated revocation at supported points.",
+          "status": "Build",
+          "kind": "Configuration/data"
+        }
+      ]
+    },
+    {
+      "id": "M05",
+      "name": "Evidence acquisition and reconciliation",
+      "purpose": "Bring heterogeneous source records into a trustworthy common form.",
+      "receives": "Gateway/OTEL/CloudWatch records, ServiceNow records and independent expected-work sources.",
+      "produces": "Raw preserved inputs, normalized observations, reconciled usage and source gaps.",
+      "location": "Ingestion/assessment worker and source adapters.",
+      "items": [
+        {
+          "id": "M05.1",
+          "name": "Gateway / telemetry readers",
+          "purpose": "Read available gateway, OTEL and CloudWatch source records.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M05.2",
+          "name": "ServiceNow evidence reader",
+          "purpose": "Reads permitted notes, records, traces and delivery information; distinct from outbound M14.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M05.3",
+          "name": "Independent expected-work adapter",
+          "purpose": "Obtains obligations, expected sources and ordered event slots from an accepted authority.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M05.4",
+          "name": "Pagination / cursor / checkpoint tracker",
+          "purpose": "Tracks source scope, pages, cursor semantics and errors; advances recovery checkpoints only after recoverable preservation. Page exhaustion alone does not prove completeness.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M05.5",
+          "name": "Raw preservation and receipt handling",
+          "purpose": "Preserves source/capture versions before durable receipt; retains malformed inputs and exposes any lost/unrecorded input.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M05.6",
+          "name": "Deterministic source parsers",
+          "purpose": "Translate reliable structured fields, identifiers, timestamps, units and accounting semantics.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M05.7",
+          "name": "Duplicate and identity reconciler",
+          "purpose": "Recognizes identical duplicate content and corroborating observations without extra charges; changed content under one ID remains visible for resolution.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M05.8",
+          "name": "Authority / conflict / correction handling",
+          "purpose": "Retains disagreements, late data and versioned authoritative corrections.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M05.9",
+          "name": "Source completeness and freshness tracking",
+          "purpose": "Records missing sources, lag and unproven populations; checkpoints alone do not prove completeness.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M06",
+      "name": "Shared evidence workspace",
+      "purpose": "Keep the evidence, relationships and results in one queryable place.",
+      "receives": "Raw records and the outputs of ingestion, validation, tests and model investigation.",
+      "produces": "Versioned facts, bindings and source references for queries and export.",
+      "location": "Logical repositories/tables; conditional S3 and transactional-store mapping, plus local SQLite index.",
+      "items": [
+        {
+          "id": "M06.1",
+          "name": "Raw-source repository",
+          "purpose": "Stores immutable source copies and resolvable references.",
+          "status": "Build",
+          "kind": "Logical repository/index"
+        },
+        {
+          "id": "M06.2",
+          "name": "Canonical fact repositories",
+          "purpose": "Stores runs, attempts, observations, obligations, usage and windows.",
+          "status": "Build",
+          "kind": "Logical repository/index"
+        },
+        {
+          "id": "M06.3",
+          "name": "Evidence-binding tables",
+          "purpose": "Represents versioned many-to-many links between exact fact revisions, controls, specifications and assessed scopes without multiplying usage charges.",
+          "status": "Build",
+          "kind": "Logical repository/index"
+        },
+        {
+          "id": "M06.4",
+          "name": "Proposal storage",
+          "purpose": "Keeps model-extracted facts and candidate links separate from verified facts.",
+          "status": "Build",
+          "kind": "Logical repository/index"
+        },
+        {
+          "id": "M06.5",
+          "name": "Assessment / case repositories",
+          "purpose": "Stores control results, findings, investigation records, source/input manifests and case revisions with resolvable input references.",
+          "status": "Build",
+          "kind": "Logical repository/index"
+        },
+        {
+          "id": "M06.6",
+          "name": "Exact scope indexes",
+          "purpose": "Serves available exact run/action/attempt/window inputs and explicit gaps at selected revisions; exposes pagination/index lag without claiming upstream completeness.",
+          "status": "Build",
+          "kind": "Logical repository/index"
+        },
+        {
+          "id": "M06.7",
+          "name": "Contextual relevance index",
+          "purpose": "Ranks narrative context for the model; it never defines a control denominator.",
+          "status": "Build",
+          "kind": "Logical repository/index"
+        }
+      ]
+    },
+    {
+      "id": "M07",
+      "name": "Control 7 implementation \u2014 event recording",
+      "purpose": "Test whether the declared events were recorded and their timing meets the rule.",
+      "receives": "Independent obligations, observed events, expected adjacent pairs and the pinned C7 rule.",
+      "produces": "Coverage and timing measures, exceptions, sufficiency and a control assessment.",
+      "location": "Pure control-test functions in the shared assurance package.",
+      "items": [
+        {
+          "id": "M07.1",
+          "name": "Event coverage evaluator",
+          "purpose": "Matches observations to the independently expected population.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M07.2",
+          "name": "Expected timing-pair builder",
+          "purpose": "Uses authoritative order/slots; missing events do not remove expected pairs.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M07.3",
+          "name": "Clock / epoch eligibility checks",
+          "purpose": "Prevents invalid timing across unrelated clocks, discontinuities, backwards timestamps or insufficient precision; affected expected pairs remain unmeasurable.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M07.4",
+          "name": "Gap and exception evaluator",
+          "purpose": "Computes measured timing gaps, violating shares and bounds when justified.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M07.5",
+          "name": "Missing / empty population handling",
+          "purpose": "Retains missing streams and unknown denominators; distinguishes source-proven deadline omissions from collection lag, and never automatically passes an empty population.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M08",
+      "name": "Control 9 implementation \u2014 performance drift",
+      "purpose": "Test a meaningful measured performance change and raise alerts for threshold crossings.",
+      "receives": "Accepted labels, canonical outcomes, a frozen baseline, expected windows and the C9 rule.",
+      "produces": "Window assessments, run-to-window links, missingness and alert intents.",
+      "location": "Scenario/measurement modules and a scheduled assessment entry point.",
+      "items": [
+        {
+          "id": "M08.1",
+          "name": "Accepted scenario and label manifest",
+          "purpose": "Defines ground truth, eligibility, cohort and baseline/assessment split.",
+          "status": "Build",
+          "kind": "Configuration/data"
+        },
+        {
+          "id": "M08.2",
+          "name": "Canonical outcome mapping and scorer",
+          "purpose": "Scores each eligible canonical diagnosis once with fixed aliases/deadlines; separates source-proven wrong outcomes from missing or unparseable evidence.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M08.3",
+          "name": "Frozen baseline builder",
+          "purpose": "Requires a valid positive baseline and all required eligible outcomes.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M08.4",
+          "name": "Window scheduler and membership",
+          "purpose": "Registers expected windows and their scenario/run membership before assessment.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M08.5",
+          "name": "Comparability checker",
+          "purpose": "Checks dataset, cohort, model/prompt/tool versions and measurement compatibility.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M08.6",
+          "name": "Drift calculator",
+          "purpose": "Computes the declared relative change for each fully measured comparable window; applies the exact boundary before display rounding.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M08.7",
+          "name": "Window coverage and allowance evaluator",
+          "purpose": "Separately assesses missing windows and the allowed share of violating windows.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M08.8",
+          "name": "Threshold-crossing alert creator",
+          "purpose": "Creates an alert intent for each measured crossing; M14 handles delivery.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M09",
+      "name": "Control 16 implementation \u2014 token accounting",
+      "purpose": "Test actual token spend for the complete declared run.",
+      "receives": "Authoritative execution inventory, reconciled usage and the pinned cap/allowance rule.",
+      "produces": "Actual spend, exceptions, evidence sufficiency and an assessment.",
+      "location": "Pure accounting/control-test functions; required independently of optional prevention.",
+      "items": [
+        {
+          "id": "M09.1",
+          "name": "Whole-run execution population",
+          "purpose": "Establishes all governed actual executions, including hidden retries; retains unresolved work and whole-run finality gaps.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M09.2",
+          "name": "Usage accounting rules",
+          "purpose": "Pins source authority and non-overlapping input/output/cache/reasoning and counter semantics; separates actual usage from reservations.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M09.3",
+          "name": "Actual usage aggregator",
+          "purpose": "Sums each accepted execution once; excludes duplicate observations, binding fan-out and overlapping parent or cumulative totals.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M09.4",
+          "name": "Cap / exception evaluator",
+          "purpose": "Compares each run with its inclusive cap and evaluates exceptions over the independently fixed eligible population.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M09.5",
+          "name": "Missing-usage sufficiency evaluator",
+          "purpose": "Accepted scoped subtotal can prove breach; complete resolved whole-run evidence is required for an under-cap pass; missing inventory is not zero.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M10",
+      "name": "Optional inline admission coordinator",
+      "purpose": "Prevent a bounded model call from overspending when verified hooks and bounds permit it.",
+      "receives": "An authenticated exact model request, run state, policy and trustworthy token bound.",
+      "produces": "An admission decision, reservation and recoverable state transitions.",
+      "location": "Optional in-path entry point with transactional durable state.",
+      "items": [
+        {
+          "id": "M10.1",
+          "name": "Atomic capacity reservation",
+          "purpose": "Checks available exposure and reserves it before ALLOW.",
+          "status": "Optional",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M10.2",
+          "name": "Request identity / idempotency guard",
+          "purpose": "Returns the existing attempt for transport duplicates and rejects changed request content.",
+          "status": "Optional",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M10.3",
+          "name": "Dispatch ownership guard",
+          "purpose": "Claims dispatch ownership once against the atomic run/policy state; distinguishes authorization from the later physical send.",
+          "status": "Optional",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M10.4",
+          "name": "Proved-undispatched cancellation",
+          "purpose": "Releases a reservation only when dispatch is ruled out.",
+          "status": "Optional",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M10.5",
+          "name": "Settlement and correction handler",
+          "purpose": "Retains provisional bounds; releases only after full execution-set finality and applies accepted corrections once; upward final corrections halt admission.",
+          "status": "Optional",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M10.6",
+          "name": "Unknown-outcome and closure recovery",
+          "purpose": "Preserves ambiguous liabilities; closure stops new admissions/claims while pre-close authorized sends remain possible.",
+          "status": "Optional",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M10.7",
+          "name": "Minimal transition journal / outbox",
+          "purpose": "Durably records coordination transitions; rich evidence export remains asynchronous.",
+          "status": "Optional",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M10.8",
+          "name": "Bound / bypass / hidden-retry checks",
+          "purpose": "Verifies aggregate request bounds, all model routes and retry coverage before claiming strict prevention.",
+          "status": "Optional",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M11",
+      "name": "Nemotron Evidence Investigator",
+      "purpose": "Interpret unstructured evidence and assemble a useful cited explanation.",
+      "receives": "A scoped evidence snapshot, selected narratives and deterministic assessment references.",
+      "produces": "Extracted statements, candidate links, corroboration requests and an explanation plan.",
+      "location": "Custom orchestration in the permitted environment, calling the approved workshop Nemotron endpoint/gateway path.",
+      "items": [
+        {
+          "id": "M11.1",
+          "name": "Approved model API adapter",
+          "purpose": "Calls the actual permitted endpoint and records request/provider identifiers and model configuration.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M11.2",
+          "name": "Primary fast Nemotron profile",
+          "purpose": "Lightning is preferred, subject to verified availability and capability.",
+          "status": "Configure",
+          "kind": "Model configuration"
+        },
+        {
+          "id": "M11.3",
+          "name": "Extraction prompt and output schema",
+          "purpose": "Requests exact quoted source statements, typed values and explicit ambiguity.",
+          "status": "Build",
+          "kind": "Configuration/data"
+        },
+        {
+          "id": "M11.4",
+          "name": "Candidate-link and contradiction extractor",
+          "purpose": "Proposes relationships and identifies conflicting accounts without inventing operational truth.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M11.5",
+          "name": "Corroborating-read request planner",
+          "purpose": "Proposes one bounded read batch for host execution and deterministic corroboration; new semantic extraction cannot create a hidden third call.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M11.6",
+          "name": "Cited explanation-plan composer",
+          "purpose": "Organizes validated revision-pinned references without tools or new extraction; host renders fixed facts and verdicts.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M11.7",
+          "name": "Optional background extraction",
+          "purpose": "Pre-extracts notes with separate deduplication/budgets and self-extraction exclusions.",
+          "status": "Optional",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M11.8",
+          "name": "Optional natural-language scope planner",
+          "purpose": "Translates a question into a proposed scope; the baseline uses explicit selectors.",
+          "status": "Optional",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M11.9",
+          "name": "Optional Super profile",
+          "purpose": "Supports profiled complex composition or separately timed investigation.",
+          "status": "Optional",
+          "kind": "Model configuration"
+        },
+        {
+          "id": "M11.10",
+          "name": "Optional Nano Omni profile",
+          "purpose": "Extracts relevant real media evidence with region/time references.",
+          "status": "Optional",
+          "kind": "Model configuration"
+        },
+        {
+          "id": "M11.11",
+          "name": "Optional Ultra profile",
+          "purpose": "Supports offline complex investigation or adversarial planning.",
+          "status": "Optional",
+          "kind": "Model configuration"
+        }
+      ]
+    },
+    {
+      "id": "M12",
+      "name": "Evidence validation and assessment composition",
+      "purpose": "Determine what can be accepted as evidence and keep control results consistent with it.",
+      "receives": "Model proposals, source records, accepted-input revisions and control assessments.",
+      "produces": "Verified/rejected/unresolved proposals and a consistent claim assessment.",
+      "location": "Deterministic host modules, shared by the worker and query path.",
+      "items": [
+        {
+          "id": "M12.1",
+          "name": "Schema / source / span validator",
+          "purpose": "Checks typed proposals, exact source versions/spans and declared normalization mappings; text occurrence alone is not entailment.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M12.2",
+          "name": "Scope and relationship validator",
+          "purpose": "Reauthorizes both ends of a proposed link and checks permitted relations.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M12.3",
+          "name": "Authority and corroboration checker",
+          "purpose": "Validates the precise assertion under scoped authority/corroboration rules; distinguishes source statements, relations and operational facts.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M12.4",
+          "name": "Proposal promotion / revision manager",
+          "purpose": "Records specific validation outcomes and coherent accepted-input revisions; preserves history and scoped/effective authority changes.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M12.5",
+          "name": "Affected-control reassessment trigger",
+          "purpose": "Invalidates/recomputes affected run, window, population and claim dependencies; frozen baseline corrections require explicit restatement.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M12.6",
+          "name": "Shared assessment-state composer",
+          "purpose": "Keeps requirement verdict, safeguard operation and evidence sufficiency separate.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M12.7",
+          "name": "C-FM-01 claim composer",
+          "purpose": "Combines required objective-level branches for a compatible declared run/window scope after their allowances; completion remains separate.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M12.8",
+          "name": "Explanation and consistency validator",
+          "purpose": "Checks templates/references and coherent durable source/input/assessment manifests; excludes known-invalid current proof and labels hypotheses.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M13",
+      "name": "Judge query and case assembly",
+      "purpose": "Deliver an inspectable case within the bounded query workflow.",
+      "receives": "Explicit control/run/window selection or a separately validated optional natural-language scope.",
+      "produces": "A cited case, explicit analysis status and reproducible source/calculation views.",
+      "location": "Query/investigation entry point plus a local CLI; optional HTML client.",
+      "items": [
+        {
+          "id": "M13.1",
+          "name": "Judge CLI and optional UI",
+          "purpose": "Accepts explicit scope/profile and stable query identity; distinguishes fresh investigation, recorded-case inspection and offline recheck.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M13.2",
+          "name": "Scope resolver and snapshot catalog",
+          "purpose": "Resolves full applicable run/window scope and pins event interval, source vector and accepted-input revision; mutable reads cannot silently enter.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M13.3",
+          "name": "Deterministic case loader / read tools",
+          "purpose": "Provides authorized exact retrieval and bounded list_evidence/get_evidence tools.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M13.4",
+          "name": "Bounded workflow and deadline controller",
+          "purpose": "Owns durable query/stage claims, original deadline/budgets, duplicate recovery, cancellation liabilities and coherent publication timing.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M13.5",
+          "name": "Permission-aware query cache",
+          "purpose": "Keys cached results by current authorization, exact scope, source snapshot, accepted-input revision and software/policy versions; labels reused model provenance.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M13.6",
+          "name": "Constrained case renderer",
+          "purpose": "Renders exact assessment values and source quotes from the validated explanation plan.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M13.7",
+          "name": "Deterministic fallback and status handler",
+          "purpose": "Separates requested replay/recheck success from degraded fresh analysis, scope limits and evidence insufficiency.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M13.8",
+          "name": "Source and relationship explorer",
+          "purpose": "Navigates from verdicts to exact captured inputs and from records to typed links, candidates and gaps, reauthorizing pinned drill-downs.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M14",
+      "name": "ServiceNow governance and human oversight",
+      "purpose": "Connect measured findings to actual platform records and accountable people.",
+      "receives": "Control-generated alert/finding intents and optional validated explanatory material.",
+      "produces": "Remote record IDs, delivery state, named owners and remediation/retest links.",
+      "location": "Provided ServiceNow AICT/workflow plus our permitted connector and delivery code.",
+      "items": [
+        {
+          "id": "M14.1",
+          "name": "Team-scoped AICT connection / asset registration",
+          "purpose": "Verifies authorized team connection/assets and separately records trace and finding-route capabilities; naming prefixes do not establish isolation.",
+          "status": "Configure",
+          "kind": "Configuration/integration"
+        },
+        {
+          "id": "M14.2",
+          "name": "Permitted finding / alert route",
+          "purpose": "Maps deterministic findings and immutable content/routing mutations to a verified authorized workflow; model explanations remain optional.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M14.3",
+          "name": "Delivery outbox and bounded retries",
+          "purpose": "Preserves required intents, checks dispatch validity, bounds attempts and reconciles ambiguous writes using verified receiver semantics; remains off inference and publication paths.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M14.4",
+          "name": "Remote ID / status readback",
+          "purpose": "Verifies instance, correlation, intended content revision and named-recipient route; separates acknowledgement, uncertain outcome and dated delivery.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M14.5",
+          "name": "Owner and human-response tracking",
+          "purpose": "Preserves authoritative recipient/reassignment/actor history and distinguishes covered no-response observations from response uncertainty.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M14.6",
+          "name": "Remediation and passing-retest linkage",
+          "purpose": "Links real remediation closure to the relevant passing retest and authorized closure; separates authoritative correction/withdrawal while retaining history.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M15",
+      "name": "Validation campaign and submission packaging",
+      "purpose": "Prove behavior and produce the required reproducible submission.",
+      "receives": "Authorized scenarios, actual source/model runs, declared rules and exported evidence.",
+      "produces": "Test results, benchmark measurements and the six-artifact bundle.",
+      "location": "Local/test commands and worker/export modules using the same shared package.",
+      "items": [
+        {
+          "id": "M15.1",
+          "name": "Pass / breach scenario runner",
+          "purpose": "Executes predeclared permitted pass/breach cases with independently expected results, actual IDs and explicit live/replay/fixture provenance.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M15.2",
+          "name": "Adversarial failure campaign",
+          "purpose": "Challenges missing inputs, conflicts, races, injection, outages and access; retains original failures, fixes and relevant retests.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M15.3",
+          "name": "Independent arithmetic rechecker",
+          "purpose": "Independently recomputes formulas from captured inputs and frozen rules without calling production evaluators; shared-source authority/completeness remain limitations.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M15.4",
+          "name": "Model extraction / link quality evaluation",
+          "purpose": "Uses case-grouped held-out references to measure quote/fact/link quality, recall, abstention, coverage and model-versus-template value.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M15.5",
+          "name": "Latency / freshness / cost benchmark",
+          "purpose": "Measures full fresh/replay/offline outcomes and separate source freshness; retains failures, usage uncertainty and the20-scope repeated-trial readiness gate.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M15.6",
+          "name": "Bundle exporter and offline index rebuild",
+          "purpose": "Stages a coherent audience-authorized snapshot with critical local inputs, versioned derivatives and a clean offline index rebuild.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M15.7",
+          "name": "Manifest and release validator",
+          "purpose": "Checks the six usable artifacts, exact release versions, accepted cases and required integrations/tests; readiness stays separate from control satisfaction.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M15.8",
+          "name": "Judge rehearsal runner",
+          "purpose": "Records two judge-selected answer-and-record rehearsals, profiles, timing, failures and any operator help.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    },
+    {
+      "id": "M16",
+      "name": "Shared platform, security and operational support",
+      "purpose": "Host the small deployment and make its capabilities, permissions and own behavior visible.",
+      "receives": "Approved workshop resources, configured identities and runtime state.",
+      "produces": "Operational entry points, safe storage access, capability status and assurance telemetry.",
+      "location": "Cross-cutting configuration and modules, not an additional large platform.",
+      "items": [
+        {
+          "id": "M16.1",
+          "name": "Shared Python distribution and entry points",
+          "purpose": "Packages adapters, worker, query/investigator and optional admission code together.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M16.2",
+          "name": "Approved compute/runtime configuration",
+          "purpose": "Maps the investigator and workers to permitted workshop hosting; exact capabilities remain unverified.",
+          "status": "Configure",
+          "kind": "Configuration/integration"
+        },
+        {
+          "id": "M16.3",
+          "name": "State/object/index repository adapters",
+          "purpose": "Conditional mapping to DynamoDB for atomic state, S3 for raw/export objects and SQLite for offline indexing.",
+          "status": "Configure",
+          "kind": "Configuration/integration"
+        },
+        {
+          "id": "M16.4",
+          "name": "Authentication, authorization and credential configuration",
+          "purpose": "Enforces team isolation and permitted source/model access outside LLM control.",
+          "status": "Configure",
+          "kind": "Configuration/integration"
+        },
+        {
+          "id": "M16.5",
+          "name": "Assurance-job trace and usage records",
+          "purpose": "Records model/tool calls, versions, timings and failures. Shows separate subject/assurance subtotals and combined spend; policy scope determines inclusion.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M16.6",
+          "name": "Non-recursion and operational limits",
+          "purpose": "Prevents automatic investigation of the investigator and respects bounded resource policies.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M16.7",
+          "name": "Capability and gap register",
+          "purpose": "Tracks proposed/tested/verified/unavailable source features, owners and unresolved effects.",
+          "status": "Build",
+          "kind": "Module/function"
+        },
+        {
+          "id": "M16.8",
+          "name": "Version/configuration provenance",
+          "purpose": "Pins model/prompt/schema/evaluator/package settings and preserves revision history.",
+          "status": "Build",
+          "kind": "Module/function"
+        }
+      ]
+    }
+  ],
+  "records": [
+    [
+      "PolicyBundle",
+      "Dated rules, owners, versions and applicability."
+    ],
+    [
+      "Run",
+      "The whole subject workflow and its lifecycle."
+    ],
+    [
+      "Attempt",
+      "One identified intended execution/admission attempt and its lifecycle; it may be reserved, denied, cancelled or never dispatched. Actual provider executions/charges are separately reconciled."
+    ],
+    [
+      "Obligation",
+      "An independently expected event/action requirement."
+    ],
+    [
+      "Observation",
+      "An actually received source record."
+    ],
+    [
+      "UsageEntry",
+      "An authoritative reconciled model-execution charge."
+    ],
+    [
+      "EvidenceBinding",
+      "A link from evidence to control/specification/run or window."
+    ],
+    [
+      "Window",
+      "A registered C9 assessment batch and its member runs."
+    ],
+    [
+      "Assessment",
+      "The calculation, exceptions, sufficiency and control verdict."
+    ],
+    [
+      "Alert / Finding",
+      "Delivery, ownership and remediation state around a finding."
+    ],
+    [
+      "Snapshot / SourceCheckpoint",
+      "The frozen source versions and declared acquisition/completeness state."
+    ],
+    [
+      "AcceptedInputRevision",
+      "The particular accepted facts/bindings used by an assessment."
+    ],
+    [
+      "ExtractedFact",
+      "A model-proposed cited statement and its validation status."
+    ],
+    [
+      "LinkProposal",
+      "A proposed relationship and corroboration or rejection."
+    ],
+    [
+      "EvidenceCase",
+      "The cited presentation around assessments and unresolved context."
+    ],
+    [
+      "InvestigationRun",
+      "The investigator\u2019s own model/tool activity, budget and timings."
+    ]
+  ],
+  "interfaces": [
+    [
+      "evaluate",
+      "Synchronous enforcement decision",
+      "M02"
+    ],
+    [
+      "emit",
+      "Observation submission and receipt",
+      "M02"
+    ],
+    [
+      "callback",
+      "Correlated later-result receipt",
+      "M02"
+    ],
+    [
+      "pull",
+      "Source pagination and completion",
+      "M02"
+    ],
+    [
+      "query",
+      "Judge-facing scope request",
+      "M13"
+    ],
+    [
+      "open_case",
+      "Host opens a scoped snapshot",
+      "M13"
+    ],
+    [
+      "list_evidence",
+      "Authorized bounded source search/list",
+      "M13"
+    ],
+    [
+      "get_evidence",
+      "Authorized exact record/excerpt reading",
+      "M13"
+    ],
+    [
+      "submit_candidates",
+      "Host handles model proposal output",
+      "M12"
+    ],
+    [
+      "assess_controls",
+      "Host runs authoritative control calculations",
+      "M07\u2013M09 / M12"
+    ],
+    [
+      "assemble_case",
+      "Host renders the validated case",
+      "M13"
+    ]
+  ],
+  "artifacts": [
+    "Exported evidence, including the investigator\u2019s actual inputs/outputs and validations",
+    "Dated threshold specifications and supporting model/configuration policy",
+    "Runnable test/query tool and reproduction instructions",
+    "Actual named passing/breaching cases and their provenance",
+    "One-page diagram matching what was implemented",
+    "Known-gap list with owners and effects on the claims"
+  ]
+}

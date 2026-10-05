@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="970" viewBox="0 0 1200 970" role="img" aria-labelledby="title desc">
+<title id="title">M09: Whole-run token accounting</title><desc id="desc">All three agents and actual retries contribute to a unique execution population. Accepted non-overlapping usage is summed and compared with a pinned cap. Source examples FM-A 9600 and FM-B 10800 show one breach of the 10000 cap. Missing under-cap usage cannot establish compliance.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#64748b"/></marker></defs>
+<rect width="1200" height="970" rx="20" fill="#eef1f5"/>
+<g font-family="Arial, sans-serif" fill="#16202c">
+<text x="40" y="47" font-size="15" fill="#2563eb" font-weight="700">M09 / CONTROL 16 / ACN-COST-001</text>
+<text x="40" y="86" font-size="30" font-weight="700">Count executions once. Prove the whole-run result.</text>
+<text x="40" y="115" font-size="17" fill="#475569">Accounting design • supplied teaching values • no live implementation measured</text>
+<g fill="#fff" stroke="#cbd5e1" stroke-width="2"><rect x="40" y="151" width="350" height="91" rx="12"/><rect x="425" y="151" width="350" height="91" rx="12"/><rect x="810" y="151" width="350" height="91" rx="12"/></g>
+<g font-size="21" font-weight="700"><text x="62" y="185">ServiceNow customer agent</text><text x="447" y="185">AWS IT agent</text><text x="832" y="185">AWS network agent</text></g>
+<g font-size="17" fill="#475569"><text x="62" y="217">Every governed model execution</text><text x="447" y="217">Every governed model execution</text><text x="832" y="217">Every governed model execution</text></g>
+<path d="M215 242 V278 H600 M985 242 V278 H600 M600 242 V312" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="40" y="317" width="1120" height="123" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="63" y="351" font-size="22" font-weight="700">M05 + M06: accepted execution and usage revisions</text>
+<text x="63" y="380" font-size="18">Include real retries and unresolved executions. Establish source authority and run ownership.</text>
+<text x="63" y="411" font-size="18" fill="#475569">Three observations of one execution = one charge. Two distinct executions = two charges.</text>
+<path d="M600 440 V474" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="40" y="480" width="742" height="117" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="63" y="517" font-size="23" font-weight="700">M09: sum actual input + output tokens</text>
+<text x="63" y="550" font-size="18">Once per accepted execution; use non-overlapping counters.</text>
+<text x="63" y="578" font-size="17" fill="#475569">Check whole-run completeness before declaring under-cap compliance.</text>
+<rect x="825" y="480" width="335" height="117" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="849" y="516" font-size="21" font-weight="700">M04: pinned rule</text><text x="849" y="549" font-size="18">Cap 10,000 • zero over-cap runs</text><text x="849" y="578" font-size="17" fill="#475569">Dated before assessed execution</text>
+<path d="M825 538 H792" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="40" y="632" width="1120" height="199" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="63" y="667" font-size="22" font-weight="700">The supplied slide's two complete runs</text>
+<text x="735" y="695" font-size="15" fill="#475569">10,000 cap</text>
+<text x="63" y="726" font-size="19" font-weight="700">FM-A</text><rect x="160" y="707" width="576" height="24" rx="5" fill="#2563eb"/><text x="840" y="726" font-size="19" fill="#166534" font-weight="700">9,600 · SATISFIED</text>
+<text x="63" y="769" font-size="19" font-weight="700">FM-B</text><rect x="160" y="750" width="600" height="24" rx="5" fill="#94a3b8"/><rect x="760" y="750" width="48" height="24" fill="#dc2626"/><text x="840" y="769" font-size="19" fill="#b91c1c" font-weight="700">10,800 · BREACHED</text>
+<path d="M760 701 V782" stroke="#0f172a" stroke-dasharray="4 4" stroke-width="2"/>
+<text x="63" y="809" font-size="18">One of two over cap = 50%. None permitted. The 800-token overshoot remains visible.</text>
+<rect x="40" y="854" width="546" height="86" rx="12" fill="#fff7ed" stroke="#fed7aa" stroke-width="2"/><rect x="614" y="854" width="546" height="86" rx="12" fill="#fff1f2" stroke="#fecdd3" stroke-width="2"/>
+<text x="62" y="887" font-size="20" font-weight="700">9,000 known + unresolved usage</text><text x="62" y="919" font-size="18" fill="#9a3412">INDETERMINATE • cannot establish a final pass</text>
+<text x="636" y="887" font-size="20" font-weight="700">10,800 accepted + unresolved usage</text><text x="636" y="919" font-size="18" fill="#b91c1c">BREACHED • at least 800 over at this revision</text>
+</g></svg>

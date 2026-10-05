@@ -1,0 +1,34 @@
+M12 INDEPENDENT AI DESIGN REVIEWS — 2026-10-04
+
+Reviewer1: /root/m03_identity_review — source authority, typed verification, identity, normalization and promotion states.
+Reviewer2: /root/m02_contract_review — claim composition, scope compatibility, dependency revisions, publication and baseline corrections.
+Sources: current M12 inventory, V4 NVIDIA promotion/case contracts, control foundation section7 and actual .lavish/prooflab-walkthrough/m12-body.html draft.
+
+FINAL VERDICTS: ACCEPT / ACCEPT after two medium clarifications. Both reviewers verified corrected actual draft. No remaining material findings in reviewed scope. Conceptual acceptance only; no runtime validation pipeline was executed.
+
+Required corrections incorporated:
+1. MEDIUM — Authority changes: prospective withdrawal carries scope/effective time and does not automatically falsify valid historical facts. Evidence/source invalidation affecting prior records marks dependent proofs invalid. Access revocation remains a separate permission check on reads, publication and export.
+2. MEDIUM — Frozen baseline: an assessed outcome correction triggers affected window/interval recalculation. A correction affecting frozen baseline data/labels marks dependencies stale or invalid and requires an explicit baseline/restatement revision under the declared process. Preserve the original dated reference; later restatement is not the original predeclared baseline. New scored work needs a valid previously frozen basis.
+
+Accepted promotion/identity rules:
+- VERIFIED names the precise quotation, relation or operational fact; it never verifies an entire narrative or every linked control.
+- Exact span occurrence is distinct from semantic entailment. Preserve negation, qualifiers, raw references and declared normalization/coordinate mappings.
+- Source namespaces and both relationship endpoints are scoped and authorized; literal IDs/relation labels do not grant operational authority.
+- Missing/inaccessible/ambiguous evidence remains unresolved; rejecting a proposal is not necessarily proof that the real-world claim is false.
+- Manual adjudication records authorized person, rule, exact proposition, source basis and rationale; it cannot invent sources or completeness.
+- Promotions conditionally publish an accepted-input revision, preserving original proposals and prior decisions. Revalidate concurrent base conflicts.
+- Source reconciliation belongs toM05, calculations toM07-M09 and live settlement toM10. Added bindings do not add usage charges or release reservations.
+
+Accepted composition/publication rules:
+- Reassess affected run/window/population/claim dependencies. Unaffected reuse requires unchanged valid dependencies.
+- Compose objective-level results after declared allowances; a violating C9 child window can coexist with a satisfied allowed interval, with crossing/alert still visible.
+- C-FM-01 uses a declared manifest joining compatible runs, windows, policies, inputs and cutoffs. No averaging or combining unrelated green results.
+- A valid in-scope required branch breach remains meaningful amid unrelated gaps; an outside-scope breach cannot establish the requested claim's failure.
+- Requirement verdict, safeguard operation, evidence sufficiency, analysis completion and hackathon control completion stay separate.
+- Keep one coherent source/input/assessment/explanation revision. Valid older as-of cases may remain historical; known-invalid inputs cannot be presented as current proof.
+- Publication references durable coherent records or explicit gaps; partial writes remain pending. Current access and cached dependencies are rechecked.
+- Offline exports remain as-of artifacts and do not automatically learn later invalidation.
+
+Primary-agent verification: source SVG rendered and visually inspected; exported HTML IDs/anchors/local asset embedding checked; both current foundation copies synchronized. Composition examples reviewed conceptually. No production code, unit/concurrency test, source integration or browser rendering verification performed.
+
+Remaining readiness work: implement validators and revision publication, obtain actual authoritative mappings/data, run held-out/adversarial proposal and composition tests, prove actual pass/breach/evidence exports. All actual control completion remains0/3.

@@ -1,0 +1,19 @@
+M07 INDEPENDENT AI DESIGN REVIEW — 2026-10-04
+Reviewer: separate agent /root/m03_identity_review.
+Sources: current component inventory and C7 architecture foundation, supplied masterclass worked example and requirements; actual M07 chapter draft.
+Verdict: ACCEPTABLE as a conceptual chapter — no material corrections needed.
+
+Reviewed:
+- Coverage matches unique valid records to an independently established due population. Duplicates, orphans and conflicts do not inflate the numerator; a wholly missing stream stays expected.
+- Timing uses authoritative adjacency, valid clock/epoch/precision and declared scope. Unknown expected pair counts cannot produce numerical bounds.
+- Source gaps[2,3,4,2,8,3,2,4,3,2]ms: eleven events, ten measured pairs, one violation, share10%; strict gap<5 and inclusive exception allowance<=10% are correctly distinguished.
+- Exactly5ms violates. A second violating gap produces20% and breaches the same rule.
+- Removing E06 retains G05/G06 as unmeasurable: P10,M8,K0,U2, possible violating share0–20%. The observed E05->E07 interval is not a replacement eligible pair.
+- Timing tolerance cannot compensate for missing required records or override measurement-completeness requirements.
+- Complete source reconciliation/deadline premises are explicit before claiming a recording omission. An unfinished page proves incomplete acquisition, not necessarily failed upstream recording.
+- Late retrieval of timely records differs from actual late recording/delivery. Revised assessments preserve prior inputs and proved deadline misses.
+- One-stream teaching arithmetic is not a claim of whole-three-zone coverage. Empty/unknown populations do not automatically pass; a proved breach survives unrelated evidence gaps.
+
+Additional verification by primary agent: one-off Python arithmetic checks reproduce eleven events/ten pairs,1/10, missingE06P10/M8/K0/U2,0–20% and exact5ms/second-violation boundary. Output saved in work/walkthrough/m07-arithmetic-check.json.
+
+Limits: independent AI design/arithmetic review, not runtime verification, workshop source access, a live pass/breach run or a completed Control7.

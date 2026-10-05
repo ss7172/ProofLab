@@ -1,0 +1,18 @@
+M04 INDEPENDENT AI DESIGN REVIEW — 2026-10-03
+Reviewer: separate agent /root/m02_contract_review.
+Sources: current component inventory and detailed architecture, V4 Nemotron amendment, source masterclass extracts; actual M04 chapter draft.
+Verdict: ACCEPT — no material blocker in the walkthrough.
+
+Verified in the proposed design:
+- Control ID, team specification revision, bundle revision, applicability revision and evaluator version are distinct.
+- Authorized publication and actual retained version history precede assessed work; thresholds are not selected from the assessed result.
+- Exact policy is loaded/pinned before work; no live request-path registry lookup.
+- Ordinary changes affect new runs. Selection expiry, pinned continuation, hard cutoff and urgent revocation have different declared effects.
+- Historical replay preserves original rules; a new 12,000-token cap cannot erase a previous 10,800-versus-10,000 breach.
+- C9 freezes its baseline, scorer, eligibility/window rule and policy references before assessed cases; incompatible cohorts are not silently mixed.
+- Missing in-scope mapping is a gap/error; only required inline gate failures directly block dispatch. Known independent breaches remain visible.
+- The investigator and governed agents cannot publish policy changes.
+
+Consistency correction incorporated: replaced the foundation's ambiguous “Reject missing/unsupported/expired bundles” with explicit new-run selection, pinned continuation and historical-replay semantics.
+
+Limits: independent AI document reasoning review. No deployed policy, live integration, source access, runtime test, human approval or hackathon outcome is certified. All example caps remain illustrative.

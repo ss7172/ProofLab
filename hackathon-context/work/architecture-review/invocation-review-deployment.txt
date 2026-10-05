@@ -1,0 +1,28 @@
+INDEPENDENT REVIEW — DEPLOYMENT, PORTABILITY AND SUBMISSION
+Reviewed: outputs/prooflab-invocation-contract.txt
+Sources: full PDF physical pages 12–15, 17, 19–26; transcript-2 and transcript-3 hosting/model/judging passages; transcript-4 ServiceNow integration caveats. I did not read other reviewers’ reports. This is a design review, not runtime verification.
+
+Overall finding
+The proposed contract correctly distinguishes the five problems, five operating modes, five enforcement responsibilities and four transports. It correctly treats AgentCore Runtime and the workshop’s shared model gateway as different things; identifies interceptor support as conditional; keeps agents in the supplied AWS/ServiceNow environments; and separates a local query UI from cloud enforcement. Six artifacts and published judge questions are accurately represented. No critical deployment contradiction found. Resolve the following material ambiguities before presenting it as an implementation plan.
+
+1. MEDIUM — Local post-run minimum could be mistaken for the complete event submission.
+Section 10 says a local post-run tool can support the published minimum once it produces complete evidence. That is correct for the controls’ technical floor, but completeness alone does not satisfy the full event conditions: six artifacts, named pass/breach runs, predated specifications and the transcript’s mandatory ServiceNow AI Control Tower/human-loop integration still apply.
+Fix wording: “A local post-run checker can meet the control-evaluation floor; it does not waive the other submission artifacts, required agent/model environment or ServiceNow integration.” Keep auxiliary-service hosting conditional rather than implying that the organizers explicitly require every supporting executable to be cloud-hosted.
+
+2. MEDIUM — Nemotron eligibility needs a firmer statement than ‘agents and/or approved assurance agent’.
+Transcript-3 around offset 4,307 says valid solutions need Nemotron in their agents; transcript-2 around 2,234 says the supplied agents already use Nemotron. The current ‘and/or’ wording could invite replacing the governed agents’ models and assuming an optional assurance agent independently satisfies the rule. No such exception is established.
+Fix: “Retain and verify the supplied governed agents’ Nemotron usage. Use Nemotron for any custom agents as required by the workshop. The precise required agent scope/model variants must follow the workshop guidance; an optional proposer does not establish an exemption.” Include a model invocation source record in the integration checkpoint, not just asset discovery.
+
+3. MEDIUM — Claim scope and status need an explicit deliverable.
+The document explains per-control assessment but omits the slides’ management-claim result. Physical20 explicitly says a completed subset is partial coverage, not a pass. A dashboard showing only a green completed Control16 could mislead judges about C-FM-01.
+Fix: Add a claim manifest listing 7/9/16 and each branch’s assessment status/scope. If any required branch remains unassessed or indeterminate, the whole claim is not SATISFIED; a substantiated breach remains visible. Export this manifest with the evidence and show it in the query overview. Treat this as our implementation of the slide’s claim tree, not a seventh official artifact.
+
+4. MEDIUM — Extensibility is described, but verified support still needs an explicit inventory.
+Section 8 reasonably avoids building every possible adapter. Yet mentioning callback, static review, polling and out-of-band stopping can be read as implemented support unless capability status is recorded. Adapter availability depends on platform access; examples do not prove transport semantics.
+Fix: Maintain a compact adapter/mode capability matrix: proposed / fixture-tested / live-verified / unavailable; source, supported methods, authorization boundary, wait/timeout behavior and whether it can actually block. Demonstrate a real second point with shared evaluator/evidence code and adapter-only changes. Say “designed to accommodate” for unbuilt modes, not “supports all modes.”
+
+5. MEDIUM — Plan the actual breached-run artifact before hard prevention is enabled.
+The contract correctly distinguishes attempted from actual breaches, but it does not yet specify how the required named breach run will be obtained when Control16 successfully denies every over-budget dispatch.
+Fix: Prepare a permitted, clearly labelled observation-only assessed scenario or organizer-accepted recorded breach under the same predeclared threshold, and separately demonstrate the live preventive run. Preserve provenance and confirm eligibility of any replay; a denied attempt alone is not the required evidence of actual overspend. Do not secretly disable safeguards or change thresholds to manufacture a result.
+
+No further review required merely for stylistic changes. These issues can be fixed through explicit wording, submission metadata and integration gates; they do not require another runtime or a larger architecture.

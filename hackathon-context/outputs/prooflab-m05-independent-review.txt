@@ -1,0 +1,20 @@
+M05 INDEPENDENT AI DESIGN REVIEW — 2026-10-03
+Reviewer: separate agent /root/m03_identity_review.
+Sources: component inventory, current detailed architecture, V4 Nemotron acquisition/snapshot rules; actual M05 chapter draft.
+Verdict: Accept after two wording corrections, both incorporated. No broader design issue found.
+
+Required draft corrections:
+1. Deduplication verifies identical preserved content or a guaranteed immutable source version. Same ID/revision with changed content is retained as a conflict or new captured version under the source contract. Mutable unversioned sources receive local capture identities, not invented source-issued versions.
+2. Ownership is explicit: M09 recomputes accounting from accepted facts; M10 applies any live settlement/state changes idempotently. M05 supplies reconciled facts/corrections.
+
+Reviewed and consistent:
+- Independent expected work survives complete telemetry loss; fetching all available pages does not establish capture completeness.
+- Preserve recoverable inputs before durable acknowledgment/checkpoint advancement; replay does not double charge.
+- Source authority is fact-specific; intended dispatch, actual execution, usage and narratives are not interchangeable.
+- Cumulative corrections replace accepted totals rather than being summed as new charges; incremental usage follows a declared source contract.
+- Invalid, unmatched, conflicting and late inputs retain source/parser provenance and explicit gaps.
+- Event time alone is not a safe acquisition watermark; source authorization, filtering and cursor failure remain coverage limits.
+- Immutable source versions/checkpoints and accepted input revisions define a frozen case; mutable live reads cannot silently enter it.
+- Synthetic arithmetic: three known executions sum8000; fourth missing means under-cap satisfaction is unproven. Its1000 usage gives9000, not11000 when three observations describe that same execution. C7's12due/11matched slots are a separate population.
+
+Limits: conceptual AI review only, not runtime certification, verified source access, a completeness guarantee or deployed integration.

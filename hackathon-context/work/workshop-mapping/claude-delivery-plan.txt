@@ -1,0 +1,78 @@
+PROOFLAB — TWO-PERSON IMPLEMENTATION AND DELIVERY PLAN
+Updated 2026-10-04. Planning only: no cloud command, model invocation, resource modification or submission has been executed in this work. Workshop technology is DOCUMENTED, not RUNTIME_VERIFIED. Use workshop-task-plan.json for all 50 tasks, dependencies, 123 original component IDs and exact guide URLs.
+
+OBJECTIVE
+Extend the supplied workshop starter into a reproducible assurance tool for controls 7, 9 and 16. For a declared run or runtime/hour, return the dated rule, measured result, exact evidence, gaps and applicable owner/delivery status. Complete one control first, then add the second and third. A correct BREACHED result can demonstrate a working control; a green dashboard without measurements cannot.
+
+Keep the custom Nemotron investigator: it extracts cited statements and proposes evidence links; deterministic code validates them and calculates verdicts. Official judging requires answer plus records within two minutes. Our fresh-model case target is one minute only for a declared, measured workload; it is not yet a performance result.
+
+TEAM SPLIT
+Person A: starter/source integration, C16, C7, identity/repositories, investigator runtime and query/package engineering.
+Person B: dated register and hourly C9 baseline, scenario/quality manifests, source/LLM validation, governance requirement clarification, independent arithmetic and test evaluation.
+Both: inspect each other's evidence and arithmetic, review critical failures, validate the six artifacts and rehearse judge questions. Use Claude against a specific task ID with inputs, acceptance criteria and a small diff; never mark a task done from generated code alone.
+
+USE THE SUPPLIED PLATFORM
+Start with ~/starter/register.yaml, evaluate.py, pull-evidence.sh, gap-list.md, run-ids.txt and submit.sh. Extend them; do not rebuild the platform.
+All three reference agents run in AgentCore Runtime. ModelConfig, ToolConfig and AgentConfig are the actual oda.tmforum.org/v1beta1 CR kinds; the model alias is a field/value, not another CR kind.
+Custom agent creation follows new-agent.sh -> CodeBuild/ECR image -> generated/applied AgentConfig -> legitimate review/approval -> operator-provisioned AgentCore Runtime. ToolConfig supplies Lambda/MCP tools through AgentCore Gateway. Model inference uses the separate shared modaas-agw governed alias path. No direct Bedrock/AgentCore creation, IAM writes or custom gateway/PDP code.
+Use IDE-host team-output files plus SQLite first, after persistence/restart tests. An IDE AWS permission does not give component pods AWS credentials or public-S3 egress.
+
+STAGE 1 — ESTABLISH A REAL BASELINE AND FREEZE RULES
+Tasks T01–T17, T49; A and B work in parallel.
+A inspects starter behavior and real CR/endpoint/credential status. Any permitted exploratory/calibration run before the measurement contract freezes is labelled exploratory and excluded from submitted assessed cases; capture assessed reference runs only after the applicable rule is frozen. Reuse gateway/PDP logs, audit-store correlation records, /modaas/evidence and AgentCore CloudWatch spans. The collector has no durable exporter: an empty cockpit Trace/X-Ray view is a gap, not proof of no activity.
+B freezes the dated register and baseline/treatment collection protocol before any assessed run or window, then begins C9 baseline collection early because completed clock-hours take real time. Record Latency Average in milliseconds and Errors Sum count for each runtime, in namespace AWS/Bedrock-AgentCore with exact Name, Operation and Resource dimensions plus statistic/unit/period/region/timestamp query identity. Use closed UTC clock-hour windows and declare availability lag, closure, complete pagination and zero-baseline behavior before assessed windows. Begin preserved baseline capture without waiting for the full T16 case/proposal repository; bind it later without changing the original dates or rule.
+Record TMF639 projection failures honestly. CR phase may establish deployment state while lagging conditions or Projected=False do not establish complete registry inventory.
+Milestone: one correlated capture and frozen measurement contract exist; unknown source populations remain explicit. No retrospective threshold tuning.
+
+STAGE 2 — COMPLETE C16 FIRST AND PRODUCE THE FIRST PACKAGE
+Tasks T18–T21, T25, initial T35/T37/T40.
+A extends evaluate.py to sum accepted actual model executions once across the whole declared run, including observable retries and all relevant agents. Bind usage to authoritative identities rather than summing duplicated gateway/audit/span copies. Define a justified per-run cap; the account ceiling is a different rule.
+B prepares the independent checker and named accepted pass/breach cases. Missing usage prevents an under-cap pass; an already-over-cap trusted subtotal still proves breach. Registry inventory alone is not a complete execution population.
+Milestone: C16 verdict, exact source records, dated rule, actual/organizer-accepted named cases and independent recomputation are reproducible. Assemble the initial six-artifact package without waiting for C7/C9. A package awaiting a mandatory integration decision remains explicitly incomplete in that respect.
+
+STAGE 3 — ADD THE NEMOTRON CASE EARLY
+Tasks T05, T20/T21, T28–T34, T38/T39.
+A checks current ModelConfig approval/attestation, dependencies and route readiness for every selected alias. Guide pages disagree about preapproval, so no fixed helper/30B-versus-9B/Super split is assumed. Prefer testing nemotron-nano-9b -> nvidia.nemotron-nano-9b-v2; supported Nano30B is a measured alternative after its own readiness check. Super120B is the documented subject baseline, not automatic access.
+B supplies held-out contradictory notes/records, false-link and injection examples. The first profile is one extraction call plus host validation/template rendering. Add a second composition call only when it provides measured value; no hidden third call or automatic inference retry.
+Preserve exact quotes, candidates, validation decisions and input revisions. The model cannot set thresholds, choose alert recipients, authorize writes or invent missing evidence.
+Coordinate all controlled agent/investigator/helper calls against the account ceiling: 100 requests/minute and 2.5 million tokens/hour. Three agents at one request/second produce 180 requests/minute and are not safe. Account for competing/in-flight traffic and use bounded retries.
+Milestone: a real approved model call contributes validated evidence links to a C16 case, with timing/usage provenance and an honest deterministic degraded result if the model fails.
+
+STAGE 4 — COMPLETE C7 AND THE GUIDE-NATIVE C9
+Tasks T22–T24; A owns C7, B owns C9.
+C7 compares independent expected events/timing pairs with captured observations. Missing events do not delete obligations or create shortcut timing pairs. Ineligible clocks cannot support millisecond precision.
+C9 compares complete, closed, comparable runtime/hour metrics to the frozen baseline. Missing pages/datapoints, current partial hours and no traffic are distinct. Latency worsening is an increase; zero-baseline Errors needs a predeclared absolute rule, not division by zero. Do not average runtime averages without valid weights and an explicitly declared aggregate scope.
+Create a finding for each measured threshold crossing even if the aggregate exception allowance tolerates some crossings.
+Milestone: each additional control has its own accepted pass/breach evidence, independent arithmetic, source references and honest missing-data states. score-run.py diagnoses are a separate quality evaluation, not C9 drift.
+
+STAGE 5 — RESOLVE GOVERNANCE AND TEST ACTUAL POLICY BOUNDARIES
+Tasks T04, conditional T13/T26/T27, plus T10/T18.
+The transcript says AICT/human loop is required; this guide describes a facilitator-owned, optional/default-absent connector. Obtain an authoritative event-specific resolution. Do not build an imaginary ServiceNow instance, silently waive the requirement or block unrelated evidence work.
+If a route is required/enabled, verify actual named recipient, remote identity/content readback and response visibility. Human reply is not required. Intent, attempted send, uncertain outcome, delivered record and observed silence are distinct. Operator deployment approval is not a human response to a control alert.
+The documented team Cedar ConfigMap exception in modaas-system requires app.kubernetes.io/part-of=modaas-pdp and policy-id annotation; it is not blanket shared-cluster permission. Test effective shared-Gateway tool-name restrictions across composed policies, including missing/unknown toolName and competing permits. Fixed PDP lacks per-agent identity; do not claim isolation from an unavailable attribute.
+Milestone: the accepted governance path is evidenced or the unresolved requirement remains a named release gap. No unsupported inline token-prevention claim.
+
+STAGE 6 — VERIFY, SUBMIT AND REHEARSE
+Tasks T36–T42, T49.
+Test duplicates, hidden retries, conflicting corrections, missing evidence, wrong metric dimensions/units/statistics, partial hours, zero baseline, stale caches/permissions and exact boundaries. Test HTTP200 content_filter separately from usable completion. Establish source-supported quota429/zero-charge evidence without assuming every429 from every layer is free. Test false model citations/joins, injected instructions, timeouts, restarts and partial publication.
+A measured supplied pause/resume example is not instantaneous enforcement; preserve in-flight work. Enumerate current policy names/status rather than hardcoding an older four-policy count.
+Inspect submit.sh and the ZIP contents. After release validation and authorized execution, verify the actual team S3 object and judge readability; a local file or successful script exit is insufficient. Keep temporary presigned access URLs out of public/shareable plans. Confirm submission cutoff/timezone separately from account lifetime.
+Milestone: the six artifacts are readable from the official team bucket, and both people can answer a judge-selected question with exact records within two minutes. Report measured latency/cost and remaining gaps; do not give a probability of winning.
+
+EXACTLY SIX REQUIRED DELIVERABLE CATEGORIES
+1. Evidence export: permitted source captures, canonical records/bindings, assessments, actual model/validation provenance and explicit gaps for scored cases.
+2. Dated threshold document: register.yaml with each control's scope, metric, comparison, limit, allowance, baseline/basis, owner, version and date.
+3. Runnable query/control-test tool: extended evaluate.py and its documented query entry point; package the independent arithmetic rechecker and necessary approved inputs here.
+4. Named passing and breaching runs/windows: actual identifiers in run-ids.txt with provenance and per-control coverage.
+5. One-page actual architecture: implemented runtime, operator, gateway, tool, evidence and submission routes; visibly distinguish conditional/unimplemented pieces.
+6. Gap list: gap-list.md with unresolved causes, affected claims, impact, owner and next check, including any requirement conflict.
+
+OPTIONAL DIFFERENTIATION, AFTER COMPLETED CONTROLS
+Improve S2-transport-congestion by gathering named disambiguating evidence and choosing a justified reversible action. Preserve S1-fronthaul-degradation auto-resolution and S3-restricted-change escalation. Guide sample scores are not our executed results. Use supported ToolConfig/AgentConfig paths and capture added token/tool evidence.
+A second observed enforcement point and approved Nano30B/Super ablation may follow if they add measured value.
+Cut strict M10 admission under the current gateway contract. Omni is outside the text-only event; Ultra is unavailable. Reuse any supplied integrity affordance; do not build a new signing/hash-chain system.
+
+SOURCE TRAIL
+Full exact guide URLs and component coverage are in workshop-task-plan.json.
+Workshop entry: https://catalog.us-east-1.prod.workshops.aws/event/dashboard/en-US/workshop
+Key observed sections: /challenge-brief/platform-contract, /challenge-brief/evidence-cookbook, /agent-observability/console-and-metrics, /baseline-walkthrough/nemotron-models, /controls-and-policies/cedar, /controls-and-policies/ceiling, /reference-agents/self-check, /servicenow-integration.

@@ -1,0 +1,51 @@
+INDEPENDENT BASELINE AUDIT — INTERFACES / IMPLEMENTATION PRECISION
+
+Reviewed outputs/prooflab-architecture.txt, outputs/prooflab-invocation-contract.txt and the applicable slide requirements. No other reviewer reports consulted. This is the combined current baseline, including the invocation contract's prior edge-case revisions. Ratings use the supplied fixed 0–4 scale and weights; implementation itself is not being scored as completed.
+
+DESIGN COMPLETENESS
+Criterion                                      Weight  Rating  Points
+D1 Control7 scope/coverage/timing/denominators      12      3       9
+D2 Control9 metric/baseline/window/alert           16      2       8
+D3 Control16 accounting/admission/recovery        16      3      12
+D4 Invocation/runtime/immutable specifications    12      3       9
+D5 Evidence/source authority/claim rollup         12      3       9
+D6 Deployment/ServiceNow/model/data integration   12      2       6
+D7 Six deliverables/query/provenance scenarios    12      3       9
+D8 Two-person plan/dependency gates                8      2       4
+TOTAL                                                           66/100
+
+WINNING-POTENTIAL DESIGN SCORE
+Criterion                                      Weight  Rating  Points
+W1 Credible path to3 completed controls            32      2      16
+W2 Reliable independent2-minute query              16      3      12
+W3 Correct portable architecture                  16      3      12
+W4 Verifiable evidence/honest failures             16      3      12
+W5 Live inline/adversarial/secondpoint             12      2       6
+W6 Deliverable within2-person constraints           8      2       4
+TOTAL                                                           62/100
+
+These are internal design scores, not official points, percentages built or winning probabilities. Actual demonstrated state: 0/3 completed controls; no judge-ready submission or actual assessed runs evidenced. The official ordering remains completed controls, then quality, then extras.
+
+RATIONALE
+The contract now resolves the important conceptual races: atomic reservation, exact-request binding, durable dispatch ownership, unknown outcomes retained, idempotent settlement, recoverable transition journal, immutable specifications and run finality. It distinguishes four transports from five responsibilities/modes, keeps the evaluator stateless and registry off-path, and models multiple control decisions. Source/evidence uncertainty and replay provenance are treated honestly. These merit implementable-proposal ratings, not box-only ratings.
+
+However, the documents still leave the implementer to choose substantial details: complete canonical schemas, finite event obligations, precise source precedence, final performance measurement design, deployable capability branches and executable acceptance outcomes. Stating “declare X” is not the same as specifying X. These are design-completion gaps even before sandbox access. Environmental unknowns should remain unknown, but their outcomes and fallbacks can be designed now.
+
+FIVE CONSEQUENTIAL CHANGES
+
+1. HIGH — Finish Control9's measurement contract first.
+The metric is a candidate, and access to accepted fault labels is unresolved. Specify the diagnostic output schema and deterministic scoring rule, how abstentions/multiple diagnoses/timeouts count, the fixed scenario split, positive-baseline validity, window membership, minimum sample eligibility, comparability and missingness. Include a small explicitly illustrative scored dataset demonstrating one pass, one drift breach and one unassessable window under one frozen rule. Define alert failure separately. Add a hard dependency gate: accepted labels/scoring source or branch remains unassessed. Never swap to self-confidence as accuracy. This is the weakest route to completing all3 controls.
+
+2. HIGH — Turn Control7's expected-population principle into an implementable obligation table.
+Enumerate required events by action lifecycle: planned, admitted/denied, dispatched, completed/unknown and each zone send/receive pair. State which component creates each expected obligation before execution, who reports its outcome, and the authority/coverage limits. Define canonical obligation keys, permitted missing/cancelled cases, gap ordering, comparator and zero/unmeasurable-gap results. Supply one worked dynamic-retry example. Distinguish full-population coverage from coverage of only an instrumented subset. Actual all-zone source support remains a workshop verification gate.
+
+3. HIGH — Publish schema and transition artifacts, not only prose.
+Specify canonical Run, Attempt, Obligation, Observation, PolicyBundle, Assessment and Alert records with unique keys, enums and required associations. Add a complete attempt transition table covering reserve ambiguity, never-dispatched cancellation, dispatch crash, partial/missing usage, duplicate settlement, authoritative correction and closure races. Show exact atomic write preconditions and postconditions in datastore-neutral pseudocode. Include multi-control decision composition and any reservation rollback ordering. This makes the already sound concurrency principles implementable without another architectural design round.
+
+4. HIGH — Resolve deployment through explicit capability branches.
+Create a matrix for every adapter: needed source fields, supported invocation hook, identity/permissions, network reachability, delivery guarantee and acceptance probe. Each unknown needs a branch: verified inline hook -> preventive implementation; log-only -> detection; missing authoritative population/usage -> indeterminate. Document where state, workers, scheduler and query actually run for each permitted deployment option. Define the minimum required AICT and Nemotron demonstration separately from optional findings/trace features. Official documentation is not workshop entitlement.
+
+5. MEDIUM — Convert delivery into two owned implementation tracks with exit tests.
+Assign runtime/contracts/C16 to one track and evidence/query/AICT/C7-C9 preparation to the other, with one shared schema checkpoint. List acceptance scenarios and exact expected outcomes, including concurrency, duplicate delivery, crash recovery, stale policy, missing call/window, real alert delivery and a fresh-machine offline query. Give every required artifact its export path and validation. Gate bonuses behind completed controls and accepted pass/breach evidence; set explicit cut conditions for unavailable integrations and the optional AI proposer. The existing calendar plan has priorities but insufficient task ownership and measurable exits.
+
+Source fidelity is otherwise strong. Do not conflate an observation-only floor with exemption from required model/platform/AICT integration, or a blocked overspend with an actual breached run. No design score can resolve organizer acceptance of replayed breach evidence.

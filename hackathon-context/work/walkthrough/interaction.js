@@ -1,0 +1,1 @@
+document.getElementById('theme').addEventListener('click',()=>{const r=document.documentElement;const dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);r.dataset.theme=dark?'light':'dark';});

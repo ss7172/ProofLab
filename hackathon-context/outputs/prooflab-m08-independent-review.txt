@@ -1,0 +1,19 @@
+M08 INDEPENDENT AI DESIGN REVIEW — 2026-10-04
+Reviewer: separate agent /root/m02_contract_review.
+Sources: current inventory and Control9 foundation, supplied masterclass objectives/worked examples/human-response scope, V4 model roles; actual M08 draft.
+Verdict: ACCEPT — no material corrections required.
+
+Reviewed:
+- Exact-match single-fault diagnosis rate is a proposed accepted-label metric, not an organizer mandate or claim to measure every production drift cause.
+- Fixed eligibility, disjoint baseline/assessed cases and complete known positive baseline are explicit. Sample sizes and thresholds require pre-assessment justification.
+- One score per canonical eligible case; calls/retries are not extra cases. Source-proven wrong/malformed/crash/timeout outcomes differ from missing telemetry or our parser failure.
+- Comparable window memberships/cohorts/versions are registered before assessed work; planned candidate changes can be explicit comparisons rather than silent pooling.
+- Source example0.900->0.792 gives12% relative decline and10.8 percentage points.0.810 is exactly10% and is allowed by a<=10% rule. Interval violating-window share is a separate10% versus0% allowance.
+- Due missing/unstarted windows remain expected; no zero drift or observed-only denominator. Acquisition lag alone does not establish failed upstream monitoring. Known violations remain breaches under zero allowance despite unrelated gaps.
+- Every measured crossing creates an idempotent alert intent even when an interval allowance permits that window. Intent, verified delivery and actual human response/silence are separate records; no human reply is required for the hackathon.
+- Corrected assessments/alerts preserve history. Missing measurements can have separate health findings, not fabricated drift alerts.
+- Scoring/calculation are deterministic; Nemotron retains its subject/investigation roles without supplying invented truth labels or overriding verdicts.
+
+Additional primary-agent verification: exact Fraction arithmetic checks for source example, inclusive boundary, improvement sign, one-of-ten share and missing-window bounds. Output: work/walkthrough/m08-arithmetic-check.json.
+
+Limits: independent AI conceptual and arithmetic review, not a real performance campaign, justified sample size, live baseline, model invocation, ServiceNow delivery or completed Control9.

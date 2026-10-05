@@ -1,0 +1,376 @@
+[
+  {
+    "component_id": "M01",
+    "name": "Telecom fault-resolution workflow",
+    "role": "The supplied three-zone business system whose event recording, diagnostic performance and whole-run token spend we assess.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: ServiceNow customer/ticket agent, AWS IT triage agent and AWS network investigation agent; Gateway A and Gateway B connect zones (slides PDF page 17).",
+      "SUPPLIED-SOURCE CLAIM: shared model gateway, input/output guardrails, OpenTelemetry collector/storage, NVIDIA digital twin and scenario switch (slides PDF page 17).",
+      "SUPPLIED-SOURCE CLAIM: AI Native ODA Canvas is an experimental partner/open-source platform running on EKS using AWS services; it is not itself an AWS service (transcript).",
+      "SUPPLIED-SOURCE CLAIM: approved NVIDIA Nemotron model family is used by subject agents; exact deployed endpoint/model identifiers require verification."
+    ],
+    "proposed_build": [
+      "Retain the supplied subject workflow and inventory its actual agent, gateway, tool, model and telemetry identities.",
+      "Capture one authorized complete three-zone fault-resolution run before modifying agents.",
+      "Separate business handoff gateways, the shared model-routing role and any AgentCore Gateway product instance; do not assume they are the same.",
+      "Record supplied guardrails/scenario switches as capabilities, not as completed C7/C9/C16 controls or accepted ground-truth labels."
+    ],
+    "interfaces_in": ["Authorized customer fault request and account/service context", "Permitted scenario selection"],
+    "interfaces_out": ["M02 action/handoff/model boundaries", "M05 source telemetry, results and actual model usage", "M08 independently accepted scenario outcomes"],
+    "proof_needed": ["Actual team-scoped resource/agent inventory", "Successful three-zone run with correlatable root run and handoff identities", "Actual model invocation route and model identifiers", "Collector/source locations and permitted access", "Digital-twin/scenario capabilities and label authority, if used"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M01", "work/hackathon-sources/slides-extracted.txt:54", "work/nvidia-review/nvidia-transcript-excerpts.txt:5", "work/nvidia-review/nvidia-transcript-excerpts.txt:17"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M02",
+    "name": "Enforcement points and platform adapters",
+    "role": "Translate supported workshop boundaries into common evaluation, recording, delayed-result and source-read contracts.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: the lab has a shared model gateway, Gateway A/B and agent/tool boundaries; actual extension interfaces are not specified by the slides.",
+      "SUPPLIED-SOURCE CLAIM: workshop describes Kubernetes configuration for models/tools and examples of launching agents on AgentCore through AI Native ODA Canvas.",
+      "PROPOSED CONDITIONAL MAPPING: supported wrapper/hook or AgentCore Gateway interceptor if the actual event path and permissions are verified; tool interception alone does not establish model-call visibility.",
+      "PROPOSED CONDITIONAL MAPPING: authenticated read-only source adapter when no writable hook exists; label observation rather than prevention."
+    ],
+    "proposed_build": [
+      "Implement thin shared-model, selected handoff and permitted tool adapters around one shared control/evidence package.",
+      "Define our own evaluate, emit, callback and pull contracts; these names are proposed application interfaces, not asserted vendor APIs.",
+      "Keep M13 query separate from four enforcement/source transports.",
+      "Route events using the pinned applicability map; recording/monitoring do not become blocking merely because they share a request.",
+      "Attempt a second point only through a permitted integration; keep actual adapter differences visible."
+    ],
+    "interfaces_in": ["M01 action/request/result boundary", "M03 authenticated team/run/action/attempt context", "M04 pinned applicability and policy"],
+    "interfaces_out": ["M10 optional synchronous admission request/decision", "M05 normalized observations and durable/best-effort receipts", "M03 authenticated delayed-result correlation", "M13 read-only source data through M05/M06"],
+    "proof_needed": ["Exact boundary product and deployed path", "Hook/write permissions and supported authentication", "Complete model-request coverage or explicitly partial scope", "Real send/receive pair and permitted failure at second point", "Blocking behavior, bypasses and callback semantics if claimed"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M02", "outputs/prooflab-detailed-architecture.txt:21", "outputs/prooflab-detailed-architecture.txt:32", "outputs/prooflab-detailed-architecture.txt:142", "work/nvidia-review/nvidia-transcript-excerpts.txt:17"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M03",
+    "name": "Identity, schemas and run lifecycle",
+    "role": "Keep subject runs, intended actions, proposed attempts, actual executions and source observations distinct and unambiguously scoped.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: existing agents and OpenTelemetry emit evidence, but exact run/trace/usage schemas have not been proven.",
+      "PROPOSED BUILD: versioned Python schemas and lifecycle modules, independent of hosting product.",
+      "PROPOSED CONDITIONAL MAPPING: permitted transactional/conditional-write store for shared lifecycle state; DynamoDB is a candidate, not an entitlement."
+    ],
+    "proposed_build": [
+      "Bind authenticated team/point context outside the LLM and reject spoofed scopes.",
+      "Define run/action/attempt/observation/execution identities, source namespaces and immutable revision references.",
+      "Model an attempt as zero, one or several actual provider executions; account hidden retries and retain unmatched/conflicting identities.",
+      "Implement OPEN, ACTIONS_CLOSED and EVIDENCE_FINAL distinctly; late facts remain recordable.",
+      "Prevent agent-chosen identifiers or new policy versions from resetting an existing whole-run budget."
+    ],
+    "interfaces_in": ["M02 authenticated boundary context", "M05 raw scoped source identifiers", "M04 pinned policy"],
+    "interfaces_out": ["Canonical versioned records for M05–M14", "Run state and identity checks for M10", "Explicit unresolved identity conflicts for M06/M12/M13"],
+    "proof_needed": ["Real cross-zone root-run correlation", "Identifier uniqueness boundaries by account/region/instance/provider", "Retry versus duplicate delivery examples", "Authoritative run open/close events", "Store concurrency and authorized ownership semantics"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M03", "outputs/prooflab-detailed-architecture.txt:45", "outputs/prooflab-m03-independent-review.txt"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M04",
+    "name": "Policy register and control applicability",
+    "role": "Declare dated measurement rules, scope, ownership and limits before assessed work and pin them without per-call register lookups.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE REQUIREMENT: dated thresholds, observation limit, exception tolerance, measurement basis and named owner (slides PDF pages 19 and 23).",
+      "PROPOSED BUILD: immutable versioned configuration and shared Python validation/loading.",
+      "PROPOSED CONDITIONAL MAPPING: versioned object storage such as S3; a local exported policy copy is sufficient for replay but does not establish cloud availability."
+    ],
+    "proposed_build": [
+      "Declare C7 expected-event/timing rules, C9 accepted metric/baseline/window rules and C16 accounting/cap rules.",
+      "Freeze action-to-control applicability and exact policy/evaluator/baseline references before assessed runs.",
+      "Keep policy register off the inference path; pass an authorized pinned bundle to evaluators.",
+      "Distinguish new-run selection expiry, active-run continuation, hard cutoff, authenticated revocation and historical replay.",
+      "Record source authority, completion and correction rules as policy inputs rather than model-generated judgments."
+    ],
+    "interfaces_in": ["Declared scope and owners", "Accepted source/label/accounting capabilities from M16 gates", "Approved threshold rationale"],
+    "interfaces_out": ["Pinned policy bundle to M02/M03/M07–M10", "Historical exact versions for M12/M13/M15"],
+    "proof_needed": ["Actual versioned threshold document dated before test runs", "Named owner and justified metric/limit/allowance", "Accepted baseline/label and usage-accounting rules", "Historical rule retention and no post-hoc threshold switching"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M04", "outputs/prooflab-detailed-architecture.txt:47", "work/hackathon-sources/slides-extracted.txt:61", "work/hackathon-sources/slides-extracted.txt:73"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M05",
+    "name": "Evidence acquisition and reconciliation",
+    "role": "Preserve authorized source records, reconcile identities and usage, and expose missing or conflicting evidence without inventing completeness.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: provided OpenTelemetry collector and storage keep what arrives; this is not proof that every expected action was observed.",
+      "SUPPLIED-SOURCE CLAIM: AWS and ServiceNow environments expose traces/evidence; exact read APIs and entitlement require workshop verification.",
+      "PROPOSED CONDITIONAL MAPPING: gateway/OTEL/CloudWatch readers and permitted ServiceNow readers; CloudWatch availability is not established by the slides alone.",
+      "PROPOSED BUILD: deterministic source adapters in the shared worker package, reusing the supplied transport rather than adding a new event bus."
+    ],
+    "proposed_build": [
+      "Preserve raw pages/records before durable receipt or advancing recovery checkpoints.",
+      "Read independent expected-work, actual execution and diagnostic-label sources instead of deriving populations from surviving logs.",
+      "Normalize structured fields and source namespaces; deduplicate identical observations without dropping distinct actual executions.",
+      "Retain malformed data, missing pages, schema errors, conflicts and authoritative corrections.",
+      "Track pagination, freshness, index coverage and upstream completeness separately; page exhaustion alone is insufficient."
+    ],
+    "interfaces_in": ["M01/M02 source records", "M03 identities", "M04 authority/accounting/completion rules", "M14 delivery and response observations"],
+    "interfaces_out": ["M06 raw captures, accepted facts, revision lineage and source checkpoints", "M07 obligations/events", "M08 labels/outcomes/window coverage", "M09 execution population/usage"],
+    "proof_needed": ["Actual source endpoints and minimum field payloads", "Read permissions, cursor/update/finality semantics and retention", "Independent expected action/execution/window inventories", "Duplicate, late correction and missing-page fixtures", "Cross-zone usage reconciliation with actual retries"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M05", "outputs/prooflab-detailed-architecture.txt:59", "outputs/prooflab-nvidia-architecture.txt:20", "work/hackathon-sources/slides-extracted.txt:54"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M06",
+    "name": "Shared evidence workspace",
+    "role": "Store exact source versions, typed facts, many-to-many control bindings, proposals, assessments and cases in a queryable shared workspace.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: workshop telemetry has collector/storage; that supplied store is distinct from our normalized evidence workspace.",
+      "PROPOSED CONDITIONAL MAPPING: S3 for raw/policy/export objects and DynamoDB or another permitted transactional store for shared facts/state; not confirmed resources.",
+      "PROPOSED LOCAL MAPPING: SQLite index rebuilt from JSONL export for offline judge queries.",
+      "PROPOSED BUILD: exact indexes plus a bounded narrative-relevance index; no separate graph database or vector database required."
+    ],
+    "proposed_build": [
+      "Implement repository adapters for raw captures, facts, bindings, proposals, assessments and cases.",
+      "Bind evidence to exact control/specification/scope/revision while charging a provider execution only once.",
+      "Separate accepted-input revision from raw snapshot so parser or validated-link corrections invalidate dependent results.",
+      "Include unbound/unmatched inputs and explicit gaps in exact scope retrieval; semantic top-k never defines a denominator.",
+      "Require durable resolvable referenced versions before publishing; make critical export inputs available locally."
+    ],
+    "interfaces_in": ["M05 source and fact revisions", "M11 model proposals", "M12 validation/accepted revisions", "M07–M10 assessments/transitions", "M14 delivery records"],
+    "interfaces_out": ["M11 bounded context", "M12 exact dependency inputs", "M13 scope/snapshot queries", "M15 reproducible export"],
+    "proof_needed": ["Permitted object/state/index resources and isolation", "Conditional writes or transactions where needed", "Reference resolution and snapshot consistency", "Rebuildable offline index", "No duplicate charging after many-to-many binding joins"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M06", "outputs/prooflab-detailed-architecture.txt:26", "outputs/prooflab-detailed-architecture.txt:67"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M07",
+    "name": "Control 7 implementation — event recording",
+    "role": "Evaluate independently expected event coverage and eligible adjacent-event timing against the dated C7 specification.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CONTROL: AIA-LOG-001, expected-event recording across three zones and gap measurement.",
+      "SUPPLIED-SOURCE INPUT: provided telemetry may supply observations; it cannot alone define events that failed to reach it.",
+      "PROPOSED BUILD: stateless Python evaluator over M06 facts, reused by worker, CLI and export checker."
+    ],
+    "proposed_build": [
+      "Match observations to independently defined expected event slots.",
+      "Build timing pairs from authoritative sequence/pair inventory; retain missing middle events and expected pairs.",
+      "Validate clock domain, epoch, precision and monotonicity before subtraction.",
+      "Calculate coverage, gap violations and declared exception allowance separately.",
+      "Distinguish proven omission from ingestion lag, known breach with gaps from unsupported pass, and empty/unassessed populations."
+    ],
+    "interfaces_in": ["M04 C7 specification", "M05/M06 independent obligations, observations and source coverage", "M03 scope/clock/source identities"],
+    "interfaces_out": ["M12 C7 assessment with measures, exceptions and sufficiency", "M06 evidence bindings", "M13/M15 reproducible calculation inputs"],
+    "proof_needed": ["Accepted independent expected-event inventory", "Clock basis suitable for the chosen gap limit", "Actual passing and accepted breaching cases", "Dropped-event test with unchanged denominator", "Threshold freeze time and supported full declared scope"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M07", "outputs/prooflab-detailed-architecture.txt:75", "work/hackathon-sources/slides-extracted.txt:61", "work/hackathon-sources/slides-extracted.txt:70"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M08",
+    "name": "Control 9 implementation — performance drift",
+    "role": "Score comparable diagnostic windows against a frozen baseline and create a routed alert for each measured threshold crossing.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CONTROL: AIA-ARC-006, measured drift/performance relative to frozen baseline with named owner.",
+      "SUPPLIED-SOURCE CLAIM: lab scenario switch and digital twin exist; neither alone establishes accepted ground-truth labels.",
+      "PROPOSED BUILD: deterministic scorer/window evaluator with permitted scheduled worker; no scheduler or Lambda entitlement presumed.",
+      "PROPOSED METRIC: exact-match diagnostic score on accepted labels, subject to workshop acceptance and available outcomes."
+    ],
+    "proposed_build": [
+      "Freeze labelled baseline/scorer/cohort/window membership and source rules before assessed cases.",
+      "Keep absent measurements UNKNOWN; assign zero only for supported wrong/crashed outcomes under declared rules.",
+      "Measure relative drop, window coverage and interval violation allowance independently.",
+      "Create idempotent alert intents for every measured crossing, even where aggregate tolerance allows it.",
+      "Track alert delivery through M14 separately from whether diagnostic performance breached.",
+      "Preserve historical baseline/assessment; corrections require explicit restatement rather than retroactive silent replacement."
+    ],
+    "interfaces_in": ["M04 baseline/metric/window specification", "M05/M06 accepted labels and canonical outcomes", "Independent expected windows and run membership"],
+    "interfaces_out": ["M12 window/interval assessments", "M14 deterministic named-owner alert intents", "M06 run-to-window relationships and missing-data records"],
+    "proof_needed": ["Accepted label authority and meaningful metric", "Complete positive frozen baseline", "Comparable held-out scenario windows", "Actual passing and accepted breaching window", "Permitted schedule and named recipient route", "Missing-data versus measured-crossing behavior"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M08", "outputs/prooflab-detailed-architecture.txt:92", "work/hackathon-sources/slides-extracted.txt:70", "outputs/prooflab-nvidia-architecture.txt:68"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M09",
+    "name": "Control 16 implementation — token accounting",
+    "role": "Reconcile actual input/output token consumption across all subject agents and actual retries for the declared whole run.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CONTROL: ACN-COST-001 whole-run spend cap using input plus output tokens across three agents and retries.",
+      "SUPPLIED-SOURCE CLAIM: every model call crosses a shared gateway; coverage and authoritative usage fields still need a live probe.",
+      "PROPOSED BUILD: pure deterministic accounting evaluator using accepted execution/usage records; independent of optional M10 prevention."
+    ],
+    "proposed_build": [
+      "Establish actual execution population independently and reconcile authoritative usage once per scoped execution.",
+      "Declare non-overlapping input/output/cache/reasoning semantics; do not sum parent totals and child usage.",
+      "Replace accepted cumulative corrections instead of adding them; retain source conflicts and revisions.",
+      "Require complete resolved population for a final under-cap pass; a trustworthy deduplicated in-scope subtotal above cap can establish breach despite other gaps.",
+      "Record separate subject/assurance and combined spend; actual declared policy decides inclusion of investigator calls."
+    ],
+    "interfaces_in": ["M04 cap/accounting/allowance policy", "M05/M06 authoritative execution inventory and usage", "M03 canonical scope", "M16 investigator usage"],
+    "interfaces_out": ["M12 actual-spend assessment, sufficiency and exceptions", "M13/M15 arithmetic and source references", "M10 accepted final usage/correction information when prevention enabled"],
+    "proof_needed": ["Complete all-zone inference route and execution inventory", "Real retry and duplicate-source examples", "Provider usage identity/finality and accounting semantics", "Actual passing and accepted over-cap case", "Declared investigator-budget inclusion policy"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M09", "outputs/prooflab-detailed-architecture.txt:106", "work/hackathon-sources/slides-extracted.txt:61", "outputs/prooflab-nvidia-architecture.txt:65"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M10",
+    "name": "Optional inline admission coordinator",
+    "role": "Provide the prevention bonus only when a verified model hook, complete bypass control, trustworthy usage bounds and transactional state support it.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: shared model gateway is described as a place for budget decisions/halting; precise supported blocking mechanism is unverified.",
+      "PROPOSED CONDITIONAL MAPPING: allowed gateway function/wrapper plus transactional repository, with DynamoDB a candidate only.",
+      "PROPOSED BUILD: shared Python reservation/dispatch/settlement state machine; S3 or offline SQLite is not a substitute for shared atomic admission state."
+    ],
+    "proposed_build": [
+      "Atomically admit only when finally settled spend plus full unresolved liabilities plus new trustworthy bound fits the cap.",
+      "Pin exact request identity, claim dispatch ownership once and journal minimal transitions durably.",
+      "Keep ambiguous send liability; do not blindly redispatch after timeout or lease expiry.",
+      "Release only provably undispatched cancellations or verified-final complete settlements, not provisional usage.",
+      "Retain hidden-retry liability and halt new admission on bound/finality premise failures.",
+      "Disable prevention claims if any gate fails; preserve M09 accounting/detection work."
+    ],
+    "interfaces_in": ["M02 authenticated evaluate request", "M03 authoritative run/attempt state", "M04 pinned bound/policy rules", "M09 accepted settlement/correction information"],
+    "interfaces_out": ["M02 ALLOW/DENY/ERROR decision", "M06 transition journal and reservations", "M16 prevention-capability/failure status"],
+    "proof_needed": ["Actual synchronous model-dispatch hook", "Output/reasoning/input bound enforcement covering all retries", "No uncontrolled bypass route", "Atomic reservation/dispatch/closure behavior", "Provider idempotency and finality if relied upon", "Concurrency, lost-response and upward-correction tests"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M10", "outputs/prooflab-detailed-architecture.txt:110", "outputs/prooflab-detailed-architecture.txt:142", "outputs/prooflab-m10-independent-review.txt"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M11",
+    "name": "Nemotron Evidence Investigator",
+    "role": "Use the approved NVIDIA model to extract source statements, propose evidence relationships and assemble a cited explanation within bounded orchestration.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: Nemotron family options are described as Lightning/fast, Omni/multimodal, Super and Ultra; transcript labels and sizes are not verified deployment IDs.",
+      "SUPPLIED-SOURCE REQUIREMENT: valid custom agents must use approved Nemotron models in the permitted environment.",
+      "PROPOSED CONDITIONAL MAPPING: custom Strands/AgentCore workshop deployment calling existing approved gateway/endpoints, subject to exact guide and permission verification.",
+      "PROPOSED DEFAULT: one fast approved text-model profile; optional Super, Omni or Ultra only after measured need and access, not four new deployments.",
+      "NO ASSUMPTION: public NVIDIA NIM endpoints, new GPU hosting, external uploads or an exact model ID are not authorized/available merely because public documentation exists."
+    ],
+    "proposed_build": [
+      "Implement approved API adapter, schema-bound extraction and bounded read-plan/composition prompts.",
+      "Store exact source-span statements and candidate links separately from accepted facts; a quote is not proof its operational assertion is true.",
+      "Use one-call extraction plus host template initially, or at most two profiled model calls under the same deadline; limit read calls/concurrency/context/tokens.",
+      "Forbid model authority over thresholds, routing, sending, finding closure or telecom changes.",
+      "Expose deterministic fallback with degraded status and record actual model IDs/call IDs/usage.",
+      "Use optional multimodal extraction only for actual media needs; extra model families are cut before completed controls."
+    ],
+    "interfaces_in": ["M13 exact authorized scope/snapshot and bounded request budget", "M06 selected narratives and deterministic assessment references", "M16 approved model route and credentials"],
+    "interfaces_out": ["M12 proposals, spans, candidate links and explanation plan", "M13 validated narrative material", "M16 assurance usage/trace records"],
+    "proof_needed": ["Exact approved endpoint and model ID/version", "Actual invocation with request/response metadata and usage", "JSON/tool/output-limit capabilities", "Permitted evidence routing and source authorization", "Held-out extraction/link quality", "Measured workload latency rather than presumed one-minute completion"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M11", "outputs/prooflab-nvidia-architecture.txt:9", "outputs/prooflab-nvidia-architecture.txt:47", "outputs/prooflab-nvidia-architecture.txt:89", "work/nvidia-review/nvidia-transcript-excerpts.txt:20"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M12",
+    "name": "Evidence validation and assessment composition",
+    "role": "Promote only supported evidence, propagate accepted revisions and compose consistent control/claim results independently of LLM confidence.",
+    "existing_technology_candidates": [
+      "PROPOSED BUILD: deterministic Python validators, revision/dependency manager and assessment composer.",
+      "PROPOSED CONDITIONAL MAPPING: same permitted transactional fact store as M06; no separate validation service or second judging LLM required.",
+      "SUPPLIED-SOURCE CLAIM STRUCTURE: C-FM-01 has three control branches; architecture must bind records to rule and scope."
+    ],
+    "proposed_build": [
+      "Validate schema, source occurrence, exact span, scope, relationship and field-specific authority separately.",
+      "Preserve CANDIDATE/REJECTED/VERIFIED types; ID mention does not establish canonical ownership or causal truth.",
+      "Publish accepted-input revisions conditionally and invalidate affected assessments/caches after corrections.",
+      "Keep satisfaction, control operation, evidence sufficiency, analysis completeness and implementation completeness distinct.",
+      "Compose only compatible required branch results; no averaging and no red window automatically treated as aggregate breach when declared allowances permit it.",
+      "Prevent old prose from being mixed with new calculations; publish coherent as-of cases or explicit pending state."
+    ],
+    "interfaces_in": ["M11 proposals/explanation plan", "M06 raw/canonical source versions", "M04 authority and policy rules", "M07–M09 control assessments"],
+    "interfaces_out": ["M06 accepted revision and validation trail", "Reassessment triggers for affected M07–M09 scopes", "M13 consistent case/claim result", "M14 finding correction/withdrawal intents where supported"],
+    "proof_needed": ["False citation/negation/cross-team/cross-run tests", "Atomic revision conflict handling", "Correction dependency coverage", "Compatible claim scope and allowance logic", "No unsupported numeric/verdict assertions in displayed model explanation"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M12", "outputs/prooflab-nvidia-architecture.txt:25", "outputs/prooflab-detailed-architecture.txt:129", "outputs/prooflab-m12-independent-review.txt"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M13",
+    "name": "Judge query and case assembly",
+    "role": "Resolve an explicit control/run/window question to an inspectable, cited, reproducible case with honest scope, freshness and completion status.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE REQUIREMENT: judge asks a control/window question and gets answer plus records within two minutes.",
+      "PROPOSED BUILD: local Python CLI and optional HTML client over the same query/case contracts.",
+      "PROPOSED CONDITIONAL MAPPING: permitted cloud query worker plus authenticated evidence downloads; local offline SQLite serves exported cases.",
+      "PROPOSED PERFORMANCE TARGET: fresh Nemotron-assisted case within 60 seconds for a declared bounded workload; not an official requirement or measured result."
+    ],
+    "proposed_build": [
+      "Resolve exact scope; C9 run questions expand to all relevant declared windows, without choosing only a favorable subset.",
+      "Pin per-source snapshot vector and accepted-input revision; retrieve exact required inputs and explicit gaps.",
+      "Persist client/query identity, original deadline, stage ownership and budgets before model work; reconnect does not reset them.",
+      "Separate fresh-model, recorded-case and offline-recheck profiles; cache hits do not claim a new model execution.",
+      "Render first-view verdict/rule/calculation/source coverage/delivery state with drill-down citations and relationship explorer.",
+      "Recheck authorization on reads, cache reuse, publication and export; cancellation stops new claims but cannot guarantee already-claimed remote work was unsent."
+    ],
+    "interfaces_in": ["Explicit judge scope/profile", "M06 exact records and checkpoints", "M11 bounded model analysis", "M12 validated assessments", "M14 delivery state"],
+    "interfaces_out": ["Cited case and separate status dimensions", "Source/calculation/relationship views", "M15 exportable case manifest and benchmark timings"],
+    "proof_needed": ["Real selected-scope end-to-end query", "Two-minute answer plus supporting records", "Measured 60-second profile if claimed", "Cancellation/reconnect/timeout/idempotency tests", "Permission-aware cache behavior", "Offline critical-reference resolution without cloud/model dependency"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M13", "outputs/prooflab-nvidia-architecture.txt:47", "outputs/prooflab-m13-independent-review.txt", "work/hackathon-sources/slides-extracted.txt:73"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M14",
+    "name": "ServiceNow governance and human oversight",
+    "role": "Connect deterministic findings to actual authorized platform records and named people, retaining delivery, response, correction and remediation history.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE REQUIREMENT: ServiceNow AI Control Tower and human-loop integration are required; transcript corrects optional-looking wording.",
+      "SUPPLIED-SOURCE CLAIM: ServiceNow AICT and sandbox are distinct products reached using the same provided link/login.",
+      "SUPPLIED-SOURCE CLAIM: AICT provides AI governance and ServiceNow agents can connect with the AWS environment; exact table/API/route entitlements are unverified.",
+      "PROPOSED BUILD: team-scoped connector, deterministic finding adapter and durable outbox in the shared worker/store; no assumed native kill switch."
+    ],
+    "proposed_build": [
+      "Verify team-prefixed asset connection/readback, trace/run visibility and finding route separately.",
+      "Map measured control intents into the actual permitted schema with named recipient and exact evidence/spec/scope references.",
+      "Use stable logical finding identities plus immutable operation revisions for content/recipient changes; revalidate queued intents before dispatch.",
+      "Bound retries and reconcile ambiguous remote writes; do not equate HTTP acceptance or an ID with verified correct-record delivery.",
+      "Read back correct instance, correlation, intended revision and recipient; retain reassignment/deletion/history.",
+      "Record actual response or covered no-response-as-of observations; lack of read access is UNKNOWN, not silence.",
+      "Link genuine remediation closure to relevant passing retest and authorized closure; authoritative correction/withdrawal is a distinct disposition preserving original history."
+    ],
+    "interfaces_in": ["M08 and other declared deterministic finding intents", "M12 corrected assessment disposition", "Optional validated M11 explanatory material", "Authorized owner/recipient mapping"],
+    "interfaces_out": ["Actual remote IDs/readback and delivery state to M05/M06/M13", "Response/silence/uncertainty observations", "Remediation/retest/correction links"],
+    "proof_needed": ["Actual AICT asset discovery/readback", "Permitted route/table/API and write/read scope", "Remote idempotency/correlation/update-order semantics", "Named human recipient and observable response channel", "Lost-response/duplicate/stale-update tests", "Actual external finding with dated readback; no human reply is required by hackathon"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M14", "outputs/prooflab-detailed-architecture.txt:145", "outputs/prooflab-m14-independent-review.txt", "work/nvidia-review/nvidia-transcript-excerpts.txt:20", "work/nvidia-review/nvidia-transcript-excerpts.txt:23", "work/hackathon-sources/slides-extracted.txt:73"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M15",
+    "name": "Validation campaign and submission packaging",
+    "role": "Prove the claimed implemented behavior through actual or accepted cases and deliver a reproducible six-artifact submission.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE REQUIREMENT: passing/breaching cases, dated rules, queryable evidence and honest gaps; minimum one completed control, three full set.",
+      "SUPPLIED-SOURCE ALLOWANCE: NVIDIA Nemotron may support adversarial testing, but generated attacks or synthetic evidence are not automatically accepted live control cases.",
+      "PROPOSED BUILD: shared Python scenario/test/export commands, independent arithmetic rechecker and local JSONL/SQLite/HTML bundle.",
+      "PROPOSED OPTIONAL TOOLING: bounded model-assisted test selection only after fixed tests and completed core controls."
+    ],
+    "proposed_build": [
+      "Run dated authorized pass/breach scenarios with provenance classes and actual identifiers.",
+      "Exercise missing records, duplicates, conflicts, hidden retries, races, late corrections, prompt injection, permission changes and platform/model outages.",
+      "Evaluate extraction/link correctness on held-out labelled cases and compare structured-only versus model-assisted investigation.",
+      "Measure full-case latency, degraded availability, source freshness and token cost separately; do not label fallback a successful full model case.",
+      "Export six artifacts: evidence, dated thresholds, runnable query tool, named pass/breach runs, actual one-page architecture and gaps.",
+      "Rebuild offline indexes and recheck arithmetic from packaged critical inputs; this proves reproducibility rather than source truth.",
+      "Rehearse a judge-chosen scope and validate every claimed completed control before bonuses."
+    ],
+    "interfaces_in": ["M01 authorized scenarios", "M04 frozen rules", "M06/M12 accepted evidence and assessments", "M11 actual model traces", "M13 cases/timings", "M14 delivery proof", "M16 capability/gap register"],
+    "interfaces_out": ["Six-artifact release bundle", "Test/evaluation/benchmark results", "Claimed-control completion checklist", "Recorded rehearsal failures and gaps"],
+    "proof_needed": ["Actual end-to-end cases for each claimed control", "Organizer acceptance where breached-case provenance is not live", "Clean-client offline recheck", "Critical citations and inputs packaged locally", "Measured judge timing and model benefit", "Final diagram matching actual deployment"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M15", "outputs/prooflab-detailed-architecture.txt:159", "outputs/prooflab-detailed-architecture.txt:182", "outputs/prooflab-nvidia-architecture.txt:77", "work/hackathon-sources/slides-extracted.txt:73"],
+    "capability_state": "UNVERIFIED"
+  },
+  {
+    "component_id": "M16",
+    "name": "Shared platform, security and operational support",
+    "role": "Host a small permitted deployment, enforce scope and credentials outside the model, and make capabilities, limitations and assurance usage visible.",
+    "existing_technology_candidates": [
+      "SUPPLIED-SOURCE CLAIM: team AWS Workshop Studio sandbox, EKS-based AI Native ODA Canvas and AgentCore deployment examples; actual account/session/resources require verification.",
+      "SUPPLIED-SOURCE CLAIM: provided ServiceNow AICT/sandbox and approved NVIDIA model access; credential and permission details are not in the planning artifacts.",
+      "PROPOSED DEPLOYMENT: one Python distribution with a small number of entry points, permitted agent/runtime/worker hosting and local judge CLI.",
+      "PROPOSED CONDITIONAL CHOICES: Lambda or permitted container/scheduler, DynamoDB atomic state and S3 objects; none is a confirmed entitlement.",
+      "PROPOSED LOCAL CHOICE: SQLite only for offline index/query; no laptop localhost or public tunnel in the live inference path."
+    ],
+    "proposed_build": [
+      "Perform read-only capability inventory and targeted authorized probes before choosing compute/storage/gateway mappings.",
+      "Enforce team/source/model authorization and permitted data routes outside LLM control; keep credentials out of prompts and exports.",
+      "Track PROPOSED, FIXTURE_TESTED, LIVE_VERIFIED or UNAVAILABLE per capability with dated evidence, owner and impact.",
+      "Record assurance-job model/tool usage, errors, versions and timings separately from subject runs and show combined spend.",
+      "Prevent recursive investigation of investigator traces and apply bounded concurrency, reads, tokens and wall time.",
+      "Pin code/configuration/model/prompt/schema/evaluator versions and retain operational gaps.",
+      "If no hook/store exists, remove prevention bonus; if sources or mandatory AICT/Nemotron access remain unavailable, surface the specific dependency rather than claiming completion."
+    ],
+    "interfaces_in": ["Authenticated workshop account/session and permitted resources", "Organizer constraints", "Configuration and versioned package", "Runtime state from all modules"],
+    "interfaces_out": ["Approved runtime/storage/network/credential adapters", "Capability and gap register for all components", "Assurance trace/usage records", "Release provenance and support diagnostics"],
+    "proof_needed": ["Actual account/region/session expiry and team scope", "Permitted compute, state, object storage and outbound connectivity", "Exact deployed AgentCore/EKS/canvas resources and roles", "Credential distribution without secret leakage", "Team isolation and denied-access tests", "Approved Nemotron route and AICT permissions", "Observed operational resource limits"],
+    "source_refs": ["outputs/prooflab-component-inventory.json#M16", "outputs/prooflab-detailed-architecture.txt:20", "outputs/prooflab-detailed-architecture.txt:140", "outputs/prooflab-nvidia-architecture.txt:64", "work/nvidia-review/nvidia-transcript-excerpts.txt:17", "work/nvidia-review/nvidia-transcript-excerpts.txt:23"],
+    "capability_state": "UNVERIFIED"
+  }
+]
