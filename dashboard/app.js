@@ -239,9 +239,16 @@
     return "<h1>Live test</h1><p class=\"lead\">The judge names a control and a run or time window. The answer below comes from the evidence pack alone: rule, population, measurement, exceptions, verdict, records, who was told, and the gaps.</p>" +
       form + '<div id="answer">' + (state.answer ? renderAnswer(state.answer) : "") + "</div>";
   }
+  function showError(err) {
+    var msg = "This page could not be computed from the evidence pack: " + (err && err.message ? err.message : err) +
+      ". Most likely the register or records do not follow the data contract in dashboard/README.md. Recorded as a gap.";
+    if (P && P._problems && P._problems.indexOf(msg) < 0) P._problems.push(msg);
+    document.getElementById("view").innerHTML = '<div class="banner problem" role="alert">' + esc(msg) + "</div>";
+  }
   function ask() {
     var scope = scopeFromState();
-    var res = evaluate(state.control, scope);
+    var res;
+    try { res = evaluate(state.control, scope); } catch (err) { showError(err); return; }
     state.answeredAt = Date.now();
     state.answer = { control: state.control, scope: scope, res: res };
     var el = document.getElementById("answer");
@@ -550,15 +557,17 @@
     if (parts[2] === "window" && parts.length >= 5) { state.scopeKind = "range"; state.from = decodeURIComponent(parts[3]); state.to = decodeURIComponent(parts[4]); }
     else if (run(decodeURIComponent(parts[2]))) { state.scopeKind = "run"; state.runId = decodeURIComponent(parts[2]); }
     else return false;
-    newQuestion(); return true;
+    newQuestion(); history.replaceState(null, "", "#live"); return true;
   }
   function render() {
     if (!P) return;
     chrome();
     var pg = page();
     var linked = pg === "live" && deepLink();
-    if (linked) { state.answer = { control: state.control, scope: scopeFromState(), res: evaluate(state.control, scopeFromState()) }; state.answeredAt = Date.now(); }
-    document.getElementById("view").innerHTML = VIEWS[pg]();
+    try {
+      if (linked) { state.answer = { control: state.control, scope: scopeFromState(), res: evaluate(state.control, scopeFromState()) }; state.answeredAt = Date.now(); }
+      document.getElementById("view").innerHTML = VIEWS[pg]();
+    } catch (err) { showError(err); }
     document.querySelectorAll(".side nav a").forEach(function (a) {
       if (a.getAttribute("href") === "#" + pg) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
@@ -601,6 +610,7 @@
         catch (err) { document.getElementById("banners").innerHTML = '<div class="banner problem" role="alert">Could not read that file as an evidence pack: ' + esc(err.message) + "</div>"; }
       };
       fr.readAsText(e.target.files[0]);
+      e.target.value = "";
     }
   });
   document.addEventListener("submit", function (e) { if (e.target.id === "ask-form") { e.preventDefault(); ask(); } });

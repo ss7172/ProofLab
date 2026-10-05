@@ -51,10 +51,30 @@ def check_register(reg):
     for k in ("version", "version_date", "controls"):
         if k not in reg:
             problems.append(f"register missing '{k}'")
-    for c, rule in (reg.get("controls") or {}).items():
-        for k in REGISTER_KEYS:
+    controls = reg.get("controls") or {}
+    for c in ("C16", "C7", "C9"):
+        if c not in controls:
+            problems.append(f"register has no {c}")
+    for c, rule in controls.items():
+        for k in REGISTER_KEYS + ["figure_of_record_ep"]:
             if k not in rule:
                 problems.append(f"register {c} missing '{k}'")
+        lim = rule.get("observation_limit")
+        tol = rule.get("exception_tolerance")
+        if not isinstance(lim, dict) or not isinstance(tol, dict):
+            problems.append(f"register {c}: observation_limit and exception_tolerance must be objects (see dashboard/README.md)")
+            continue
+        need = {"C16": (["operator", "value"], ["max_breaching_runs"]),
+                "C7": (["coverage_min_pct", "gap_operator", "gap_limit_ms"], ["max_violating_gap_pct"]),
+                "C9": (["operator", "max_relative_increase_pct"], ["max_violating_windows_pct"])}.get(c)
+        if need:
+            problems += [f"register {c}.observation_limit missing '{k}'" for k in need[0] if k not in lim]
+            problems += [f"register {c}.exception_tolerance missing '{k}'" for k in need[1] if k not in tol]
+        if c == "C9":
+            if not isinstance(rule.get("baseline"), dict) or not rule["baseline"]:
+                problems.append("register C9 needs baseline: {<runtime>: {value, unit, id, frozen_at}}")
+            if "coverage_min_pct" not in rule:
+                problems.append("register C9 missing 'coverage_min_pct'")
     return problems
 
 
