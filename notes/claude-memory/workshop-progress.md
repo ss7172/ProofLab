@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T18:52:19.997Z
+  modified: 2026-10-05T19:14:06.000Z
 ---
 
 **Progress (last updated 2026-10-05, after Module 11, the page checks and the playbook check):**
@@ -269,7 +269,7 @@ metadata:
     - **A potential independent evidence source (WHO invoked agents, timestamps, guardrail config per model call)**; no run id; join by time/session id.
   - **Checkpoint:** role exists.
   - **DONE:** 5 reader subagents + 3 independent reviewers. The synthesis is in repo `notes/servicenow/servicenow-context.md` (raw notes in `raw/`). See [[servicenow-context]].
-- **Context gathering COMPLETE (2026-10-05)**, except the pending inputs: "What the platform gives you", the Evidence Pack format (from the user) and more slides.
+- **Context gathering COMPLETE (2026-10-05)**, except the pending inputs: the Evidence Pack format (from the user) and more slides. "What the platform gives you" is done: it was extracted from the workshop KB and verified live on 2026-10-05 (see [[challenge-requirements]]).
   - The "Resources & How-To" page, the Glossary and two cockpit screenshots were checked read-only against live; the facts are in [[platform-verified-facts]], the candidate notes items are parked in [[platform-observations-notes]].
   - The reference links were checked: repo `notes/references/links.md` (see [[reference-links]]).
 - **Team winning playbook VERIFIED (2026-10-05)** by the lead session: its scoring rules (§1.1–§1.6, §1.8) and §4 criteria are trustworthy; its platform claims (§1.0/§1.7, §2, §3) carry disproven guide claims (verdict corrected after independent review, 2026-10-05). Corrections in repo `notes/playbook/playbook-verification.md`; summary in [[prooflab-project]]. The package (playbook, SN handoff, `prooflab/`) is now at the repo root.

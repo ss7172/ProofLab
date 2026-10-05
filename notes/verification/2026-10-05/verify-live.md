@@ -1,3 +1,4 @@
+> Note: C1–C8 in this report are claim labels used during verification, not the challenge's controls (C7 event recording, C9 drift, C16 token cap).
 # Live verification of C1, C2, C3, C7 (2026-10-05, read-only)
 
 - **Identity:** `arn:aws:sts::613052889143:assumed-role/WSParticipantRole/Participant`, us-east-1.

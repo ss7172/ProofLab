@@ -1,11 +1,11 @@
 ---
 name: platform-observations-notes
-description: "Pointer to the repo's platform-observations file (64 items as of 2026-10-05; #24 = cockpit leaks the ledger write token; #37–#40 = tool authorization / identity gaps; #41–#47 = Module 6–7 backlog) and how to frame it — context for the platform team, not build targets; plus parked candidates from the 2026-10-05 Resources/Glossary/screenshot checks"
+description: "Pointer to the repo's platform-observations file (64 items as of 2026-10-05; #24 = cockpit leaks the ledger write token; #37–#40 = tool authorization / identity gaps; #41–#47 = Module 6–7 backlog) and how to frame it — context for the platform team, not build targets; plus parked candidates from the 2026-10-05 Resources/Glossary/screenshot checks and the platform-contract page check (incl. participant RBAC over CRDs and gateway policies, which the admission VAP refuses)"
 metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T18:52:20.633Z
+  modified: 2026-10-05T19:44:17.495Z
 ---
 
 Repo file `notes/platform-observations.md` is the running, evidence-backed list of where the live platform, kit or guide differs from what the guide claims. The user is reviewing it with the platform team on 2026-10-05. It is not part of the hackathon submission. Committed and pushed to GitHub main (first commit 03ff0bf, 2026-10-05). Details live in the file; this note records how to use it.
@@ -107,7 +107,7 @@ Repo file `notes/platform-observations.md` is the running, evidence-backed list 
   - the quoted heredoc leaves `${MODAAS_GATEWAY_ID}` literal
   - "cedarPolicy scoping agent identities" is impossible (→ #38 cross-ref)
   - The page's citation of the AI Native Networks workshop: the cited page has no callable tools (22 names as "potential projects"), no stated `<domain>_<verb>_<resource>` convention, and the quote is a paraphrase.
-- **Parked candidates (2026-10-05, add only on the user's "add"),** from the Resources & How-To, Glossary and cockpit-screenshot checks (facts in [[platform-verified-facts]]). Not in the repo file:
+- **Parked candidates (2026-10-05, add only on the user's "add"),** from the Resources & How-To, Glossary and cockpit-screenshot checks, and the platform-contract page check (facts in [[platform-verified-facts]]). Not in the repo file:
   - **#27 update (corrected 2026-10-05 after live verification):** #27's "per-run token evidence can't be joined by run id" after a pod restart is wrong. The gateway's trace spans in CloudWatch Logs `aws/spans` (30 d) carry `modaas.run_id` = the CID, `modaas.action_id` and per-call tokens (S2: 353 spans, 1,999,001 tokens, equal to stdout). What #27 gets right: the `/aws/modaas/gateway` copy has no ids (0 of 1,630). `modaas-telemetry-export` adds them only to spans (`spec.frontend.tracing`), and its OTLP access-log sink (`spec.frontend.accessLog.otlp`) adds none, although the installer comment says that export was meant to match the stdout line (a build gap, cause unknown; both policies Accepted and Attached). Its suggested fix (add the `modaas.*` attributes to the OTLP access-log export) is not in place. The collector deletes only 6 payload keys, not the ids. X-Ray holds the same span fields but truncates long runs. See [[platform-verified-facts]].
   - **#24 update:** all 5 AgentConfigs, our `my-agent` included, carry the literal token. `get-agent-runtime` (participant role) also returns runtime env in plain text: `AUDIT_WRITE_TOKEN`, `OPENAI_API_KEY`, `AGENTCORE_GATEWAY_MCP_TOKEN`.
   - **#29:** its empty-panel list doesn't cover the Observability panels; the gateway-metrics (`:15020`) and cost-catalog panels don't need the tap.
@@ -132,6 +132,20 @@ Repo file `notes/platform-observations.md` is the running, evidence-backed list 
   - **AgentCore gateway target `aws-knowledge`** (new): an `mcpServer` target with no credential provider, the one exception to "fronts Lambda tool targets with IAM auth".
   - **Dead Cedar link** (new): `cedarpolicy.com/en` is a 404; use docs.cedarpolicy.com (see [[reference-links]]).
   - **Kit evidence pull copies the ledger token** (#24 extension; 2026-10-05, from kit source): `pull-evidence.sh:78` dumps the full CRs into `cr-status.json` (the ledger token, not the gateway key, which is only in the runtime env); `submit.sh` uploads it to the team evidence bucket and leaves the zip in its working directory (now gap-list gap 6).
+  - **Platform-contract page** (new, 2026-10-05; "What the platform gives you", KB extract; facts in [[platform-verified-facts]]):
+    - its gateway grep `modaas.run_id=$CID` matches nothing, because the line quotes the values
+    - its checkpoint says 4; it prints 6 (#5, #8)
+    - "Cedar policy via ConfigMap" (#33)
+    - "per caller" (#38)
+    - "ids/tokens/cost on every call" (#27)
+    - "refusal within 15 s" (#36)
+    - "conditions settle in ~2 min" (#28)
+    - its spans command totals 2× (#49)
+  - **Participant RBAC over enforcement objects** (new; #26 extension; reframed 2026-10-05 ~19:25 UTC: RBAC confirmed with `kubectl auth can-i`, no edit attempted, but the admission VAP `modaas-governance-guardrail` refuses these writes by its text, so "participants can edit enforcement" is NOT confirmed; details in [[platform-verified-facts]]):
+    - `modaas-participant-builder` grants create/update/patch on CRDs, where the 94 CEL admission rules live (can-i: yes; delete no); the VAP denies changes to the `*.oda.tmforum.org` and `*.agentgateway.dev` CRDs
+    - cluster-wide `admin` grants create/update/patch/delete on `agentgateway.dev/*`, incl. `modaas-authz` and the ceilings (can-i: yes on all 4 kinds); the VAP denies every participant write in `agentgateway-system`
+    - if proposed, frame it as "participant RBAC is far broader than intended; the VAP is the only barrier", not as "participants can edit enforcement". The VAP doesn't cover CONNECT (exec, port-forward, proxy), which RBAC allows in `agentgateway-system` (not attempted). Not a gap-list entry
+    - if #26 is ever edited: its "Impact" says participants "can also run pods in the gateway's own namespace". By the VAP's text, a pod CREATE in a protected namespace is refused (untested). `get secrets` (a read) and port-forward (CONNECT) stay outside the VAP (independent review 2026-10-05)
 - Add an item only with evidence, and ask the user before editing the file (see [[hackathon-working-agreement]]).
 
 **Why:** the user said these findings are not what the hackathon wants built.

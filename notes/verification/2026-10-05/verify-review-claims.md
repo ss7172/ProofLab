@@ -1,4 +1,6 @@
 > Note (2026-10-05): vh.py is not included in the repo because its ac/gw modes could print secrets; see verify-live.md for the safe queries and the live results.
+>
+> Note: C1–C8 in this report are claim labels used during verification, not the challenge's controls (C7 event recording, C9 drift, C16 token cap).
 # Independent verification of reviewer claims C1-C8 (2026-10-05)
 
 ## LIVE CHECKS BLOCKED: AWS credentials expired

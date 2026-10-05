@@ -1,11 +1,11 @@
 ---
 name: platform-verified-facts
-description: "Live-verified facts (2026-10-05) about the MoDaaS platform's evidence surfaces, governance mechanics and cockpit that the ProofLab plan can rely on — incl. where per-run IDs and tokens actually live, and where the handoff's assumptions were wrong; plus the Resources/Glossary/screenshot checks (authz log has no per-call records, PDP/authz pod-only, get-agent-runtime exposes env tokens), the 2026-10-05 live verification (the gateway's spans in aws/spans carry run id + tokens for 30 d; gateway key only in runtime env) and the evidence snapshot / ledger PVC"
+description: "Live-verified facts (2026-10-05) about the MoDaaS platform's evidence surfaces, governance mechanics and cockpit that the ProofLab plan can rely on — incl. where per-run IDs and tokens actually live, and where the handoff's assumptions were wrong; plus the Resources/Glossary/screenshot checks (authz log has no per-call records, PDP/authz pod-only, get-agent-runtime exposes env tokens), the 2026-10-05 live verification (the gateway's spans in aws/spans carry run id + tokens for 30 d; gateway key only in runtime env), the evidence snapshot / ledger PVC, and the 2026-10-05 platform-contract page checks (gateway stdout values are quoted; 6 gateway policies; no Cedar policy DENY ever; participant RBAC allows CRD and gateway-policy writes, but the admission VAP refuses them; can-i checked 2026-10-05)"
 metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T18:52:19.038Z
+  modified: 2026-10-05T19:44:15.907Z
 ---
 
 Verified live with read-only commands on 2026-10-05 (UTC); items marked (review) were verified by an independent reviewer subagent. Re-verify before assessed runs.
@@ -181,6 +181,55 @@ Verified live with read-only commands on 2026-10-05 (UTC); items marked (review)
 - **0 restarts on all six pods** (gateway 1, PDP 2, authz 2, audit-store 1).
 - **The audit-store ledger is on a PVC** (`audit-store-data`, 1Gi, mounted at `/data`): it survives pod restarts, but is deleted with the PVC/stack (reclaimPolicy=Delete). `/records` works without a cid. The audit-store's request logging is off by design.
 - Re-snapshot before judging, and export the ledger into the Evidence Pack.
+
+**Platform-contract page checks (live, read-only, 2026-10-05 19:04–19:13 UTC, WSParticipantRole; the page "What the platform gives you", extracted from the KB; report repo `notes/verification/2026-10-05/platform-contract-verify.md`):**
+- **Gateway stdout quotes its id values:** `modaas.run_id="<CID>"`, and the same for `modaas.trace_id` and `modaas.action_id` (1,092 of 1,092). So an unquoted `grep "modaas.run_id=$CID"` (the page's command) matches 0 lines for every run. `grep -F "modaas.run_id=\"$CID\""` or `grep -F "$CID"` works: S2 353 lines, S1 24.
+- **Gateway stdout coverage** (whole pod log, 2,033 lines, 10-04 10:35Z → 10-05 18:58Z, 0 restarts):
+  - all 1,092 served (2xx) lines carry the three ids
+  - all 258 served `listener=llm` lines carry tokens and cost
+  - 573 lines carry no ids: 24× 403, 127× 404, 422× 405
+- **Six AgentgatewayPolicies,** all `Accepted=True` and `Attached=True`: access-log, authz, llm-auth and mcp-ratelimit (10:33Z), plus telemetry-export and ceiling (10:37Z). The page's checkpoint "4" is stale.
+- **PDP, both replicas** (`kubectl logs deploy/modaas-pdp --all-pods=true --tail=-1 --prefix` works; without `--all-pods` only one replica):
+  - 1,097 decisions (501 + 596), 10-04 18:07Z → 10-05 18:58Z
+  - **0 DENY**; 12 policy ids, all `model-*` or `modaas-toolconfig-*`
+  - `my-team-policy` named in 0 of them
+- **`/modaas/evidence`** (1,130 records, 10-04 18:07Z → 10-05 19:07Z):
+  - 1,106 ALLOW / 24 DENY
+  - the DENYs are 23 `reason=NoSigV4Credential` (principal `unknown`, asset `-unresolved-`) and 1 `PolicyEngineUnavailable` (bootstrap-key, runbook-lookup; notes #43)
+  - 1,107 records are `bootstrap-key`
+  - So no Cedar policy has ever refused a call on this platform.
+- **S1 joins** (`fault-1791179282-8ef1a8`, trace `e13e7b73…`):
+  - all 24 gateway action ids are in the PDP log
+  - 24 PDP lines carry the trace; gateway `modaas.trace_id` = `trace.id` on 24 of 24
+  - the kit's `show-run-spans.py` (read-only) finds 48 agent spans on the trace, but totals 75,328 tokens: 2× the gateway's 37,664, because 3 `invoke_agent` parents repeat 9 `chat` spans. Agent spans carry no action id.
+  - the ledger's 3 trace ids ≠ the run trace
+- **Participant RBAC grants writes to enforcement objects** (read from the ClusterRoles; not attempted), but the admission VAP refuses them (next bullet):
+  - ClusterRole `modaas-participant-builder` grants create/update/patch on `customresourcedefinitions`, where the 94 CEL admission rules live. Its rights on VAPs and webhooks are read-only.
+  - `admin` (bound cluster-wide by `modaas-participant-admin`; aggregated from `edit`/`modaas-crs-edit`) grants create/update/patch/delete on `oda.tmforum.org`, `agentgateway.dev` and `gateway.networking.k8s.io` `*`. That covers `modaas-authz` and the ceilings in `agentgateway-system`.
+  - `AgentgatewayPolicy.spec.traffic` offers `extAuth`, `extProc`, `authorization`, `jwtAuthentication` and more.
+- **2026-10-05 ~19:15–19:25 UTC: permission confirmed with `kubectl auth can-i`; no edit attempted. The edit itself is NOT confirmed: the admission VAP refuses it by its text,** so no gap-list entry:
+  - Identity: WSParticipantRole (groups `modaas:participants`, `system:authenticated`).
+  - RBAC yes: update/patch/delete (and create) on `agentgatewaypolicies`, `agentgatewaybackends`, `agentgatewaymodels` and `agentgatewayparameters` in `agentgateway-system`; also by name on `modaas-authz` and `modaas-llm-auth`, and on `agentgatewaypolicies` in `modaas-system`. `customresourcedefinitions` (`-A`): update/patch/create yes, delete no. `can-i --list -n agentgateway-system`: `*.agentgateway.dev` and `*.gateway.networking.k8s.io` with all write verbs, CRDs without delete.
+  - RBAC no: every write on VAPs, VAP bindings, validating webhooks and ClusterRoleBindings.
+  - The gateway's policies: six in `agentgateway-system` (access-log, authz, ceiling, llm-auth, mcp-ratelimit, telemetry-export), plus `modaas-system/modaas-authz-timeout`. Authentication is `modaas-authz` (`traffic.extAuth` to the authorization gateway, which resolves the API key or JWT, then asks Cedar; it sets `failureMode`). `modaas-llm-auth`, which the KB calls the API-key check on the model listeners, holds only `traffic.rateLimit.local[]` live (key names read, no values).
+  - VAP `modaas-governance-guardrail` (v1, generation 1 observed, no type-check warnings, created 2026-10-04 10:49Z, failurePolicy Fail; binding action Deny) matches group `modaas:participants` or a username containing `:assumed-role/WSParticipantRole/`, for CREATE/UPDATE/DELETE on `*/*`. Its CEL denies (1) any write in `modaas-system`, `agentgateway-system`, `canvas`, `canvas-system`, `canvas-vault`, `istio-system`, `istio-ingress`, `cert-manager` and `kube-system`, except labelled team Cedar ConfigMaps in `modaas-system`; (2) cluster-scoped writes to RBAC, `admissionregistration`, nodes, protected namespaces, and CRDs named `*.oda.tmforum.org`, `*.agentgateway.dev`, `*.gateway.networking.k8s.io`, `*.istio.io` or `*.cert-manager.io`. That covers the 4 CRDs holding the 94 CEL rules (`agentconfigs`, `modelconfigs`, `toolconfigs`, `registries`, all `.oda.tmforum.org`).
+  - The AgentgatewayPolicy CRD's `targetRefs`/`targetSelectors` have no namespace field, so a policy in a team namespace can't name the gateway. But the Gateway's three listeners admit routes from all namespaces (`allowedRoutes: All`; `llm`/`llm-tls` only `AgentgatewayModel`), and HTTPRoute/AgentgatewayModel `parentRefs` carry a namespace. So a route plus a policy in a team namespace fall outside the VAP's text (untested). Every existing route, model and backend is operator-made in `agentgateway-system`. (Independent review, ~19:35 UTC.)
+  - **`components` is not protected**, and the CRD clause covers definitions, not resources. Claude, through our shell, created `my-agent` there (10-05 08:59Z) and paused and resumed the `modaas-docs` ToolConfig (05:56Z), both after the VAP existed. So Cedar changes on our own ToolConfigs (`spec.access.cedarPolicy`) pass the VAP.
+    - The operator projects them into `modaas-system/modaas-toolconfig-<alias>`, labelled `managed-by=modaas`. The VAP's team-Cedar exemption excludes `managed-by`, so edit the ToolConfig, not the ConfigMap.
+    - The ToolConfig CRD's 20 CEL rules still apply.
+    - An unapproved ToolConfig gets its ConfigMap but no route: `demo-crm-lookup` is Reviewing and has no HTTPRoute or backend.
+  - Outside the VAP: it lists only CREATE/UPDATE/DELETE, so reads (e.g. secrets) and CONNECT requests are not covered; RBAC allows `pods/exec`, `pods/portforward` and `pods/proxy` in `agentgateway-system` (#26; not attempted).
+  - `can-i` checks RBAC only, not admission; the refusal itself is untested (no write).
+- **Declarations:**
+  - All 4 ModelConfigs: `safety.required: true`, `enforcer {kind: bedrockGuardrail, enforcedAt: self}`, `allowedConsumers: ['bootstrap-key']`. 4 READY guardrails `canvas-<alias>`.
+  - All 10 ToolConfigs set `access.cedarPolicy`. No AgentConfig sets `spec.access` or `spec.agentPolicy`, or has `status.agentPolicy` (#39, live).
+  - The 15 PDP ConfigMaps are 10 tool, 4 model and `my-team-policy`.
+- **Stores and pipelines:**
+  - Ledger PVC: `gp3` (ebs.csi) with reclaim Delete. The server reads `AUDIT_WRITE_TOKEN` from Secret `audit-write-token`.
+  - `TeamEvidenceBucketName` is a `a-02-code-editor` stack output.
+  - Collector pipelines: traces → `awsxray`, metrics → `debug`, `logs/audit` → `/modaas/evidence`, `logs/gateway` → `/aws/modaas/gateway`.
+  - The AWS AgentCore gateway `modaas-agw` is `AWS_IAM`, MCP, READY.
+- **Still stale at 19:12Z:** `ReconcilePaused=True` with `spec.paused=false` on nano-9b (since 04:05Z), super-120b (09:13Z) and modaas-docs (05:56Z), so "conditions settle within ~2 min" fails for pause conditions.
 
 **Not yet verified:** the OAuth/JWT path, direct-AgentCore denial, and refusal of unapproved models.
 

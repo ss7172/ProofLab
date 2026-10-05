@@ -1,11 +1,11 @@
 ---
 name: challenge-requirements
-description: "The workshop's 'The Challenge' section (Challenge page, Control 16 worked example, Evidence cookbook) — the six required steps mapped to the platform, the two-minute finish line, the six auditor questions, the kit tooling as it really behaves, and the critical questions the planning session must answer; the masterclass C16 example (cap 10,000) differs from the guide's (900); which inputs are still pending"
+description: "The workshop's 'The Challenge' section (Challenge page, Control 16 worked example, Evidence cookbook) — the six required steps mapped to the platform, the two-minute finish line, the six auditor questions, the kit tooling as it really behaves, and the critical questions the planning session must answer; the masterclass C16 example (cap 10,000) differs from the guide's (900); the 'What the platform gives you' page (extracted from the workshop KB, verified live 2026-10-05: six enforcement points, team code only in the runtime and, with the token, the ledger; its gateway grep is broken); which inputs are still pending"
 metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T18:42:41.416Z
+  modified: 2026-10-05T19:44:10.836Z
 ---
 
 The user pasted this section on 2026-10-05 to build context for planning. The plan is made in a FRESH session after the ServiceNow section and the shared PDFs are added. The master class brief is still the authority for "done", the judging axes and the artifacts; this section only maps them onto the platform.
@@ -18,7 +18,7 @@ The user pasted this section on 2026-10-05 to build context for planning. The pl
    - C9, drift (AgentCore metrics, Module 8)
    - C16, spend cap (the gateway per-call line, Module 5 §8). C16 is IN SCOPE (user).
 2. **Declare thresholds** in `register.yaml`, dated before the first assessed run. Fields: metric, observation_limit, exception_tolerance, measurement_basis, owner, version, version_date, enforcement_point.
-3. **Where in the timeline:** post-run forensics is the floor; inline in the request path is a bonus. The enforcement point is the shared gateway modaas-agw (a "What the platform gives you" page lists the enforcement points; not yet pasted).
+3. **Where in the timeline:** post-run forensics is the floor; inline in the request path is a bonus. The enforcement point is the shared gateway modaas-agw. The "What the platform gives you" page lists six enforcement points; it was extracted from the workshop KB and verified on 2026-10-05 (see below).
 4. **Build the control:** emit records bound to the control, the threshold version and the run.
 5. **Control test / evaluators:**
    - `starter/evaluate.py`: control id + run id in, PASS/BREACH/NO EVIDENCE with record ids out; exit 0/1/2.
@@ -115,8 +115,25 @@ The user pasted this section on 2026-10-05 to build context for planning. The pl
     - the quoted sentence is a paraphrase
   - Sources are public via `static…/public/quicklinks/ai-native-networks/published.json`.
 
+**"What the platform gives you"** (`/challenge-brief/platform-contract`; never pasted. Extracted from the workshop KB on 2026-10-05 into repo `notes/workshop-reference/platform-contract.md` and verified live, read-only; report `notes/verification/2026-10-05/platform-contract-verify.md`; handoff §5.9):
+- **Six enforcement points; team code only in two.** The page lists gateway+PDP/Cedar, Bedrock Guardrails, admission (CEL) and the ledger as "Refuse", and AgentCore Runtime and the collector/CloudWatch as "Observe". It allows team code only in the runtime and, with the token, the ledger. "Cedar does not meter tokens." So by the page, inline C16 means our agent code on the runtime.
+- **No Cedar policy has ever refused.** The PDP shows 0 DENY in 1,097 decisions (both replicas). The 24 DENYs in `/modaas/evidence` are 23 keyless `NoSigV4Credential` and 1 fail-closed `PolicyEngineUnavailable`. "Cedar policy via ConfigMap" works only through an asset's policy (ToolConfig `access.cedarPolicy`): `my-team-policy` was named in 0 of 1,097 decisions.
+- **The page's gateway grep `modaas.run_id=$CID` matches nothing:** the line quotes its values (`modaas.run_id="<CID>"`). Use `grep -F "modaas.run_id=\"$CID\""` (S2: 353 lines). Its PDP command (`--all-pods=true`) does read both replicas.
+- **Its checkpoint prints 6, not 4,** all Accepted.
+- **Contradicted or partly wrong:**
+  - "per caller": there is one principal
+  - "ids/tokens/cost on every call": 573 refused or unrouted lines carry no ids
+  - "refusal within 15 s": nano-9b 33–41 s
+  - "conditions settle within ~2 min": stale pause conditions remain
+  - the AgentCore spans helper totals 2× the gateway
+- **Untested:** its three breach recipes (writes).
+- **New, RBAC read only:** participants may update the CRDs that hold the CEL rules, and may edit `AgentgatewayPolicy` objects (`extAuth`/`extProc` hooks exist). RBAC confirmed with `kubectl auth can-i` (2026-10-05), but the admission VAP `modaas-governance-guardrail` refuses these writes by its text (untested), so neither is open to us in the protected namespaces. The VAP leaves `components` open, so Cedar changes on our own ToolConfigs pass it. By its text it also leaves open a route plus a policy in a team namespace, because the Gateway admits routes from all namespaces (untested). Independent review 2026-10-05 ~19:35 UTC. Details in [[platform-verified-facts]].
+
 **Inputs (updated 2026-10-05):**
-- **Done:** the ServiceNow section (Module 11 AI Control Tower), the shared PDFs, the "Resources & How-To" page and the Glossary (both checked against live; see [[platform-verified-facts]]).
-- **Still pending:** "What the platform gives you" (enforcement points), the Evidence Pack format (from the user), more slides.
+- **Done:**
+  - the ServiceNow section (Module 11 AI Control Tower) and the shared PDFs
+  - the "Resources & How-To" page and the Glossary (both checked against live; see [[platform-verified-facts]])
+  - "What the platform gives you" (from the workshop KB, not pasted; verified live 2026-10-05, above)
+- **Still pending:** the Evidence Pack format (from the user), more slides.
 
 Related: [[prooflab-project]], [[workshop-progress]], [[platform-verified-facts]], [[reference-agents-facts]]
