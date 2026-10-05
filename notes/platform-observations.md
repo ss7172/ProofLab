@@ -66,6 +66,8 @@ Working notes for a review with the platform team. Not part of the hackathon sub
 | 54 | M9 Step 2 | Doc accuracy | Deleting the safety block isn't refused at admission (a server dry run accepts it); the `EnforcementNotDeclared` check runs in the operator, after storage (per source; not applied live). `new-agent.sh` also passes the SDK pins as `EXTRA_PIP`, which the page says never to do |
 | 55 | M9 Step 1b · new-agent.sh --tool | **Governance gap** | `--tool` only adds environment variables, so `my-agent` declares no tool in `dependsOn` yet calls `modaas-docs`. Neither its contract nor its registry record names the tool |
 | 56 | M9 Step 3 | Doc drift | The expected `disposition: blocked by guardrail` can't come from the template (we got `undetermined`), and the kill-switch step pauses `nemotron-nano-9b`, which the Step 1b agent doesn't use |
+| 57 | M10 · Scenario recipes | **Bug (kit)** | The recipes can't produce their artifacts as shipped. `twin-scenario.sh` prints text instead of JSON, overwrites its dataset in place, has no `trap` scenario, and can't find its data when run from `/tmp`. The checkpoint only counts files, so it passes anyway |
+| 58 | M10 · Twin roles · network-twin | Design gap | "Breach on demand" can't reach the agents, because the network-twin Lambda reads its own packaged dataset. The twin knows only three sites (none for S2), and the agents query it with element ids |
 
 ---
 
@@ -1045,6 +1047,59 @@ A correct S3 run escalates, and S1's disposition check rejects an escalation. So
 **Suggested fix:**
 - Expect `disposition: undetermined`, or give the template a guardrail branch like `strands-agent-agentcore.py`'s.
 - Pause the model the agent was built on, read from its AgentConfig: `kubectl get agentconfig my-agent -n components -o jsonpath='{.spec.dependsOn.models[0]}'`.
+
+## 57. Module 10's scenario recipes can't produce their artifacts as shipped — Bug (kit)
+
+**Guide (Module 10, "Scenario recipes"):**
+- *"The scenario scripts use the twin data in `static/data/twin/` and the helper `twin-scenario.sh` from Lane B."* The page has no command to download that helper.
+- Expected results: *"a JSON list of site ids with predicted RSRP values at baseline conditions"*; *"the drift value crosses the threshold"*; *"a JSON object with `twin_answer`, `agent_answer`, and `disagree: true`"*.
+- Checkpoint: `ls ~/evidence/expected-events.json ~/evidence/drift-pair.json ~/evidence/twin-vs-agent.json 2>/dev/null | wc -l` should print 3.
+
+**Observed (2026-10-05, read-only; we did not run the recipes):**
+- **Where the helper is:** only at `static/scripts/twin-scenario.sh` in the event bucket.
+  - The pages' signed URLs download from `assets/` (90 objects), but `static/` holds 136, including this script.
+  - There is no `static/data/twin/` folder; the data is `static/data/twin-dataset.json`.
+  - Every object is dated 2026-10-04 04:36 UTC.
+- **What the script does** (`baseline|breach|recovery`):
+  - `baseline` only **echoes a line of text** (*"SITE-DEN-12 degraded …, SITE-DEN-09 healthy, SITE-PHX-04 degraded"*). It produces no JSON.
+  - `breach` and `recovery` **overwrite `twin-dataset.json` in place**, setting every site to RSRP ≤ −110 dBm and loss ≥ 5 % for breach, or −82 dBm and healthy for recovery. They print text, compute no drift value and keep no backup, so the baseline state is lost after one run.
+  - There is **no `trap` scenario**: `trap` prints the usage line and exits 2.
+  - Run as `/tmp/twin-scenario.sh`, as the page says, `DATA_DIR` defaults to `$(dirname $0)/../data` = `/data`, so every scenario fails with *"twin dataset not found"*.
+  - `>> drift-pair.json` appends a second text block, so the file is never valid JSON.
+- **Recipe 1's diff can't work either:** the audit-store `timeline` endpoint returns text, not JSON, and ledger records have no `site` field.
+- **The checkpoint only counts files,** so it prints 3 even when all three files contain error text.
+
+**Impact:** the three artifacts the page calls *"the fixtures the judging ladder expects your control test to run against"* can't be produced as written, and the checkpoint would report success on error output.
+
+**Suggested fix:**
+- Ship the helper under `assets/` with a download command.
+- Have it emit JSON for each recipe, add the `trap` case, and work on a copy of the dataset.
+- Make the checkpoint validate the files' JSON content.
+
+## 58. "Breach on demand" can't reach the agents, and the twin covers only three sites — Design gap
+
+**Guide (Module 10 overview):** the twin's roles are *"Expected events (Control 7)"*, *"Breach on demand (Control 9 drift)"* and *"Ground truth for a trap"*, and its data is *"synthetic and aligned to the scenario sites"*.
+
+**Observed (2026-10-05, read-only):**
+- **The agents' twin is a Lambda with its own copy of the data.** `team-a61f5-network-twin` (python3.12, last modified 2026-10-04 10:37 UTC) reads `DATA_DIR=/var/task`, the dataset packaged with it. Editing a local `twin-dataset.json`, which is all `twin-scenario.sh` does, changes nothing the agents see.
+- **Coverage:**
+  - The dataset has three sites: `SITE-DEN-12`, `SITE-DEN-09` and `SITE-PHX-04`.
+  - In `data/network-inventory.json`, S1 points at `SITE-DEN-12` and S3 at `SITE-PHX-04`, but **S2 names no site**, so the twin can't be S2's ground truth.
+- **How the agents use it:**
+  - The handler matches the site id exactly.
+  - In the last 24 hours, the reference network agent's spans hold 40 tool results reading *"no twin data for site"*. It had asked with element ids: `DU-DEN-12-A` (29), `RTR-DEN-12-CORE` (9) and `RTR-PHX-04-CORE` (7).
+  - Every call was allowed and returned 200, and the agent recorded a disposition anyway (our gap list, gap 10).
+- **Module 10's own twin isn't connected:** the MAVERIC model the module trains (Tokyo cells 1–3) is unrelated to the scenario sites and to the `network-twin` tool.
+
+**Impact:**
+- "Breach on demand" and "ground truth for a trap" can't be exercised against the live agents without redeploying the Lambda.
+- S2 has no twin ground truth.
+- "The twin" means two unrelated things in this module.
+
+**Suggested fix:**
+- Have the Lambda read its dataset from a location the scenario script controls.
+- Cover S2, and map element ids to their site, or say in the tool description that it takes site ids.
+- State plainly which twin each recipe uses.
 
 ## Running from outside the IDE (FYI)
 
