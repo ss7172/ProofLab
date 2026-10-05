@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iFabric Assurance</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="layout">
+    <aside class="side">
+      <div class="brand">iFabric Assurance</div>
+      <div class="brand-sub">Claim C-FM-01 · controls 7, 9, 16</div>
+      <nav aria-label="Sections">
+        <div class="section-label">Judge</div>
+        <a href="#overview"><span class="num">1</span>Overview and progression</a>
+        <a href="#live"><span class="num">2</span>Live test</a>
+        <div class="section-label">Quality (axis 2)</div>
+        <a href="#architecture"><span class="num">3</span>Architecture</a>
+        <a href="#evidence"><span class="num">4</span>Evidence, not logs</a>
+        <a href="#thresholds"><span class="num">5</span>Thresholds</a>
+        <a href="#gaps"><span class="num">6</span>Gaps and honesty</a>
+        <div class="section-label">Chain and bonus</div>
+        <a href="#loop"><span class="num">7</span>Human loop</a>
+        <a href="#adversarial"><span class="num">8</span>Adversarial tests</a>
+        <a href="#judgement"><span class="num">9</span>Judgement day</a>
+      </nav>
+    </aside>
+    <main id="main" tabindex="-1">
+      <div class="topbar">
+        <div class="claim" id="claim"></div>
+        <div class="toolbar">
+          <label class="btn small" for="pack-file">Load evidence pack (.json)</label>
+          <input id="pack-file" type="file" accept=".json,application/json" hidden>
+          <button class="btn small" id="theme-btn" type="button">Theme</button>
+        </div>
+      </div>
+      <div id="banners"></div>
+      <div id="view" aria-live="polite"></div>
+      <div class="foot">Reads the evidence pack only. No network calls; works offline from a file. Verdicts are recomputed in your browser by evaluators.js from the raw records and the frozen register.</div>
+    </main>
+  </div>
+  <script src="evaluators.js"></script>
+  <script src="data/evidence-pack.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
