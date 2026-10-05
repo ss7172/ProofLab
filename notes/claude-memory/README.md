@@ -1,0 +1,4 @@
+- What this is: a snapshot of Claude Code's persistent project memory for this project.
+- Live location: `~/.claude/projects/-/memory/`; `MEMORY.md` is the index.
+- Snapshot time: 2026-10-05 17:48 UTC.
+- Today's memory integration was still in progress at this snapshot; the reviewed version follows in the next commit.

@@ -1,0 +1,291 @@
+---
+name: workshop-progress
+description: "Where the user is in the MoDaaS workshop modules, what live cluster state exists and who created it, and what was done along the way"
+metadata:
+  node_type: memory
+  type: project
+  originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
+  modified: 2026-10-05T03:16:30.204Z
+---
+
+**Progress (last updated 2026-10-05, after Module 9 (complete)):**
+- **Module 2:** done from the laptop on 2026-10-04. Step 6 (Amazon Q, console-only) was skipped.
+- **Module 3:** done on 2026-10-04; `validate-canvas.sh` gave 6 passed, 0 failed.
+- **Module 4 overview:** done on 2026-10-05.
+  - The estate shows 15 assets against the guide's 1 (drift; repo notes #5), and the CRD checkpoint matched.
+  - The page's main diagram is in the repo at `notes/workshop-reference/modaas-platform-architecture.svg`. Its claims were compared with live state; the results went into repo notes #2, #3 and #16–#18.
+- **Module 4 Step 1** ("What MoDaaS does"): done on 2026-10-05.
+  - The checkpoint passed: the unsafe-model dry run was rejected (by two rules) and nothing was stored.
+  - Capabilities 2–4, 6 and 7 matched in substance. Capability 5 needs `network-resolution-agent` (Module 7).
+  - Capability 8 (cockpit Cost view) was explored read-only on the user's invitation; see [[platform-verified-facts]].
+- **Module 4 Step 2** ("The AWS services behind it", reading only): done on 2026-10-05.
+  - Its "one log line per model call … each with the run id … and policy verdict" is contradicted live (repo notes #27).
+  - Its "nothing is pulled from an outside registry" holds only for the 5 MoDaaS images in the account's ECR; the other running images come from docker.io (18), quay.io (3), cr.agentgateway.dev (2), registry.istio.io (2), public.ecr.aws (1) and AWS's EKS add-on ECR (13).
+- **Module 5 "The models you serve: NVIDIA Nemotron"** (reading plus a checkpoint): done on 2026-10-05.
+  - The checkpoint matched: 3 alias/modelId pairs, and the signed download is identical to the kit's `crs/demo-nemotron-models.yaml`.
+  - Live alias→modelId matches the guide's table. The only shipped agent (`hackathon-helper`) uses its own alias, `nemotron-super-120b-helper` (same model id as super-120b).
+- **Module 5 "Declare three models":** checked on 2026-10-05, not re-applied. `kubectl diff` showed the guide's file is identical to the live specs, so it was already applied with exactly this file. All 4 models are Approved, so the checkpoint prints 0, not 2. The bootstrap attestations match the guide.
+- **Module 5 "Approve a model":** checked on 2026-10-05, not re-run.
+  - All 3 sections were already done from CloudShell. §1 nano-9b at 23:57:12 UTC and §2 Super at 23:58:17, both with the guide's exact text. §3 changed the nano-9b attestation annotation to end in ", cloudshell-user".
+  - Both routes are programmed.
+  - The guide's checkpoint ("two Approved and one Reviewing") contradicts its own steps; live shows 4 Approved.
+  - §3 changed the annotation but did NOT add a new approval record, so the annotation and the status record disagree.
+- **Module 5 "Call the model through the governed door":** run by Claude on 2026-10-05 ~04:00 UTC with the user's OK. All passed.
+  - direct Bedrock: AccessDenied (explicit deny)
+  - no key: 403 NoSigV4Credential
+  - with the key: 200 from super-120b ("Paris", 23+8 tokens)
+  - checkpoint: http.status=200
+  - Probe pods were cleaned up. The "unapproved model refused" claim remains untested (repo notes #9).
+- **Module 5 "Watch the guardrail block an attack":** run by Claude on 2026-10-05 with the user's OK. Passed.
+  - The injection to nano-9b returned HTTP 200, `finish_reason=content_filter`, "Input blocked by policy." and 0/0/0 tokens. The gateway line shows 0 tokens, cost 0 and 563 ms. Checkpoint: `Approved route=True`.
+  - The guide's "agents' own evidence records" carry token counts: wrong per notes #20.
+- **MODULE 5 COMPLETE.**
+- **Module 6 overview:** read. #32 was added (the trace pipeline does export to X-Ray).
+- **Module 6 "The guardrail":** passed on 2026-10-05, read-only. The declaration (PROMPT_ATTACK HIGH input / NONE output, required, bedrockGuardrail) matches the deployed Bedrock guardrail `canvas-nemotron-nano-9b`, which is at **version 2** while the other models' are at 1. Its blocked message is "Input blocked by policy.". Checkpoint: `true`.
+- **Module 6 "Runtime Cedar policies":** done on 2026-10-05.
+  - Claude created ConfigMap `modaas-system/my-team-policy` (the guide's broad permit) at 03:41:51 UTC with the user's OK. It loaded on both PDP replicas (bytes=159); checkpoint 2.
+  - Step 2: our nano-9b guardrail probe shows as ALLOW, and both Module 5 calls join to their decisions by action_id. There is no DENY line, because our Module 5 page had no undeclared-model probe; the guide's capture is older.
+- **Module 6 "Pause: the kill switch" (first run, 2026-10-05 03:46 UTC, user OK): INCONCLUSIVE.** Run as written, with an always-resume trap.
+  - Paused at 03:46:18. The call at +7 s still got **200** and the phase stayed Approved. Resumed at 03:46:26; the call got 200.
+  - The operator never processed either change: generation 5 vs observedGeneration 3 at 03:47:26. Each of its resync passes waits through two 10 s TMF639 timeouts per model, and its status PATCHes retry.
+  - Net state: `spec.paused=false`, serving, checkpoint Approved. Stale ReconcilePaused/RegistryPauseProjected (since 00:32:48) are unchanged.
+  - **Second run, by the USER in workshop-local/shell, 2026-10-05 04:05 UTC (polling version): conclusive.**
+    - Paused 04:05:20. Calls still got 200 at +9/+20/+31 s. The operator reconciled at 04:05:53 (+33 s). First 404, phase Paused, at 04:06:01 (+41 s).
+    - Resumed 04:06:02. Route re-programmed 04:06:25 (+23 s). First 200 at 04:06:37 (+35 s).
+    - End state: generation 7 = observed 7, phase Approved, serving.
+    - Even so, `ReconcilePaused=True` and `RegistryPauseProjected=True` ("servingState=PAUSED") persist, now dated 04:05:53. **Resume never clears them (notes #28 reproduced).**
+- **Module 6 "Governed tools and records":** passed on 2026-10-05, read-only.
+  - The tool backend (ConfigMaps, Deployment, Service) and ToolConfig `demo-crm-lookup` were already applied from CloudShell, identical to the guide's files (`kubectl diff` exit 0). The tool is Reviewing (not approved; it isn't ours).
+  - The anonymous MCP 403 was already shown in Module 3. The latest `/modaas/evidence` record is a decision from the user's pause-test call. Checkpoint: 3 / Approved.
+  - The page repeats claims disproved in notes #20, #21 and #32. The `step-mcp-tool.svg` diagram is illustrative (`o2-network-inventory` doesn't exist here).
+  - On the user's question, Claude traced the page's end goal explicitly: one call (`c5025cdc…`) across 6 surfaces (see [[platform-verified-facts]]). The page gives the record sources, the join keys and the bar ("A readable audit trail that links intent, control decisions and results. Activity logs alone do not qualify."), but no build recipe. The "how" is in starter Path 1 and Modules 7/8.
+- **Module 6 "The ceiling":** passed on 2026-10-05, read-only. The policy reads exactly 100 req/min and 2.5M tokens/h, Attached=True; checkpoint `100/min 2500000/h`.
+  - The page's "~1 req/s per agent keeps a team well under" is wrong: 3 agents = 180/min > 100.
+  - The cockpit Usage view against the ceiling is empty ("no live source", notes #29).
+  - The cockpit Cost view is computed from CloudWatch AWS/Bedrock metrics, not `/aws/modaas/gateway` as the page says.
+  - Not tested: the 429 and its no-charge claim.
+- **MODULE 6 COMPLETE.**
+- **Module 7 overview:** read on 2026-10-05.
+- **Module 7 "Set up the reference agents": DONE** by Claude on 2026-10-05, 04:35–04:38 UTC (user "OK").
+  - Steps 1–2 skipped (already identical).
+  - Step 3: the CodeBuild build from the laptop WORKED (~64 s). Image `a-01-eks-cluster-aws-agent-operator@sha256:48a1b0ed…`.
+  - Step 4: the generator ran with umask 077 (file 600). 3 AgentConfigs were applied and approved as `satyabratsrikumar@team` ("Reviewed: reference agent on AgentCore"); all were Provisioned in under 1 min.
+  - Step 5: network-resolution-agent re-configured with the IT runtime ARN.
+  - Checkpoint: 4 Approved. Runtimes READY: customer_experience_agent, it_resolution_agent, network_resolution_agent, hackathon_helper. All 3 agents use `nemotron-super-120b`.
+- **Module 7 "Run and read the evidence":** run by Claude on 2026-10-05 04:47 UTC (user "OK"). STARTER_DIR pointed at the local kit. Exploratory run, not an assessed one.
+  - Forged write → 401. Run **CID `fault-1791175626-0d34e2`**, run trace `55b022228ea34351b7eb0186f49f46f9`.
+  - Dispositions: customer undetermined, IT refused, network auto-resolve.
+  - Ledger: **11 records** (4+3+4), not 10. No action_id, token or guardrail fields (#20 confirmed live). 3 distinct ledger trace_ids, none equal to the run trace (#21 confirmed live). No NEGOTIATION record. seq increasing.
+  - **IT refusal:** its MCP call to `/mcp/runbook-lookup` got a gateway **403** right after a 200 `initialize`.
+    - **CORRECTED 2026-10-05 (re-check):** it IS recorded. `/modaas/evidence` has `DENY reason=PolicyEngineUnavailable` (action `d9aefa16…`, 04:47:15), a fail-closed refusal. There is no PDP log entry, and the gateway line has no run_id or action_id.
+    - The ledger says "refused at gateway: http_status=500 model=nemotron-super-120b": wrong status, wrong asset.
+    - Cause unknown: no pod restarts, and the authz log is silent. The IT runtime log shows `httpx.HTTPStatusError 403` with the run trace id. Notes #43.
+  - Gateway for this CID: 6 model calls, 11 MCP lines, **24,796 tokens** (24,329 in / 467 out), $0.003953.
+- **Module 7 "Self-check: three faults":** done by Claude on 2026-10-05 (user "OK" for the S2/S3 runs). Exploratory runs.
+  - Grades: S1 `fault-1791175626-0d34e2` **FAIL 6/8** (guide PASS 8/8). S2 `fault-1791177342-d3f892` **FAIL 5/10** (guide 7/10). S3 `fault-1791177636-8fa0bd` **FAIL 8/10** (guide PASS 10/10).
+  - Every run fails the 2 checks that fail by construction (guardrail verdict, negotiation). S3 behaviour was fully correct (all escalate). S2 said auto-resolve and named no evidence and no reversible action.
+  - **S2 runaway (re-verified 2026-10-05 against the durable `/aws/modaas/gateway`):**
+    - The IT agent looped. **174 model calls and 170 tool calls (137 runbook-lookup)**, 05:15:46–05:20:39.
+    - **Peak 49 model calls/min.** The earlier "98/min" and "1,960,103" were wrong.
+    - **1,999,001 tokens (1,992,059 in / 6,942 out), $0.3033 = 80% of the 2.5M/h ceiling.**
+    - Ledger: 16 records. IT has 8 across two invocations (INTENT 05:16:01 and 05:19:01); the first invocation finished last (05:20:39), after the network agent. The ledger is blind to the loop (notes #41, #44).
+  - Account input tokens in the last hour reached ~2.05M of the 2.5M/h ceiling at ~05:22 UTC.
+  - Token totals: S1 24,796; S2 1,999,001; S3 37,836.
+  - The S1 IT 403 did not recur in S2/S3.
+  - The guide's checkpoint regrades the S3 chain as S1 (bug).
+  - **The user re-ran S1 and S3 in workshop-local/shell (~05:24 UTC) with a `run_and_grade` helper:**
+    - S1 `fault-1791177843-fde682`: 12 records (the IT agent answered; no 403), FAIL 6/8, **50,246 tokens**.
+    - S3 `fault-1791177926-b0ce69`: 12 records, FAIL 8/10, 37,799 tokens (matches Claude's run within 0.1%).
+    - Headroom check: 2,139,857 input tokens in the last 60 min, so the user held S2.
+    - So the IT 403 is intermittent, and S1 is 25–50K tokens depending on whether IT runs.
+- **Module 7 "Swap the model":** done by Claude on 2026-10-05 05:47–05:49 UTC (user "you run it for me").
+  - **it-resolution-agent now depends on `nemotron-nano-9b`** (`dependsOn.models[0]` and `modelRef`, generation 2). The runtime updated in 24 s.
+  - S1 run `fault-1791179282-8ef1a8`: FAIL 6/8, 12 records. IT 2 calls on nano-9b, 8,450 tokens, $0.000537; customer+network 7 calls on super, 29,214 tokens, $0.004694; total 37,664 tokens, $0.005231.
+  - The guide's compare grep (`it.resolution`) matches 0 lines; filter by CID and model instead.
+  - **The model swap needed NO re-approval** (stayed Approved). The re-attest annotation did NOT add an approval record: still 1, "Reviewed: reference agent on AgentCore", 04:37:25.
+  - Decide later whether to revert IT to super-120b before scored runs.
+- **Module 7 "Kill switch" (tool):** done by Claude on 2026-10-05 05:56 UTC (user "OK") on `modaas-docs`, with polling and an always-unpause trap.
+  - Pause 05:56:43; operator +1 s; first probe +7 s → 404 "route not found", phase Paused.
+  - Unpause 05:56:50; route re-programmed +23 s; 200 at +32 s. Checkpoint Approved.
+  - **Tool pause ≈1 s vs model pause ≈33 s.** Stale ReconcilePaused/RegistryPauseProjected persist on the ToolConfig too (#28 generalises).
+- **MODULE 7 COMPLETE.** The IT agent is still on nano-9b (from the swap).
+- AWS credentials expired ~06:05 UTC 2026-10-05; the user pasted fresh ones ~06:12 UTC and the profile was rewritten.
+- **Module 8 overview:** read.
+- **Module 8 "Trace a run through its spans":** done read-only on 2026-10-05, reusing the swap run (trace `e13e7b73…`), with no new run.
+  - 9/9 chat spans match the gateway per call.
+  - show-run-spans.py totals are exactly 2× the gateway (12 calls / 75,328 vs 9 / 37,664) because it double-counts the invoke_agent parent spans.
+  - 48 Strands-native spans, not the guide's 8; no action_id in spans; no negotiate spans.
+  - **CROSS-TOOL USE:** network (declared network-twin) called runbook-lookup ×2 and customer-records via `/mcp/network-twin`; IT (declared runbook-lookup) called evidence-lookup via `/mcp/runbook-lookup`. All 200 / ALLOW. PDP decides on the CALLED tool's policy. Every principal is `ServiceIdentity::"bootstrap-key"`, so there is no per-agent identity.
+- **Module 8 "Console, trust hierarchy, and health metrics":** done read-only by Claude on 2026-10-05 (~08:05 UTC). The console views are the USER's to check (console-only); a link and a time window were given (04:40–06:00 UTC).
+  - **Drift command:** works with macOS `date -u -v-6H` instead of `-d '-6 hours'`. The CLI prints timestamps in LOCAL time (CDT: `00:00-05:00` = 05:00 UTC).
+  - **Hourly AgentCore metrics** (AWS/Bedrock-AgentCore, Name=`<runtime>::DEFAULT`). The guide's healthy capture was 1.3–4.9 s.
+    - 04:00 UTC hour: customer 6.5 s; IT 1.05 s (the refused run, so fast = not healthy); network 8.8 s.
+    - 05:00 UTC hour: customer avg 8.2 s (max 16.6, 5 calls); **IT avg 71.6 s, max 278.4 s (6 calls; the S2 runaway)**; network avg 8.5 s (max 12.8, 5 calls).
+    - Errors were 0 everywhere, even for S2. hackathon_helper had no calls.
+  - **Trust table:**
+    - The gateway as the only path to the model is CONFIRMED. The shared runtime role `a-01-eks-cluster-agentcore-runtime` has an explicit Deny `NoDirectModelOrToolAccess` (bedrock:InvokeModel, InvokeModelWithResponseStream, bedrock-agentcore:InvokeGateway).
+    - All 4 runtimes share that ONE role, which also allows InvokeAgentRuntime on runtime/* (peer invoke). Whether resource policies block it is untested.
+  - **The page's "no prompt or completion text in its spans" is FALSE (resolves notes #22):** `chat` span events (`events[].attributes.content`) hold the system prompt and the full context, including customer records (CUST-1001 "Meridian Logistics (gold)"), in each runtime's `spans` stream.
+  - **Cockpit:** the Cost window is 24 h by default, max 168 h; has_pricing handling exists; tokens come from AWS/Bedrock × the price catalog (#42). The Trace view is built from X-Ray segments.
+  - **Checkpoint:** fails as before (show-run-spans 12 calls / 75,328 vs gateway 9 / 37,664).
+- **Module 9 overview:** read on 2026-10-05.
+  - Prerequisites OK: nano-9b Approved with route True; modaas-docs Approved (but `provider: custom`, not the page's agentCoreGateway); ledger `audit-store` present.
+  - **Helper runtime env NAMES** (values never printed): AGENTCORE_GATEWAY_MCP_TOKEN, AGENTCORE_GATEWAY_MCP_URL, AGENT_NAME, AUDIT_URL, AUDIT_WRITE_TOKEN, AWS_ENDPOINT_URL_BEDROCK_RUNTIME, MODEL_ALIAS, OPENAI_API_KEY, OPENAI_BASE_URL, REGION, STEP_BASE, TEAM, TOOL_ALIAS.
+  - Per `sdk_redirect.py`, `AGENTCORE_GATEWAY_MCP_URL` = agentgateway `/mcp/<alias>` (NOT the AWS AgentCore Gateway), and the MCP token = the same team key as OPENAI_API_KEY. So there is no bypass.
+  - The helper depends on model `nemotron-super-120b-helper` and tools helper-docs, aws-knowledge, cluster-status, cr-author, evidence-lookup.
+  - **Lead for Step 1:** the helper-docs policy allows `["helper-docs___search_docs", "get_doc"]`; the wire name would be `helper-docs___get_doc`, so get_doc may be DENIED (unchecked).
+- **Module 9 Step 1 "Read the hackathon-helper agent": read-only parts done 2026-10-05 (~08:40 UTC).**
+  - **Section 1 drift:** the guide expects models [nemotron-super-120b] and tools modaas-docs, aws-knowledge, cluster-status. Live: models **[nemotron-super-120b-helper]**, tools **helper-docs, aws-knowledge, cluster-status, cr-author, evidence-lookup**. provider awsAgentCore; Approved with 1 approval. The guide's `-o yaml` prints AUDIT_WRITE_TOKEN (#24); the user was warned not to paste it.
+  - **Section 2:** modaas-docs is `custom`, not agentCoreGateway. The Lambda-backed docs tool the guide describes is ToolConfig **`helper-docs`** (agentCoreGateway, Lambda `team-a61f5-modaas-docs`). The others are agentCoreGateway and Approved; demo-crm-lookup is custom and Reviewing.
+  - **Checkpoint:** Approved.
+  - **Starter kit:** all 12 signed downloads are byte-identical to `workshop-assets/starter` (no ~/starter needed locally; `ask-agent.sh` is on PATH from the kit).
+  - **`ask-agent.sh`** wraps ask_agent.py: it resolves the runtime ARN from the AgentConfig, mints a CID and calls InvokeAgentRuntime directly. Exit 0 on success or a governed refusal.
+  - **get_doc lead (UNVERIFIED):** the helper-docs policy allow-list is ["helper-docs___search_docs","get_doc"]. Gateway tools/call names seen in 24 h: helper-docs___search_docs ×30, search_docs ×1, and NO get_doc calls. The 39 decisions were all ALLOW. If the helper ever calls get_doc, the wire name helper-docs___get_doc would be DENIED by the policy.
+  - **Sections 3–5 run by Claude on 2026-10-05 08:30–08:32 UTC** (user: "go ahead for section 3-5. you have the cockpit url"). The kit's ask-agent.sh is not executable after the S3 sync, so it was run via `bash`.
+    - **Section 3:** cockpit POST /api/agents/hackathon-helper/ask → 200 in 6.7 s; response keys agent/answer/cid/disposition/run_id; CID hackathon-helper-1791189048-a9c9fc.
+    - **Q1** (CID …1791189091-2633eb): answer + CID + export line, as expected.
+    - **Q2** (…097-cdcf50): price-check ToolConfig YAML (agentCoreGateway) + apply cmd. A server dry run REJECTS it: unknown field `spec.alias`. It also has no Lambda target and no cedarPolicy.
+    - **Q3** (…106-6525ac): a patch with a JSON-Patch `test` for super-120b, so it is REJECTED on live state (IT is on nano-9b). The helper claimed "The agent will now use nano-9b". 13 model calls, **123,476 tokens**, 10 tool calls incl. cr-author___patch_cr ×5.
+    - **Nothing was applied:** IT is still at generation 2, no governed CR has non-status writes since 08:30 (checked with --show-managed-fields), and price-check is NotFound. cr-author patch_cr only returns text.
+    - **Ledger:** every run has 2 records (INTENT, INVOCATION), NOT the guide's 3; no RESULT-INSPECTION, so disposition is "unknown".
+    - **Gateway:** Q1/section 3 = 1 model call (~6.2K tokens) and NO tool call, yet the answer cites "[Source: helper-docs]".
+    - **PDP:** every helper run makes 15 ALLOW tool decisions (initialize/notification/tools-list for all 5 tools) even with no tool call. That is evidence noise for "WHAT did it touch".
+    - **get_doc:** still no call seen; the lead is unverified.
+    - Step 1 tokens: 148,817 in total.
+- **Module 9 Step 1b "Build your own agent": read-only prep before the run** (the run itself is below, from 08:57 UTC). Prep findings:
+  - The extra downloads are identical to the kit.
+  - new-agent.sh honours REFERENCE_IMPL (set by env.sh), writes `~/agents/<name>/`, defaults --role customer, has a `--dry-run` (render + server dry run, no build), and has no GNU-only commands.
+  - **Plan if the user OKs:** dry run → real run (CodeBuild ~4 min, apply → Reviewing) → annotate approval → wait Approved/READY → `bash ask-agent.sh my-agent …` → checkpoint 3 records. Use umask 077 (the generator writes AUDIT_WRITE_TOKEN into the YAML with no chmod).
+- **Module 9 Step 2 "What the script did" (reading page): claims checked read-only.**
+  - Template: GatewayModel present; it writes intent/invocation/result-inspection (3 records; the helper writes 2).
+  - Build pins: strands-agents[openai] 1.57.2, bedrock-agentcore 1.24.0, mcp 1.30.0, boto3 1.43.103, ADOT 0.21.0; EXTRA_PIP is validated; reference tags are refused.
+  - Generator: safety {enforces: true, enforcerKind: bedrockGuardrail}; TOOL_MCP_ALIAS for --tool; token in the file.
+  - Registry: registryRecordId = awsagentcore_<name> on all 4 agents.
+  - The page itself admits "An image change is not re-reviewed" (cf. #46).
+- **Module 9 Step 1b RUN by Claude** (user "OK" 2026-10-05; approver `satyabratsrikumar@team`, per Claude's recommendation over the guide's `$(whoami)@workshop`). umask 077 was used.
+  - **A. `new-agent.sh my-agent nemotron-super-120b --skills knowledge-base --tool modaas-docs --dry-run` (08:57 UTC):** OK.
+    - It wrote `~/agents/my-agent/{agent.py,requirements.txt}` and `/tmp/my-agent-agentcore.dry-run.yaml` (mode 600).
+    - TOOL_MCP_URL = the public ELB :8080/mcp/modaas-docs (plain http).
+  - **B. Safety block removed → server dry run ACCEPTED** ("created (server dry run)"); nothing stored.
+    - Step 2's "Delete the safety block and apply it to watch admission refuse it with EnforcementNotDeclared" is WRONG at admission.
+    - The check lives in `operators/shared/composition/checks.py` (operator, after storage). That is untested; it would need a real apply.
+  - **C. Real run, 08:57:56–08:59:08 UTC (72 s, not "about 4 minutes"):** exit 0.
+    - CodeBuild image is in ECR repo `a-01-eks-cluster-aws-agent-operator` by digest (sha256:07e65608…).
+    - `/tmp/my-agent-agentcore.yaml` and `/tmp/my-agent-image-uri` are mode 600.
+    - AgentConfig `my-agent` was created 08:59:08: Reviewing, gen 1, models [nemotron-super-120b].
+    - **`dependsOn.tools` is EMPTY:** `--tool` only adds the TOOL_MCP_URL/TOOL_MCP_ALIAS env vars, so the declaration (and registry) doesn't name the tool the agent uses.
+  - **D. Approved by Claude 08:59:51** (approver `satyabratsrikumar@team`, attestation "Reviewed: governed gateway path only"). Phase Approved by 09:00:16; runtime `my_agent-9AyPFbHh5Z` READY at 09:00:31.
+  - **E. Ask (09:01 UTC):** `bash ask-agent.sh my-agent "How does a ModelConfig get approved?"` → exit 0, CID `my-agent-1791190861-638235`, disposition "auto-resolve".
+    - The answer cites docs via modaas-docs (ADR-006, Workshop resources). But the CONTENT misses the real mechanism (the two approval annotations): it says "Canvas does not perform model approval", whereas the helper answered correctly. Governed ≠ correct.
+  - **Checkpoint:** 3 ledger records (INTENT, INVOCATION, RESULT-INSPECTION), as the guide says.
+  - **Evidence:**
+    - 4 model calls (model id nvidia.nemotron-super-3-120b, 7,313 tokens); 3 tool calls on /mcp/modaas-docs (search_docs, get_doc ×2), all 200.
+    - PDP: exactly 3 tool ALLOW + 4 model ALLOW (no session-setup noise, unlike the helper); only 3 MCP lines.
+  - **Step 2 checkpoint:** `Approved   awsagentcore_my-agent`, matching the guide's capture.
+  - **Created and left running:** AgentConfig my-agent (Approved), its runtime, an ECR image digest, `~/agents/my-agent/`, and /tmp files holding the token (mode 600).
+  - **Agent→gateway transport (verified):** all 4 agent runtimes (VPC mode) use the PUBLIC ELB over plain HTTP: OPENAI_BASE_URL and AWS_ENDPOINT_URL_BEDROCK_RUNTIME on :8081, MCP on :8080. So the team key travels unencrypted on every call, although a TLS :8443 listener exists.
+- **Module 9 Step 3 "Prove the governance": DONE by Claude 2026-10-05 09:12–09:14 UTC** (user "go ahead" for the prompt attack + option B).
+  - **Prompt attack** (CID `my-agent-1791191546-6aa5dd`): "Input blocked by policy.", gateway status 200, in/out 0 tokens.
+    - Disposition **undetermined** (the page says "blocked by guardrail"; the template has no such path).
+    - Ledger: 3 records (invocation http_status=200, result-inspection undetermined).
+    - PDP and /modaas/evidence: ALLOW, with no guardrail field.
+  - **Kill switch, option B** (the page pauses nano-9b, but my-agent is on super-120b; "every agent depends on this model" is false here):
+    - Paused super-120b at 09:13:04. The first probe at +2 s was **refused, http_status=404**, phase already Paused (CID `my-agent-1791191585-4d9744`).
+    - Unpaused 09:13:07. The guide's wait returned at +24 s; a normal answer by +34 s (7,285 tokens).
+    - **The pause took effect in ≤2 s, vs 33–41 s for nano-9b in Module 6, so latency VARIES.**
+    - Stale ReconcilePaused/RegistryPauseProjected now on super-120b too (#28).
+  - **Checkpoint:** 3 records (invocation http_status=404, result-inspection refused), exactly as the guide says.
+  - **Platform side of the refusal:** /modaas/evidence + PDP = ALLOW (model-nemotron-super-120b v331993); the pod's 404 line has no run/trace/action id, but its durable /aws/modaas/gateway copy shares the evidence trace id (f5140819…) and shows a bare 404. ONLY the agent's ledger names the refusal.
+  - gap-list.md gap 4 was retitled "calls the platform refused are recorded as ALLOW" and both CIDs added.
+- **MODULE 9 COMPLETE.** my-agent is left running (Approved, on super-120b, tool modaas-docs via env only).
+- **Module 10 overview (2026-10-05, read-only):**
+  - **Twin roles:** C7 expected events, C9 breach on demand, trap ground truth. NOT for simulating agents/gateway or replacing the ledger. Steps: set up/ask/feed (10 min), scenario recipes (15), twin as a governed tool (10).
+  - The MAVERIC pin `7573f030…` exists (2025-11-06).
+  - **The existing `network-twin` tool is NOT MAVERIC:** Lambda `team-a61f5-network-twin` returns a precomputed `prediction` from a JSON dataset.
+  - **Kit `digital-twin/setup-digital-twin.sh` targets the IDE:**
+    - `set -euo pipefail`; clones the pinned MAVERIC into TWIN_DIR (default ~/environment/maveric); RADP on port 8090 (8080 is held on the IDE).
+    - compose `dc.yml + dc-prod.yml + dc-workshop.yml`; `docker build -t radp radp`; its own venv with PY=python3 (RADP needs Python ≥3.8 <3.11).
+    - creates ~/evidence.
+    - buildx self-heal (downloads a Linux buildx into ~/.docker/cli-plugins if buildx < 0.17).
+  - **Local Mac:** Docker Desktop 29.3.1 (arm64, 16 CPU, 48 GB); buildx v0.32.1 (self-heal won't trigger); compose v5.1.1; port 8090 free.
+    - BREAKS on macOS: GNU `sed -i` (aborts under set -e) and python3 = venv 3.12.
+    - Fixes: a python3 shim → /usr/bin/python3 3.9.6 (or uv 3.10); a portable sed; TWIN_DIR outside the repo.
+    - arm64 image builds are untested.
+- **Module 10 "Set up, ask and feed the twin": running LOCALLY (option B; user "run in B", 2026-10-05).** SSM to the IDE is denied to our role, so the IDE can't be driven from here.
+  - Setup started in the background: `TWIN_DIR=…/workshop-local/maveric PATH=…/workshop-local/digital-twin/shim:$PATH bash setup-digital-twin.sh`; log at `workshop-local/digital-twin/setup.log`.
+  - The downloaded script is identical to the kit's.
+  - Shims: `python3` → /usr/bin/python3 3.9.6; `sed` → maps GNU `-i` to BSD `-i ''`.
+  - The script's `ss` port check is skipped harmlessly on macOS (it sits inside an `if`).
+  - It creates `~/evidence` on the laptop and leaves Docker containers (zookeeper, kafka, RADP services) running; stop them after Module 10.
+  - **RESULT (14:51–14:57 UTC): Step DONE.**
+    - Setup exit 0 in ~4 min. arm64 images built natively (Debian bookworm, librdkafka compiled).
+    - 7 containers up; api_manager is published on 0.0.0.0:8090 and kafka on 0.0.0.0:9094, so they are reachable on the LAN.
+    - `tokyo-rf-twin` trained.
+  - **Ask:** `example_app.py` exit 0 in 16 s → rf_dataframe (cell_id, rxpower_dbm, lon, lat, mock_ue_id, tick).
+  - **Feed:** "model updated: True" in 12 s.
+  - **Checkpoint:** exit 0 with rxpower_dbm, BUT its output is byte-identical to the ask.
+  - **FINDING:** `example_app.py` uses its own `MODEL_ID = "example_test_model"`, never tokyo-rf-twin. So "the twin speaking" and "confirm the retrained model still serves" don't test the twin.
+    - Claude queried tokyo-rf-twin directly (`workshop-local/digital-twin/query-tokyo-twin.py`; the example's simulation event with model_id swapped; `load_dotenv` must point at maveric/.env, else the client defaults to port 8080): success, 45 rows.
+    - Means: cell_1 −73.45, cell_2 −99.98 (FLAT for every UE), cell_3 −78.59 dBm. The example model gives −74.59 / −100.40 / −77.54.
+  - Outputs are in `workshop-local/digital-twin/{setup.log,ask.out,feed.out,checkpoint.out}`.
+- **Module 10 "Scenario recipes" (2026-10-05, read-only analysis; NOT run, the recipes are broken as shipped):**
+  - The user heard "some file was missing from digital twin and they fixed it today morning". BUT no event-bucket object is dated 2026-10-05.
+  - **Helper found at `static/scripts/twin-scenario.sh`.** The bucket's `static/` prefix has 136 objects vs 90 in `assets/` (our day-1 sync took only assets/). It is now synced to `~/firstmate-homes/TrustworthyAI/workshop-static/`. Extras: hackathon-helper source, cfn/, iam/ policies, Lambda tests, scripts/, images.
+  - **twin-scenario.sh (baseline|breach|recovery) as shipped:**
+    - baseline only ECHOES text (no JSON)
+    - breach/recovery OVERWRITE data/twin-dataset.json in place (rsrp ≤ −110 / loss ≥ 5; or −82 healthy), print text, compute no drift value; `>>` makes non-JSON
+    - NO `trap` scenario (exit 2)
+    - from /tmp, DATA_DIR resolves to /data, so it fails
+    - the checkpoint `ls | wc -l` = 3 passes even with garbage files
+    - recipe 1's ledger diff can't work (the timeline is text; no `site` field)
+  - **Breach on demand can't reach the agents:** the network-twin Lambda (team-a61f5-network-twin, py3.12, modified 2026-10-04 10:37) reads DATA_DIR=/var/task, its own packaged copy. The Lambda DOES have the dataset.
+  - **Twin coverage:** the dataset has SITE-DEN-12, SITE-DEN-09 and SITE-PHX-04. S1 → SITE-DEN-12, S3 → SITE-PHX-04; S2 names NO site.
+  - **The network agent queried ELEMENT ids** (DU-DEN-12-A ×29, RTR-DEN-12-CORE ×9, RTR-PHX-04-CORE ×7): 40 span results "no twin data for site" in 24 h, yet it recorded dispositions. Now gap-list.md gap 10 (commit 56b9cb1).
+  - MAVERIC (Tokyo cells) is unconnected to the recipes and scenarios.
+- **User decision (2026-10-05): "a now and b as part of plan after finishing the modules".** The recipe findings were recorded as notes #57–#58 (pushed). Building working fixtures is deferred to the plan.
+- **Module 10 "The twin as a governed tool": done read-only (2026-10-05).** All page checks match:
+  - network-twin Approved / Provisioned True / approver system-admin.
+  - Attestation "Approved by the workshop platform at install"; approvals record at 2026-10-04 10:40:52, signature "".
+  - Endpoint http://<public LB>:8080/mcp/network-twin; checkpoint Approved.
+  - **Page claims tested:**
+    - The Cedar toolName clause "restricts this route to only the tools it declares" is FALSE per #37: the network-twin route admitted runbook-lookup and customer-records. This is the same outdated claim as Step 1b.
+    - "a call that bypasses the gateway has nowhere to go" is true for AGENTS (their runtime role has no lambda permissions and Denies InvokeGateway). BUT the live participant policy `participant-permissions-policy-1` v1 (Sid P1HostUtilityLambdaAndApi) allows lambda:UpdateFunctionCode, UpdateFunctionConfiguration, InvokeFunction, AddPermission, DeleteFunction, CreateFunction and GetFunction on `arn:aws:lambda:*:*:function:team-*`, with no condition.
+    - GetFunction on team-a61f5-network-twin succeeds ($LATEST, CodeSha256 PaWw7RVO…). All 7 Lambda-backed ToolConfigs are UNQUALIFIED ($LATEST). So a code change would go live under the old approval. Writes were NOT attempted; SCPs are unknown.
+    - gap-list.md gap 11 added (commit ace0442).
+- **MODULE 10 COMPLETE.** The MAVERIC containers were STOPPED with `docker compose … stop` (state kept; `start` restores; ports 8090/9094 closed).
+- **"The Challenge" section (Challenge page, Control 16 worked example, Evidence cookbook):** recorded as context on 2026-10-05, read-only checks only. See [[challenge-requirements]].
+- **Module 11 "ServiceNow AI Control Tower" (2026-10-05, read-only; connector secret values NEVER printed):**
+  - **Stack `a-03-servicenow-aict`:** AictConfigured=true, role SgcAictReadOnlyAccessRole, secret `team-servicenow-aict-connector-…`, InvocationLogGroupName `/aws/bedrock/aict-invocations`, target account = ours.
+  - **The participant role CAN read the connector secret** (AccessKeyId 20 chars, starting AKIA = a long-term IAM user key; SecretAccessKey 40). The page says this is by design.
+  - **Trust policy:** only `user/ServiceNowAictUser`, no condition. The user has no policies of its own.
+  - **Role inline policy `SgcAictReadOnlyAccessPolicy`:** ALLOW sts:GetCallerIdentity, ec2:DescribeRegions, bedrock List/GetInferenceProfile(s), logs StartQuery/GetQueryResults, cloudtrail LookupEvents, and agentcore List/Get Gateways/GatewayTargets/AgentRuntimes (all Resource *). Explicit DENY (`DenyTokenAndSecretIssuance`) on GetWorkloadAccessToken*, GetResourceApiKey, GetResourceOauth2Token. NO bedrock:ListGuardrails (the page is right).
+  - **AICT IS LIVE:** CloudTrail shows ServiceNowAictUser AssumeRole about every minute (session `613052889143-session`).
+    - Calls OK: GetAgentRuntime ×21, ListAgentRuntimes, ListGateways, and every 15 min a Logs Insights StartQuery/GetQueryResults on /aws/bedrock/aict-invocations ("stats … count(*) by eventName, requestParameters.sessionId …").
+    - **AccessDenied:** bedrock ListAgents, sagemaker ListModelCards, agentcore ListBrowsers/ListCodeInterpreters. So the page's "discovers Bedrock agents and SageMaker models" fails with this role.
+  - **`/aws/bedrock/aict-invocations` = CloudTrail data events, AWS-written and durable.** Sample (500 events, 00:01–08:32 UTC):
+    - bedrock ConverseStream ×466 + Converse ×11 by role `a-01-eks-cluster-agentgateway-bedrock`; requestParameters = modelId, guardrailConfig, inferenceConfig (no prompts)
+    - bedrock-agentcore InvokeAgentRuntime ×23 by WSParticipantRole, plus 2 by the IDE role
+    - **A potential independent evidence source (WHO invoked agents, timestamps, guardrail config per model call)**; no run id; join by time/session id.
+  - **Checkpoint:** role exists.
+  - **DONE:** 5 reader subagents + 3 independent reviewers. The synthesis is in repo `notes/servicenow/servicenow-context.md` (raw notes in `raw/`). See [[servicenow-context]].
+- **Next (user plan, updated 2026-10-05):** the user will share MORE ServiceNow material and other resources first. Claude finishes the reviewed ServiceNow notes, then takes in the new material. Write the HANDOFF NOTE only when the user says so; then the user restarts for PLANNING.
+
+**Live state and who made it:**
+- **Reference agents:** 3 AgentConfigs (customer-experience, it-resolution, network-resolution) deployed by Claude at 04:35–04:38 UTC (Module 7 set-up, user "OK"). Approved by `satyabratsrikumar@team` ("Reviewed: reference agent on AgentCore"). The CodeBuild image is in ECR. **it-resolution-agent is on `nemotron-nano-9b`** (generation 2, swap at 05:47; still 1 approval record).
+- **`modaas-system/my-team-policy`:** ConfigMap created by Claude at 03:41:51 UTC (Module 6 Cedar, user "OK"). It loads in the PDP but decides nothing (notes #33).
+- **`modaas-docs` MCP tool:** deployed and approved by Claude on the user's instruction (approver `satyabratsrikumar@team`, 2026-10-04 21:29 UTC).
+- **ModelConfigs:** all 4 Approved.
+  - `nemotron-nano-3-30b` and `nemotron-super-120b-helper`: by `system-admin` at bootstrap.
+  - `nemotron-nano-9b` and `nemotron-super-120b`: by `cloudshell-user@team` at 23:57 and 23:58 UTC, with attestation text verbatim from the guide's Module 5 "approve" page.
+- **`nemotron-nano-9b` was paused and resumed** (probably the Module 6 pause lab; who did it is unknown).
+  - First cycle 00:32:48 (route re-applied 00:33:31, generation 3). Re-cycled by Claude at 03:46 and by the user at 04:05–04:06 (generation 7).
+  - **Its status still says paused:** `ReconcilePaused=True`, and `RegistryPauseProjected=True` with the registry record "servingState=PAUSED". Meanwhile `spec.paused=false` and the route is programmed. The conditions are re-dated 04:05:53, and the same stale pair is on ToolConfig `modaas-docs` (05:56:44/45; notes #28).
+- **ToolConfig `demo-crm-lookup`:** the Module 6 demo, created 2026-10-05 00:36:35 UTC together with its backend Deployment `demo-tool-backend` (00:36:19 UTC). Creator unknown; it was not created by Claude. It is `Reviewing`. Don't approve or delete it without asking.
+- **CloudShell API activity (participant role):** from 6 distinct source IPs since 2026-10-04 18:38 UTC. During the approval window (23:29–00:05 UTC) only the laptop's public IP was active. The same IP does not mean the same person.
+- **ServiceNow AICT:** provisioned by the facilitators (`WSOpsRole`) on 2026-10-04 between 22:02 and 22:45 UTC. See [[workshop-aws-access]].
+- **EKS control-plane logging** (including audit) is off.
+- **Guide vs live drift:** see repo notes #5 and #6.
+
+**Along the way:** on 2026-10-05 around 00:45 UTC, Claude deleted a leftover throwaway `egress-probe` pod in `components`. Who created it can't be determined, because EKS audit logging is off. Claude committed to asking before deleting anything it did not create.
+
+Related: [[workshop-aws-access]], [[platform-verified-facts]], [[platform-observations-notes]], [[hackathon-working-agreement]]
