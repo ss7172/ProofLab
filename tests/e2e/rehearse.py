@@ -16,6 +16,7 @@ Exit 0: no step FAILED (PASS / XFAIL / SKIP only). Exit 1: at least one FAIL. A 
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import io
 import json
@@ -26,6 +27,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import types
 import zipfile
 from dataclasses import asdict
 
@@ -59,6 +61,10 @@ DEFECTS = {
            " copies the directory if present",
     "D11": "query --control --run prints the T1 LastModified and the run start but never compares them: a register"
            " dated after the run still answers BREACHED/SATISFIED with no gap (G5 date check)",
+    "D12": "the declared fault (suppress-record / inject-tool-output) is carried in the envelope by"
+           " orchestrator/run.build_envelope but never applied by the app: ifabric_app._envelope drops it from the"
+           " translated envelope and nothing in ifabric_app.py or adapters/runtime/ reads it, so a live N4 emits"
+           " every record and C7 N4 comes out SATISFIED, not BREACHED (G5 C7 BREACH named run)",
     "D9": "`registry inventory` freezes to register/versions/inv-N.yaml but the query engine (and ARCH 9.1) read"
           " register/inventory/*.yaml: `query --inventory` finds no inventory in the pack",
 }
@@ -293,7 +299,8 @@ RUN_PLANS = {
     "N3": {"scenario": "S2", "mode": "enforce", "calls": {"ifabric-customer": 2, "ifabric-it": 14, "ifabric-network": 4},
            "tin": 3900, "tout": 40, "tools": 2, "suppress": False},
     "N4": {"scenario": "S1", "mode": "enforce", "calls": {"ifabric-customer": 2, "ifabric-it": 3, "ifabric-network": 2},
-           "tin": 2200, "tout": 150, "tools": 1, "suppress": True},
+           "tin": 2200, "tout": 150, "tools": 1, "suppress": True,
+           "fault": "suppress-record:ifabric-it:tool.call:1"},   # SIMULATED by this driver: see D12
     "N5": {"scenario": "S1", "mode": "enforce", "calls": {"ifabric-customer": 2, "ifabric-it": 3, "ifabric-network": 2},
            "tin": 2200, "tout": 150, "tools": 1, "suppress": False},
 }
@@ -371,7 +378,9 @@ def gen_run(R, name, cid, plan, client):
                 tid = "act-%s-t%02d" % (name, i + 1)
                 recorder.before("lookup", {"site": "SITE-DEN-12", "n": i})
                 t0 = time.time()
-                if not (plan["suppress"] and i == 0):   # suppress-record:ifabric-it:tool.call:1 (the declared fault)
+                # suppress-record:ifabric-it:tool.call:1 SIMULATED HERE by the rehearsal driver (no merged code
+                # applies a declared fault: D12); the dropped record is the EP-3 tool.call AFTER record.
+                if not (plan["suppress"] and i == 0):
                     recorder.after("lookup", {"site": "SITE-DEN-12", "n": i}, status=200, call_id=tid, result={"ok": i})
                 spans.append(_span(cid, tid, "mcp", 0, 0, t0, time.time() + 0.001, trace, agent))
                 actions.append({"action_id": tid, "kind": "tool.call", "agent": agent, "end": _iso(time.time())})
@@ -422,7 +431,92 @@ def step_runs(R):
     R.check("N2 (observe): DENY recorded, calls served", not runs["N2"]["halted"] and bool(n2_deny),
             "deny decisions=%d" % len(n2_deny))
     R.state.update(runs=runs, ledger_rows=rows)
+    step_fault(R)
     return True
+
+
+# ------------------------------------------------------------------ 2b. the declared fault on the merged path (D12)
+FAULT_KEYS = ("fault", "declared_faults")
+
+
+def _fault_readers(paths):
+    """STATIC scan: every `x["fault"]`, `x.get("fault")` or `.declared_faults` read in the given sources."""
+    hits = []
+    for path in paths:
+        tree = ast.parse(_read(path), path)
+        for node in ast.walk(tree):
+            key = None
+            if isinstance(node, ast.Subscript):
+                sl = node.slice
+                key = sl.value if isinstance(sl, ast.Constant) else None
+            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "get" \
+                    and node.args and isinstance(node.args[0], ast.Constant):
+                key = node.args[0].value
+            elif isinstance(node, ast.Attribute) and node.attr in FAULT_KEYS:
+                key = node.attr
+            if key in FAULT_KEYS:
+                hits.append("%s:%d" % (os.path.relpath(path, REPO), node.lineno))
+    return hits
+
+
+def _import_ifabric_app():
+    """Import the merged agents/ifabric-customer/ifabric_app.py; bedrock_agentcore / strands are stubbed only
+    when absent (they are only used inside build(), which the rehearsal never calls)."""
+    saved, added = list(sys.path), []
+    stubs = {"bedrock_agentcore": None, "bedrock_agentcore.runtime": {"BedrockAgentCoreApp": object},
+             "strands": {"Agent": object}}
+    try:
+        for name, attrs in stubs.items():
+            try:
+                __import__(name)
+            except ImportError:
+                m = types.ModuleType(name)
+                for k, v in (attrs or {}).items():
+                    setattr(m, k, v)
+                sys.modules[name] = m
+                added.append(name)
+        sys.path.insert(0, _p(REPO, "agents", "ifabric-customer"))
+        sys.modules.pop("ifabric_app", None)
+        import ifabric_app  # noqa: E402
+        return ifabric_app
+    finally:
+        sys.path[:] = saved
+        for name in added:
+            sys.modules.pop(name, None)
+        sys.modules.pop("ifabric_app", None)
+
+
+def step_fault(R):
+    """N4's C7 BREACH needs the declared fault applied by the RUNTIME. Check the merged path end to end:
+    orchestrator envelope -> app envelope translation -> a runtime component that reads it."""
+    from prooflab.adapters.orchestrator import conditions as COND
+    from prooflab.adapters.orchestrator import run as ORUN
+    spec = RUN_PLANS["N4"]["fault"]
+    fault = COND.parse_fault(spec)
+    args = argparse.Namespace(mode="enforce", scenario="S1")
+    pin = {"register_version": "v1", "register_sha256": None, "pin_sha256": None}
+    cond = {"name": "none", "sha256": None}
+    cid = R.state["runs"]["N4"]["cid"]
+    env = ORUN.build_envelope(cid, IDS.handoff_id(cid, 1), "ifabric-customer", fault["agent"], args, pin, cond,
+                              fault, "default", "FAULT_INJECTION", (0, 0))
+    R.check("orchestrator envelope carries %s to %s" % (spec, fault["agent"]),
+            env.get("fault", {}).get("spec") == spec and env.get("provenance") == "FAULT_INJECTION",
+            "run.build_envelope fault=%s provenance=%s" % (bool(env.get("fault")), env.get("provenance")))
+    try:
+        app = _import_ifabric_app()
+        translated, raw = app._envelope({"prompt": "x", "ifabric": env})
+        carried = "fault" in (translated.get("envelope") or {})
+        note = "ifabric_app._envelope: translated keys %s (raw keeps fault=%s)" % (
+            sorted((translated.get("envelope") or {}).keys()), "fault" in raw)
+    except Exception as exc:  # noqa: BLE001
+        carried, note = False, "ifabric_app import/_envelope failed: %s: %s" % (type(exc).__name__, exc)
+    R.check("app envelope translation carries the fault", carried, note, xfail="D12")
+    srcs = [_p(REPO, "agents", "ifabric-customer", "ifabric_app.py")] + sorted(
+        _p(REPO, "adapters", "runtime", f) for f in os.listdir(_p(REPO, "adapters", "runtime")) if f.endswith(".py"))
+    readers = _fault_readers(srcs)
+    R.check("the merged app applies %s (STATIC scan)" % spec, bool(readers),
+            "readers of fault/declared_faults in ifabric_app.py + adapters/runtime/: %s; N4 rows below use a"
+            " driver-simulated fault" % (readers or "none"), xfail="D12")
 
 
 # ------------------------------------------------------------------ 3. snapshot: collectors, refresh, postrun
@@ -624,7 +718,9 @@ def step_assess(R):
         g = got[name]
         ok = (w16 is None or g["C16"] == w16) and (w7 is None or g["C7"] == w7)
         R.check("assess %s: C16 %s, C7 %s" % (name, g["C16"], g["C7"]), ok,
-                "want C16=%s C7=%s (stand-in glue for D1)" % (w16 or "any", w7 or "any"))
+                "want C16=%s C7=%s (stand-in glue for D1)%s" % (
+                    w16 or "any", w7 or "any",
+                    "; fault simulated by the rehearsal driver (D12)" if RUN_PLANS[name].get("fault") else ""))
     R.check("C7 N3 (stopped agent) with workflow_events_after_stop", got["N3"]["C7"] == V.SATISFIED,
             "verdict %s: lifecycle.stop / handoff.received are never emitted under those names" % got["N3"]["C7"],
             xfail="D5")
@@ -751,7 +847,8 @@ def step_query(R):
         ok = rc == want and dt < QUERY_BUDGET_S
         if "N2 (BREACHED)" in label:
             ok = ok and "T1 proof" in out and "unknown" not in out.split("T1 proof", 1)[1].split("\n", 1)[0]
-        R.check("query %s from the fresh unzip" % label, ok, "rc=%d in %.1fs %s" % (rc, dt, err.strip()[:60]))
+        sim = "; fault simulated by the rehearsal driver (D12)" if "N4" in label else ""
+        R.check("query %s from the fresh unzip" % label, ok, "rc=%d in %.1fs %s%s" % (rc, dt, err.strip()[:60], sim))
     late = _p(w, "late-t1")             # a copy whose T1 is AFTER the runs: the date check must not pass
     shutil.copytree(ev, late)
     hp = _p(late, "register", "versions", "v1.head.json")

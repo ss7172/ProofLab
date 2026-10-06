@@ -47,3 +47,15 @@ def test_query_answers_from_the_fresh_unzip(result):
                  "planted tokens in the 3 ARCH 9.3 paths: 0 hits in the pack", "tools/manifest.py verify",
                  "manifest verify on the fresh unzip"):
         assert rows.get(step) == "PASS", step
+
+
+def test_n4_fault_is_checked_on_the_merged_path(result):
+    """N4's C7 BREACH needs the RUNTIME to apply the declared fault: the merged-path rows must exist, and while
+    D12 is open the N4 verdict rows must say the fault was simulated by the driver."""
+    _, _, doc = result
+    fault_rows = [r for r in doc["rows"] if r["step"].startswith("the merged app applies suppress-record")]
+    assert len(fault_rows) == 1 and fault_rows[0]["status"] in ("PASS", "XFAIL"), fault_rows
+    if fault_rows[0]["status"] == "XFAIL":
+        n4 = [r for r in doc["rows"] if r["step"].startswith(("assess N4", "query C7 run N4"))]
+        assert len(n4) == 2, n4
+        assert n4 and all("simulated by the rehearsal driver (D12)" in r["note"] for r in n4), n4
