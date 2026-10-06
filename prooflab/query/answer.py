@@ -202,24 +202,124 @@ def _file_sha(path):
         return "0" * 64
 
 
-def _tick_text(ok, manifest_status, a, rc, rule, corr=None):
+def _approved_before(rule, run_start):
+    """True only when the owner's approval time is recorded and at or before the run start (never on a dated register alone)."""
+    at, start = E._utc_key((rule.get("approval") or {}).get("at")), E._utc_key(run_start)
+    return bool(at and start and at <= start)
+
+
+def _dated_before(at, start):
+    """True / False when both UTC times are recorded, None when either is missing."""
+    a, b = E._utc_key(at), E._utc_key(start)
+    return None if not (a and b) else a <= b
+
+
+def _cmp(at, start):
+    b = _dated_before(at, start)
+    return "before" if b else "after" if b is False else "not proven before"
+
+
+def _with_dates(pack, control, rule):
+    """The rule plus WHICH register frozen_at belongs to: frozen_at is the S3 (T1) date of the FIRST register that carried
+    the threshold version (t1_register); register_t1 is the S3 (T1) date of the register named in register_version.
+    Read from the T1 heads; nothing is rewritten."""
+    try:
+        first, _t = pack.t1_for(rule.get("threshold_version"), control)
+        head = (pack.registers.get(rule.get("register_version")) or {}).get("head") or {}
+    except Exception:
+        return rule
+    own = head.get("LastModified") or head.get("last_modified") or head.get("t1")
+    own = E._utc_key(own) and own or (re.sub(r"\+00:00$", "Z", own) if isinstance(own, str) else None)
+    return dict(rule, t1_register=first or rule.get("register_version"), register_t1=_utc_or(own))
+
+
+def _authority_text(rule, run_start, label="run start"):
+    """Who authorised the rule and WHEN, stated exactly: the S3 (T1) date of the register that FIRST carried the threshold
+    version, the S3 date of the register named (when different), and the ServiceNow approval time, each vs the scope start."""
+    ap = rule.get("approval") or {}
+    who = "register owner: %s" % ((rule.get("owner") or {}).get("id") or (rule.get("owner") or {}).get("name") or E.UNKNOWN)
+    first = rule.get("t1_register") or rule.get("register_version")
+    t1 = "threshold version %s first dated by S3 (T1) %s in register %s, %s the %s %s" % (
+        rule.get("threshold_version") or "not recorded", rule.get("frozen_at"), first, _cmp(rule.get("frozen_at"), run_start),
+        label, run_start or "not recorded")
+    if rule.get("register_version") and rule.get("register_version") != first:
+        t1 += "; register %s (the rule shown) dated by S3 (T1) %s, %s the %s" % (
+            rule["register_version"], rule.get("register_t1") or "not recorded", _cmp(rule.get("register_t1"), run_start), label)
+    if rule.get("bound_by"):
+        who += "; threshold version bound by %s" % rule["bound_by"]
+    if ap.get("status") == "APPROVED" and ap.get("at"):
+        noun = "run" if label == "run start" else label
+        this = "this run" if label == "run start" else "the " + label
+        when = ("approved before the %s" % noun if _approved_before(rule, run_start)
+                else "approved AFTER %s; %s was dated before it by S3" % (
+                    this, "the register" if first == rule.get("register_version") else "threshold version %s (register %s)" % (rule.get("threshold_version"), first))
+                if _dated_before(rule.get("frozen_at"), run_start) else "approved AFTER %s" % this)
+        appr = "ServiceNow approval note %s on %s, responded from account %s (%s)" % (ap["at"], str(ap.get("ref") or "").replace("servicenow:", ""),
+                                                             (ap.get("approver") or {}).get("id") or "not recorded", when)
+    else:
+        appr = "approval %s" % (ap.get("status") or "MISSING")
+    return "%s; %s; %s" % (who, t1, appr)
+
+
+def _first_carrier_approval(pack, control, threshold_version):
+    """(register, approval) of the FIRST register that carried this threshold version (the approval that bound it), from
+    the T2 files; (None, None) when the pack has none. A later register re-carrying the same version does not re-date it."""
+    try:
+        from prooflab.pack import history as _h
+        appr = _h.approvals(pack.root) or {}
+        names = sorted(pack.registers, key=lambda n: pack._reg_date(n))
+    except Exception:
+        return None, None
+    for name in names:
+        if any(e.get("control_ref") == control and e.get("threshold_version") == threshold_version
+               for e in pack.registers[name]["doc"]["entries"]):
+            a = appr.get(str(name))
+            return (str(name), dict((k, a[k]) for k in ("status", "ref", "at", "approver") if a.get(k))) if a else (str(name), None)
+    return None, None
+
+
+def _bound_rule(pack, control, rule, run_start):
+    """The rule as the approval that FIRST bound its threshold version sees it (C7-v1/C9-v1 carried by v1, approved before
+    the run, are re-carried unchanged by v1.1); the rule itself when no earlier approval applies."""
+    name, ap = _first_carrier_approval(pack, control, rule.get("threshold_version"))
+    if not name or not ap or name == rule.get("register_version") or ap.get("status") != "APPROVED":
+        return rule
+    if not _approved_before(dict(rule, approval=ap), run_start):
+        return rule
+    return dict(rule, approval=ap, register_version=name, bound_by="register %s (first carried %s)" % (name, rule.get("threshold_version")))
+
+
+def _tick_text(ok, manifest_status, a, rc, rule, corr=None, run_start=None, label="run start"):
+    """V is lit only when the owner's approval is recorded at or before the scope start AND the threshold version was
+    dated by S3 before it; an approval after the scope start is stated, never vouched."""
+    ap = rule.get("approval") or {}
+    first = rule.get("t1_register") or rule.get("register_version")
+    dated = "threshold version %s dated by S3 %s (register %s)" % (rule.get("threshold_version") or "not recorded", rule.get("frozen_at"), first)
+    if ap.get("status") != "APPROVED":
+        v = "not vouched: no owner approval recorded (%s)" % (ap.get("status") or "MISSING")
+    elif run_start is None:
+        v = "not vouched: the %s is not recorded, so the approval cannot be placed before it" % label
+    elif not _dated_before(rule.get("frozen_at"), run_start):
+        v = "not vouched: %s, not proven before the %s %s" % (dated, label, run_start)
+    elif not _approved_before(rule, run_start):
+        v = ("not vouched: the owner's approval (%s) came AFTER the %s %s; %s, before it"
+             % (ap.get("at") or "time not recorded", label, run_start, dated))
+    else:
+        v = "vouched: owner approval %s, before the %s %s; %s" % (ap.get("at"), label, run_start, dated)
     return {"R": ("recomputed by the evaluator: %s" % rc) if rc else "not recomputed (no evaluator entry point)",
             "A": "agreed to MANIFEST.json (%s)" % manifest_status,
             "T": ("corroboration report: %d mismatches" % len(corr.get("mismatches", []))) if isinstance(corr, dict)
                  else "not traced: no corroboration report for this scope in the pack",
-            "V": _vouch_text(rule, a)}
+            "V": v}
 
 
-def _authority(rule, ctx):
-    """Register owner and approval, with the approval time stated against the run: an approval after the run is said so."""
-    ap = rule["approval"]
-    at, start = ap.get("at"), ctx.get("start")
-    after = bool(at and start and E._utc_key(at) and E._utc_key(start) and E._utc_key(at) > E._utc_key(start))
-    words = "register owner %s; approval %s%s%s%s" % (
-        rule["owner"]["name"], ap["status"], (" on " + str(ap["ref"])) if ap.get("ref") else "", (" at " + str(at)) if at else "",
-        " (AFTER this run; the register was dated before it by S3)" if after and rule.get("date_before_scope") else
-        " (AFTER this run)" if after else "")
-    return _txt(words, [rule["source_ref"]], "OK" if ap["status"] == "APPROVED" and not after else "FLAG")
+_NONE = re.compile(r"\bNone\b")
+
+
+def _clean(text):
+    """A Python None leaking from a recorded detail string ('position=None', 'received None') reads 'not recorded'.
+    The record itself is never changed; only the displayed summary."""
+    return _NONE.sub("not recorded", str(text))
 
 
 def date_words(rule):
@@ -235,17 +335,6 @@ def date_words(rule):
             "GAP")
 
 
-def _vouch_text(rule, a=None):
-    words, _ = date_words(rule)
-    approved = rule["approval"]["status"] == "APPROVED"
-    at, start = rule["approval"].get("at"), (a or {}).get("scope_start")
-    if approved and at and start and E._utc_key(at) and E._utc_key(start) and E._utc_key(at) > E._utc_key(start):
-        return "not vouched before the run: owner approval at %s came AFTER the run; register %s" % (at, words)
-    if approved and rule["date_before_scope"]:
-        return "vouched: owner approval%s, register %s" % ((" at " + str(at)) if at else "", words)
-    return "not vouched: %s; register %s" % ("owner approval on record" if approved else "no owner approval record in the pack", words)
-
-
 def _record_rows(recs, ok, manifest_status, rc_matches):
     rows = []
     in_manifest = ok.get("store/records.jsonl")
@@ -254,12 +343,31 @@ def _record_rows(recs, ok, manifest_status, rc_matches):
         ticks = (["A"] if in_manifest else []) + (["R"] if (r.get("record_kind") == "assessment" and rc_matches) else [])
         rows.append({"ref": "record:%s" % r.get("record_id"), "role": _ROLE.get(r.get("record_kind"), "context"),
                      "surface": str(r.get("emitter") or r.get("record_kind") or ""), "manifest": mf, "tickmarks": ticks,
-                     "summary": str(r.get("detail") or r.get("record_kind") or "")})
+                     "summary": _clean(r.get("detail") or r.get("record_kind") or ""),
+                     "source": "recorded (detail of record:%s)" % r.get("record_id") if r.get("detail") else "recorded (record_kind)"})
     return rows
 
 
-def _human_loops(recs):
+def _human_loops(recs, pack=None, cid=None, control=None):
     out = []
+    items = E.pack_human_loop(pack, cid, control) if pack is not None and cid else []
+    if items:
+        by = dict((x["kind"], x) for x in items)
+        fnd, dl, an, cl = by.get("finding"), by.get("notification"), by.get("assurance"), by.get("closure")
+        inc = None
+        if dl:
+            m = re.search(r"\b(INC\d+)\b", dl["text"])
+            inc = m.group(1) if m else None
+        if cl and not inc:
+            m = re.search(r"\b(INC\d+)\b", cl["text"])
+            inc = m.group(1) if m else None
+        out.append({"finding_id": fnd["ref"] if fnd else (cl or {}).get("ref"), "incident": inc,
+                    "delivery": {"state": "DELIVERED" if dl else "NOT_RECORDED", "at": _utc_or(dl["text"].split(" DELIVERED ")[-1].split(" ")[0]) if dl else None},
+                    "response": {"state": "UNKNOWN", "actor": None, "at": None},
+                    "assurance_agent": {"state": "ANALYSIS_WRITTEN" if an else "UNKNOWN", "at": None},
+                    "closure": {"state": cl["state"] if cl else "OPEN"},
+                    "lines": [x["text"] for x in items], "source": "joined-from: findings/, servicenow/delivery-log.jsonl, closures/"})
+        return out
     notes = [r for r in recs if r.get("record_kind") == "notification"]
     for f in [r for r in recs if r.get("record_kind") == "finding"]:
         out.append({"finding_id": str(f.get("record_id")), "incident": f.get("incident") or None,
@@ -267,6 +375,36 @@ def _human_loops(recs):
                     "response": {"state": "UNKNOWN", "actor": None, "at": None},
                     "assurance_agent": {"state": "UNKNOWN", "at": None},
                     "closure": {"state": "OPEN"}})
+    return out
+
+
+_BRACKET = re.compile(r"\b(committed|reserved|bound)=(\d+(?:\.\d+)?)")
+
+
+def _c9_largest(measured):
+    """((largest |change_pct|, runtime), n windows) from a stored C9 assessment's measured.windows; (None, 0) when none."""
+    wins = [w for w in ((measured or {}).get("windows") or []) if isinstance(w, dict) and _num(w.get("change_pct")) is not None]
+    if not wins:
+        return None, 0
+    top = max(wins, key=lambda w: abs(_num(w["change_pct"])))
+    return (round(abs(_num(top["change_pct"])), 4), top.get("runtime")), len(wins)
+
+
+def _decision_numbers(r):
+    """committed / reserved / bound from the decision's own detail bracket (recorded: detail), limit from inline.limit_value,
+    and the projected total = committed + reserved + bound (the decision's measured.value is this projection, not spend)."""
+    out = {}
+    for k, v in _BRACKET.findall(str(r.get("detail") or "")):
+        out[k] = _num(v)
+    lim = _num(r.get("inline.limit_value"))
+    if lim is None:
+        lim = _num(r.get("threshold.value"))
+    if lim is not None:
+        out["limit"] = lim
+    if all(out.get(k) is not None for k in ("committed", "bound")):
+        out["projected"] = out["committed"] + (out.get("reserved") or 0) + out["bound"]
+    if out:
+        out["source"] = "recorded (detail bracket, inline.limit_value) on record:%s" % r.get("record_id")
     return out
 
 
@@ -279,8 +417,9 @@ def _enforcement(control, recs, a):
     for r in dec:
         d = r.get("verdict")
         if d in V.DECISION_VERDICTS and _utc_or(r.get("ts")):
-            items.append({"call_id": str(r.get("record_id")), "decision": d, "at": r["ts"],
-                          "reason": str(r.get("detail") or "")})
+            item = {"call_id": str(r.get("record_id")), "decision": d, "at": r["ts"], "reason": str(r.get("detail") or "")}
+            item.update(_decision_numbers(r))
+            items.append(item)
     return {"mode": mode, "tester": {"name": a.get("evaluator_name") or "prooflab.evaluators.%s" % control.lower(),
                                      "version": a.get("threshold_version") or E.UNKNOWN},
             "inline_decisions": items}
@@ -290,8 +429,10 @@ def _aict(pack):
     return {"status": "UNKNOWN", "monitor": "UNKNOWN"}
 
 
-def _txt(text, refs=None, flag=None):
+def _txt(text, refs=None, flag=None, source=None):
     d = {"text": text}
+    if source:
+        d["source"] = source
     if refs:
         d["refs"] = refs
     if flag:
@@ -364,35 +505,49 @@ def _audit_question(control, a, rule, ctx):
             x["actor"] or E.UNKNOWN, x["runtime"] or "not recorded", ver or "not recorded",
             x["principal"] or "not recorded in the records")
     agents = "; ".join(_agent(x) for x in actors)
+    vr = ctx.get("vrule") or rule
     meas = a.get("measured") or {}
+    mval = ctx["mval"] if "mval" in ctx else meas.get("value")
+    munit = (ctx.get("munit") if "mval" in ctx else meas.get("unit")) or ""
+    mshow = "not recorded" if mval is None else (round(mval, 4) if isinstance(mval, float) else mval)
+    lbl = "run start" if ctx["scope_kind"] == "run" else "scope start"
     return {
-        "what_was_done": _txt("%s over %s %s: %d records, measured %s %s." % (
-            control, ctx["scope_kind"], ctx["scope_label"], len(recs), E.UNKNOWN if meas.get("value") is None else meas["value"], meas.get("unit") or ""),
-            rid(recs)),
-        "by_which_agent": _txt(agents or "unknown (gap: no actor records for this scope)", rid([r for r in recs if r.get("actor.id")]),
-                               None if agents else "GAP"),
+        "what_was_done": (_txt(ctx["what_text"] + ".", [], source="recorded (stored assessments)") if ctx.get("what_text") else
+                          _txt("%s over %s %s: %d records, measured %s %s." % (
+            control, ctx["scope_kind"], ctx["scope_label"], len(recs), mshow, munit),
+            rid(recs), source="%s; record count from store/records.jsonl" % (ctx.get("msource") or "recorded (measured.value of the stored assessment)"))),
+        "by_which_agent": _txt(agents or "not recorded (gap: no actor records for this scope)", rid([r for r in recs if r.get("actor.id")]),
+                               None if agents else "GAP",
+                               source="recorded (actor.id); version joined-from: register inventory (actor.version not recorded)"),
         "where": _txt("by the evaluator named in the assessment; EPs seen: %s" % (", ".join(sorted(set(str(r["ep.id"]) for r in recs if r.get("ep.id")))) or "none recorded"),
-                      rid([r for r in recs if r.get("ep.id")])),
-        "when": _txt("%s .. %s (UTC)" % (E.UNKNOWN if not ctx["start"] else ctx["start"], E.UNKNOWN if not ctx["end"] else ctx["end"])),
-        "under_whose_authority": _authority(rule, ctx),
-        "rule_checked": _txt("%s %s: %s" % (control, rule["threshold_version"], rule["statement"]), [rule["source_ref"]]),
+                      rid([r for r in recs if r.get("ep.id")]), source="recorded (ep.id)"),
+        "when": _txt("%s .. %s (UTC)" % ("not recorded" if not ctx["start"] else ctx["start"], "not recorded" if not ctx["end"] else ctx["end"]),
+                     source="recorded (ts of the scope's records)"),
+        "under_whose_authority": _txt(_authority_text(vr, ctx["start"], lbl),
+                                      [rule["source_ref"]] + ([vr["approval"]["ref"]] if vr["approval"].get("ref") else []),
+                                      "OK" if (vr["approval"]["status"] == "APPROVED" and _approved_before(vr, ctx["start"])) else "FLAG",
+                                      source="joined-from: register/versions + register/t1 (witnessed-by:S3) + register/approval* (witnessed-by:ServiceNow)"),
+        "rule_checked": _txt("%s %s: %s" % (control, rule["threshold_version"], rule["statement"]), [rule["source_ref"]],
+                             source="joined-from: register/versions/%s.yaml" % rule["register_version"]),
         "limit_in_force": _txt("%s %s %s per run, version %s, %s" % (
             rule["observation_limit"]["operator"], rule["observation_limit"]["value"], rule["observation_limit"]["unit"], rule["threshold_version"],
-            date_words(rule)[0]), [rule["source_ref"]], date_words(rule)[1]),
+            date_words(rule)[0]), [rule["source_ref"]], date_words(rule)[1], source="joined-from: register/versions + register/t1 (witnessed-by:S3)"),
         "decision": {"text": "control test %s (%s)%s" % (a["verdict"], V.display(a["verdict"]), (
                          "; the inline guard stopped the denied call(s) before they were sent, so the run's spend stayed within the limit"
                          if a["verdict"] == V.SATISFIED else "; a call was DENIED inline") if stopped else ""),
                      "refs": ["assessment:%s" % a["assessment_id"]] if a.get("assessment_id") else [],
                      # the outcome follows THIS control's assessment: a stop, else a breach escalated to a human, else allowed
+                     "source": "recorded (verdict of the stored assessment; DENY decisions recorded by the EP-1 adapter)",
                      "outcome": "STOPPED" if stopped else "ESCALATED" if (a["verdict"] == V.BREACHED and (told or staged)) else "ALLOWED"},
         "who_was_told": _txt("; ".join(["%s %s" % (r["record_kind"], r.get("verdict")) for r in told] + [
             "finding %s %s -> %s %s%s" % (f.get("control_ref"), f.get("verdict"), (f["delivery"].get("incident") or "no incident recorded"),
                                          f["delivery"].get("state") or "not delivered", (" to " + f["delivery"]["owner"]) if f["delivery"].get("owner") else "")
             for f in staged]) or "no finding or notification record for this scope (none needed when the control held)",
                              rid(told) + ["finding:%s" % f["path"] for f in staged][:3],
-                             None if (told or staged) else ("GAP" if a.get("verdict") == V.BREACHED else None)),
+                             None if (told or staged) else ("GAP" if a.get("verdict") == V.BREACHED else None),
+                             source="recorded (finding/notification records); joined-from: servicenow/delivery-log.jsonl"),
         "unchanged_since": _txt("MANIFEST.json status %s" % ctx["manifest_status"], ["manifest:MANIFEST.json"] if ctx["manifest_status"] != "UNVERIFIED" else None,
-                                "OK" if ctx["manifest_status"] == "VERIFIED" else "FLAG"),
+                                "OK" if ctx["manifest_status"] == "VERIFIED" else "FLAG", source="joined-from: MANIFEST.json"),
     }
 
 
@@ -414,6 +569,14 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
     src, ok = _source(pack, len(pack.records))
     ms = ans["measured"] or {}
     mval = _num(ms.get("value"))
+    msource = "recorded (measured.value of the stored assessment)"
+    if mval is None and control == "C9":
+        # C9 stores one change_pct per runtime window: the judged figure is the largest |change_pct| (never 'unknown' next to a verdict)
+        top, n = _c9_largest(a.get("measured"))
+        if top is not None:
+            mval = top[0]
+            ms = dict(ms, unit="%% relative change vs baseline (largest |change_pct|, runtime %s)" % top[1])
+            msource = "recorded (measured.windows[].change_pct of the stored assessment; largest of %d)" % n
     lim = _num(ans["limit"])
     op = "<="
     if lim is None:
@@ -437,10 +600,12 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
         gaps.append({"id": "G-POP", "text": "the assessment carries no completeness counts: the population is unknown, zeros shown", "affects": "population"})
     rc = ans.get("recompute") or ""
     rc_match = rc.startswith("matches")
-    tick = _tick_text(ok, src["manifest_status"], a, rc, rule, E.read_json(pack.p("derived", "corroboration", cid + ".json")))
+    vrule = _with_dates(pack, control, _bound_rule(pack, control, rule, ans.get("run_start")))
+    tick = _tick_text(ok, src["manifest_status"], a, rc, vrule, E.read_json(pack.p("derived", "corroboration", cid + ".json")),
+                      run_start=ans.get("run_start"))
     ctx = {"recs": recs, "cid": cid, "scope_kind": "run", "scope_label": parse.get("alias") or cid, "start": ans.get("run_start"),
            "end": E.run_end(pack, cid), "manifest_status": src["manifest_status"], "findings": stored_findings(pack, cid),
-           "inventory": _inventory_versions(pack)}
+           "inventory": _inventory_versions(pack), "vrule": vrule, "mval": mval, "munit": ms.get("unit") or "", "msource": msource}
     scope = {"kind": "run", "id": parse.get("alias") or cid, "cid": cid}
     if parse.get("alias"):
         scope["alias"] = parse["alias"]
@@ -456,7 +621,7 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
         "control": {"ref": control, "id": CONTROL_IDS[control], "name": (entry or {}).get("name") or CONTROL_NAMES[control],
                     "mode": CONTROL_MODES[control]},
         "rule": rule, "scope": scope, "population": population,
-        "measurement": {"value": mval, "unit": ms.get("unit") or E.UNKNOWN,
+        "measurement": {"value": mval, "unit": ms.get("unit") or E.UNKNOWN, "source": msource,
                         "formula": str(a.get("formula") or rule["measurement_basis"])},
         "comparison": {"limit": lim, "operator": op, "delta": (mval - lim) if (mval is not None and lim is not None) else None,
                        "within_limit": within, "exceptions_count": len(exc), "exceptions_allowed": rule["exception_tolerance"]["value"],
@@ -466,7 +631,7 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
                     "evidence_sufficiency": a.get("evidence_sufficiency") if a.get("evidence_sufficiency") in ("COMPLETE", "PARTIAL", "UNKNOWN") else "UNKNOWN"},
         "enforcement": _enforcement(control, recs, a),
         "audit_question": _audit_question(control, a, rule, ctx),
-        "human_loops": _human_loops(recs), "aict": _aict(pack),
+        "human_loops": _human_loops(recs, pack, cid, control), "aict": _aict(pack),
         "records": _record_rows(recs + ([{"record_id": a["record_id"], "record_kind": "assessment", "detail": "stored assessment"}] if a.get("record_id") else []),
                                 ok, src["manifest_status"], rc_match),
         "gaps": gaps, "tickmarks": tick,
@@ -477,6 +642,16 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
         doc["gaps"].append({"id": "G-RC", "text": "recompute: %s" % rc, "affects": "verdict"})
     doc["answer_id"] = answer_id_of(doc)
     return doc
+
+
+def _counted_words(counted, breached):
+    """'N breached of M counted assessments (x runs, y hourly roll-ups)': a window roll-up is never called a run."""
+    runs = sum(1 for a in counted if a.get("scope_kind") == "run")
+    rolls = len(counted) - runs
+    parts = (["%d run%s" % (runs, "" if runs == 1 else "s")] if runs else []) + (
+        ["%d hourly roll-up%s" % (rolls, "" if rolls == 1 else "s")] if rolls else [])
+    return "%d breached of %d counted assessment%s (%s)" % (len(breached), len(counted), "" if len(counted) == 1 else "s",
+                                                           ", ".join(parts) or "none")
 
 
 # ---------------------------------------------------------------- answer/v1: one window
@@ -508,14 +683,23 @@ def compose_window(pack, parse, ans=None, now=None):
     series = []
     for a in counted:
         m = a.get("measured") or {}
-        series.append({"id": str(a["scope_id"]), "value": _num(m.get("value")), "limit": _num(a["limit"]),
+        sval = _num(m.get("value"))
+        if sval is None and control == "C9":
+            top, _n = _c9_largest(m)
+            sval = top[0] if top else None
+        series.append({"id": str(a["scope_id"]), "value": sval, "limit": _num(a["limit"]),
                        "violates": a["verdict"] == V.BREACHED if a["verdict"] in (V.BREACHED, V.SATISFIED) else None,
                        "status": "VIOLATES" if a["verdict"] == V.BREACHED else "OK" if a["verdict"] == V.SATISFIED else "UNKNOWN",
                        "ref": "assessment:%s" % a["assessment_id"] if a.get("assessment_id") else "run:%s" % a["scope_id"]})
+    vrule = _with_dates(pack, control, _bound_rule(pack, control, rule, parse["t1"]))
+    top_s = max([x for x in series if x["value"] is not None], key=lambda x: abs(x["value"]), default=None)
     ctx = {"recs": [], "cid": win, "scope_kind": "window", "scope_label": win, "start": parse["t1"], "end": parse["t2"],
-           "manifest_status": src["manifest_status"]}
+           "manifest_status": src["manifest_status"], "vrule": vrule, "mval": len(breached),
+           "munit": "(%s)%s" % (_counted_words(counted, breached), ("; largest per-assessment value %s (%s)" % (top_s["value"], top_s["id"])) if top_s else ""),
+           "what_text": "%s over window %s: %s, from the stored assessments" % (control, win, _counted_words(counted, breached)),
+           "msource": "recorded (verdict and measured value of each counted run's stored assessment)"}
     verdict = ans["verdict"]
-    reason = "%d of %d counted runs breached; tolerance %s per register version" % (len(breached), len(counted), E.UNKNOWN if allowed is None else allowed)
+    reason = "%s; tolerance %s per register version" % (_counted_words(counted, breached), E.UNKNOWN if allowed is None else allowed)
     recs = []
     for a in counted:
         recs += [r for r in pack.by_cid.get(a["scope_id"], []) if r.get("record_kind") == "finding"]
@@ -531,12 +715,12 @@ def compose_window(pack, parse, ans=None, now=None):
         "rule": rule, "scope": scope,
         "population": {"expected": {"count": len(counted) + len(ans["listed"]), "source": "assessments and run index inside the window (E-06)"},
                        "observed": len(counted) + len(ans["listed"]), "matched": len(counted), "missing": 0, "unmatched": len(ans["listed"])},
-        "measurement": {"value": len(breached), "unit": "breached runs",
-                        "formula": "count of counted runs whose stored verdict is BREACHED (window rule E-06)", "series": series},
+        "measurement": {"value": len(breached), "unit": "breached assessments",
+                        "formula": "count of counted assessments (runs and hourly roll-ups) whose stored verdict is BREACHED (window rule E-06)", "series": series},
         "comparison": {"limit": allowed, "operator": "<=", "delta": len(breached) - allowed,
                        "within_limit": len(breached) <= allowed, "exceptions_count": len(breached), "exceptions_allowed": allowed,
-                       "exceptions_unit": "breached runs"},
-        "exceptions": [{"id": str(a["scope_id"]), "ref": "run:%s" % a["scope_id"], "value": _num((a.get("measured") or {}).get("value")),
+                       "exceptions_unit": "breached assessments"},
+        "exceptions": [{"id": str(a["scope_id"]), "ref": ("run:%s" if a.get("scope_kind") == "run" else "assessment-scope:%s") % a["scope_id"], "value": _num((a.get("measured") or {}).get("value")),
                         "why": "stored verdict %s" % a["verdict"]} for a in breached],
         "verdict": {"value": verdict, "label": V.display(verdict), "reason": reason,
                     "evidence_sufficiency": "PARTIAL" if ans["listed"] or ans["gaps"] else "COMPLETE"},
@@ -546,7 +730,7 @@ def compose_window(pack, parse, ans=None, now=None):
         "records": [{"ref": "assessment:%s" % a["assessment_id"], "role": "measurement", "manifest": "OK" if ok.get("store/records.jsonl") else "MISSING",
                      "tickmarks": []} for a in counted[:RECORD_LIMIT] if a.get("assessment_id")],
         "gaps": gaps,
-        "tickmarks": _tick_text(ok, src["manifest_status"], first, "", rule),
+        "tickmarks": _tick_text(ok, src["manifest_status"], first, "", vrule, run_start=parse["t1"], label="scope start"),
     }
     doc["answer_id"] = answer_id_of(doc)
     return doc
@@ -555,6 +739,15 @@ def compose_window(pack, parse, ans=None, now=None):
 # ---------------------------------------------------------------- auditor/v1
 _QMAP = (("who", ("WHO acted", "WHO owns it")), ("what", ("WHAT it touched",)), ("authorized", ("AUTHORIZED",)),
          ("approved", ("APPROVED",)), ("integrity", ("INTEGRITY",)), ("reconstruct", ("RECONSTRUCT",)))
+
+
+_QSOURCE = {"WHO acted": "recorded (actor.id); version joined-from: register inventory",
+            "WHO owns it": "joined-from: register inventory + register owner; recorded (control.owner)",
+            "WHAT it touched": "recorded (model.id, tool.name); human loop joined-from: findings/, servicenow/delivery-log.jsonl, closures/",
+            "AUTHORIZED": "recorded (platform_decision records)",
+            "APPROVED": "joined-from: register/approval* (witnessed-by:ServiceNow); recorded (detail of ep0.declared_treatment)",
+            "INTEGRITY": "joined-from: MANIFEST.json, derived/corroboration/",
+            "RECONSTRUCT": "recorded (ts, record_kind, ep.id, record_id)"}
 
 
 def compose_auditor(pack, parse, now=None, only=None):
@@ -571,7 +764,8 @@ def compose_auditor(pack, parse, now=None, only=None):
         facts, refs, gaps = [], [], []
         for q in parts:
             for line in q["lines"]:
-                facts.append({"label": q["q"], "value": line, "refs": ["record:%s" % r for r in q["records"][:3]], "flag": "OK"})
+                facts.append({"label": q["q"], "value": _clean(line), "refs": ["record:%s" % r for r in q["records"][:3]], "flag": "OK",
+                              "source": "not-recorded" if q.get("gap") else _QSOURCE.get(q["q"], "recorded")})
             refs += ["record:%s" % r for r in q["records"]]
             if q.get("gap"):
                 gaps.append(q["gap"])
