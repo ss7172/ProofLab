@@ -189,7 +189,11 @@ result and is excluded from every verdict.
 
 - **Owner** (accountable; approves thresholds): `<owner name and contact>`
 - **Builder** (AWS agents, controls): `<builder>`
-- **ServiceNow integration and the Assurance Agent:** Arth
+- **ServiceNow integration and the Assurance Agent:** built and integrated by Arth, from the
+  owner's account (he has no separate identity in ServiceNow or AWS)
 
-Nobody approves their own work: Arth reviews before the owner approves. The governance-assurance
-role is vacant (stated in `gap-list.md`).
+Nobody approves their own work, by procedure: Arth reviews before the owner approves. The records
+cannot show it. There is one ServiceNow account (`annapurna@invences.com`, the owner's) and one
+shared AWS role (`WSParticipantRole`), so a `RESPONDED` state or an approval shows which account
+acted, not which person (`gap-list.md` B37). Approvals are the accountable owner's acts on her own
+account. The governance-assurance role is vacant (stated in `gap-list.md`).
