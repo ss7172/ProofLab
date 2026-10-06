@@ -1,0 +1,4 @@
+{"correlation_id": "ifabric-run-1791137236-102178", "step": 1, "phase": "intent", "actor": "hackathon-helper", "detail": "helper query via nemotron-super-120b-helper: how to declare modelconfig", "ts": "2026-10-04T18:07:17Z", "seq": 1791137237681}
+{"correlation_id": "ifabric-run-1791137236-102178", "step": 2, "phase": "invocation", "actor": "hackathon-helper", "detail": "http_status=200 answer_len=564", "ts": "2026-10-04T18:07:25Z", "seq": 1791137245740}
+{"correlation_id": "ifabric-run-1791137236-102178", "step": 1, "phase": "intent", "actor": "hackathon-helper", "detail": "helper query via nemotron-super-120b-helper: is the any cr stuck?", "ts": "2026-10-04T20:39:16Z", "seq": 1791146356801}
+{"correlation_id": "ifabric-run-1791137236-102178", "step": 2, "phase": "invocation", "actor": "hackathon-helper", "detail": "http_status=200 answer_len=861", "ts": "2026-10-04T20:39:26Z", "seq": 1791146366834}
