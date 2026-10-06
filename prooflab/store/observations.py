@@ -169,10 +169,61 @@ def _gateway_record(kv: dict, raw_ref: str, lineno: int, line_sha: str, provenan
     return rec, sighting, None
 
 
-def normalize_gateway_text(text: str, raw_ref: str, provenance_map=None) -> dict:
+def _flat(obj, prefix="", out=None):
+    out = {} if out is None else out
+    for k, v in obj.items():
+        key = prefix + str(k)
+        if isinstance(v, dict):
+            _flat(v, key + ".", out)
+        else:
+            out[key] = v
+    return out
+
+
+def _insights_ts(row: dict, span: dict):
+    """The span's own end time (ns epoch), else the Logs Insights @timestamp ('YYYY-MM-DD HH:MM:SS.mmm', UTC)."""
+    import datetime
+    nano = span.get("endTimeUnixNano") or span.get("startTimeUnixNano")
+    try:
+        t = datetime.datetime.fromtimestamp(int(nano) / 1e9, datetime.timezone.utc)
+        return t.strftime("%Y-%m-%dT%H:%M:%S.") + "%06dZ" % t.microsecond
+    except (TypeError, ValueError, OverflowError, OSError):
+        pass
+    stamp = str(row.get("@timestamp") or "").strip().replace(" ", "T")
+    if stamp and not stamp.endswith("Z"):
+        stamp += "Z"
+    return stamp or None
+
+
+def insights_row_to_flat(doc: dict) -> dict:
+    """D3: one Logs Insights row (`@timestamp`, `@message` = the span as JSON) -> the flat span shape
+    (`ts`, `protocol`, and the span's attributes as dotted keys) that the gateway normalizer reads. A row that is
+    already flat is returned unchanged."""
+    msg = doc.get("@message")
+    if msg is None:
+        return doc
+    try:
+        span = json.loads(msg) if isinstance(msg, str) else dict(msg)
+    except ValueError:
+        return {}
+    if not isinstance(span, dict):
+        return {}
+    flat = dict(_flat(span.get("attributes") or {}))
+    for k, v in _flat(dict((k, v) for k, v in span.items() if k != "attributes")).items():
+        flat.setdefault(k, v)
+    flat["ts"] = _insights_ts(doc, span)
+    listener = flat.get("listener")
+    if listener and "protocol" not in flat:
+        flat["protocol"] = listener
+    return flat
+
+
+def normalize_gateway_text(text: str, raw_ref: str, provenance_map=None, insights=False) -> dict:
     """Gateway pod log text (or span-export JSON lines) -> {records, sightings, rejects, background}.
 
-    `raw_ref` is the capture's path inside the snapshot (`raw/gateway/<file>`); it goes into source.refs."""
+    `raw_ref` is the capture's path inside the snapshot (`raw/gateway/<file>`); it goes into source.refs.
+    `insights=True`: the lines are the aws-spans collector's Logs Insights rows (@message JSON, D3); each is
+    flattened first, and the sha256 in source.refs is still the sha of the RAW line."""
     records, sightings, rejects, background = [], [], [], 0
     for lineno, line in enumerate(text.splitlines(), 1):
         if not line.strip():
@@ -184,6 +235,8 @@ def normalize_gateway_text(text: str, raw_ref: str, provenance_map=None) -> dict
             except ValueError:
                 rejects.append({"ref": "%s:%d" % (raw_ref, lineno), "why": "not JSON"})
                 continue
+            if insights:
+                doc = insights_row_to_flat(doc)
             kv = dict((k, str(v)) for k, v in doc.items() if v is not None)
             kv["_ts"] = _utc6(kv.get("ts") or kv.get("_ts") or "")
         else:

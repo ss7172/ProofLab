@@ -5,7 +5,7 @@ Pack layout read (ARCH 9.1, all optional; a missing piece becomes a printed gap,
   derived/run-index.jsonl      one row per run: cid | run_id, provenance, phase, condition, first_span, last_span
   derived/run-catalogue.jsonl  one row per run any source saw: cid | run_id, label, source, assessed
   assessments/<C>/*.json       Assessment as a dict (the contract dataclass names) or one flat assessment record
-  register/versions/*.yaml (+ <v>.head.json T1 proof), register/versions/*.risks.yaml, register/inventory/*.yaml
+  register/versions/*.yaml (+ <v>.head.json T1 proof), register/versions/*.risks.yaml, register/versions/inv-*.yaml (or register/inventory/*.yaml)
   MANIFEST.json, derived/corroboration/<cid>.json
 
 Verdict semantics live here (the window rule, E-06) and in prooflab.evaluators; nothing in console code.
@@ -338,6 +338,12 @@ def control_run(pack, control, cid, recompute_fn=None):
     if t1 is None:
         out["gaps"].append("T1 date proof for %s missing (register/<v>.head.json)" % a["threshold_version"])
     out["gaps"] += [str(g) for g in (a["gaps"] or [])]
+    t1_key, start_key = _utc_key(t1), _utc_key(out["run_start"])
+    if t1_key and start_key and t1_key > start_key:      # G5 date check: the register must predate the run (ARCH 3.3)
+        out["stored_verdict"] = out["verdict"]
+        out["verdict"] = V.INDETERMINATE
+        out["gaps"].append("date check failed: T1 proof %s is later than the run start %s; the stored verdict %s "
+                           "is not a clean answer" % (t1, out["run_start"], a["verdict"]))
     ms = a["measured"] or {}
     mv, lv = _num(ms.get("value")), _num(a["limit"])
     out["measured"], out["limit"] = ms, a["limit"]
@@ -485,7 +491,11 @@ def resolve_incident(pack, ident):
 
 
 def _inventory(pack):
-    for path in reversed(pack.list_file(("register", "inventory", "*.yaml"))):
+    # `registry inventory` freezes to register/versions/inv-N.yaml; register/inventory/*.yaml is the older layout
+    paths = pack.list_file(("register", "inventory", "*.yaml")) + sorted(
+        pack.list_file(("register", "versions", "inv-*.yaml")),
+        key=lambda p: [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", os.path.basename(p))])
+    for path in reversed(paths):
         try:
             return os.path.basename(path)[:-5], P.parse_inventory(open(path, "rb").read().decode("utf-8"))
         except (ValueError, IOError, OSError):
@@ -600,7 +610,7 @@ def risk_list(pack, risk_id=None):
 def inventory_list(pack):
     name, doc = _inventory(pack)
     if not doc:
-        return {"kind": "inventory", "verdict": "NOT_ASSESSED", "rows": [], "message": "no inventory in this pack (register/inventory/*.yaml)"}
+        return {"kind": "inventory", "verdict": "NOT_ASSESSED", "rows": [], "message": "no inventory in this pack (register/versions/inv-*.yaml)"}
     return {"kind": "inventory", "verdict": "RECORDED", "version": name, "top": doc["top"], "rows": doc["entries"]}
 
 
