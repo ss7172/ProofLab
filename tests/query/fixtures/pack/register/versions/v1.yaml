@@ -1,0 +1,37 @@
+# SYNTHETIC register for the query tests
+version: v1
+version_date: "2026-10-06T03:52:10Z"
+claim_id: C-FM-01
+register_owner: Sree
+controls:
+  - control_id: "16"
+    name: "Per-run token spend cap"
+    metric: "synthetic metric C16"
+    observation_limit: 50000
+    exception_tolerance: 0
+    measurement_basis: "synthetic basis"
+    owner: "Sree"
+    version_date: "2026-10-06T03:52:10Z"
+    control_ref: C16
+    threshold_version: C16-v1
+    risk_ref: R-C16
+  - control_id: "7"
+    name: "Event recording coverage"
+    metric: "synthetic metric C7"
+    observation_limit: 50000
+    exception_tolerance: 0
+    measurement_basis: "synthetic basis"
+    owner: "Sree"
+    version_date: "2026-10-06T03:52:10Z"
+    control_ref: C7
+    threshold_version: C7-v1
+  - control_id: "9"
+    name: "Drift against a frozen baseline"
+    metric: "synthetic metric C9"
+    observation_limit: 50000
+    exception_tolerance: 0
+    measurement_basis: "synthetic basis"
+    owner: "Sree"
+    version_date: "2026-10-06T03:52:10Z"
+    control_ref: C9
+    threshold_version: C9-v1

@@ -1,0 +1,4 @@
+{"assessed": true, "cid": "ifabric-run-1791260000-ab12cd", "label": "ours: ifabric trio", "source": "ours"}
+{"assessed": true, "cid": "ifabric-run-1791261000-cd34ef", "label": "ours: ifabric trio", "source": "ours"}
+{"assessed": false, "cid": "ifabric-adv-1791262000-ee55aa", "label": "ours: adversarial", "source": "ours"}
+{"assessed": false, "cid": "customer-1791250000-0a0a0a", "label": "reference trio", "source": "reference"}

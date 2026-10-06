@@ -1,0 +1,4 @@
+{"cid": "ifabric-run-1791260000-ab12cd", "condition": "none", "first_span": "2026-10-06T06:00:00.000Z", "last_span": "2026-10-06T06:12:00.000Z", "phase": "Alert 1", "provenance": "LIVE_SUBJECT", "register_version": "v1"}
+{"cid": "ifabric-run-1791261000-cd34ef", "condition": "none", "first_span": "2026-10-06T06:30:00.000Z", "last_span": "2026-10-06T06:40:00.000Z", "phase": "Alert 1", "provenance": "LIVE_SUBJECT", "register_version": "v1"}
+{"cid": "ifabric-adv-1791262000-ee55aa", "condition": "adv", "first_span": "2026-10-06T06:40:00.000Z", "last_span": "2026-10-06T06:41:00.000Z", "phase": "Alert 0", "provenance": "BASELINE", "register_version": "v1"}
+{"cid": "customer-1791250000-0a0a0a", "first_span": "2026-10-06T05:50:00.000Z", "last_span": "2026-10-06T05:55:00.000Z", "phase": "Alert 0", "provenance": "UNATTRIBUTED"}

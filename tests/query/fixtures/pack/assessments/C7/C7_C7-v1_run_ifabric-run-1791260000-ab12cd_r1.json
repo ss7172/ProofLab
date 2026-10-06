@@ -1,0 +1,37 @@
+{
+ "as_of": "2026-10-06T07:00:00.000Z",
+ "assessment_id": "C7:C7-v1:run:ifabric-run-1791260000-ab12cd:r1",
+ "completeness": {
+  "captured": 9,
+  "expected": 9,
+  "missing": 0
+ },
+ "control_id": "X",
+ "control_ref": "C7",
+ "deficiency": "none",
+ "denominators": {
+  "calls": 9
+ },
+ "design": "SATISFIED",
+ "evaluator_name": "prooflab.evaluators.c7",
+ "evidence_refs": [
+  "aws-spans:q-SYNTH#1"
+ ],
+ "evidence_sufficiency": "COMPLETE",
+ "exceptions": [],
+ "gaps": [],
+ "limit": 1.0,
+ "measured": {
+  "source": "gateway-figure-of-record",
+  "unit": "tokens",
+  "value": 1.0
+ },
+ "operation": "SATISFIED",
+ "register_version": "v1",
+ "requirement_verdict": "SATISFIED",
+ "scope_end": "2026-10-06T06:00:00.000Z",
+ "scope_id": "ifabric-run-1791260000-ab12cd",
+ "scope_kind": "run",
+ "scope_start": "2026-10-06T06:00:00.000Z",
+ "threshold_version": "C7-v1"
+}
