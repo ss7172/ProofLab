@@ -520,8 +520,36 @@ class Handler(BaseHTTPRequestHandler):
         nxt = str(start + PAGE) if start + PAGE < len(rows) else ""
         return self._json(200, page, None, self._meta({"next_cursor": nxt, "total": len(rows)}))
 
+    def _run_window(self, q):
+        """PR-53: 'control 16 for run <RUN> between <T1> and <T2>' (grammar kind controltest-run-window), composed from
+        the pack by prooflab/query/run_window.py. None for any other question (the stored-answer routes below)."""
+        root = getattr(self.server.source, "root", None)
+        if not root or not re.search(r"\brun\b.*\b(between|from)\b|--run\b.*--window\b", q or "", re.I):
+            return None
+        from prooflab.query import engine as QE, grammar as QG, run_window as QRW
+        pack = getattr(self.server, "_query_pack", None)
+        if pack is None:
+            pack = self.server._query_pack = QE.Pack(root)
+        parsed = QG.parse(q, pack)
+        if not parsed.get("ok") or parsed.get("kind") != "controltest-run-window":
+            return None
+        return parsed, QRW.ask_doc(pack, parsed)
+
     def _ask(self, q, t0):
         src = self.server.source
+        rw = self._run_window(q)
+        if rw is not None:
+            parsed, doc = rw
+            entry = {"q": q, "normalized": parsed["normalized"], "answer_id": None, "elapsed_ms": int((time.time() - t0) * 1000)}
+            self.server.queries.append(entry)
+            if self.server.session_dir:
+                try:
+                    with open(os.path.join(self.server.session_dir, "queries.jsonl"), "a", encoding="utf-8") as handle:
+                        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                except OSError:
+                    pass
+            return self._json(200, doc, None, self._meta({"normalized": parsed["normalized"], "route": None, "key": None,
+                                                         "kind": doc.get("kind"), "render": "text"}))
         parsed = parse_question(q)
         if parsed is None:
             return self._err(422, "cannot-parse", "I can't parse that (deterministic grammar, no guessing, no LLM)")

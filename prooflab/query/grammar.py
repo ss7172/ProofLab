@@ -2,7 +2,7 @@
 
 parse(text, pack=None) -> a plain dict:
     ok, kind, normalized, control, run, t1, t2, error, examples, candidates
-kind: controltest-run | controltest-window | auditor | trail | who | told | unparsed
+kind: controltest-run | controltest-window | controltest-run-window (PR-53) | auditor | trail | who | told | unparsed
 No LLM, no guessing: unknown input -> "I can't parse that" plus the example list; an ambiguous run -> candidates.
 Rules: RUN is an alias (FM-B) or a CID; times are ISO UTC or HH:MMZ (resolved inside the pack's event window);
 C16 = 16 = "spend cap", C7 = 7 = "event recording", C9 = 9 = "drift".
@@ -22,6 +22,7 @@ EXAMPLES = (
     "Was control 9 satisfied between 23:00Z and 09:00Z?",
     "control 9 for window 2026-10-06T00",
     "controltest 16 --run FM-B",
+    "show me control 16 for run FM-B between 13:56Z and 13:57Z",
     "six questions for INC0090216",
     "reconstruct run FM-B",
     "who acted in FM-B",
@@ -30,8 +31,11 @@ EXAMPLES = (
 
 _CTL = r"(c?\d+|spend cap|event recording|drift)"
 _UTC = r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z"
-_TIME = r"(%s|\d\d:\d\dZ)" % _UTC
+_TIME = r"(%s|\d\d:\d\d(?::\d\d)?Z)" % _UTC
+_SHORT = re.compile(r"^(\d\d):(\d\d)(?::(\d\d))?Z$")
 _PATTERNS = (
+    ("run-window", re.compile(r"^(?:show me |was )?control %s (?:satisfied )?for run (\S+) (?:between|from) %s (?:and|to) %s$" % (_CTL, _TIME, _TIME), re.I)),
+    ("cli-run-window", re.compile(r"^controltest %s --run (\S+) --window (\S+)\.\.(\S+)$" % _CTL, re.I)),
     ("run", re.compile(r"^(?:show me |was )?control %s (?:satisfied )?for run (\S+)$" % _CTL, re.I)),
     ("between", re.compile(r"^(?:show me |was )?control %s (?:satisfied )?(?:between|from) %s (?:and|to) %s$" % (_CTL, _TIME, _TIME), re.I)),
     ("hour", re.compile(r"^(?:show me |was )?control %s (?:satisfied )?for window (\d{4}-\d\d-\d\dT\d\d)$" % _CTL, re.I)),
@@ -72,23 +76,28 @@ def _parse_utc(text):
     return datetime.datetime.strptime(key[:19], "%Y-%m-%dT%H:%M:%S")
 
 
-def resolve_times(pack, t1, t2):
-    """(T1, T2, error): full UTC stamps. HH:MMZ resolves forward from the pack's declared window start."""
-    short = [t for t in (t1, t2) if re.match(r"^\d\d:\d\dZ$", t)]
+def resolve_times(pack, t1, t2, anchor=None):
+    """(T1, T2, error): full UTC stamps. HH:MMZ resolves forward from the pack's declared window start; with no declared
+    window, from `anchor` (PR-53: the run's start minus 12 hours, so a run+window question resolves near its run)."""
+    short = [t for t in (t1, t2) if _SHORT.match(t)]
     start = None
     if short:
         win = (getattr(pack, "window", None) or {}) if pack is not None else {}
         start = _parse_utc(win.get("start") or "")
+        if start is None and anchor:
+            start = _parse_utc(anchor)
+            start = start - datetime.timedelta(hours=12) if start else None
         if start is None:
             return None, None, "a time like %s needs the pack's event window (window.json): none declared" % short[0]
     cur, out = start, []
     for t in (t1, t2):
-        if re.match(r"^\d\d:\d\dZ$", t):
-            hh, mm = int(t[:2]), int(t[3:5])
-            if hh > 23 or mm > 59:
+        sm = _SHORT.match(t)
+        if sm:
+            hh, mm, ss = int(sm.group(1)), int(sm.group(2)), int(sm.group(3) or 0)
+            if hh > 23 or mm > 59 or ss > 59:
                 return None, None, "not a time: %s" % t
             base = cur or start
-            cand = base.replace(hour=hh, minute=mm, second=0, microsecond=0)
+            cand = base.replace(hour=hh, minute=mm, second=ss, microsecond=0)
             if cand <= base and out:       # the second time rolls over midnight
                 cand += datetime.timedelta(days=1)
             elif cand < base:
@@ -103,6 +112,15 @@ def resolve_times(pack, t1, t2):
     if not E._utc_key(out[0]) < E._utc_key(out[1]):
         return None, None, "T1 must be before T2 (%s .. %s)" % tuple(out)
     return out[0], out[1], None
+
+
+def run_anchor(pack, cid):
+    """The run's first record time (UTC text) for resolving HH:MMZ when the pack declares no window, else None."""
+    if pack is None:
+        return None
+    recs = [r for r in pack.by_cid.get(cid, []) if r.get("record_kind") != "assessment" and r.get("authorship") != "ASSURANCE"]
+    keys = sorted(k for k in (E._utc_key(r.get("emitted.at") or r.get("ts")) for r in recs) if k)
+    return (keys[0][:19] + "Z") if keys else None
 
 
 def resolve_run(pack, token):
@@ -158,6 +176,16 @@ def parse(text, pack=None):
             return _fail(raw, "I can't parse that: unknown control %r (C7, C9, C16)" % g[0])
         out["control"] = ctl
         num = ctl[1:]
+        if name in ("run-window", "cli-run-window"):
+            cid, cands = resolve_run(pack, g[1])
+            if cid is None and cands:
+                return _fail(raw, "ambiguous run %r: %d candidates" % (g[1], len(cands)), candidates=cands)
+            t1, t2, err = resolve_times(pack, g[2], g[3], anchor=run_anchor(pack, cid or g[1]))
+            if err:
+                return _fail(raw, err)
+            out.update(kind="controltest-run-window", run=cid or g[1], alias=g[1], t1=t1, t2=t2,
+                       normalized="controltest %s --run %s --window %s..%s" % (num, cid or g[1], t1, t2))
+            return out
         if name in ("run", "cli-run"):
             cid, cands = resolve_run(pack, g[1])
             if cid is None and cands:
