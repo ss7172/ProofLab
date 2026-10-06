@@ -31,7 +31,7 @@ Total: 15:00. Steps 1 to 8 end at 14:00; the last minute is questions.
   Human Loop, Enforcement points, Gaps and Runs. Where the guide names Overview, Agent Trail, Live
   or Adversarial and the console build lacks that screen, show the pack file or the CLI answer
   instead and say which it is. Do not present a missing screen as built.
-- **C-4, handoffs:** "every model and tool call crossed the gateway; every handoff is a recorded EP-5 event."
+- **C-4, handoffs:** "every model and tool call crossed the gateway; every handoff is a recorded EP-5 event." (three handoffs: Gateway A h1 customer → IT, B h2 IT → network, C h3 network → IT, the negotiation; four invocations, and each model call in the negotiating IT invocation passes C16 and the rails)
 - **C-5, separation of duties:** "nobody checks their own work alone: Arth reviews before the owner approves." The governance-assurance role is vacant, stated in the gap list.
 - **C-6, live inline decision:** one `enforce` run live with `python3 -m prooflab tail` at the slot,
   if AWS credentials are valid then. Otherwise play the recorded run and label it as recorded.

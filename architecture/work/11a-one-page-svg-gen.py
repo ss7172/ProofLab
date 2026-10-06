@@ -161,10 +161,10 @@ ROW_TOP, ROW_H = 150, 380
 SX, SW = 24, 270
 sx, sy, sw_, sh = card(SX, ROW_TOP, SW, "Orchestrating script", [
     "laptop · prooflab run · OURS",
-    "mints the CID; invokes the",
-    "3 agents in sequence; carries",
-    "tier, C16 tally, register v + sha",
-    "EP-5 handoffs = Gateway A / B:",
+    "mints the CID; invokes x4:",
+    "cust > IT > net > IT (negotiate);",
+    "carries tier, C16 tally, reg v",
+    "EP-5 handoffs = Gateway A/B/C:",
     "emit() only, never blocks",
 ], BLUE, "#eff6ff", BLUE, chips=[("PRE", GREEN), ("CONT", RED)], h=268)
 card(SX + 10, ROW_TOP + 152, SW - 20, "EP-0 pre-run gate (D13)", [
@@ -258,7 +258,7 @@ card(TX, ROW_TOP, TW, "Telemetry", [
 
 # --- live-path arrows
 arrow([(SX + SW, ROW_TOP + 40), (RX - 2, ROW_TOP + 40)], BLUE)
-text((SX + SW + RX) / 2, ROW_TOP + 32, "×3", 14, "bold", BLUE, "middle", maxw=RX - SX - SW)
+text((SX + SW + RX) / 2, ROW_TOP + 32, "×4", 14, "bold", BLUE, "middle", maxw=RX - SX - SW)
 arrow([(RX + RW, ROW_TOP + 90), (PX - 2, ROW_TOP + 90)], INK)
 arrow([(PX + PW, ROW_TOP + 90), (TX - 2, ROW_TOP + 90)], GREY)
 

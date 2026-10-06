@@ -13,9 +13,9 @@ This is the text of `architecture/one-page.svg` (1600×1842, self-contained, eve
 ## The live path (blue = our code, grey = the platform's)
 
 **Orchestrating script** (laptop, `prooflab run`; ours) · PRE + CONT:
-- mints the run id (CID) and invokes the three agents in sequence (×3);
+- mints the run id (CID) and invokes the three agents in sequence, four invocations (×4): customer → IT → network → IT (Gateway C: one IT invocation that negotiates; each model call in it passes C16 (EP-1) and the rails);
 - carries the tier, the C16 tally, and the register version and sha256;
-- EP-5 handoffs (the brief's **Gateway A and Gateway B**: customer → IT, IT → network) go to `emit()` only, never blocking (the blue arrow from the script to the `emit()` pill);
+- EP-5 handoffs (the brief's **Gateway A and Gateway B**: h1 customer → IT, h2 IT → network; our **Gateway C**: h3 network → IT, the negotiation) go to `emit()` only, never blocking (the blue arrow from the script to the `emit()` pill);
 - **EP-0, the pre-run gate (D13, decided by the captain: it blocks assessed runs):** is each agent's running version an approved one? It may decline to **start** an assessed run; inside a run, nothing waits on it.
 
 **AgentCore Runtime (ours):** `ifabric-customer` → `ifabric-it` → `ifabric-network`, on `nemotron-super-120b`; our only code in the model-call path. CONT.
