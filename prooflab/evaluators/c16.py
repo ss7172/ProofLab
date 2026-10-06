@@ -272,7 +272,17 @@ def assess_run(run_id, calls, scenario_attrs, decisions, pin, completeness, as_o
     times = sorted(t for t in (_ts(r[k]) for r in by_id.values() for k in ("start", "end")) if t is not None)
     first = _clocks.format_utc(times[0]) if times else ""
     last = _clocks.format_utc(times[-1]) if times else ""
-    suff = "MISSING" if not by_id else ("PARTIAL" if gaps else "COMPLETE")
+    # the second EP: with EP-1 decisions but no EP-2 replay the measurement stands, the corroboration does not
+    ep2_missing = bool(ep1) and not ep2
+    if ep2_missing:
+        exceptions.append({"kind": "ep2-replay-missing", "record": "reconciliation",
+                           "detail": comp.get("ep2_note") or "no EP-2 decision for the run"})
+    pins1 = sorted(set(_g(d, "pin.sha256") for d in ep1 if _g(d, "pin.sha256")))
+    pins2 = sorted(set(_g(d, "pin.sha256") for d in ep2 if _g(d, "pin.sha256")))
+    pin_differs = bool(pins1 and pins2 and pins1 != pins2)
+    if pin_differs:
+        exceptions.append({"kind": "ep1-ep2-pin-differs", "record": "reconciliation", "ep1": pins1, "ep2": pins2})
+    suff = "MISSING" if not by_id else ("PARTIAL" if (gaps or ep2_missing or pin_differs) else "COMPLETE")
     measured = {
         "total_tokens": total, "calls": len(by_id), "missing_usage_calls": len(missing), "cap": cap, "tier": tier,
         "tier_basis": tier_basis, "overshoot": overshoot, "headroom_committed_minus_cap": total - cap,

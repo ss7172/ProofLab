@@ -246,6 +246,63 @@ def replay(cid, calls, pin, core_sha256, now=None, tier=None, provenance="REPLAY
     return records
 
 
+# --- the replay over a refreshed snapshot's store (the assess path) -------------------------------------
+
+def _iso_nanos(stamp):
+    try:
+        t = _clocks.parse_utc(stamp)
+    except (ValueError, TypeError):
+        return None
+    return int(round(t.timestamp() * 1000)) * 1000000
+
+
+def store_model_calls(rows, cid):
+    """The run's gateway model-call records from the store (authorship PLATFORM, gateway clock, token counts),
+    as replay() calls: gateway order (observed.at, then action id), one per action id (a conflicting duplicate
+    keeps the larger figure, as the C16 tester does)."""
+    by_id = {}
+    for r in rows:
+        if (r.get("run.id") or r.get("correlation_id")) != cid:
+            continue
+        if r.get("authorship") != "PLATFORM" or r.get("observed.clock") != "gateway":
+            continue
+        if r.get("record_kind") not in ("metric", "platform_decision"):
+            continue
+        aid, t_in, t_out = r.get("call.id"), _int(r.get("tokens.in")), _int(r.get("tokens.out"))
+        if not aid or t_in is None or t_out is None:
+            continue
+        at = _iso_nanos(r.get("observed.at"))
+        call = {"action_id": str(aid), "tokens_in": t_in, "tokens_out": t_out, "start": at, "end": at,
+                "stamp": r.get("observed.at"), "trace_id": r.get("trace.id"), "span_id": None,
+                "http_status": _int(r.get("outcome.http_status")), "order": 0}
+        prev = by_id.get(call["action_id"])
+        if prev is None or t_in + t_out > prev["tokens_in"] + prev["tokens_out"]:
+            by_id[call["action_id"]] = call
+    return sorted(by_id.values(), key=lambda c: (c["start"] if c["start"] is not None else float("inf"),
+                                                 c["action_id"]))
+
+
+def is_replay_record(rec):
+    return rec.get("ep.id") == EP_ID and rec.get("record_kind") == "decision" and \
+        str(rec.get("emitter") or "").startswith(EMITTER_NAME + "@")
+
+
+def replay_store(cid, rows, pin, now, tier=None, owner=None, sha_file=DEFAULT_SHA_FILE):
+    """-> (EP-2 decision records, note). Replays the SAME c16 core with the run's pin over the run's gateway
+    model-call records; deterministic for a given `now` (the snapshot's as-of). Fail closed: on a core hash
+    mismatch, no calls or an unreadable span, no record and a note saying why."""
+    try:
+        sha = read_core_sha(sha_file)
+        if sha != loaded_core_sha():
+            raise ReplayError("c16_core.py does not match register/c16_core.sha256")
+        calls = store_model_calls(rows, cid)
+        if not calls:
+            raise ReplayError("no model-call spans for %s in the store" % cid)
+        return replay(cid, calls, pin, sha, now=now, tier=tier, owner=owner), None
+    except (ReplayError, OSError, ValueError) as exc:
+        return [], "EP-2 replay not run: %s" % exc
+
+
 def main(argv=None, out=None):
     ap = argparse.ArgumentParser(prog="prooflab postrun", description="EP-2: replay the c16 core over a run's spans")
     ap.add_argument("--cid", required=True)

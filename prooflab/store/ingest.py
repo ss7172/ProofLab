@@ -143,3 +143,38 @@ def copy_ledger_into_file_store(client, file_store: FileStore, cids) -> dict:
             known.add(record_key(row))
             out["appended"] += 1
     return out
+
+
+def merge_replay(root, records, replaced_runs, is_replay):
+    """Put post-run replay records (EP-2) into <root>/store/records.jsonl: this replay's records replace any earlier
+    replay records of the same runs (`is_replay(rec)` names them), the store is re-sorted (ts, key) and the
+    store's sha256 in SNAPSHOT.json is updated. Returns the number of records written."""
+    import hashlib
+    import json
+    import os
+    path = os.path.join(root, "store", "records.jsonl")
+    rows = []
+    if os.path.isfile(path):
+        with open(path, "r", encoding="utf-8") as fh:
+            rows = [json.loads(l) for l in fh if l.strip()]
+    replaced = set(replaced_runs)
+    keep = [r for r in rows if not (is_replay(r) and (r.get("run.id") or r.get("correlation_id")) in replaced)]
+    seen, out = set(), []
+    for r in keep + list(records):
+        k = record_key(r)
+        if k not in seen:
+            seen.add(k)
+            out.append(r)
+    out.sort(key=lambda r: (r.get("ts") or "", record_key(r)))
+    text = "".join(json.dumps(r, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n" for r in out)
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(text)
+    manifest = os.path.join(root, "SNAPSHOT.json")
+    if os.path.isfile(manifest):
+        with open(manifest, "r", encoding="utf-8") as fh:
+            doc = json.load(fh)
+        if isinstance(doc.get("files"), dict) and "store/records.jsonl" in doc["files"]:
+            doc["files"]["store/records.jsonl"] = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            with open(manifest, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(json.dumps(doc, sort_keys=True, indent=1) + "\n")
+    return len(records)
