@@ -29,7 +29,10 @@ def _pct(v):
 
 
 def _s(o, a):
-    v = getattr(o, a, None)
+    try:
+        v = getattr(o, a, None)
+    except Exception:
+        return None
     return v if isinstance(v, str) else None
 
 

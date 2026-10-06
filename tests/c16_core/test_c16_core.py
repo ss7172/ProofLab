@@ -182,6 +182,19 @@ def test_none_and_garbage_objects_fail_closed():
     assert decide_inline(None, ENF).reason == "evaluator-error"
 
 
+class _Boom(object):
+    def __getattr__(self, name):
+        raise RuntimeError("boom")
+
+
+def test_objects_that_raise_on_attribute_access_fail_closed():
+    for qq, pp in ((_Boom(), ENF), (q(1), _Boom()), (_Boom(), _Boom())):
+        d = decide_inline(qq, pp)
+        assert isinstance(d, Decision) and (d.verdict, d.action) == ("DENY", "halt")
+        assert d.control_id in ("ACN-COST-001", ENF.control_id)
+    assert bound_for(1, 1, 1, 1, _Boom()) == (None, None)
+
+
 def test_tampered_pin_object_fails_closed():
     bad = copy.copy(ENF)
     object.__setattr__(bad, "caps", (("default", -5),))
