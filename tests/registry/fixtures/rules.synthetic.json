@@ -1,0 +1,3 @@
+{"c16_rule_id": "SYNTH-C16-cap/1", "c16_headroom_pct": 20, "c16_round_up_to": 1000, "appetite_tokens": 100000,
+ "c7_rule_id": "SYNTH-C7-gap/1", "c7_headroom_pct": 50, "c7_round_up_to": 1000,
+ "c9_rule_id": "SYNTH-C9-baseline/1", "eligible_scenarios": ["S1", "S3"]}
