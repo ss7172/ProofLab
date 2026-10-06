@@ -13,7 +13,7 @@ SURFACES = ("aws_spans", "ledger_export", "cr_status", "agentcore_metrics", "run
 
 
 def main(argv=None) -> int:
-    """List the surfaces. Live pulls are driven by the orchestrator / ops lane (the `collect` verb's module is
-    not owned by this PR), so this entry point never makes a call."""
-    print("collectors: " + ", ".join(SURFACES))
-    return 0
+    """`prooflab collect`: the live driver (driver.py) over the surface modules; `--list` prints the surfaces.
+    Every live call goes through the one seam (`capture.default_runner`); the ops lane runs the verb under hk."""
+    from prooflab.adapters.collectors import driver
+    return driver.main(argv)
