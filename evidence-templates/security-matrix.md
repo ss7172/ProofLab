@@ -10,7 +10,7 @@
 | EP-0 | Pre-run version gate (script preflight) | Yes: blocks an assessed run on an unapproved or paused version | Us | A decision per agent; a finding on mismatch | T-PRE-01, T-PRE-02 | `<>` |
 | EP-1 | Our runtime, model call | Yes in `enforce` (the C16 cap); records only in `observe` | Us (the c16 core) | Decision and stop records; usage | T-C16-01; ADV-R-05; ADV-R-06 | `<>` |
 | EP-2 | After the run, over the gateway's log | No: the second placement of the same c16 core | Nobody | Replayed decisions, reconciled with EP-1's | EP-2 replay tests | `<>` |
-| EP-3 | Our runtime, tool call | Detects (declared-tool scope, arguments, repetition, tool-output screening); refuses only through a Cedar rule on the called tool | Our rails; Cedar at the PDP | Action records, `suspicious_tool_output` | ADV-H-02; ADV-R-01 | `<>` |
+| EP-3 | Our runtime, tool call | Yes (DG-1): the tool rails may refuse or modify (X-01/X-02 declared-tool scope, X-03 arguments; X-04 repetition FLAG; T-01–T-06 tool-output screening), each BLOCK / MODIFY an emitted `rail_decision`; a platform refusal stays the PDP's (Cedar, EP-6) | Our rails; Cedar at the PDP | Action records, `suspicious_tool_output`, `rail_decision` | ADV-H-02; ADV-R-01 (leg 1 our rails, leg 2 the PDP) | `<>` |
 | EP-4 | Judgment (J2) | Output rails move a disposition only toward safety | Our rails, recorded | Judgment record with deciding evidence and reason | ADV-H-04 | `<>` |
 | EP-5 | Orchestrating script, handoffs | No: records only | Nobody | Handoff records, timeouts included; one invocation per handoff | T-HO-01; ADV-R-06; ADV-R-10 | `<>` |
 | EP-6 | Gateway authorization and PDP/Cedar | Yes: API key and Cedar tool policy | Platform | DENY / ALLOW, policy id, principal | SP-1; ADV-R-01; ADV-R-07 | `<>` |
