@@ -448,7 +448,8 @@ def named_runs_md(root):
         with open(os.path.join(root, "named-runs.md"), "r", encoding="utf-8") as fh:
             text = fh.read()
     except (IOError, OSError):
-        return {"window": None, "rows": []}
+        return {"window": None, "rows": [], "written_at": None}
+    wm = re.search(r"Written at \(UTC\):\s*`?(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)", text)
     m = _NR_WIN.search(text)
     win = {"start": m.group(1), "end": m.group(2)} if m else None
     day = win["start"][:10] if win else None
@@ -468,4 +469,4 @@ def named_runs_md(root):
         rows.append({"control": cells[0], "role": cells[1].upper(), "attempt": cells[2], "cid": cm.group(1) if cm else None,
                      "start": t(cells[4]), "end": t(cells[5]), "register": cells[6], "note": note,
                      "not_counted": "NOT COUNTED" in note.upper()})
-    return {"window": win, "rows": rows}
+    return {"window": win, "rows": rows, "written_at": wm.group(1) if wm else None}

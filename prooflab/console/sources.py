@@ -456,6 +456,24 @@ class PackSource(_Base):
                          "provenance": (ientry.get(r["cid"]) or {}).get("provenance") or r.get("provenance"),
                          "source": res["source"], "assessed": r.get("assessed"), "in_window": inside,
                          "label": r.get("label"), "first_seen": start})
+        seen = set(x["cid"] for x in rows)
+        for e in self.index.get("runs", []):     # PR-56: every pack-index run (21), not only the catalogue's rows
+            if e.get("cid") in seen:
+                continue
+            start = e.get("started_at")
+            inside = None
+            if start and win.get("start") and win.get("end"):
+                inside = E._utc_key(win["start"]) <= E._utc_key(start) <= E._utc_key(win["end"])
+            rows.append({"alias": e.get("alias"), "cid": e.get("cid"), "provenance": e.get("provenance"),
+                         "source": "pack-index" + (" (" + ", ".join(e.get("sources") or []) + ")" if e.get("sources") else ""),
+                         "assessed": bool(e.get("verdicts")), "in_window": inside, "label": e.get("label") or e.get("purpose"),
+                         "first_seen": start})
+        for x in rows:                           # pack-index label NOT COUNTED and its reason win over the catalogue label
+            e = ientry.get(x["cid"]) or {}
+            if e.get("label") == "NOT COUNTED":
+                x["label"] = "NOT COUNTED"
+                x["failure_class"] = e.get("failure_class") or e.get("state")
+                x["reason"] = e.get("purpose")
         if rows:
             return rows
         rows = []
