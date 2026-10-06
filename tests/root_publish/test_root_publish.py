@@ -154,7 +154,9 @@ def test_dry_run_posts_nothing(snow, pack):
 
 def test_wrapper_prints_command_and_posts_nothing(pack, tmp_path):
     d, z = pack
-    env = dict(os.environ, PROOFLAB_ALLOW_EMPTY_SCAN="1", PROOFLAB_PYTHON=sys.executable)
+    fake = tmp_path / "fake-scan.sh"     # never run the real pre-push scan from a test (it loads live secrets)
+    fake.write_text("#!/bin/sh\necho 'RESULT: clean'\n")
+    env = dict(os.environ, PROOFLAB_PREPUSH_SCAN=str(fake), PROOFLAB_PYTHON=sys.executable)
     subprocess.check_call([sys.executable, os.path.join(REPO, "tools", "manifest.py"), "build", str(d)],
                           stdout=subprocess.DEVNULL)
     z2 = tmp_path / "p2.zip"

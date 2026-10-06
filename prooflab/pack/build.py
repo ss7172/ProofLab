@@ -25,7 +25,13 @@ STAGED_FROM_WORKDIR = ("gap-list.md", "run-ids.txt", "sketch.png")
 DROP_ANNOTATIONS = ("kubectl.kubernetes.io/last-applied-configuration",
                     "kopf.zalando.org/last-handled-configuration")
 MIN_VALUE_LEN = 6
+TEAM_NAME = "ifabric"                      # the submission record's team name (PR-34); tools/submit_wrapper.sh mirrors it
+KEY_PREFIX = "submissions/" + TEAM_NAME + "/"
 _IGNORE = ("__pycache__", "tests", ".pytest_cache")
+
+
+class DraftRegister(Exception):
+    """register.yaml matches no frozen version: never present it as frozen (PR-34)."""
 
 
 class SketchMissing(Exception):
@@ -44,17 +50,27 @@ def _copy(src, dst):
         shutil.copyfile(src, dst)
 
 
+def _manifest_path():
+    for c in (os.environ.get("PROOFLAB_MANIFEST_PY", ""), os.path.join(_repo_root(), "tools", "manifest.py")):
+        if c and os.path.isfile(c):
+            return c
+    return None
+
+
 def _load_manifest_tool():
     """Arth's tools/manifest.py, by path (one import site)."""
-    cands = [os.environ.get("PROOFLAB_MANIFEST_PY", ""),
-             os.path.join(_repo_root(), "tools", "manifest.py")]
-    for c in cands:
-        if c and os.path.isfile(c):
-            spec = importlib.util.spec_from_file_location("_pl_manifest", c)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            return mod
+    c = _manifest_path()
+    if c:
+        spec = importlib.util.spec_from_file_location("_pl_manifest", c)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
     raise SystemExit("pack: tools/manifest.py not found (set PROOFLAB_MANIFEST_PY)")
+
+
+def _is_bytecode(rel):
+    parts = rel.replace("\\", "/").split("/")
+    return "__pycache__" in parts or rel.endswith(".pyc")
 
 
 def _load_redactor():
@@ -186,6 +202,36 @@ def scan_tree(root, values):
     return sorted(hits)
 
 
+NO_FROZEN_NOTE = ("# No version frozen\n\nThe register in this pack is a DRAFT: it is not byte-identical to any "
+                  "frozen version, so nothing under register/versions/ is a frozen register. Read "
+                  "register/draft/ as a draft.\n")
+
+
+def _frozen_match(reg, vdir):
+    """True when reg is byte-identical to a register/versions/*.yaml file."""
+    if not os.path.isdir(vdir):
+        return False
+    with open(reg, "rb") as f:
+        b = f.read()
+    for n in os.listdir(vdir):
+        if n.endswith(".yaml"):
+            with open(os.path.join(vdir, n), "rb") as g:
+                if g.read() == b:
+                    return True
+    return False
+
+
+def _precheck_register(a):
+    """Refuse (before staging anything) an unfrozen register.yaml unless --allow-draft-register."""
+    if a.allow_draft_register or not a.workdir:
+        return
+    reg = os.path.join(a.workdir, "register.yaml")
+    if os.path.isfile(reg) and not _frozen_match(reg, os.path.join(a.src or "", "register", "versions")):
+        raise DraftRegister("workdir register.yaml is not byte-identical to any register/versions/*.yaml "
+                            "in --src; refusing to present it as frozen (use --allow-draft-register to stage "
+                            "it under register/draft/)")
+
+
 def _stage(out, a):
     warnings = []
     src = a.src
@@ -205,19 +251,16 @@ def _stage(out, a):
         reg = os.path.join(wd, "register.yaml")
         vdir = os.path.join(out, "register", "versions")
         if os.path.isfile(reg):
-            same = False
-            if os.path.isdir(vdir):
-                with open(reg, "rb") as f:
-                    b = f.read()
-                for n in os.listdir(vdir):
-                    if n.endswith(".yaml"):
-                        with open(os.path.join(vdir, n), "rb") as g:
-                            same = same or g.read() == b
-            if not same:
-                if os.path.isdir(vdir):
-                    warnings.append("register.yaml is not byte-identical to any register/versions/*.yaml")
-                else:
-                    _copy(reg, os.path.join(vdir, "register.yaml"))
+            if not _frozen_match(reg, vdir):
+                # never present an unfrozen register as frozen (PR-34); the caller checked the flag
+                ddir = os.path.join(out, "register", "draft")
+                os.makedirs(ddir, exist_ok=True)
+                _copy(reg, os.path.join(ddir, "register.yaml"))
+                os.makedirs(vdir, exist_ok=True)
+                with open(os.path.join(vdir, "NO-VERSION-FROZEN.md"), "w", encoding="utf-8") as f:
+                    f.write(NO_FROZEN_NOTE)
+                warnings.append("register.yaml matches no frozen version: staged as register/draft/register.yaml "
+                                "(NO-VERSION-FROZEN.md written)")
         else:
             warnings.append("workdir has no register.yaml")
     sketch = os.path.join(out, "sketch.png")
@@ -235,6 +278,11 @@ def _stage(out, a):
         with open(os.path.join(out, "README.md"), "w", encoding="utf-8") as f:
             f.write("# Evidence Pack\n\nREADME template missing at build time; see the gap list.\n")
         warnings.append("README template missing: stub written")
+    mp = _manifest_path()      # the README tells a judge to run tools/manifest.py: it ships in the pack (PR-34)
+    if mp:
+        _copy(mp, os.path.join(out, "tools", "manifest.py"))
+    else:
+        warnings.append("tools/manifest.py not found: not staged")
     tool = a.tool_src or os.path.join(_repo_root(), "prooflab")
     if os.path.isdir(tool):
         shutil.copytree(tool, os.path.join(out, "prooflab"),
@@ -254,10 +302,17 @@ def cmd_build(argv):
     p.add_argument("--readme")
     p.add_argument("--tool-src")
     p.add_argument("--scan-values-stdin", action="store_true")
+    p.add_argument("--allow-draft-register", action="store_true",
+                   help="stage an unfrozen register.yaml under register/draft/ instead of refusing")
     a = p.parse_args(argv)
     out = os.path.abspath(a.out)
     if os.path.exists(out) and os.listdir(out):
         print("pack: refusing a non-empty --out " + out, file=sys.stderr)
+        return 2
+    try:
+        _precheck_register(a)
+    except DraftRegister as exc:
+        print("pack: " + str(exc), file=sys.stderr)
         return 2
     os.makedirs(out, exist_ok=True)
     try:
@@ -313,7 +368,17 @@ def cmd_verify(argv):
     if len(argv) != 1:
         print("usage: pack verify <dir>", file=sys.stderr)
         return 2
-    return _load_manifest_tool().main(["verify", argv[0]])
+    # manifest.py verify, but bytecode a run may have written (prooflab/__pycache__) is not "unlisted"
+    m = _load_manifest_tool()
+    try:
+        result = m.verify_manifest(argv[0])
+    except (OSError, ValueError, KeyError) as exc:
+        print("pack: cannot verify: %s" % exc, file=sys.stderr)
+        return 1
+    result["unlisted"] = [x for x in result["unlisted"] if not _is_bytecode(x)]
+    problems = ["%s: %s" % (k, x) for k, v in result.items() for x in v]
+    print("\n".join(problems) if problems else "OK: every file matches MANIFEST.json")
+    return 1 if problems else 0
 
 
 def main(argv=None):
