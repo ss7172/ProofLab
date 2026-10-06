@@ -503,7 +503,7 @@ def main(argv=None):
     if args.operator:
         print("console: --operator is P2 and not built; running as viewer", file=sys.stderr)
     info = source.mode_info()
-    print("%s\nopen (one time): %s" % (info["banner"], server.url()))
+    print("%s\nopen (one time): %s" % (info["banner"], server.url()), flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
