@@ -14,10 +14,11 @@ import importlib.util
 import json
 import os
 import shutil
+import subprocess
 import sys
 
 PACK_TOP = ("store", "raw", "derived", "assessments", "findings", "register", "kit-crosscheck",
-            "reviews", "servicenow", "adversarial", "answers", "architecture",
+            "reviews", "servicenow", "adversarial", "answers", "architecture", "records", "runs", "auditor", "gaps",
             "window.json", "live-lane-log.jsonl", "security-matrix.md", "pack-index.json")
 WORKDIR_FILES = ("register.yaml", "gap-list.md", "run-ids.txt", "sketch.png")
 STAGED_FROM_WORKDIR = ("gap-list.md", "run-ids.txt", "sketch.png")
@@ -294,6 +295,56 @@ def _stage(out, a):
     return warnings
 
 
+def readme_placeholders(path):
+    """Unfilled template markers in the README: <UPPER_CASE>, <INCnnnnnnn>-style, <...> and the template note."""
+    import re
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            t = fh.read()
+    except (IOError, OSError):
+        return ["(README.md missing)"]
+    found = re.findall(r"<(?:[A-Z][A-Z0-9_]+|INC[a-z]+|\.\.\.|YYYY-MM-DD|[a-z][a-z0-9 ,/;.\-]{8,}[a-z.])>", t)
+    found = [f for f in found if f not in ("<CID>", "<T1>", "<T2>", "<CID-or-time>")]    # the reader's own command arguments
+    if "Delete this note when filled" in t:
+        found.append("Delete this note when filled")
+    return found
+
+
+def _project_console(out, warnings):
+    """Console entry point (D1/D2): compose stored answers and project pack-index.json + records/ from the STAGED tree.
+
+    One-way: the projection goes to a temp dir; only pack-index.json, records/ and the projected assessments (under
+    projected-assessments/, apart from the native assessments/ the query engine reads) are copied into the pack."""
+    import tempfile
+    from prooflab.pack import answers as _answers
+    entries, skipped = _answers.compose(out)
+    for sk in skipped:
+        warnings.append("answer not composed (%s): %s" % (sk["query"], sk["reason"]))
+    tmp = tempfile.mkdtemp(prefix="prooflab-proj-")
+    try:
+        pj = os.path.join(tmp, "p")
+        idx = os.path.join(tmp, "answers.json")
+        with open(idx, "w", encoding="utf-8") as fh:
+            json.dump(entries, fh)
+        # the projector runs as its own process: nothing imports it (the one-way grep in tests/projector)
+        env = dict(os.environ, PYTHONPATH=_repo_root(), PYTHONDONTWRITEBYTECODE="1")
+        r = subprocess.run([sys.executable, "-m", "prooflab.pack." + "projector", "--src", out, "--out", pj,
+                            "--answers", idx, "--assessments-dir", "projected-assessments"],
+                           env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        if r.returncode != 0:
+            raise RuntimeError("projector exit %d: %s" % (r.returncode, r.stderr.strip()[-300:]))
+        for name in ("pack-index.json", "records", "projected-assessments"):
+            s = os.path.join(pj, name)
+            if os.path.exists(s):
+                dst = os.path.join(out, name)
+                if os.path.isdir(dst):
+                    shutil.rmtree(dst)
+                _copy(s, dst)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return len(entries)
+
+
 def cmd_build(argv):
     p = argparse.ArgumentParser(prog="prooflab pack build")
     p.add_argument("--out", required=True)
@@ -302,6 +353,8 @@ def cmd_build(argv):
     p.add_argument("--readme")
     p.add_argument("--tool-src")
     p.add_argument("--scan-values-stdin", action="store_true")
+    p.add_argument("--strict-readme", action="store_true",
+                   help="fail the build while the staged README still holds a <PLACEHOLDER> or the template note")
     p.add_argument("--allow-draft-register", action="store_true",
                    help="stage an unfrozen register.yaml under register/draft/ instead of refusing")
     a = p.parse_args(argv)
@@ -320,10 +373,21 @@ def cmd_build(argv):
     except SketchMissing as exc:
         print("pack: " + str(exc), file=sys.stderr)
         return 2
+    if a.strict_readme:
+        left = readme_placeholders(os.path.join(out, "README.md"))
+        if left:
+            print("pack: README.md still holds %d placeholder(s), e.g. %s (--strict-readme)" % (len(left), ", ".join(left[:4])),
+                  file=sys.stderr)
+            return 2
     redactor = _load_redactor()
     if redactor:
         redactor(out)
     dropped, redact_errors = builtin_redact(out)
+    if not redact_errors:
+        try:
+            _project_console(out, warnings)
+        except Exception as exc:       # the pack is still valid without the console entry point; say so loudly
+            warnings.append("console projection FAILED (%s: %s): pack-index.json not written" % (type(exc).__name__, exc))
     if redact_errors:
         for rel in redact_errors:
             print("REDACT FAIL: cannot parse and redact " + rel, file=sys.stderr)

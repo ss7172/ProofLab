@@ -337,6 +337,14 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/v1/pack":
             data = flag_closures(json.loads(json.dumps(src.pack_index())))
+            if src.name == "pack":
+                # the index is projected BEFORE the MANIFEST exists (the MANIFEST lists the index): the live check wins
+                live = src.integrity()
+                data["integrity"] = dict(data.get("integrity") or {}, status=live["status"], files=live.get("files", 0),
+                                         manifest_sha256=live.get("manifest_sha256") or (data.get("integrity") or {}).get("manifest_sha256"))
+                for art in data.get("artefacts", []):
+                    if art.get("path") == "MANIFEST.json" and live["status"] != "NO_MANIFEST":
+                        art["present"], art["sha256"] = True, live.get("manifest_sha256")
             meta = self._meta({"vocab": VOCAB})
             return self._json(200, data, None, meta)
         if path == "/api/v1/answer":
@@ -362,7 +370,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._err(404, "no-such-auditor", "no auditor view for that id")
             return self._json(200, self._stamp(doc), None, self._meta())
         if path == "/api/v1/runs":
-            return self._json(200, src.run_catalogue(), None, self._meta())
+            win = src.declared_window() if hasattr(src, "declared_window") else None
+            return self._json(200, src.run_catalogue(), None, self._meta({"window": win}))
         m = re.match(r"^/api/v1/runs/([^/]+)$", path)
         if m:
             doc = src.run(unquote(m.group(1)))
@@ -378,7 +387,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, got, None, self._meta())
         if path == "/api/v1/cases":
             refused = src.refused_cases() if hasattr(src, "refused_cases") else []
-            return self._json(200, src.cases(), None, self._meta({"refused": refused}))
+            return self._json(200, flag_closures(json.loads(json.dumps(src.cases()))), None, self._meta({"refused": refused}))
         if path == "/api/v1/integrity":
             return self._json(200, src.integrity(), None, self._meta())
         m = re.match(r"^/api/v1/replay/([^/]+)$", path)

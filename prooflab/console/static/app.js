@@ -160,7 +160,7 @@ function architecture() {
 }
 function runsView() {
   const rows = D.runList || [];
-  return h("div", { class: "page" }, h("div", {}, h("div", { class: "label" }, "Run catalogue · every run any source saw"), h("h1", { class: "h1" }, "Runs, with what each one is"), h("p", { class: "sub" }, "Runs outside the declared window or not assessed stay listed and are labelled; they never change a verdict.")),
+  return h("div", { class: "page" }, h("div", {}, h("div", { class: "label" }, "Run catalogue · every run any source saw"), h("h1", { class: "h1" }, "Runs, with what each one is"), h("p", { class: "sub" }, "Runs outside the declared window or not assessed stay listed and are labelled; they never change a verdict."), h("p", { class: "sub mono" }, D.runWindow ? "Declared window: " + (D.runWindow.start || "?") + " .. " + (D.runWindow.end || "?") + (D.runWindow.note ? " (" + D.runWindow.note + ")" : "") : "Declared window: none in this source")),
     card(rows.length + " runs", h("table", { class: "t" }, h("thead", {}, h("tr", {}, ["Alias", "Run id", "Provenance", "Source", "Window", "Assessed", "Label"].map(x => h("th", {}, x)))),
       h("tbody", {}, rows.map(r => h("tr", { class: r.provenance && r.provenance !== "ASSESSED" ? "dim" : "" }, h("td", { class: "mono" }, r.alias || "—"), h("td", { class: "mono" }, r.cid || r.run_id || "—"), h("td", {}, tp(r.provenance || "UNKNOWN")), h("td", {}, r.source || "—"), h("td", {}, r.in_window == null ? "unknown" : r.in_window ? "inside" : "outside"), h("td", {}, r.assessed == null ? "unknown" : r.assessed ? "yes" : "no"), h("td", {}, r.label || r.purpose || "")))))));
 }
@@ -217,7 +217,7 @@ async function loadAll() {
   (P.auditor || []).forEach(a => jobs.push(api("/api/v1/auditor/" + encodeURIComponent(a.id)).then(j => { D.auditor[a.id] = j.data; }).catch(() => {})));
   (P.runs || []).forEach(r => jobs.push((async () => { let cur = "", out = []; do { const j = await api("/api/v1/records?run=" + encodeURIComponent(r.alias) + (cur ? "&cursor=" + encodeURIComponent(cur) : "")); out = out.concat(j.data); cur = (j.meta || {}).next_cursor || ""; } while (cur); D.records[r.alias] = out; })().catch(() => {})));
   jobs.push(api("/api/v1/cases").then(j => { D.cases = j.data; }).catch(() => {}));
-  jobs.push(api("/api/v1/runs").then(j => { D.runList = j.data; }).catch(() => {}));
+  jobs.push(api("/api/v1/runs").then(j => { D.runList = j.data; D.runWindow = (j.meta || {}).window || null; }).catch(() => {}));
   await Promise.all(jobs);
   const m = META.mode || {};
   const rb = $("ribbon"); rb.textContent = m.banner || ""; rb.className = "ribbon " + (m.tone || "");

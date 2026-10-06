@@ -828,6 +828,53 @@ def step_pack(R):
     return True
 
 
+def _console_row(R, ev, runs):
+    """AT-P0 on the fresh unzip: the console starts from the pack alone and serves a stored, composed answer."""
+    import socket
+    import urllib.error
+    import urllib.request
+    sk = socket.socket()
+    sk.bind(("127.0.0.1", 0))
+    port = sk.getsockname()[1]
+    sk.close()
+    env = {"PATH": "/usr/bin:/bin", "HOME": os.environ.get("HOME", "/"), "PYTHONDONTWRITEBYTECODE": "1"}   # the console refuses a shell with secrets
+    proc = subprocess.Popen([R.py, "-m", "prooflab", "console", "--data", "pack", "--pack", ev, "--port", str(port)],
+                            cwd=ev, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    detail, ok = "", False
+    try:
+        banner, url = proc.stdout.readline().strip(), proc.stdout.readline().strip()
+        if "#k=" not in url:
+            raise RuntimeError("no one-time URL: %s" % (banner or url))
+        tok = url.split("#k=")[-1]
+        base = "http://127.0.0.1:%d" % port
+        req = urllib.request.Request(base + "/api/v1/session", data=json.dumps({"token": tok}).encode(),
+                                     headers={"Content-Type": "application/json"}, method="POST")
+        for _ in range(50):             # the banner prints just before the socket listens
+            try:
+                with urllib.request.urlopen(req, timeout=10) as r:
+                    cookie = r.headers.get("Set-Cookie", "").split(";")[0]
+                break
+            except urllib.error.HTTPError:
+                raise
+            except urllib.error.URLError:
+                time.sleep(0.1)
+        q = urllib.request.Request(base + "/api/v1/ask?q=control%2016%20for%20run%20" + runs["N2"]["cid"], headers={"Cookie": cookie})
+        with urllib.request.urlopen(q, timeout=10) as r:
+            ans = json.loads(r.read().decode())["data"]
+        m = ans["measurement"]
+        ok = ans["verdict"]["value"] == V.BREACHED and m["value"] is not None and ans["comparison"]["limit"] is not None
+        detail = "%s; %s measured %s vs %s" % (banner[:40], ans["verdict"]["value"], m["value"], ans["comparison"]["limit"])
+    except Exception as exc:        # a console that cannot start on the pack is the finding
+        detail = "%s: %s" % (type(exc).__name__, str(exc)[:80])
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except Exception:
+            proc.kill()
+    R.check("console starts on the fresh unzip and answers C16 N2 from the pack", ok, detail)
+
+
 def step_query(R):
     pack, runs, w = R.state["pack"], R.state["runs"], R.work
     zpath = _p(w, "out", "submission.zip")
@@ -847,6 +894,7 @@ def step_query(R):
     p = subprocess.run([R.py, _p(REPO, "tools", "manifest.py"), "verify", ev], stdout=subprocess.PIPE,
                        stderr=subprocess.STDOUT)
     R.check("manifest verify on the fresh unzip", p.returncode == 0, p.stdout.decode()[:80].strip())
+    _console_row(R, ev, runs)
     cases = [("C16 run N2 (BREACHED)", ["--control", "C16", "--run", runs["N2"]["cid"]], V.exit_code(V.BREACHED)),
              ("C16 run N1 (SATISFIED)", ["--control", "C16", "--run", runs["N1"]["cid"]], V.exit_code(V.SATISFIED)),
              ("C16 run N3 (SATISFIED, halt)", ["--control", "C16", "--run", runs["N3"]["cid"]], V.exit_code(V.SATISFIED)),

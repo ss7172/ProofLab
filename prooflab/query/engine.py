@@ -204,6 +204,21 @@ class Pack(object):
         return sorted(glob.glob(self.p(*pattern)))
 
 
+def _native_measured(m):
+    """Map an evaluator's own measured keys onto value/unit/limit (the renderer's vocabulary); never invents a number.
+    C16: total_tokens vs cap. C7: coverage_pct (share of the expected events observed). Existing value/unit/limit win."""
+    if not isinstance(m, dict) or m.get("value") is not None:
+        return m
+    m = dict(m)
+    if m.get("total_tokens") is not None:
+        m["value"], m["unit"] = m["total_tokens"], m.get("unit") or "tokens"
+        if m.get("limit") is None and m.get("cap") is not None:
+            m["limit"] = m["cap"]
+    elif m.get("coverage_pct") is not None:
+        m["value"], m["unit"] = m["coverage_pct"], m.get("unit") or "% of expected events observed"
+    return m
+
+
 def normalize_assessment(doc):
     """Accept the contract dataclass dict or a flat `assessment` record; return one flat shape."""
     g = lambda *keys: next((doc[k] for k in keys if k in doc and doc[k] is not None), None)
@@ -223,6 +238,7 @@ def normalize_assessment(doc):
     measured = doc.get("measured")
     if not isinstance(measured, dict):
         measured = {"value": g("measured.value"), "unit": g("measured.unit"), "source": g("measured.source")}
+    measured = _native_measured(measured)
     limit = g("limit", "threshold.value")
     if limit is None and isinstance(measured, dict):
         limit = measured.get("limit")

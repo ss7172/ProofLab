@@ -467,7 +467,7 @@ def _bump(report, why):
 
 
 # ------------------------------------------------------------------ the projection
-def project(src, out, as_of=None, generated_at=None):
+def project(src, out, as_of=None, generated_at=None, answers=None, assessments_dir="assessments"):
     src, out = os.path.abspath(src), os.path.abspath(out)
     if out == src or out.startswith(src + os.sep) or src.startswith(out + os.sep):
         raise ValueError("projection is one-way: --out must be a directory apart from --src (and not contain it)")
@@ -491,7 +491,7 @@ def project(src, out, as_of=None, generated_at=None):
             docs.append(p)
     files = []
     for p in docs:
-        rel = "assessments/%s/%s.json" % (p["control_ref"], safe(p["assessment_id"]))
+        rel = "%s/%s/%s.json" % (assessments_dir, p["control_ref"], safe(p["assessment_id"]))
         files.append((rel, p))
     proj_records = project_records(cx, docs, report)
     ep_seen, counts = {}, {}
@@ -555,7 +555,7 @@ def project(src, out, as_of=None, generated_at=None):
         artefacts.append({"id": i + 1, "name": name, "path": path, "present": data is not None,
                           "sha256": hashlib.sha256(data).hexdigest() if data is not None else None})
     ictx = {"as_of": cx["as_of"], "generated_at": generated_at or cx["as_of"], "pack": pack, "claim": cx["claim"],
-            "assessments": [dict(p, _path="assessments/%s/%s.json" % (p["control_ref"], safe(p["assessment_id"]))) for p in docs],
+            "assessments": [dict(p, _path="%s/%s/%s.json" % (assessments_dir, p["control_ref"], safe(p["assessment_id"]))) for p in docs],
             "findings": findings, "cases": cases, "runs": runs, "named_runs": named, "artefacts": artefacts,
             "integrity": integrity, "record_counts": counts, "ep_seen": ep_seen, "register": cx["register"],
             "register_controls": cx["register_controls"], "register_versions": cx["register_versions"],
@@ -563,7 +563,7 @@ def project(src, out, as_of=None, generated_at=None):
             "first_assessed_run_at": min((r["started_at"] for r in runs if r.get("started_at")), default=None),
             "exploratory_runs": len(set(r.get("run.id") for r in cx["records"] if r.get("run.id") and r.get("run.id") not in cx["run_ids"]
                                        and provenance_of(r.get("provenance"), r.get("run.id"), cx["run_ids"]) == "EXPLORATORY")),
-            "gaps": []}
+            "gaps": [], "answers": list(answers or [])}
     index_doc = _index.build_index(ictx)
     os.makedirs(out, exist_ok=True)
     for rel, doc in files:
@@ -584,9 +584,15 @@ def main(argv=None):
     ap.add_argument("--src", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--as-of", default=None)
+    ap.add_argument("--answers", default=None, help="JSON list of pack-index answers[] entries (from pack build)")
+    ap.add_argument("--assessments-dir", default="assessments", help="where projected assessments go (default assessments)")
     args = ap.parse_args(argv)
+    answers = None
+    if args.answers:
+        with open(args.answers, "r", encoding="utf-8") as fh:
+            answers = json.load(fh)
     try:
-        res = project(args.src, args.out, args.as_of)
+        res = project(args.src, args.out, args.as_of, answers=answers, assessments_dir=args.assessments_dir)
     except ValueError as exc:
         sys.stderr.write("projector: %s\n" % exc)
         return 2
