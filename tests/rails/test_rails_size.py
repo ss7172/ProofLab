@@ -21,7 +21,7 @@ def test_rails_packed_size_reported():
 
 try:
     import pytest
-    _xfail = pytest.mark.xfail(strict=True, reason="B-G1 MIN budget 6,144 B raw: measured 9,512 B with fail-closed "
+    _xfail = pytest.mark.xfail(strict=True, reason="B-G1 MIN budget 6,144 B raw: measured 9,532 B with fail-closed "
                                                    "wrappers (declared miss; amendment requested)")
 except ImportError:  # plain-interpreter smoke runs
     def _xfail(f):

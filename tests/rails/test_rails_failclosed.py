@@ -96,6 +96,19 @@ def test_ground_fails_closed():
         check("O-03", mode, err(r, "O-03"))
 
 
+def test_keyword_arguments_pass_through_the_wrapper():
+    # the agent glue calls output(text, prompts=[...]) and tools(ts, name=...) by keyword
+    prompt = "You are the network resolution agent for a telecom operator; answer in JSON only."
+    r = R.Rails("ifabric-network", mode="enforce")
+    assert prompt[:45] not in r.output("x " + prompt[:45], prompts=[prompt])
+    assert r.tools(["a", "network-twin___predict_rsrp"], name=str) == ["network-twin___predict_rsrp"]
+    assert not any(d["rail.matches"] == {"rail-error": 1} for d in r.records)
+    for mode in ("enforce", "observe"):   # and a crash with keywords still fails closed
+        r = R.Rails("ifabric-network", mode=mode)
+        assert r.output(None, prompts=["p"]) == ("" if mode == "enforce" else None)
+        assert r.tools(["a"], name=boom) == ([] if mode == "enforce" else ["a"])
+
+
 def test_ground_crash_on_dict_escalates_in_enforce():
     r = R.Rails("ifabric-it", mode="enforce")
     with Patch("IDS"):   # IDS.findall -> AttributeError inside ground
