@@ -18,7 +18,7 @@ VERBS = {
     "registry": ("prooflab.registry:main",
                  "registry tooling: freeze, pin, derive, inventory, approval-finding, run-ids", "PR-11"),
     "query": ("prooflab.query.cli:main", "the control test: query a control for a run or window", "PR-15a"),
-    "assess": ("prooflab.query.cli:assess_main", "run the control tests and write assessments", "PR-15a"),
+    "assess": ("prooflab.query.cli:assess_main", "run the control tests and write assessments (--snapshot: evaluate a refreshed snapshot)", "PR-15a"),
     "refresh": ("prooflab.store.snapshot:main", "snapshot the one store (with the check poller)", "PR-13a"),
     "pack": ("prooflab.pack.build:main", "build / index / verify the Evidence Pack", "PR-21"),
     "humanloop": ("prooflab.humanloop.runner:main", "the human loop: findings -> ServiceNow, mirror", "PR-20a"),

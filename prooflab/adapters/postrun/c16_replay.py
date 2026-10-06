@@ -69,6 +69,15 @@ def _flatten(obj, prefix="", out=None):
 
 def _row(raw):
     if isinstance(raw, dict):
+        msg = raw.get("@message")
+        if isinstance(msg, str):       # D3: a Logs Insights row; the span is the JSON in @message
+            try:
+                span = json.loads(msg)
+            except ValueError:
+                span = None
+            if isinstance(span, dict):
+                raw = dict((k, v) for k, v in raw.items() if k != "@message")
+                raw.update(span)
         flat = _flatten(raw)
         # also expose nested {"attributes": {"modaas.run_id": ...}} as dotted keys either way
         return flat

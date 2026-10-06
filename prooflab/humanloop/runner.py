@@ -131,6 +131,9 @@ def _ph2(args, config, findings, client_factory, analyzer_factory) -> int:
 def main(argv: Optional[List[str]] = None, env: Optional[Mapping[str, str]] = None,
          client_factory: Optional[Callable[[], object]] = None,
          analyzer_factory: Optional[Callable[[], object]] = None) -> int:
+    if argv and argv[0] == "findings":          # D4: build Finding files from the snapshot's BREACHED assessments
+        from prooflab.humanloop import findings as _findings
+        return _findings.main(argv[1:], env)
     parser = argparse.ArgumentParser(prog="prooflab humanloop", description="human loop: notify")
     sub = parser.add_subparsers(dest="command", required=True)
     notify_p = sub.add_parser("notify", help="selftest, then notify new notify-due findings")

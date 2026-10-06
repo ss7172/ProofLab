@@ -24,6 +24,8 @@ import sys
 from prooflab.contract import ids as _ids
 from prooflab.contract import record as _rec
 from prooflab.stitch import catalogue as _catalogue
+from prooflab.stitch import corroboration as _corroboration
+from prooflab.stitch import kit_crosscheck as _kit
 from prooflab.stitch import stitcher as _stitcher
 from prooflab.store import ingest as _ingest
 from prooflab.store import observations as _obs
@@ -68,14 +70,19 @@ def normalize_all(root, provenance=None) -> dict:
     records, sightings, rejects, background = [], [], [], 0
     jobs = [("gateway", "*.log", _obs.normalize_gateway_text), ("spans", "*.jsonl", _obs.normalize_gateway_text),
             ("aws-invocations", "*.jsonl", _obs.normalize_invocation_text)]
-    for sub, pattern, fn in jobs:
-        for path in _files(root, sub, pattern):
-            ref = "raw/%s/%s" % (sub, os.path.basename(path))
-            out = fn(_read(path), ref, provenance)
-            records += out["records"]
-            sightings += out["sightings"]
-            rejects += out["rejects"]
-            background += out["background"]
+    work = [(sub, path, fn, False) for sub, pattern, fn in jobs for path in _files(root, sub, pattern)]
+    # D3: the aws/spans collector's capture, raw/aws-spans/<cid>/spans.jsonl (Logs Insights @timestamp/@message rows)
+    work += [("aws-spans", path, _obs.normalize_gateway_text, True)
+             for path in sorted(glob.glob(os.path.join(root, "raw", "aws-spans", "*", "spans.jsonl*"))
+                                ) if not path.endswith(".capture.json")]
+    for sub, path, fn, insights in work:
+        ref = os.path.relpath(path, root).replace(os.sep, "/") if sub == "aws-spans" else \
+            "raw/%s/%s" % (sub, os.path.basename(path))
+        out = fn(_read(path), ref, provenance, insights=True) if insights else fn(_read(path), ref, provenance)
+        records += out["records"]
+        sightings += out["sightings"]
+        rejects += out["rejects"]
+        background += out["background"]
     return {"records": _obs.sort_records(_dedup(records)), "sightings": sightings, "rejects": rejects,
             "background": background}
 
@@ -124,6 +131,33 @@ def _ledger_sightings(rows):
     return out
 
 
+def _read_raw(root):
+    def read(rel):
+        path = os.path.join(root, rel)
+        return _read(path) if os.path.isfile(path) else None
+    return read
+
+
+def _write_corroboration(root, store_rows, stitched, join_tolerance_s) -> list:
+    """derived/corroboration/<CID>.json (ARCH 3.6 / 9.2): where the independent sources agree and where they do not."""
+    reports = _corroboration.corroborate(store_rows, stitched, join_tolerance_s, read_raw=_read_raw(root))
+    return [os.path.relpath(p, root).replace(os.sep, "/") for p in _corroboration.write(root, reports)]
+
+
+def _write_kit_logs(root, store_rows) -> list:
+    """D10: kit-crosscheck/<CID>/gateway-log.json, built from the gateway records of that CID (ARCH 9.1)."""
+    cids = sorted(set(r.get("run.id") or r.get("correlation_id") or "" for r in store_rows
+                      if _kit.is_model_call_span(r)))
+    names = []
+    for cid in cids:
+        if not _ids.is_ours(cid):
+            continue
+        log = _kit.build_gateway_log(store_rows, cid)
+        if log["records"]:
+            names.append(os.path.relpath(_kit.write(root, cid, log), root).replace(os.sep, "/"))
+    return names
+
+
 def refresh(root, as_of=None, run_ids=(), provenance=None, window=None, join_tolerance_s=None,
             client=None, pull=False, do_ingest=False, fallback_store=None) -> dict:
     summary = {"pulled": [], "ingest": None}
@@ -155,6 +189,8 @@ def refresh(root, as_of=None, run_ids=(), provenance=None, window=None, join_tol
     _write(os.path.join(root, "derived", "rejects.jsonl"), _dumps(sorted(norm["rejects"], key=lambda r: r["ref"])))
     names = ["store/records.jsonl", "derived/observations.jsonl", "derived/run-index.jsonl",
              "derived/unjoined.jsonl", "derived/run-catalogue.jsonl", "derived/rejects.jsonl"]
+    names += _write_corroboration(root, store_rows, out, join_tolerance_s)
+    names += _write_kit_logs(root, store_rows)
     manifest = {"as_of": as_of, "schema": _rec.SCHEMA_ID, "background_lines": norm["background"],
                 "files": dict((n, _sha(os.path.join(root, n))) for n in names)}
     _write(os.path.join(root, "SNAPSHOT.json"), json.dumps(manifest, sort_keys=True, indent=1) + "\n")

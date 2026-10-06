@@ -555,16 +555,16 @@ def step_snapshot(R):
     rc, out, err, _ = R.cli(args)
     metrics = _metric_cids(snap)
     R.check("refresh sees the collector's aws/spans capture", rc == 0 and runs["N2"]["cid"] in metrics,
-            "rc=%d metric runs=%d" % (rc, len(metrics)), xfail="D3")
+            "rc=%d metric runs=%d" % (rc, len(metrics)))
 
     # postrun straight on the collector's file (what the live lane would run)
     n2 = runs["N2"]
     n2_file = [p for p in coll if n2["cid"] in p][0]
     rc, out, err, _ = R.cli(["postrun", "--cid", n2["cid"], "--spans", n2_file, "--pin", _p(R.work, "pins", "v1-observe.json"),
                              "--pin-sha256", R.state["pins"]["observe"]["env"]["IFABRIC_PIN_SHA256"]])
-    R.check("postrun reads the collector's aws/spans capture", rc == 0, (err.strip() or "ok")[:120], xfail="D3")
+    R.check("postrun reads the collector's aws/spans capture", rc == 0, (err.strip() or "ok")[:120])
 
-    # stand-in shapes so the chain continues: flat span lines for refresh, flattened rows for postrun
+    # the rows EP-2's replay reads (the collector's own file is also read directly by the postrun row above)
     flat_lines = []
     for run in runs.values():
         for s in run["spans"]:
@@ -578,10 +578,9 @@ def step_snapshot(R):
             flat_lines.append(flat)
         _write(_p(R.work, "spans", run["cid"] + ".json"),
                json.dumps({"rows": [dict((k, v) for k, v in s.items() if k != "_agent") for s in run["spans"]]}))
-    _write(_p(snap, "raw", "spans", "rehearsal-standin.jsonl"), _jsonl(flat_lines))
     rc, out, err, _ = R.cli(args)
     metrics = _metric_cids(snap)
-    R.check("refresh (stand-in flat spans) -> store + derived", rc == 0 and all(r["cid"] in metrics for r in runs.values()),
+    R.check("refresh -> store + derived (kit-crosscheck + corroboration written)", rc == 0 and all(r["cid"] in metrics for r in runs.values()),
             "rc=%d %s" % (rc, err.strip()[:100]))
     cat = [json.loads(l) for l in _read(_p(snap, "derived", "run-catalogue.jsonl")).splitlines() if l.strip()]
     by = {}
@@ -703,10 +702,18 @@ def assess_glue(R, snap):
 
 def step_assess(R):
     snap, runs = R.state["snap"], R.state["runs"]
-    rc, out, err, _ = R.cli(["assess", "--pack", snap])
-    R.check("`prooflab assess` produces assessments from the snapshot",
-            bool([p for p in _walk(_p(snap, "assessments"))]) if os.path.isdir(_p(snap, "assessments")) else False,
-            "rc=%d (reads stored assessments only) %s" % (rc, (out + err).strip()[:80]), xfail="D1")
+    gap = next(i for i in R.state["derive"] if i["control_ref"] == "C7")["value"]
+    rc, out, err, _ = R.cli(["assess", "--snapshot", snap, "--register", R.state["v1"],
+                             "--limit", "C7:coverage_min_pct=100", "--limit", "C7:gap_max_ms=%s" % gap,
+                             "--limit", "C7:violating_gap_share_max_pct=0"])
+    real = {}
+    for ctl in ("C16", "C7"):
+        for name, run in runs.items():
+            fp = _p(snap, "assessments", ctl, run["cid"] + ".json")
+            if os.path.isfile(fp):
+                real[(name, ctl)] = json.loads(_read(fp))["requirement_verdict"]
+    R.check("`prooflab assess --snapshot` writes assessments/<C>/<cid>.json for every named run",
+            len(real) == 2 * len(runs), "rc=%d files=%d %s" % (rc, len(real), (err.strip())[:80]))
     try:
         got = assess_glue(R, snap)
     except Exception as exc:  # noqa: BLE001
@@ -718,9 +725,13 @@ def step_assess(R):
         g = got[name]
         ok = (w16 is None or g["C16"] == w16) and (w7 is None or g["C7"] == w7)
         R.check("assess %s: C16 %s, C7 %s" % (name, g["C16"], g["C7"]), ok,
-                "want C16=%s C7=%s (stand-in glue for D1)%s" % (
+                "want C16=%s C7=%s (C7 by the evaluators called directly until D5 lands)%s" % (
                     w16 or "any", w7 or "any",
                     "; fault simulated by the rehearsal driver (D12)" if RUN_PLANS[name].get("fault") else ""))
+    R.check("assess --snapshot C16 verdicts == the evaluators called directly (stand-in glue)",
+            all(real.get((n, "C16")) == got[n]["C16"] for n in runs),
+            "real %s vs glue %s" % (sorted((n, real.get((n, "C16"))) for n in runs),
+                                    sorted((n, got[n]["C16"]) for n in runs)))
     R.check("C7 N3 (stopped agent) with workflow_events_after_stop", got["N3"]["C7"] == V.SATISFIED,
             "verdict %s: lifecycle.stop / handoff.received are never emitted under those names" % got["N3"]["C7"],
             xfail="D5")
@@ -742,19 +753,13 @@ def step_notify(R):
     from prooflab.registry import parse as P
     from prooflab.tests.fake_servicenow import CLIENT_ID, CLIENT_SECRET, INTEGRATION_USER, OWNER_USER, FakeServiceNow
     snap, runs = R.state["snap"], R.state["runs"]
-    R.check("a verb builds Finding files from assessments", False, "human_loop.build_finding has no caller", xfail="D4")
-    doc = P.parse_register(R.state["v1_bytes"].decode("utf-8"))
     fdir = _p(snap, "findings")
-    made = []
-    for name, ctrl in (("N2", "C16"), ("N4", "C7")):
-        cid = runs[name]["cid"]
-        a = json.loads(_read(_p(snap, "assessments", ctrl, cid + ".json")))
-        e = [x for x in doc["entries"] if x.get("control_ref") == ctrl][0]
-        lim = {"value": R.state["cap"], "operator": "<=", "unit": "tokens"} if ctrl == "C16" else None
-        f = hl.build_finding(a, cid, OWNER_USER, e["version_date"], limit=lim)
-        if f:
-            made.append(_write(_p(fdir, "%s-%s.json" % (ctrl, cid)), json.dumps(f, indent=1, sort_keys=True)))
-    R.check("finding builder (stand-in for D4): N2 C16 + N4 C7", len(made) == 2, "%d findings" % len(made))
+    rc, out, err, _ = R.cli(["humanloop", "findings", "--snapshot", snap, "--register", R.state["v1"]],
+                            env_extra={"SNOW_OWNER_USER": OWNER_USER})
+    made = sorted(os.listdir(fdir)) if os.path.isdir(fdir) else []
+    want = sorted("%s-%s.json" % (c, runs[n]["cid"]) for n, c in (("N2", "C16"), ("N4", "C7")))
+    R.check("`humanloop findings` builds Finding files from the BREACHED assessments", rc == 0 and set(want) <= set(made),
+            "rc=%d %s %s" % (rc, made, err.strip()[:80]))
     srv = FakeServiceNow().start()
     try:
         log = _p(snap, "servicenow", "delivery-log.jsonl")
@@ -762,11 +767,11 @@ def step_notify(R):
         env = {"SNOW_INSTANCE": srv.base_url, "SNOW_CLIENT_ID": CLIENT_ID, "SNOW_CLIENT_SECRET": CLIENT_SECRET,
                "SNOW_OWNER_USER": OWNER_USER, "SNOW_INTEGRATION_USER": INTEGRATION_USER,
                "PROOFLAB_DELIVERY_LOG": log, "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost"}
-        rc, out, err, _ = R.cli(["humanloop", "notify", "--findings-dir", fdir], env_extra=env)
+        rc, out, err, _ = R.cli(["humanloop", "notify"] + [a for f in want for a in ("--finding", _p(fdir, f))], env_extra=env)
         rows = json.loads(out) if rc == 0 and out.strip().startswith("[") else []
         ok = rc == 0 and len(rows) == 2 and all(r.get("state") == "DELIVERED" for r in rows)
         R.check("humanloop notify -> FAKE ServiceNow: 2 DELIVERED", ok, "rc=%d %s" % (rc, (err.strip() or out.strip())[:100]))
-        rc2, out2, _, _ = R.cli(["humanloop", "notify", "--findings-dir", fdir], env_extra=env)
+        rc2, out2, _, _ = R.cli(["humanloop", "notify"] + [a for f in want for a in ("--finding", _p(fdir, f))], env_extra=env)
         rows2 = json.loads(out2) if rc2 == 0 and out2.strip().startswith("[") else []
         R.check("notify re-run sends nothing new", rc2 == 0 and all(r.get("action") == "skipped" for r in rows2),
                 "rc=%d" % rc2)
@@ -813,7 +818,7 @@ def step_pack(R):
     p = subprocess.run([R.py, _p(REPO, "tools", "manifest.py"), "verify", pack], stdout=subprocess.PIPE,
                        stderr=subprocess.STDOUT)
     R.check("tools/manifest.py verify", p.returncode == 0, p.stdout.decode()[:100].strip())
-    R.check("findings/ staged in the pack", os.path.isdir(_p(pack, "findings")), "PACK_TOP has no findings", xfail="D7")
+    R.check("findings/ staged in the pack", os.path.isdir(_p(pack, "findings")), "staged from the snapshot")
     R.state["pack"] = pack
     return True
 
@@ -825,8 +830,11 @@ def step_query(R):
         for f in _walk(pack):
             z.write(f, os.path.join("evidence", os.path.relpath(f, pack)))
         for name in ("register.yaml", "gap-list.md", "run-ids.txt", "sketch.png"):
-            if os.path.isfile(_p(w, "workdir", name)):
-                z.write(_p(w, "workdir", name), name)
+            src = _p(w, "workdir", name)
+            if name == "sketch.png" and not os.path.isfile(src):
+                src = _p(pack, name)          # pack build stages the checked-in render (evidence-templates/sketch.png)
+            if os.path.isfile(src):
+                z.write(src, name)
     fresh = _p(w, "fresh")
     with zipfile.ZipFile(zpath) as z:
         z.extractall(fresh)
@@ -856,10 +864,9 @@ def step_query(R):
     h["LastModified"] = _iso(time.time() + 3600)
     _write(hp, json.dumps(h))
     rc, out, err, dt = R.cli(["query", "--control", "C16", "--run", runs["N2"]["cid"]], cwd=late)
-    R.check("date check: a T1 later than the run is not a clean answer", rc == 2 or not any(l.strip() == "gaps: none" for l in out.splitlines()), "rc=%d %s" % (rc, [l for l in out.splitlines() if l.startswith("gaps:")]),
-            xfail="D11")
+    R.check("date check: a T1 later than the run is not a clean answer", rc == 2 or not any(l.strip() == "gaps: none" for l in out.splitlines()), "rc=%d %s" % (rc, [l for l in out.splitlines() if l.startswith("gaps:")]))
     R.check("kit-crosscheck/<CID>/gateway-log.json produced", os.path.isdir(_p(ev, "kit-crosscheck")),
-            "no producer in prooflab/", xfail="D10")
+            "written by refresh from the gateway records")
     rc, out, err, dt = R.cli(["query", "--claim"], cwd=ev)
     R.check("query --claim", rc == 0 and "partial" in out.lower(), out.strip().splitlines()[0][:100] if out.strip() else err[:80])
     win = "%s..%s" % (_iso(R.state["t1"]), _iso(time.time() + 60))
@@ -874,15 +881,14 @@ def step_query(R):
     R.check("deliverable: risks.yaml frozen with v1 in the pack", os.path.isfile(_p(ev, "register", "versions", "v1.risks.yaml")), "")
     R.check("deliverable: inventory frozen in the pack", os.path.isfile(_p(ev, "register", "versions", "inv-1.yaml")), "")
     rc, out, err, dt = R.cli(["query", "--inventory"], cwd=ev)
-    R.check("query --inventory finds the frozen inv-1", rc == 0 and "inv-1" in out, out.strip()[:80], xfail="D9")
+    R.check("query --inventory finds the frozen inv-1", rc == 0 and "inv-1" in out, out.strip()[:80])
     lines = _read(_p(fresh, "run-ids.txt")).splitlines() if "run-ids.txt" in top else []
     pil = set(R.state["pilots"].values())
     R.check("deliverable: run-ids.txt one CID per line, no pilot", bool(lines) and all(IDS.is_valid_run_id(l) for l in lines)
             and not (set(lines) & pil), "%d lines" % len(lines))
     R.check("deliverable: control test tool (query runs from the zip)", True, "see the query rows")
     R.check("deliverable: gap-list.md", "gap-list.md" in top, "")
-    R.check("deliverable: sketch.png", "sketch.png" in top, "nothing renders it from architecture/one-page.svg",
-            xfail="D2")
+    R.check("deliverable: sketch.png", "sketch.png" in top, "the checked-in render of architecture/one-page.svg (evidence-templates/sketch.png)")
     return True
 
 
