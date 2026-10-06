@@ -1,0 +1,50 @@
+[
+ {
+  "record_id": "20261006T043020000Z-synthetic-00000014",
+  "record_kind": "rail_decision",
+  "run.id": "ifabric-run-1791260000-ab12cd",
+  "correlation_id": "ifabric-run-1791260000-ab12cd",
+  "handoff.id": "ifabric-run-1791260000-ab12cd:h2",
+  "provenance": "LIVE_SUBJECT",
+  "ts": "2026-10-06T04:30:20.000Z",
+  "detail": "SYNTHETIC rail_decision",
+  "verdict": "BLOCK",
+  "rail.id": "X-02",
+  "rail.version": "1",
+  "control.id": "RAIL-X-02",
+  "control.ref": "RAIL",
+  "reason": "SYNTHETIC undeclared tool"
+ },
+ {
+  "record_id": "20261006T043021000Z-synthetic-00000015",
+  "record_kind": "rail_decision",
+  "run.id": "ifabric-run-1791260000-ab12cd",
+  "correlation_id": "ifabric-run-1791260000-ab12cd",
+  "handoff.id": "ifabric-run-1791260000-ab12cd:h2",
+  "provenance": "LIVE_SUBJECT",
+  "ts": "2026-10-06T04:30:21.000Z",
+  "detail": "SYNTHETIC rail_decision",
+  "verdict": "ALLOW",
+  "rail.id": "T-02",
+  "rail.version": "1"
+ },
+ {
+  "record_id": "20261006T043022000Z-synthetic-00000016",
+  "record_kind": "lifecycle",
+  "run.id": "ifabric-run-1791260000-ab12cd",
+  "correlation_id": "ifabric-run-1791260000-ab12cd",
+  "handoff.id": "ifabric-run-1791260000-ab12cd:h2",
+  "provenance": "LIVE_SUBJECT",
+  "ts": "2026-10-06T04:30:22.000Z",
+  "detail": "SYNTHETIC lifecycle",
+  "verdict": "RECORDED",
+  "rails.counts": {
+   "X-02": {
+    "ALLOW": 0,
+    "BLOCK": 1,
+    "MODIFY": 0,
+    "FLAG": 0
+   }
+  }
+ }
+]
