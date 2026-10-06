@@ -1,0 +1,28 @@
+{
+ "evaluator": "c9.assess_run",
+ "expect": {
+  "requirement_verdict": "NOT_ASSESSED"
+ },
+ "inputs": {
+  "as_of": "2026-10-06T06:00:00.000Z",
+  "run_id": "ifabric-run-1791260000-ab12cd",
+  "windows": {
+   "ifabric-it": {
+    "datapoints": 1,
+    "errors": 0,
+    "invocations_expected": 1,
+    "latency_max": 4000
+   }
+  }
+ },
+ "name": "c9_no_baseline_not_assessed",
+ "note": "SYNTHETIC fixture; token magnitudes shaped like the 20261005T173727Z gateway llm lines, never a raw copy",
+ "pin": {
+  "control_id": "AIA-ARC-006",
+  "max_relative_change_pct": 10,
+  "register_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "register_version": "v1",
+  "threshold_version": "C9-v1",
+  "violating_windows_max_pct": 0
+ }
+}

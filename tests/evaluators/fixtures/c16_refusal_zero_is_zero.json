@@ -1,0 +1,99 @@
+{
+ "evaluator": "c16.assess_run",
+ "expect": {
+  "requirement_verdict": "SATISFIED"
+ },
+ "inputs": {
+  "as_of": "2026-10-06T05:30:00.000Z",
+  "calls": [
+   {
+    "action_id": "call-1",
+    "end": "2026-10-06T05:10:02.500Z",
+    "handoff_id": "h1",
+    "http_status": 200,
+    "listener": "llm",
+    "model": "nvidia.nemotron-super-3-120b",
+    "start": "2026-10-06T05:10:01.000Z",
+    "tokens_in": 6079,
+    "tokens_out": 43
+   },
+   {
+    "action_id": "call-2",
+    "end": "2026-10-06T05:10:04.500Z",
+    "handoff_id": "h1",
+    "http_status": 200,
+    "listener": "llm",
+    "model": "nvidia.nemotron-super-3-120b",
+    "start": "2026-10-06T05:10:03.000Z",
+    "tokens_in": 7000,
+    "tokens_out": 120
+   },
+   {
+    "action_id": "call-3",
+    "end": "2026-10-06T05:10:06.500Z",
+    "handoff_id": "h1",
+    "http_status": 403,
+    "listener": "llm",
+    "model": "nvidia.nemotron-super-3-120b",
+    "start": "2026-10-06T05:10:05.000Z",
+    "tokens_in": 0,
+    "tokens_out": 0
+   }
+  ],
+  "completeness": {
+   "expected_action_ids": [
+    "call-1",
+    "call-2",
+    "call-3"
+   ]
+  },
+  "decisions": [],
+  "run_id": "ifabric-run-1791260000-ab12cd",
+  "scenario_attrs": {
+   "attrs": {
+    "impact": "low"
+   },
+   "condition": "none",
+   "envelope_tier": "standard",
+   "provenance": "LIVE_SUBJECT",
+   "tier_rule": "impact=high->high;*->standard"
+  }
+ },
+ "name": "c16_refusal_zero_is_zero",
+ "note": "SYNTHETIC fixture; token magnitudes shaped like the 20261005T173727Z gateway llm lines, never a raw copy",
+ "pin": {
+  "c16": {
+   "bound": {
+    "inline_bound_fallback_tokens": 8000,
+    "inline_bound_margin_pct": 10,
+    "max_tokens": 800
+   },
+   "caps": {
+    "high": 20000,
+    "standard": 40000
+   },
+   "control_id": "ACN-COST-001",
+   "default_tier": "standard",
+   "mode": "enforce",
+   "modes": [
+    "enforce",
+    "observe"
+   ],
+   "safety_ceiling": 300000,
+   "threshold_version": "C16-v1",
+   "tiers": [
+    "high",
+    "standard"
+   ],
+   "version_date": "2026-10-06T05:00:00Z"
+  },
+  "c7": {
+   "declared_faults": []
+  },
+  "register": {
+   "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "version": "v1"
+  },
+  "schema": "ifabric.pin/1"
+ }
+}

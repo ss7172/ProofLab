@@ -1,0 +1,33 @@
+{
+ "evaluator": "c7.assess_run",
+ "expect": {
+  "requirement_verdict": "NOT_ASSESSED"
+ },
+ "inputs": {
+  "as_of": "2026-10-06T05:30:00.000Z",
+  "gateway_actions": [],
+  "link_gaps": [],
+  "observed": [],
+  "refusals": [],
+  "run_id": "ifabric-run-1791260000-ab12cd",
+  "stops": [],
+  "workflow_events": []
+ },
+ "name": "c7_no_expected_not_assessed",
+ "note": "SYNTHETIC fixture; token magnitudes shaped like the 20261005T173727Z gateway llm lines, never a raw copy",
+ "pin": {
+  "control_id": "AIA-LOG-001",
+  "coverage_min_pct": 100,
+  "ep1_deployed": false,
+  "exception_tolerance": 0,
+  "gap_max_ms": 5000,
+  "register_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "register_version": "v1",
+  "threshold_version": "C7-v1",
+  "violating_gap_share_max_pct": 10,
+  "workflow_events_after_stop": [
+   "decision",
+   "lifecycle"
+  ]
+ }
+}
