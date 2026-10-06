@@ -26,6 +26,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from prooflab.console import sources as S
 from prooflab.console.sources import ConsoleRefusal
+from prooflab.contract import verdicts as _V  # the one verdict vocabulary (ARCH §4.3)
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 # Arth's drop-in panel, byte-identical and served at /static/panel/. It lives OUTSIDE static/ so the "no verdict words
@@ -63,11 +64,11 @@ SECRET_ENV_PREFIXES = ("SNOW_CLIENT", "MODAAS_API", "MODAAS_GATEWAY_KEY", "MCP_T
 # Display vocabulary for the verdict enum (03-CONTRACTS section 3). The browser holds NO verdict words of its own:
 # it asks the server how to label what the pack says. Labels never decide anything.
 VOCAB = {
-    "SATISFIED": {"label": "SATISFIED", "glyph": "●", "tone": "held", "pill": "good"},
-    "BREACHED": {"label": "NOT SATISFIED", "glyph": "▲", "tone": "breach", "pill": "bad"},
-    "INDETERMINATE": {"label": "INDETERMINATE", "glyph": "◐", "tone": "unknown", "pill": "hatch"},
-    "NOT_ASSESSED": {"label": "NOT ASSESSED", "glyph": "○", "tone": "mute", "pill": "mute"},
-    "ESCALATED": {"label": "ESCALATED", "glyph": "", "tone": "unknown", "pill": "warn"},
+    _V.SATISFIED: {"label": _V.SATISFIED, "glyph": "●", "tone": "held", "pill": "good"},
+    _V.BREACHED: {"label": "NOT SATISFIED", "glyph": "▲", "tone": "breach", "pill": "bad"},
+    _V.INDETERMINATE: {"label": _V.INDETERMINATE, "glyph": "◐", "tone": "unknown", "pill": "hatch"},
+    _V.NOT_ASSESSED: {"label": "NOT ASSESSED", "glyph": "○", "tone": "mute", "pill": "mute"},
+    _V.ESCALATED: {"label": _V.ESCALATED, "glyph": "", "tone": "unknown", "pill": "warn"},
 }
 
 

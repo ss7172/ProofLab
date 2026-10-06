@@ -110,9 +110,12 @@ def test_judgment_records(ledger):
     assert judgment.record_judgment(c, cx, "guess", "x") == ec.REJECTED_SCHEMA
     assert judgment.record_judgment(c, cx, "escalate", " ") == ec.REJECTED_SCHEMA
     c.flush()
-    kinds = [(r["judgment.disposition"], r["verdict"], r["control.ref"]) for r in ledger.records]
-    assert kinds == [("auto-resolve", "RECORDED", "C7"), ("escalate", "ESCALATED", "ESC"),
-                     ("gather-evidence", "RECORDED", "C7")]
+    kinds = [(r["judgment.disposition"], r["verdict"], r["control.ref"], r["phase"]) for r in ledger.records]
+    # PR-25 decision (ARCH 3.1 EP-4, 5.2): escalate = the C7 `judgment` event + the ESC `escalation` event
+    assert kinds == [("auto-resolve", "RECORDED", "C7", "ifabric.judgment"),
+                     ("escalate", "RECORDED", "C7", "ifabric.judgment"),
+                     ("escalate", "ESCALATED", "ESC", "ifabric.escalation"),
+                     ("gather-evidence", "RECORDED", "C7", "ifabric.judgment")]
 
 
 def test_t_dup_01_second_invocation_refused_and_recorded(ledger):
@@ -190,7 +193,7 @@ def test_outage_records_gap_and_stdout_keeps_record():
     s.close()                                              # nothing listens: connection refused
     out = io.StringIO()
     c = ec.EmitClient("http://127.0.0.1:%d" % port, TOKEN, stdout=out, attempts=2, backoff=0.01)
-    judgment.record_judgment(c, ctx(), "escalate", "x")
+    judgment.record_judgment(c, ctx(), "gather-evidence", "x")   # one judgment record (escalate emits two)
     assert c.flush(timeout=2.0)["ok"]
     assert c.stats["failed"] == 1 and c.gaps[0]["lifecycle.event"] == "monitoring-gap"
     assert "monitoring-gap" in out.getvalue() and "ifabric.judgment" in out.getvalue()
@@ -200,7 +203,7 @@ def test_http_500_is_retried_then_gap():
     l = FakeLedger("500")
     try:
         c = mk(l.url, attempts=2, backoff=0.01)
-        judgment.record_judgment(c, ctx(), "escalate", "x")
+        judgment.record_judgment(c, ctx(), "gather-evidence", "x")   # one record (escalate emits two)
         c.flush(timeout=2.0)
         assert c.stats["failed"] == 1 and c.gaps
     finally:
@@ -339,9 +342,9 @@ def test_every_emitted_and_witnessed_record_is_contract_valid(ledger):
     g.begin("h-1")
     startup.refuse_duplicate(c, cx, g)
     assert c.flush()["ok"]
-    assert len(ledger.records) == 7
+    assert len(ledger.records) == 8                     # the escalate judgment adds its `escalation` record
     lines = _stdout_records(out)
-    assert len(lines) == 7
+    assert len(lines) == 8
     for rec in lines:
         assert validate_record(rec) == [], rec["record_id"]
     assert {r["lifecycle.duplicate_state"] for r in lines if "lifecycle.duplicate_state" in r} == {"in-flight"}
@@ -395,7 +398,7 @@ def test_outage_then_recovery_posts_and_gap_is_recorded():
     s.close()                                              # ledger down: connection refused
     out = io.StringIO()
     c = ec.EmitClient("http://127.0.0.1:%d" % port, TOKEN, stdout=out, attempts=1, backoff=0.01)
-    judgment.record_judgment(c, ctx(), "escalate", "during outage")
+    judgment.record_judgment(c, ctx(), "gather-evidence", "during outage")   # one record
     assert c.flush(timeout=2.0)["ok"]
     assert c.stats["failed"] == 1 and c.stats["posted"] == 0
     assert c.gaps and c.gaps[0]["lifecycle.event"] == "monitoring-gap"
@@ -404,7 +407,7 @@ def test_outage_then_recovery_posts_and_gap_is_recorded():
     FakeLedger.__init__(l)
     try:
         c._port = int(l.url.rsplit(":", 1)[1])
-        judgment.record_judgment(c, ctx(), "escalate", "after recovery")
+        judgment.record_judgment(c, ctx(), "gather-evidence", "after recovery")
         assert c.flush(timeout=2.0)["ok"]
         assert c.stats["posted"] >= 1 and len(l.records) == 1 and l.invalid == []
     finally:
@@ -414,7 +417,7 @@ def test_outage_then_recovery_posts_and_gap_is_recorded():
 def test_flush_p99_reported_over_20_flushes(ledger):
     c = mk(ledger.url)
     for i in range(25):
-        judgment.record_judgment(c, ctx(), "escalate", "r%d" % i)
+        judgment.record_judgment(c, ctx(), "gather-evidence", "r%d" % i)   # one record per flush
         assert c.flush()["ok"]
     assert len(c.flush_ms) >= 20 and len(ledger.records) == 25
     p99 = c.flush_p99_ms()

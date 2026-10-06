@@ -20,7 +20,8 @@ Matching (set semantics, so extras and duplicates cannot inflate coverage):
   EP-1 decision   -> key "decision:<call_id>" observed: decision record with that call.id
   refusal         -> key "refusal:<id>"       observed: a record with outcome.real in the refusal set and that call.id
   workflow event  -> key "<agent>|<event>"    observed: the record's actor.id + its event name
-                     (event name = `phase` minus the "ifabric." prefix when it has a dot, else record_kind)
+                     (event name = `phase` minus the "ifabric." prefix when it has a dot or is a contract WORKFLOW_PHASES
+                     name such as intent / judgment / escalation / stop, else record_kind)
 Pulled records (platform_decision, observation, metric, EP-2 replays: authorship PLATFORM, or ep.id EP-2) never count.
 Gap G-a (judged): consecutive expected events of one stream that were both observed, on `emitted.at`; a missing
 middle event makes both neighbours unmeasurable. G-b (diagnostic only): emitted.at minus the span end.
@@ -28,6 +29,7 @@ middle event makes both neighbours unmeasurable. G-b (diagnostic only): emitted.
 from __future__ import annotations
 
 from prooflab.contract import clocks as _clocks
+from prooflab.contract import record as _record
 from prooflab.evaluators import claim as _claim
 
 NAME = "prooflab.evaluators.c7"
@@ -55,7 +57,7 @@ def event_name(rec):
     ph = _g(rec, "phase") or ""
     if ph.startswith("ifabric."):
         ph = ph[len("ifabric."):]
-    return ph if "." in ph or ph in ("intent", "judgment") else (_g(rec, "record_kind") or ph)
+    return ph if "." in ph or ph in _record.WORKFLOW_PHASES else (_g(rec, "record_kind") or ph)
 
 
 def observed_key(rec):

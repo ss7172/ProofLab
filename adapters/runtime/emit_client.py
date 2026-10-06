@@ -119,7 +119,7 @@ _TIME_PAIRS = (("emitted.at", "emitted.clock"), ("observed.at", "observed.clock"
 
 
 def _validate_local(rec):
-    """The bundle-side fallback (the prooflab package is not in the agent image beyond c16_core):
+    """The bundle-side fallback (the prooflab package is not in the agent image beyond the frozen C16 core):
     the null rule, the required fields, the time pair, the id shape and the secret-key guard.
     PR-01 validate_record is the authority; a test keeps the two agreeing on the golden records."""
     if not isinstance(rec, dict):

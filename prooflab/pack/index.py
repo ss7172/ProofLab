@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import re
+from prooflab.contract import verdicts as _V  # the one verdict vocabulary (ARCH §4.3)
 
 CONTROL_NAMES = {
     "C16": ("ACN-COST-001", "Per-run token spend cap", "in-transaction"),
@@ -101,22 +102,22 @@ def person(name=None, ident=None, role=None):
 def _overall(verdicts):
     vs = [v for v in verdicts if v]
     if not vs:
-        return "NOT_ASSESSED"
-    if "BREACHED" in vs:
-        return "BREACHED"
-    if all(v == "SATISFIED" for v in vs):
-        return "SATISFIED"
-    if "INDETERMINATE" in vs:
-        return "INDETERMINATE"
-    return "NOT_ASSESSED" if all(v == "NOT_ASSESSED" for v in vs) else "INDETERMINATE"
+        return _V.NOT_ASSESSED
+    if _V.BREACHED in vs:
+        return _V.BREACHED
+    if all(v == _V.SATISFIED for v in vs):
+        return _V.SATISFIED
+    if _V.INDETERMINATE in vs:
+        return _V.INDETERMINATE
+    return _V.NOT_ASSESSED if all(v == _V.NOT_ASSESSED for v in vs) else _V.INDETERMINATE
 
 
 def claim_verdict(overalls):
     vs = [v for v in overalls if v]
-    if "BREACHED" in vs:
+    if _V.BREACHED in vs:
         return "NOT_SATISFIED"
-    if vs and all(v == "SATISFIED" for v in vs):
-        return "SATISFIED"
+    if vs and all(v == _V.SATISFIED for v in vs):
+        return _V.SATISFIED
     return "NOT_ESTABLISHED"
 
 
@@ -135,8 +136,8 @@ def build_controls(ctx):
         cid, name, mode = CONTROL_NAMES[ref]
         verdicts = [a["verdict"] for a in rows]
         entry = {"ref": ref, "id": cid, "name": name, "mode": mode, "verdict_overall": _overall(verdicts)}
-        passed = next((a for a in rows if a["verdict"] == "SATISFIED"), None)
-        breached = next((a for a in rows if a["verdict"] == "BREACHED"), None)
+        passed = next((a for a in rows if a["verdict"] == _V.SATISFIED), None)
+        breached = next((a for a in rows if a["verdict"] == _V.BREACHED), None)
         for key, a in (("pass", passed), ("breach", breached)):
             if a:
                 m = a.get("measured") or {}
@@ -155,7 +156,7 @@ def build_controls(ctx):
         }
         entry["findings_open"] = sum(1 for f in findings if (f.get("closure") or {}).get("state") != "CLOSED_BY_RETEST")
         entry["built_properly"] = all(v for k, v in entry["completeness"].items() if k != "f_query_under_2min")
-        entry["actually_worked"] = None if not rows else entry["verdict_overall"] == "SATISFIED"
+        entry["actually_worked"] = None if not rows else entry["verdict_overall"] == _V.SATISFIED
         out.append(entry)
     return out
 

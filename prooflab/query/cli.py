@@ -5,6 +5,7 @@
     query --incident <CID or UTC time>      the six auditor questions
     query --runs | --risk [ID] | --inventory | --claim
     common: --pack <dir> (default: current directory), --json
+    assess [--control C ...] [--run CID] [--out DIR]   (assess_main) every control x run of the pack
 Exit codes (prooflab.contract.verdicts.exit_code): 0 SATISFIED, 1 BREACHED, 2 INDETERMINATE / NOT_ASSESSED /
 unknown run / unsupported control / usage. Listings and incident answers exit 0.
 """
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 from prooflab.contract import verdicts as V
@@ -201,6 +203,49 @@ def main(argv=None):
     else:
         print("\n".join(RENDER.get(ans["kind"], lambda a: [a.get("message", "")])(ans)))
     return E.exit_for(ans)
+
+
+def assess_main(argv=None):
+    """`python3 -m prooflab assess`: the control test for every control x run in the pack (or the ones named).
+
+    Each answer is control_run's: the stored assessment plus the evaluator's recompute where it exposes
+    `recompute_from_pack`, a mismatch flagged. With --out each answer is written to <out>/<control>/<cid>.json
+    (never into the pack's assessments/, which holds Assessment documents only). Exit: the worst verdict's code."""
+    argv = list(sys.argv[1:] if argv is None else argv)
+    p = argparse.ArgumentParser(prog="prooflab assess", description="Run the control tests over the pack's runs.")
+    p.add_argument("--pack", default=".", help="the unzipped evidence/ directory (default: current directory)")
+    p.add_argument("--control", action="append", help="C16 | C7 | C9 (repeatable; default: all)")
+    p.add_argument("--run", action="append", help="run id (CID) (repeatable; default: every run in the pack)")
+    p.add_argument("--out", help="write each answer as JSON under this directory")
+    p.add_argument("--json", action="store_true", help="one JSON line per answer")
+    try:
+        args = p.parse_args(argv)
+    except SystemExit as exc:
+        return 0 if exc.code in (0, None) else 2
+    pack = E.Pack(args.pack)
+    controls = [E.norm_control(c) for c in (args.control or E.CONTROLS)]
+    cids = args.run or [r["cid"] for r in E.runs_list(pack)["rows"] if r.get("cid")]
+    if not cids:
+        print("prooflab assess: no runs in this pack (%s): nothing assessed" % pack.root, file=sys.stderr)
+        return V.exit_code(V.NOT_ASSESSED)
+    worst = 0
+    for control in controls:
+        for cid in cids:
+            ans = E.control_run(pack, control, cid)
+            code = E.exit_for(ans)
+            worst = code if code == 1 or (worst != 1 and code > worst) else worst   # a breach outranks a gap
+            if args.out:
+                d = os.path.join(args.out, control)
+                os.makedirs(d, exist_ok=True)
+                with open(os.path.join(d, "%s.json" % cid), "w") as f:
+                    json.dump(_jsonable(ans), f, indent=1, sort_keys=True, default=str)
+            if args.json:
+                print(json.dumps({"control": control, "run": cid, "verdict": ans.get("verdict"),
+                                  "recompute": ans.get("recompute")}, sort_keys=True))
+            else:
+                print("%-4s %s %s%s" % (control, cid, ans.get("verdict"),
+                                        "  [%s]" % ans["recompute"] if ans.get("recompute") else ""))
+    return worst
 
 
 if __name__ == "__main__":
