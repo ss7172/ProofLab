@@ -38,6 +38,7 @@ def _setup(fake, tmp_path):
 def _retest_assessment(tmp_path, **over):
     over.setdefault("scope_id", RETEST_CID)
     over.setdefault("requirement_verdict", "SATISFIED")
+    over.setdefault("as_of", "2026-10-06T07:30:00.000Z")     # after the finding's detected_at (06:00)
     return write_json(tmp_path / "retest-assessment.json", assessment(**over))
 
 
@@ -109,7 +110,7 @@ def test_lookup_by_id_and_assessment_from_snapshot(fake, tmp_path):
     (snap / "findings" / "x.json").write_text(json.dumps(_finding()))
     (snap / "assessments" / "C16").mkdir(parents=True)
     (snap / "assessments" / "C16" / ("%s.json" % RETEST_CID)).write_text(
-        json.dumps(assessment(scope_id=RETEST_CID, requirement_verdict="SATISFIED")))
+        json.dumps(assessment(scope_id=RETEST_CID, requirement_verdict="SATISFIED", as_of="2026-10-06T07:30:00.000Z")))
     fid = finding_from_dict(_finding()).finding_id
     assert _run(fake, log, ["--finding", fid, "--retest-run", RETEST_CID, "--snapshot", str(snap)]) == 0
     assert (snap / "closures" / "x-closure.json").exists()
@@ -150,3 +151,62 @@ def test_export_with_closures_has_no_closed_without_retest_gap(fake, tmp_path, c
     assert json.loads(capsys.readouterr().out)["gaps"]
     assert runner.main(base + ["--closures", str(cdir)], env=env_for(log), client_factory=lambda: make_client(fake)) == 0
     assert json.loads(capsys.readouterr().out)["gaps"] == []
+
+
+def _nothing_written(fake, log, patches, tmp_path):
+    fid = finding_from_dict(_finding()).finding_id
+    assert not [e for e in DeliveryLog(log).history(fid) if e["state"] == "RETEST_LINKED"]
+    assert fake.patch_count == patches and not (tmp_path / "c").exists()
+
+
+def test_an_earlier_run_is_no_retest(fake, tmp_path, capsys):
+    log, fpath = _setup(fake, tmp_path)
+    patches = fake.patch_count
+    earlier = "ifabric-run-1791170000-000000"
+    a = _retest_assessment(tmp_path, scope_id=earlier, as_of="2026-10-06T05:00:00.000Z")
+    assert _run(fake, log, ["--finding", fpath, "--retest-run", earlier, "--assessment", a, "--out", str(tmp_path / "c")]) == 2
+    assert "must be later" in capsys.readouterr().err
+    _nothing_written(fake, log, patches, tmp_path)
+
+
+def test_no_ordering_evidence_is_refused(fake, tmp_path, capsys):
+    log, fpath = _setup(fake, tmp_path)
+    patches = fake.patch_count
+    a = _retest_assessment(tmp_path, as_of=None)
+    assert _run(fake, log, ["--finding", fpath, "--retest-run", RETEST_CID, "--assessment", a, "--out", str(tmp_path / "c")]) == 2
+    assert "cannot establish" in capsys.readouterr().err
+    _nothing_written(fake, log, patches, tmp_path)
+
+
+def test_scope_times_in_the_snapshot_decide_order(fake, tmp_path, capsys):
+    log, fpath = _setup(fake, tmp_path)
+    snap = tmp_path / "snap"
+    (snap / "assessments" / "C16").mkdir(parents=True)
+    (snap / "assessments" / "C16" / ("%s.json" % CID)).write_text(json.dumps(
+        assessment(scope_id=CID, scope_start="2026-10-06T05:00:00Z", scope_end="2026-10-06T05:10:00Z")))
+    patches = fake.patch_count
+    early = _retest_assessment(tmp_path, scope_start="2026-10-06T05:10:00Z")      # not strictly after; as_of alone would pass
+    assert _run(fake, log, ["--finding", fpath, "--retest-run", RETEST_CID, "--assessment", early, "--snapshot", str(snap),
+                            "--out", str(tmp_path / "c")]) == 2
+    _nothing_written(fake, log, patches, tmp_path)
+    ok = _retest_assessment(tmp_path, scope_start="2026-10-06T05:20:00Z", as_of="2026-10-06T05:30:00.000Z")
+    assert _run(fake, log, ["--finding", fpath, "--retest-run", RETEST_CID, "--assessment", ok, "--snapshot", str(snap),
+                            "--out", str(tmp_path / "c")]) == 0
+
+
+def test_window_scope_needs_a_different_later_window(fake, tmp_path, capsys):
+    wid = "window-2026-10-06T05"
+    f = hl.build_finding(assessment(scope_kind="window", scope_id=wid), CID, "owner@example.com",
+                         "2026-10-06T05:15:00.000Z", limit=LIMIT, detected_at="2026-10-06T06:00:00.000Z")
+    log = tmp_path / "log.jsonl"
+    fpath = write_json(tmp_path / "W.json", f)
+    assert runner.main(["notify", "--finding", fpath], env=env_for(log), client_factory=lambda: make_client(fake)) == 0
+    patches = fake.patch_count
+    for over in ({"scope_id": wid}, {"scope_id": "window-2026-10-06T04", "as_of": "2026-10-06T05:00:00.000Z"}):
+        a = _retest_assessment(tmp_path, scope_kind="window", **over)
+        assert _run(fake, str(log), ["--finding", fpath, "--retest-run", over["scope_id"], "--assessment", a,
+                                     "--out", str(tmp_path / "c")]) == 2
+    assert fake.patch_count == patches and not (tmp_path / "c").exists()
+    a = _retest_assessment(tmp_path, scope_kind="window", scope_id="window-2026-10-06T07")
+    assert _run(fake, str(log), ["--finding", fpath, "--retest-run", "window-2026-10-06T07", "--assessment", a,
+                                 "--out", str(tmp_path / "c")]) == 0

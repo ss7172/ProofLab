@@ -66,7 +66,47 @@ def load_assessment(path: Optional[str], snapshot: Optional[str], finding: dict,
         raise Refused("cannot read the re-test assessment %s: %s" % (path, err))
 
 
-def check_closes(finding: dict, assessment: dict, retest_cid: str, at: Optional[str] = None) -> dict:
+def _time(value):
+    try:
+        return _clocks.parse_utc(value)
+    except (ValueError, TypeError):
+        return None
+
+
+def _own_assessment(snapshot: Optional[str], finding: dict) -> Optional[dict]:
+    if not snapshot:
+        return None
+    path = os.path.join(snapshot, "assessments", str(finding.get("control_ref")),
+                        "%s.json" % str(finding.get("scope_id")).replace(":", "_"))
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return None
+
+
+def check_later(finding: dict, assessment: dict, snapshot: Optional[str] = None) -> None:
+    """R-J-24: only a LATER assessment closes. Prefer scope times (re-test scope_start > the finding's own
+    assessment scope_end, from the snapshot); else re-test as_of > finding detected_at; else refuse."""
+    own = _own_assessment(snapshot, finding)
+    start, end = _time((assessment or {}).get("scope_start")), _time((own or {}).get("scope_end"))
+    if start is not None and end is not None:
+        if start <= end:
+            raise Refused("the re-test scope starts %s, not after the finding's scope ends %s: a re-test must be later" % (
+                assessment.get("scope_start"), own.get("scope_end")))
+        return
+    as_of, detected = _time(assessment.get("as_of")), _time(finding.get("detected_at"))
+    if as_of is not None and detected is not None:
+        if as_of <= detected:
+            raise Refused("the re-test as_of %s is not after the finding's detected_at %s: a re-test must be later" % (
+                assessment.get("as_of"), finding.get("detected_at")))
+        return
+    raise Refused("cannot establish that the re-test is later than the finding (need scope_start/scope_end "
+                  "via --snapshot, or as_of on the assessment and detected_at on the finding)")
+
+
+def check_closes(finding: dict, assessment: dict, retest_cid: str, at: Optional[str] = None,
+                 snapshot: Optional[str] = None) -> dict:
     """The retest block, or Refused naming the first rule the re-test fails."""
     if assessment.get("control_ref") != finding.get("control_ref"):
         raise Refused("re-test assessment is for control %s, the finding is %s" % (
@@ -74,11 +114,11 @@ def check_closes(finding: dict, assessment: dict, retest_cid: str, at: Optional[
     if assessment.get("scope_kind") != finding.get("scope_kind"):
         raise Refused("re-test assessment scope kind %s differs from the finding's %s" % (
             assessment.get("scope_kind"), finding.get("scope_kind")))
-    if finding.get("scope_kind") == "run":
-        if assessment.get("scope_id") != retest_cid:
-            raise Refused("re-test assessment is for run %s, not --retest-run %s" % (assessment.get("scope_id"), retest_cid))
-        if retest_cid == finding.get("scope_id"):
-            raise Refused("the re-test run must differ from the finding's own run %s" % retest_cid)
+    if assessment.get("scope_id") == finding.get("scope_id") or retest_cid == finding.get("scope_id"):
+        raise Refused("the re-test run must differ from the finding's own scope %s" % finding.get("scope_id"))
+    if finding.get("scope_kind") == "run" and assessment.get("scope_id") != retest_cid:
+        raise Refused("re-test assessment is for run %s, not --retest-run %s" % (assessment.get("scope_id"), retest_cid))
+    check_later(finding, assessment, snapshot)
     block = hl.build_retest(assessment, at)
     if block is None:
         raise Refused("re-test assessment has no finding verdict (%s)" % assessment.get("requirement_verdict"))
@@ -116,7 +156,7 @@ def run(finding_ref, retest_cid, config: cfg.HumanLoopConfig, client, findings_d
     if dry_run and not cfg.under_wiring_tests(log_path):
         raise cfg.ConfigError("--dry-run refused: guard (a), the log %r is not under %s/" % (log_path, cfg.WIRING_TESTS_DIR))
     assessment = load_assessment(assessment_path, snapshot, data, retest_cid)
-    retest = check_closes(data, assessment, retest_cid, now or _clocks.now_utc())
+    retest = check_closes(data, assessment, retest_cid, now or _clocks.now_utc(), snapshot)
     note = hl.retest_note(dict(data, id=fid), retest)
     if not out_dir:
         out_dir = os.path.join(snapshot or os.path.dirname(os.path.abspath(path)), "closures")
