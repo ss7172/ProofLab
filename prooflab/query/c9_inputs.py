@@ -187,12 +187,50 @@ def run_window(recs):
     return start, end, scen
 
 
-def invocations_expected(recs):
-    """{runtime: n} from the orchestrator's EP-5 handoff.sent records (one invocation each; IT gets Gateway C's too)."""
-    out = {}
+_RECV_RE = re.compile(r"^invocation of (\S+) returned status=(\S+)")
+_ARN_RE = re.compile(r"runtime/([A-Za-z0-9_]+?)-[A-Za-z0-9]{10}$")
+
+
+def _received_runtime(r):
+    """The runtime a handoff.received record is about. The orchestrator's FIRST invocation (h0, the customer) has
+    no handoff id (run.py plan_steps: n=0 -> None), so it records NO handoff.sent and its handoff.received carries
+    no handoff.to/.id (real shape: b4 ledger export); the runtime is then in the detail text, else the runtime ARN."""
+    to = r.get("handoff.to")
+    if to:
+        return runtime_key(to)
+    mm = _RECV_RE.match(str(r.get("detail") or ""))
+    if mm:
+        return runtime_key(mm.group(1))
+    am = _ARN_RE.search(str(r.get("runtime.arn") or ""))
+    return runtime_key(am.group(1)) if am else None
+
+
+def invocations(recs):
+    """[(runtime, status or None)] one entry per agent invocation of the run, h0 included: the union of the EP-5
+    handoff.sent records (keyed by handoff.id) and the handoff.received records (keyed by handoff.id; h0, which has
+    none, by its session id). Only ifabric-* runtimes. An invocation never answered has status None."""
+    seen = {}
     for r in recs:
-        if r.get("phase") == "handoff.sent" and str(r.get("handoff.to") or "").startswith("ifabric-"):
-            out[r["handoff.to"]] = out.get(r["handoff.to"], 0) + 1
+        ph = r.get("phase")
+        if ph == "handoff.sent":
+            rt = runtime_key(r.get("handoff.to"))
+            if rt.startswith("ifabric-"):
+                seen.setdefault(r.get("handoff.id") or ("sent", r.get("runtime.session_id") or r.get("record_id")),
+                                [rt, None])
+        elif ph == "handoff.received":
+            rt = _received_runtime(r)
+            if rt and rt.startswith("ifabric-"):
+                mm = _RECV_RE.match(str(r.get("detail") or ""))
+                key = r.get("handoff.id") or ("recv", rt, r.get("runtime.session_id") or r.get("record_id"))
+                seen.setdefault(key, [rt, None])[1] = mm.group(2) if mm else None
+    return [tuple(v) for v in seen.values()]
+
+
+def invocations_expected(recs):
+    """{runtime: n} one per agent invocation of the run: customer h0, IT h1, network h2, IT h3 (Gateway C)."""
+    out = {}
+    for rt, _ in invocations(recs):
+        out[rt] = out.get(rt, 0) + 1
     return out
 
 
@@ -203,35 +241,41 @@ def diagnostic_durations(recs):
         if r.get("phase") != "handoff.received":
             continue
         mm = re.search(r"duration_ms=([0-9]+)", str(r.get("detail") or ""))
-        rt = r.get("handoff.to")
+        rt = _received_runtime(r)
         if mm and rt:
             out[rt] = max(out.get(rt, 0), int(mm.group(1)))
     return out
 
 
 _TREAT_RE = re.compile(r"^EP-0 declared treatment for (\S+?): .*?generation (\S+?)[ ,)]")
+_PIN_RE = re.compile(r"\bpin \S+ -> (\S+?),")
 
 
 def treatments(recs):
-    """{agent: generation text} from the run's ep0.declared_treatment lifecycle records (a runtime update)."""
+    """{agent: "<generation>[|<to-pin sha prefix>]"} from the run's ep0.declared_treatment records (a runtime update)."""
     out = {}
     for r in recs:
         if r.get("phase") == "ep0.declared_treatment":
             mm = _TREAT_RE.match(str(r.get("detail") or ""))
             if mm:
-                out[mm.group(1)] = mm.group(2)
+                pm = _PIN_RE.search(str(r.get("detail") or ""))
+                out[mm.group(1)] = mm.group(2) + ("|" + pm.group(1) if pm else "")
     return out
 
 
 def warm_up_index(by_run):
-    """[(started, {agent: generation}, invoked agents)] for every run recorded with run.condition warm-up."""
+    """[(started, {agent: treatment}, agents warmed)] for every run recorded with run.condition warm-up. An agent is
+    warmed when the warm-up run's invocation of it returned status=OK (a failed call warmed nothing). The warm-up
+    run carries the same ep0.declared_treatment (generation and pin) as the next run on that pin, so `run_windows`
+    matches on it: one '--condition warm-up' run satisfies C9's runtime-update rule for later runs at that
+    generation and pin."""
     out = []
     for rid, recs in by_run.items():
         if not any(r.get("run.condition") == "warm-up" for r in recs):
             continue
         start, _, _ = run_window(recs)
         if start is not None:
-            out.append((start, treatments(recs), set(invocations_expected(recs))))
+            out.append((start, treatments(recs), set(rt for rt, st in invocations(recs) if st == "OK")))
     return out
 
 

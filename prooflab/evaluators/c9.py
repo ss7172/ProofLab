@@ -4,13 +4,20 @@
     assess_window(t1, t2, run_assessments, hourly_windows, pins_by_version, as_of, ...) -> Assessment
 
 `windows`: {runtime: MetricWindow}; a MetricWindow is a mapping with
+    invocations_expected  how many invocations the window should hold (0: no traffic expected)
     latency_max           the AgentCore invocation Latency statistic Maximum in the window (number) or None
     errors                Errors Sum in the window (int) or None
-    invocations_expected  how many invocations the window should hold (0: no traffic expected)
     datapoints            how many datapoints arrived (missing for an expected invocation = INDETERMINATE)
     condition             "warm-up" excludes the window (the warm-up rule, B13)
     runtime_updated       True after a pin patch, model swap or revert; needs `warmed_up` True (one unassessed warm-up
                           invocation preceded) or the window is INDETERMINATE (a cold start would confound it)
+                          THE RULE (kept: a runtime version change needs a warm-up): every pin or mode patch bumps the
+                          generation, and each later run records ep0.declared_treatment for it, so the first run after any
+                          patch is INDETERMINATE. ONE earlier run made with `--condition warm-up` (EXPLORATORY, never
+                          assessed) at the same generation and pin, whose invocation of that runtime returned OK,
+                          satisfies it for the next assessed run(s) on that pin (prooflab.query.c9_inputs.warm_up_index).
+    invocations_expected  counts EVERY agent invocation of the run per runtime: customer h0 (no handoff id, so no
+                          handoff.sent; read from its handoff.received), IT h1, network h2, IT h3 (Gateway C).
 `pin` is a mapping (values only from here, never a literal): baseline_value_<runtime> (frozen baseline),
     max_relative_change_pct (D), violating_windows_max_pct (B9), errors_max (optional), limit_direction
     (two-sided | increase | decrease; default two-sided), threshold_version, control_id, register_version,
