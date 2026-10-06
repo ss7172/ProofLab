@@ -223,11 +223,40 @@ python3 -m prooflab registry run-ids --run-ids $L/run-ids.txt --experiments $REP
 ```
 Copy `$L/servicenow` (minus `wiring-tests/`) and `$L/register` into `$L/snap/` (the pack's `--src`). **Stop:** run-ids check fails.
 
+### Step 13a′. Make the snapshot whole before the final build (PR-47) — R (ledger, spans) + local copies
+The pack lists **every run in the window**, the **whole register history** and the **T2 approvals** only from files in
+`--src` (`$L/snap`). Before the final build:
+1. **Pilots' records** (P1 08:18Z halted, P1 10:54Z failed, P1b failed, P1c, P3, P5; plus N1/N1b attempts and warm-ups):
+   add each pilot CID to `$L/provenance.json` as `"PILOT"` (warm-ups `"EXPLORATORY"`; **never** to `run-ids.txt`), pull
+   its spans (`$HK "python3 $T/collect_spans.py $SNAP <CID> <time_utc[0]> <time_utc[1]>"`, the times are in
+   `register/experiments/experiments.jsonl`; spans are kept 30 d) and then one
+   `refresh --snapshot $L/snap --run-ids $L/run-ids.txt --provenance $L/provenance.json --join-tolerance-s 5 --ledger-url $LEDGER --token-env <NAME> --pull-ledger --ingest`.
+   If the ledger pull fails for a pilot, copy its raw export instead (byte-identical, never edited):
+   `ops-lane/b3/p1-ledger-export.jsonl`, `b3b/p1-ledger-export.jsonl`, `b3c/p1b-ledger-export.jsonl`,
+   `b3d/p1c-ledger-export.jsonl`, `b3d/p3-…`, `b3d/p5-…` → `$L/snap/raw/ledger/<CID>.jsonl`, then `refresh … --ingest`
+   without `--pull-ledger`. A pilot whose records are still absent is listed anyway (from experiments.jsonl, with
+   `records_in_store: 0` and a `store_note`): say so in `gap-list.md`.
+2. **Register history + T1:** `for f in $REPO/register/versions/*; do [ -e "$L/snap/register/versions/$(basename $f)" ] || cp "$f" "$L/snap/register/versions/"; done`
+   (v0-pilot … v1, byte-identical to the write-once copies; not `cp -n`, which exits 1 on macOS when a file exists) and `cp $L/register/versions/* $L/snap/register/versions/` (v1.1); `mkdir -p $L/snap/register/t1 &&
+   cp ops-lane/b4/t1/t1-v1.json ops-lane/b4b/t1/t1-v1.1.json [ops-lane/b3*/t1-*.json] $L/snap/register/t1/`;
+   `cp $REPO/register/experiments/experiments.jsonl $L/register/experiments/rules-v1.1.json $L/snap/register/experiments/`.
+3. **Approvals (T2):** `cp -R ops-lane/b4/register/approval ops-lane/b4/register/approval-v1.1 $L/snap/register/` (Finding,
+   canonical note, `delivery-log.jsonl`, `t2-sys-id.txt`) **after** the last `humanloop check --once` and
+   `humanloop export --finding <v1 AF> --finding <v1.1 AF> --out $L/servicenow/export`; then
+   `mkdir -p $L/snap/servicenow && cp -R $L/servicenow/export $L/servicenow/cases $L/snap/servicenow/` (+ the main
+   `delivery-log.jsonl`). v1.1 shows **PENDING** until the owner's APPROVED note is on **INC0010338** itself (a note on
+   INC0010321 is named in the approval's note, not counted).
+4. **Findings:** `cp -R $L/snap/findings` is already in the snapshot when `humanloop findings` wrote there; otherwise copy it.
+   Named runs: a filled `named-runs.md` (every attempt) and `decisions-log.md` go into `$L/pack/workdir/`; else the
+   build stages the checked-in templates and warns.
+5. Optional `window.json` (`{"start": …, "end": …}`) in `$L/snap/`; without it the README states the first/last named run.
+
 ### Step 13b. Pack build (PR-34/40) — local
 ```bash
 mkdir -p $L/pack/workdir && cp $L/register/versions/v1.yaml $L/pack/workdir/register.yaml && cp $L/run-ids.txt $REPO/gap-list.md $L/pack/workdir/
-cp $REPO/evidence-templates/README.md $L/pack/README.md   # then FILL every <PLACEHOLDER> by hand
-$HK "cd $REPO && python3 -m prooflab pack build --out $L/pack/evidence --src $L/snap --workdir $L/pack/workdir --readme $L/pack/README.md --strict-readme"
+# PR-47: no hand-filled README; pack build fills it from the pack (--label submit-1|submit-2|final). Every `warning:` line,
+# especially `projector: SKIPPED assessment …`, must be read: a skipped assessment is a control the console will not show.
+$HK "cd $REPO && python3 -m prooflab pack build --out $L/pack/evidence --src $L/snap --workdir $L/pack/workdir --label final --strict-readme"
 python3 -m prooflab pack scan $L/pack/evidence ; python3 $REPO/tools/manifest.py verify $L/pack/evidence
 ```
 - **Expected:** `--strict-readme` refuses while any placeholder is left (the template has 15, row 56); then exit 0 with `answers/` composed and `pack-index.json` projected; `pack scan` "0 hit(s)"; manifest "OK". `register/versions/v1.yaml` and `findings/` are in the pack.

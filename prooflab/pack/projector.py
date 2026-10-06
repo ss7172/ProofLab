@@ -210,35 +210,28 @@ def _flat_parse(text):
 
 
 def load_register_ctx(src):
-    """(register ctx, controls-by-ref, versions) from register/versions/*.yaml. Uses prooflab.registry.parse when it
-    is importable (PR-01), else the flat fallback above; the sha256 is over the file bytes either way."""
-    try:
-        from prooflab.registry import parse as _parse
-        parse = _parse.parse_register
-    except ImportError:
-        parse = None
-    best = None
-    for path in sorted(glob.glob(os.path.join(src, "register", "versions", "*.yaml"))):
-        data = _read_bytes(path)
-        if data is None or os.path.basename(path).endswith(".risks.yaml"):
-            continue
-        try:
-            text = data.decode("utf-8")
-            doc = parse(text) if parse else _flat_parse(text)
-        except (ValueError, UnicodeDecodeError):
-            continue
-        best = (path, data, doc)   # the last (highest-named) file is the current one
-    if not best:
-        return None, {}, []
-    path, data, doc = best
+    """(register ctx, controls-by-ref, versions) from register/versions/*.yaml. The CURRENT register is the head of the
+    frozen chain (`supersedes`, then `frozen_at`; prooflab.pack.history), never the last name of a text sort ('v1.1'
+    sorts before 'v1'). `versions` is the whole history, oldest first, each with its sha256, frozen_at, T1 proof,
+    supersedes, post-hoc note and approval (T2)."""
+    from prooflab.pack import history as _h
+    hist = _h.register_history(src)
+    if not hist["head"]:
+        return None, {}, [], hist
+    doc = hist["docs"][hist["head"]]
     controls = {}
     for e in doc["entries"]:
         ref = e.get("control_ref")
         if ref in CONTROL_LIBRARY:
             controls[ref] = e
-    ctx = {"top": doc["top"], "sha256": hashlib.sha256(data).hexdigest(), "path": os.path.relpath(path, src),
-           "entries": doc["entries"]}
-    return ctx, controls, [{"version": doc["top"].get("version"), "path": os.path.relpath(path, src)}]
+    ctx = {"top": doc["top"], "sha256": doc["sha256"], "path": doc["path"], "entries": doc["entries"]}
+    appr = _h.approvals(src)
+    versions = []
+    for row in hist["versions"]:
+        v = dict(row)
+        v["approval"] = appr.get(row["version"]) or {"status": "MISSING", "note": "no approval request for this version in register/approval*/"}
+        versions.append(v)
+    return ctx, controls, versions, hist
 
 
 def load_context(src, as_of=None):
@@ -250,8 +243,8 @@ def load_context(src, as_of=None):
         if isinstance(doc, dict):
             assessments.append(doc)
     catalogue = _read_jsonl(os.path.join(src, "derived", "run-catalogue.jsonl"))
-    reg, reg_controls, reg_versions = load_register_ctx(src)
-    return {"src": src, "records": [r for r in records if r.get("record_kind") != "assessment"],
+    reg, reg_controls, reg_versions, hist = load_register_ctx(src)
+    return {"history": hist, "src": src, "records": [r for r in records if r.get("record_kind") != "assessment"],
             "assessments_in": assessments, "run_ids": run_ids, "catalogue": catalogue,
             "window": _read_json(os.path.join(src, "window.json")) or {}, "register": reg,
             "register_controls": reg_controls, "register_versions": reg_versions,
@@ -285,10 +278,15 @@ def project_assessment(doc, cx, report):
         report["skipped_assessments"].append({"id": aid, "why": "scope kind %r is not in the schema" % kind})
         return None
     tv = a.get("threshold_version")
-    entry = (cx["register_controls"] or {}).get(ref) or {}
-    if entry.get("threshold_version") not in (None, tv):
-        entry = next((e for e in (cx["register"] or {}).get("entries", []) if e.get("control_ref") == ref
-                      and e.get("threshold_version") == tv), {})
+    from prooflab.pack import history as _h
+    hist = cx.get("history") or {"docs": {}, "versions": []}
+    sha_in = a.get("threshold_sha256") if _index.SHA_RE.match(str(a.get("threshold_sha256") or "")) else None
+    rname, entry = _h.entry_for(hist, ref, tv, a.get("register_version"), sha_in)
+    entry = entry or {}
+    rdoc = hist["docs"].get(rname) or {}
+    if a.get("register_version") and rname and a.get("register_version") != rname:
+        report["warnings"].append("assessment %s names register %s but %s %s is only in register %s" % (
+            aid, a.get("register_version"), ref, tv, rname))
     m = a.get("measured") if isinstance(a.get("measured"), dict) else {}
     unit = m.get("unit") or entry.get("metric_unit") or "unit"
     obs = _limit(entry, "observation_limit", unit)
@@ -300,13 +298,15 @@ def project_assessment(doc, cx, report):
             obs = {"value": float(cov), "operator": ">=", "unit": m.get("unit") or "% of expected events observed"} if cov is not None else None
         except ValueError:
             obs = None
+    if obs is None and ref == "C9" and entry.get("observation_limit"):
+        obs = c9_limit(entry)
     if obs is None and isinstance(m.get("limit"), (int, float)):
         obs = {"value": m["limit"], "operator": "<=", "unit": unit}
     exc = _limit(entry, "exception_tolerance", "exceptions") if entry else None
     if obs is None or exc is None:
-        report["skipped_assessments"].append({"id": aid, "why": "no register limits for %s %s (cannot state the threshold honestly)" % (ref, tv)})
+        report["skipped_assessments"].append({"id": aid, "why": "no register limits for %s %s in any register version (cannot state the threshold honestly)" % (ref, tv)})
         return None
-    reg_sha = a.get("threshold_sha256") if _index.SHA_RE.match(str(a.get("threshold_sha256") or "")) else (cx["register"] or {}).get("sha256")
+    reg_sha = sha_in or rdoc.get("sha256") or (cx["register"] or {}).get("sha256")
     if not reg_sha:
         report["skipped_assessments"].append({"id": aid, "why": "no register sha256"})
         return None
@@ -338,6 +338,8 @@ def project_assessment(doc, cx, report):
                if isinstance(m.get(k), (int, float)) and not isinstance(m.get(k), bool)), None)
     if mv is not None and m.get("value") is None:
         unit = m.get("unit") or ("tokens" if m.get("total_tokens") is not None else "% of expected events observed")
+    if mv is None and ref == "C9":
+        mv, unit = c9_measured(m), C9_UNIT
     measured = {"value": mv, "unit": unit}
     for k, t in (("breakdown", dict), ("series", list), ("by_actor", list)):
         if isinstance(m.get(k), t):
@@ -350,9 +352,9 @@ def project_assessment(doc, cx, report):
     out = {
         "schema": PROJ_SCHEMA_ASSESSMENT, "assessment_id": aid, "revision": int(a.get("revision") or _rev(aid)),
         "control_ref": ref, "control_id": CONTROL_LIBRARY[ref], "threshold_version": tv,
-        "register_version": a.get("register_version") or (cx["register"] or {}).get("top", {}).get("version") or "UNKNOWN",
+        "register_version": a.get("register_version") or rname or (cx["register"] or {}).get("top", {}).get("version") or "UNKNOWN",
         "threshold": {"observation_limit": obs, "exception_tolerance": exc,
-                      "source_ref": "register:%s" % ((cx["register"] or {}).get("path") or tv), "register_sha256": reg_sha},
+                      "source_ref": "register:%s" % (rdoc.get("path") or (cx["register"] or {}).get("path") or tv), "register_sha256": reg_sha},
         "owner": _index.person(entry.get("owner_name"), entry.get("owner")),
         "scope": scope, "provenance": prov, "population": population, "measured": measured, "verdict": verdict,
         "formula": str(a.get("formula") or "not supplied"),
@@ -370,6 +372,29 @@ def project_assessment(doc, cx, report):
     elif "finding" in a:
         out["finding"] = None
     return out
+
+
+C9_UNIT = "% relative change vs baseline"
+
+
+def c9_limit(entry):
+    """C9's numbers in one string (max_relative_change_pct=..;violating_windows_max_pct=..;errors_max=..), read the way
+    prooflab.evaluators.c9._values reads them: the judged limit is the relative change, inclusive (<=)."""
+    from prooflab.evaluators import claim as _claim
+    v = _index._num(_claim.parse_limits(entry.get("observation_limit")).get("max_relative_change_pct"))
+    return {"value": v, "operator": "<=", "unit": C9_UNIT} if v is not None else None
+
+
+def c9_measured(m):
+    """The largest |relative change| over the assessed runtime windows (run) or hours (window), in %; None if none."""
+    best = None
+    for w in (m.get("windows") or []) + (m.get("hours") or []):
+        try:
+            v = abs(float((w or {}).get("change_pct")))
+        except (TypeError, ValueError):
+            continue
+        best = v if best is None or v > best else best
+    return round(best, 3) if best is not None else None
 
 
 _HEADROOM = re.compile(r"headroom (-?\d+)")
@@ -594,7 +619,7 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
     for row in cx["catalogue"]:
         if row.get("run_id") and row.get("label"):
             cx["run_prov"].setdefault(row["run_id"], row["label"])
-    report = {"skipped_assessments": [], "skipped_records": {}, "written": {"records": 0, "assessments": 0}}
+    report = {"skipped_assessments": [], "skipped_records": {}, "warnings": [], "written": {"records": 0, "assessments": 0}}
 
     docs = []
     for d in latest_revisions(cx["assessments_in"]):
@@ -654,12 +679,10 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
                 row["delivery_state"] = str(d.get("state") or "UNKNOWN")
                 row["incident"] = str(d["number"]) if d.get("number") else None
             findings.append(row)
+    from prooflab.pack import history as _h
     runs = []
-    for cid, alias in sorted(cx["run_ids"].items(), key=lambda kv: kv[1]):
-        rr = [r for r in cx["records"] if (r.get("run.id") or r.get("correlation_id")) == cid and _utc(r.get("ts"))]
-        row = {"alias": alias, "cid": cid, "provenance": "ASSESSED"}
-        if rr:
-            row["started_at"], row["ended_at"] = min(r["ts"] for r in rr), max(r["ts"] for r in rr)
+    for row in _h.run_catalogue(src, cx["run_ids"], cx["window"], cx["records"]):
+        cid = row["cid"]
         row["verdicts"] = dict((p["control_ref"], p["verdict"]) for p in docs if p["scope"].get("cid") == cid)
         runs.append(row)
     named = {"written_at": cx["as_of"], "entries": [
@@ -677,10 +700,9 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
             "findings": findings, "cases": cases, "runs": runs, "named_runs": named, "artefacts": artefacts,
             "integrity": integrity, "record_counts": counts, "ep_seen": ep_seen, "register": cx["register"],
             "register_controls": cx["register_controls"], "register_versions": cx["register_versions"],
-            "approval": cx["claim"].get("approval") or None,
-            "first_assessed_run_at": min((r["started_at"] for r in runs if r.get("started_at")), default=None),
-            "exploratory_runs": len(set(r.get("run.id") for r in cx["records"] if r.get("run.id") and r.get("run.id") not in cx["run_ids"]
-                                       and provenance_of(r.get("provenance"), r.get("run.id"), cx["run_ids"]) == "EXPLORATORY")),
+            "approval": approval_of_head(cx),
+            "first_assessed_run_at": min((r["started_at"] for r in runs if r.get("started_at") and r.get("provenance") == "ASSESSED"), default=None),
+            "exploratory_runs": sum(1 for r in runs if r.get("provenance") == "EXPLORATORY"),
             "gaps": _gaps(src), "answers": list(answers or []), "auditor": list(auditor or [])}
     index_doc = _index.build_index(ictx)
     os.makedirs(out, exist_ok=True)
@@ -689,6 +711,16 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
     _write(os.path.join(out, "pack-index.json"), index_doc)
     _write(os.path.join(out, "projection-report.json"), report)
     return {"index": index_doc, "report": report, "files": [rel for rel, _ in files] + ["pack-index.json"]}
+
+
+def approval_of_head(cx):
+    """The current register's approval from the T2 files (approval Finding, delivery log, ServiceNow export), never
+    from claim.json; MISSING only when the tree holds no approval request for that version."""
+    head = ((cx.get("history") or {}).get("head"))
+    for v in cx.get("register_versions") or []:
+        if v.get("version") == head and v.get("approval"):
+            return v["approval"]
+    return {"status": "MISSING", "note": "no approval request for the current register in register/approval*/"}
 
 
 def _gaps(src):
@@ -725,6 +757,10 @@ def main(argv=None):
     except ValueError as exc:
         sys.stderr.write("projector: %s\n" % exc)
         return 2
+    for s in res["report"]["skipped_assessments"]:
+        sys.stderr.write("projector: SKIPPED assessment %s: %s\n" % (s.get("id"), s.get("why")))
+    for w in res["report"].get("warnings") or []:
+        sys.stderr.write("projector: %s\n" % w)
     sys.stdout.write("projected %d records, %d assessments -> %s\n" % (
         res["report"]["written"]["records"], res["report"]["written"]["assessments"], args.out))
     return 0

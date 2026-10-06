@@ -204,12 +204,15 @@ def limit_of(entry, key, default_unit):
 
 
 def _c7_floor(ref, e):
-    """C7's coverage floor from its one-string limits (coverage_min_pct=..;gap_max_ms=..;...), else None."""
-    if ref != "C7":
+    """The judged limit of a one-string `k=v;k=v` observation_limit: C7's coverage floor (coverage_min_pct, >=) or
+    C9's relative-change limit (max_relative_change_pct, <=, as prooflab.evaluators.c9 reads it); else None."""
+    key = {"C7": ("coverage_min_pct", ">=", "% of expected events observed"),
+           "C9": ("max_relative_change_pct", "<=", "% relative change vs baseline")}.get(ref)
+    if not key:
         return None
     from prooflab.evaluators import claim as _claim
-    v = _num(_claim.parse_limits(e.get("observation_limit")).get("coverage_min_pct"))
-    return {"value": v, "operator": ">=", "unit": "% of expected events observed"} if v is not None else None
+    v = _num(_claim.parse_limits(e.get("observation_limit")).get(key[0]))
+    return {"value": v, "operator": key[1], "unit": key[2]} if v is not None else None
 
 
 def register_control(ref, e, owner):
@@ -219,7 +222,8 @@ def register_control(ref, e, owner):
         "ref": ref, "id": cid, "name": e.get("name") or name,
         "mode": e.get("mode") if e.get("mode") in ("static", "scheduled", "event-driven", "in-transaction", "continuous") else mode,
         "version": e.get("threshold_version") or "UNKNOWN",
-        "version_date": e.get("version_date") or "1970-01-01",
+        "version_date": (str(e.get("version_date"))[:10] if re.match(r"^\d{4}-\d\d-\d\d", str(e.get("version_date") or ""))
+                         else "1970-01-01"),      # the schema's date; the full freeze time is in register.versions[]
         "owner": person(e.get("owner_name"), e.get("owner"), "control owner") if e.get("owner") else owner,
         "metric": e.get("metric") or ns,
         "observation_limit": limit_of(e, "observation_limit", "unit") or _c7_floor(ref, e) or {"value": 0, "operator": "<=", "unit": "unknown"},
