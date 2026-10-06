@@ -90,9 +90,8 @@ def _question(p):
     return str(ctx)[:6000]
 
 
-def _constraints(p):
-    ctx = p.get("context") if isinstance(p, dict) else None
-    c = ctx.get("constraints") if isinstance(ctx, dict) else None
+def _constraints(p):   # the run's structured constraints: p = payload.context (trio) or payload.negotiate (C)
+    c = p.get("constraints") if isinstance(p, dict) else None
     return c if isinstance(c, dict) else None
 
 
@@ -322,8 +321,9 @@ def build(spec):
                 j = W.j2.halted_judgment()
             else:
                 j = W.j2.judge(text, lambda p: "" if tally.halted else str(agent(p)).strip(),
-                               constraints=_constraints(clean), tool_evidence=list(inv.evidence))
-            pos = W.j2.negotiate(j, text) if neg else None
+                               constraints=_constraints(neg or clean.get("context")), tool_evidence=list(inv.evidence))
+            # Gateway C: never less safe than the proposer, then the stated position (j2 precedence)
+            pos = W.j2.negotiate(j, text, neg.get("proposal")) if neg else None
             fields = inv.rails.ground(j.to_record_fields())
             answer = inv.rails.output(text, prompts=[prompt])
             inv.drain()
@@ -334,13 +334,12 @@ def build(spec):
             W.judgment.record_from_j2(client, ctx, fields,
                                       result_digests=[W.tool_call.args_sha256(t) for t in inv.evidence])
             client.emit(W.emit_client.lifecycle_record(   # the reference shape's result-inspection step (ARCH 3.5)
-                ctx, "result-inspection", "result inspected: valid=%s precedence=%s position=%s" % (
-                    fields.get("valid"), fields.get("precedence_rule"), pos),
+                ctx, "result-inspection", "valid=%s position=%s" % (fields.get("valid"), pos),
                 extra={"phase": "ifabric.result-inspection"}))
             if spec["role"] == "network":   # Gateway C's input: the network's structured proposal
                 result["proposal"] = W.j2.proposal_of(fields, text)
             result.update(_echo(st, tally), answer=answer, judgment=fields, disposition=fields["disposition"],
-                          halted=tally.halted, tally_tokens=tally.committed, tally_calls=tally.calls)
+                          halted=tally.halted)   # _echo(st, tally) carries tally_tokens / tally_calls
         except Exception as exc:  # the true status, never "500 on the model"
             result.update(error=type(exc).__name__, http_status=getattr(exc, "status_code", None),
                           disposition="escalate")

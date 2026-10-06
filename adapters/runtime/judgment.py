@@ -19,10 +19,12 @@ def normalize_disposition(d):
 
 def record_judgment(client, ctx, disposition, reason, evidence_ids=(), result_digests=(),
                     reversible_step=None, precedence_rule=None, model_disposition=None, valid=None,
-                    reasked=None, evidence_needed=None, proposed_action=None):
+                    reasked=None, evidence_needed=None, proposed_action=None, position=None):
     """Emit the judgment record (C7 workflow event `judgment`, RECORDED) and, for escalate, a second judgment
     record, the `escalation` event (ESC, ESCALATED): ARCH 5.2 expects both for an escalate disposition.
-    Returns the judgment record's receipt (REJECTED_SCHEMA on bad input or if either record is rejected)."""
+    Returns the judgment record's receipt (REJECTED_SCHEMA on bad input or if either record is rejected).
+    position: Gateway C's position -> the `negotiation` record instead (no escalation pair: the invocation's own
+    J2 judgment, recorded next through record_from_j2, carries it)."""
     disp = normalize_disposition(disposition)
     if disp is None or not isinstance(reason, str) or not reason.strip():
         return ec.REJECTED_SCHEMA
@@ -42,7 +44,10 @@ def record_judgment(client, ctx, disposition, reason, evidence_ids=(), result_di
              "judgment.reversible_step": reversible_step,
              "judgment.precedence_rule": precedence_rule, "reason": reason,
              "run.condition": "none", **j2}
-    detail = "disposition=%s" % disp   # the key=value form score-run.py reads (kit grader parity)
+    if position:
+        extra["phase"] = "negotiation"
+    detail = ("negotiation position=%s " % position if position else "") + "disposition=%s" % disp
+    # disposition=<d>: the key=value form score-run.py reads (kit grader parity)
     # the kit grades `detail` only: the proposed action, the reversible step and the evidence named as needed
     # are folded in (bounded, one line each); the structured judgment.* fields stay the record of truth
     for label, v in (("proposed", proposed_action), ("reversible step", reversible_step),
@@ -52,7 +57,7 @@ def record_judgment(client, ctx, disposition, reason, evidence_ids=(), result_di
     receipt = client.emit(ec.new_record(ctx, "judgment", EP_ID, EP_KIND, "emit", detail, "RECORDED",
                                         control_ref="C7", control_id="AIA-LOG-001", extra=extra,
                                         null_reasons=nr))
-    if disp == "escalate":
+    if disp == "escalate" and not position:
         esc = client.emit(ec.new_record(
             ctx, "judgment", EP_ID, EP_KIND, "emit", "escalation: " + detail, "ESCALATED",
             control_ref="ESC", control_id="AGENT-ESCALATION", extra=dict(extra, phase="ifabric.escalation"),
@@ -93,14 +98,6 @@ def record_negotiation(client, ctx, position, fields=None):
     if disp is None:
         return ec.REJECTED_SCHEMA
     f = fields or {}
-    reason = " ".join(str(f.get("reason") or "no reason given").split())[:PROPOSED_MAX]
-    rule = f.get("precedence_rule") or None
-    extra = {"phase": "negotiation", "judgment.disposition": disp,
-             "judgment.evidence_ids": list(f.get("deciding_evidence") or ()),
-             "judgment.reversible_step": None, "judgment.precedence_rule": rule,
-             "judgment.evidence_needed": list(f.get("named_evidence_needed") or ()),
-             "reason": "position %s: %s" % (position, reason), "run.condition": "none"}
-    nr = {"judgment.reversible_step": "none declared", "judgment.precedence_rule": "no precedence rule fired"}
-    detail = "negotiation position=%s disposition=%s; %s" % (position, disp, reason)
-    return client.emit(ec.new_record(ctx, "judgment", EP_ID, EP_KIND, "emit", detail, "RECORDED",
-                                     control_ref="C7", control_id="AIA-LOG-001", extra=extra, null_reasons=nr))
+    return record_judgment(client, ctx, disp, "position %s: %s" % (position, f.get("reason") or "no reason given"),
+                           f.get("deciding_evidence") or (), precedence_rule=f.get("precedence_rule") or None,
+                           evidence_needed=f.get("named_evidence_needed") or (), position=position)

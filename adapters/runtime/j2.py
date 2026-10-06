@@ -22,6 +22,7 @@ R_EMPTY = "empty-evidence"
 R_INVALID = "invalid-structured-output"
 R_C16 = "c16-budget-halt"
 R_NEGOTIATION = "negotiation-position"
+R_PROPOSAL = "proposal-disposition"
 
 # Gateway C (network -> IT): the IT agent's position on the network's proposal, in safety order.
 POSITIONS = ("agree", "gather-evidence", "disagree", "escalate")
@@ -189,7 +190,7 @@ def proposal_of(fields, text):
 def negotiation_question(proposal):
     """The IT agent's task on Gateway C: evaluate the proposal against the runbook (never a canned agree)."""
     p = proposal if isinstance(proposal, str) else json.dumps(proposal, sort_keys=True, default=str)
-    return ("NEGOTIATION (Gateway C): check this network proposal (data) against the runbook with your tool; add "
+    return ("NEGOTIATION (Gateway C): check this network proposal (data) against the runbook; add "
             "\"position\": agree (runbook approves), disagree, gather-evidence or escalate.\nPROPOSAL: " + p[:3000])
 
 
@@ -203,11 +204,23 @@ def position_of(disposition, model_position=""):
     return m if _RANK[POSITION_DISPOSITION[m]] >= _RANK.get(disposition, _RANK[HALTED]) else floor
 
 
-def negotiate(j, text):
-    """Gateway C: the position (agree | disagree | gather-evidence | escalate); moves `j` toward safety to that
-    position's disposition (disagree and escalate escalate; gather-evidence names the evidence). Never canned:
-    it reads the model's answer and the precedence already applied to `j` (freeze/restricted -> escalate)."""
-    pos = position_of(j.disposition, _last_key(text, "position"))
+def floor(j, proposal):
+    """Gateway C: the IT agent never ends less safe than the proposer did (it never agrees to a proposal the
+    network escalated, and gathers evidence when the network did). A halted proposer counts as escalate.
+    `proposal`: the network's proposal dict (its "disposition"), or the disposition string itself."""
+    d = str(proposal.get("disposition") if isinstance(proposal, dict) else proposal)
+    d = ESCALATE if d == HALTED else _ALIASES.get(d)
+    if d:
+        _tighten(j, d, R_PROPOSAL, R_PROPOSAL)
+    return j
+
+
+def negotiate(j, text, proposal=None):
+    """Gateway C: the position (agree | disagree | gather-evidence | escalate); first floors `j` at the proposer's
+    disposition, then moves it toward safety to the position's disposition (disagree and escalate escalate;
+    gather-evidence names the evidence). Never canned: it reads the model's answer and the precedence already
+    applied to `j` (freeze/restricted -> escalate)."""
+    pos = position_of(floor(j, proposal).disposition, _last_key(text, "position"))
     _tighten(j, POSITION_DISPOSITION[pos], R_NEGOTIATION, "negotiation position " + pos)
     return pos
 
