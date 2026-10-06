@@ -604,7 +604,7 @@
 
 **What's missing:** a cap rule that accounts for how enforce decides.
 
-**Why:** in enforce, a call is denied when committed tokens + the projected next-call bound (about 3,000 to 5,400; the projected next call, `max_tokens` 2048 and 10 %) is above the cap. The effective inline ceiling is therefore the cap minus that bound. The pre-registered rule C16-cap/1 (normal need x 1.2, rounded up to 1,000) ignored the reservation. Under v1 (cap 20,000) the first healthy S1 run, N1, was halted by enforce; the bound at IT h1 was 5,139, so an S1 run halted once committed spend passed about 14.9K, below P1c's own natural 15,248.
+**Why:** in enforce, a call is denied when committed tokens + the projected next-call bound (2,855 to 5,139 in the three N1b DENY records, largest 5,139; ops-lane/b4b-report.md section 1) is above the cap. The effective inline ceiling is therefore the cap minus that bound. The pre-registered rule C16-cap/1 (normal need x 1.2, rounded up to 1,000) ignored the reservation. Under v1 (cap 20,000) the first healthy S1 run, N1, was halted by enforce; the bound at IT h1 was 5,139, so an S1 run halted once committed spend passed about 14.9K, below P1c's own natural 15,248.
 
 **Evidence:** `ops-lane/b4-report.md` (section 1 and "Why the cap halts S1"; N1 `ifabric-run-1791291533-39c87b`, 17,384 tokens; its first attempt `ifabric-run-1791291231-eacc22` was an upstream 500, see B30). The decision and the new rule: `ops-lane/b4b-report.md` section 1 (rule C16-cap/2, largest bound 5,139 from the DENY record `20261006T125929290Z-ep1-17920c26`); `planning-handoff.md` (the ~12:58Z and ~13:50Z blocks).
 
