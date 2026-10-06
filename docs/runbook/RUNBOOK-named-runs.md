@@ -236,8 +236,8 @@ The pack lists **every run in the window**, the **whole register history** and t
    `b3d/p1c-ledger-export.jsonl`, `b3d/p3-…`, `b3d/p5-…` → `$L/snap/raw/ledger/<CID>.jsonl`, then `refresh … --ingest`
    without `--pull-ledger`. A pilot whose records are still absent is listed anyway (from experiments.jsonl, with
    `records_in_store: 0` and a `store_note`): say so in `gap-list.md`.
-2. **Register history + T1:** `cp -n $REPO/register/versions/* $L/snap/register/versions/` (v0-pilot … v1, byte-identical
-   to the write-once copies) and `cp $L/register/versions/* $L/snap/register/versions/` (v1.1); `mkdir -p $L/snap/register/t1 &&
+2. **Register history + T1:** `for f in $REPO/register/versions/*; do [ -e "$L/snap/register/versions/$(basename $f)" ] || cp "$f" "$L/snap/register/versions/"; done`
+   (v0-pilot … v1, byte-identical to the write-once copies; not `cp -n`, which exits 1 on macOS when a file exists) and `cp $L/register/versions/* $L/snap/register/versions/` (v1.1); `mkdir -p $L/snap/register/t1 &&
    cp ops-lane/b4/t1/t1-v1.json ops-lane/b4b/t1/t1-v1.1.json [ops-lane/b3*/t1-*.json] $L/snap/register/t1/`;
    `cp $REPO/register/experiments/experiments.jsonl $L/register/experiments/rules-v1.1.json $L/snap/register/experiments/`.
 3. **Approvals (T2):** `cp -R ops-lane/b4/register/approval ops-lane/b4/register/approval-v1.1 $L/snap/register/` (Finding,

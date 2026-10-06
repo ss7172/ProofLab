@@ -222,7 +222,8 @@ def register_control(ref, e, owner):
         "ref": ref, "id": cid, "name": e.get("name") or name,
         "mode": e.get("mode") if e.get("mode") in ("static", "scheduled", "event-driven", "in-transaction", "continuous") else mode,
         "version": e.get("threshold_version") or "UNKNOWN",
-        "version_date": e.get("version_date") or "1970-01-01",
+        "version_date": (str(e.get("version_date"))[:10] if re.match(r"^\d{4}-\d\d-\d\d", str(e.get("version_date") or ""))
+                         else "1970-01-01"),      # the schema's date; the full freeze time is in register.versions[]
         "owner": person(e.get("owner_name"), e.get("owner"), "control owner") if e.get("owner") else owner,
         "metric": e.get("metric") or ns,
         "observation_limit": limit_of(e, "observation_limit", "unit") or _c7_floor(ref, e) or {"value": 0, "operator": "<=", "unit": "unknown"},

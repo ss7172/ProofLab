@@ -174,7 +174,11 @@ def test_projection_binds_assessments_to_their_version_and_lists_history(src, tm
     # the orphan (C16-v9, in no register) is skipped AND said
     assert any("C16-v9" in s["why"] for s in res["report"]["skipped_assessments"])
     rc9 = [c for c in reg["controls"] if c["ref"] == "C9"][0]
-    assert rc9["observation_limit"]["value"] == 75
+    assert rc9["observation_limit"]["value"] == 75 and rc9["version_date"] == "2026-10-06"
+    sys.path.insert(0, os.path.join(REPO, "tests", "projector"))
+    import _projector_schema as SC
+    sch = SC.load_schema()
+    assert SC.validate(idx, sch["$defs"]["packIndex"], sch) == []      # approvals, history, every run: still the contract
 
 
 def test_approvals_come_from_the_t2_files(src, tmp_path):
