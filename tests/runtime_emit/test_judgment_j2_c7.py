@@ -39,7 +39,7 @@ def test_j2_result_to_judgment_record_passes_the_contract():
     assert rec["judgment.valid"] is True and rec["judgment.reasked"] is False
     assert rec["judgment.reversible_step"] == "roll back the change"
     assert rec["judgment.precedence_rule"] is None and rec["null_reasons"]["judgment.precedence_rule"]
-    assert rec["detail"] == "disposition auto-resolve; proposed: restart the CPE"
+    assert rec["detail"] == "disposition=auto-resolve; proposed: restart the CPE"
     assert not [k for k in fields if k in rec and k != "reason"]       # no un-prefixed J2 key leaks into the record
 
 
@@ -74,9 +74,11 @@ def test_escalate_emits_judgment_and_escalation_and_c7_matches_both():
     wf, exp = _expected(["intent", "judgment", "escalation"])
     obs = c7.observed_events(recs)
     assert set(e["key"] for e in exp) <= set(obs)
-    # the independent rechecker agrees on the match (phase = "ifabric." + event)
-    keys = set(("wf", r["actor.id"], r["phase"]) for r in recs)
-    assert set(("wf", w["agent"], "ifabric." + w["event"]) for w in wf) <= keys
+    # the independent rechecker agrees on the match (bare workflow phase or "ifabric." + event: one event)
+    from prooflab.recheck.rechecker import _wf_event
+    keys = set(("wf", r["actor.id"], _wf_event(r["phase"])) for r in recs)
+    assert set(("wf", w["agent"], w["event"]) for w in wf) <= keys
+    assert recs[0]["phase"] == "intent"            # the kit's exact INTENT phase (score-run.py)
 
 
 def test_non_escalate_emits_no_escalation_event():

@@ -131,6 +131,13 @@ def recheck_c16(run_id, calls, scenario_attrs, decisions, pin16, completeness):
 _KINDS = ("action", "decision", "handoff", "lifecycle", "judgment")
 
 
+def _wf_event(phase):
+    """The workflow event a phase names: the contract's bare names (`intent`, `handoff.sent`) and the older
+    `ifabric.<event>` spelling are one event (independent of c7.event_name, same reading)."""
+    ph = str(phase or "")
+    return ph[len("ifabric."):] if ph.startswith("ifabric.") else ph
+
+
 def recheck_c7(run_id, gateway_actions, refusals, workflow_events, stops, observed, link_gaps, pin7):
     # --- the expected set E (from sources outside the graded agents)
     E = {}  # key -> (agent, kind)
@@ -140,13 +147,13 @@ def recheck_c7(run_id, gateway_actions, refusals, workflow_events, stops, observ
         E[("call", r["call_id"])] = r.get("agent")
     streams = {}  # stream -> [(order, key)]
     for w in workflow_events:
-        k = ("wf", w["agent"], "ifabric." + w["event"])
+        k = ("wf", w["agent"], _wf_event(w["event"]))
         E[k] = w["agent"]
         streams.setdefault(w["stream"], []).append((w["order"], k))
     for s in stops:
         base = len(streams.get(s["stream"], []))
         for i, ev in enumerate(pin7.get("workflow_events_after_stop") or []):
-            k = ("wf", s["agent"], "ifabric." + ev)
+            k = ("wf", s["agent"], _wf_event(ev))
             E[k] = s["agent"]
             streams.setdefault(s["stream"], []).append((1000 + i, k))
     if not E:
@@ -160,7 +167,7 @@ def recheck_c7(run_id, gateway_actions, refusals, workflow_events, stops, observ
         keys = []
         if o.get("record_kind") == "action" and o.get("call.id"):
             keys.append(("call", o["call.id"]))
-        keys.append(("wf", o.get("actor.id"), o.get("phase")))
+        keys.append(("wf", o.get("actor.id"), _wf_event(o.get("phase"))))
         for k in keys:
             if k in E:
                 t = _ts(o["emitted.at"])

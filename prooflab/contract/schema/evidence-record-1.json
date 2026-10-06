@@ -576,7 +576,8 @@
     "seen",
     null
    ]
-  }
+  },
+  "actor": {}
  },
  "patternProperties": {
   "^assessment\\.": {}
@@ -652,6 +653,7 @@
   "judgment": "judgment",
   "handoff.received": "handoff",
   "escalation": "judgment",
+  "negotiation": "judgment",
   "run.finished": "lifecycle",
   "stop": "lifecycle"
  }

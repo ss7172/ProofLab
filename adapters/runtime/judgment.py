@@ -4,6 +4,7 @@ Dispositions: auto-resolve (alias "resolve"), gather-evidence, escalate, halted.
 mandatory; the deciding evidence goes in as record ids and tool-result digests, never content.
 """
 from adapters.runtime import emit_client as ec
+from adapters.runtime.j2 import POSITION_DISPOSITION   # Gateway C position -> disposition (disagree escalates)
 
 EP_ID, EP_KIND = "EP-4", "agent judgment (disposition)"
 DISPOSITIONS = ("auto-resolve", "gather-evidence", "escalate", "halted")
@@ -41,7 +42,7 @@ def record_judgment(client, ctx, disposition, reason, evidence_ids=(), result_di
              "judgment.reversible_step": reversible_step,
              "judgment.precedence_rule": precedence_rule, "reason": reason,
              "run.condition": "none", **j2}
-    detail = "disposition %s" % disp
+    detail = "disposition=%s" % disp   # the key=value form score-run.py reads (kit grader parity)
     if proposed_action:   # the agent's proposed action, folded into detail (bounded, one line)
         detail += "; proposed: " + " ".join(str(proposed_action).split())[:PROPOSED_MAX]
     receipt = client.emit(ec.new_record(ctx, "judgment", EP_ID, EP_KIND, "emit", detail, "RECORDED",
@@ -76,5 +77,30 @@ def record_intent(client, ctx, intent):
     rec = ec.new_record(ctx, "lifecycle", EP_ID, EP_KIND, "emit",
                         "intent: %s" % intent, "RECORDED", control_ref="C7",
                         control_id="AIA-LOG-001",   # phase = the C7 workflow event `intent` (ARCH 5.2)
-                        extra={"lifecycle.event": "intent", "reason": "intent", "phase": "ifabric.intent"})
+                        extra={"lifecycle.event": "intent", "reason": "intent", "phase": "intent"})
     return client.emit(rec)
+
+
+def record_negotiation(client, ctx, position, fields=None):
+    """Gateway C (network -> IT): the IT agent's position on the network's proposal, as a judgment record with
+    phase `negotiation` (C7 workflow event; the kit's reference phase) under the run CID and ctx's handoff id.
+    The invocation's own J2 judgment (and escalation, if any) follows through record_from_j2, not here."""
+    disp = POSITION_DISPOSITION.get(position)
+    if disp is None:
+        return ec.REJECTED_SCHEMA
+    f = fields or {}
+    reason = " ".join(str(f.get("reason") or "no reason given").split())[:PROPOSED_MAX]
+    nr = {"judgment.reversible_step": "none declared"}
+    if not f.get("precedence_rule"):
+        nr["judgment.precedence_rule"] = "no precedence rule fired"
+    extra = {"phase": "negotiation", "judgment.disposition": disp,
+             "judgment.evidence_ids": list(f.get("deciding_evidence") or ()),
+             "judgment.result_digests": [], "judgment.reversible_step": None,
+             "judgment.precedence_rule": f.get("precedence_rule") or None,
+             "reason": "negotiation position %s: %s" % (position, reason), "run.condition": "none"}
+    if f.get("named_evidence_needed"):
+        extra["judgment.evidence_needed"] = list(f["named_evidence_needed"])
+    detail = "negotiation position=%s disposition=%s; %s" % (position, disp, reason)
+    return client.emit(ec.new_record(ctx, "judgment", EP_ID, EP_KIND, "emit", detail, "RECORDED",
+                                     control_ref="C7", control_id="AIA-LOG-001", extra=extra,
+                                     null_reasons=nr))

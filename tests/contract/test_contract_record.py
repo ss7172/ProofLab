@@ -219,7 +219,7 @@ def test_golden_records_carry_no_unknown_keys_after_roundtrip():
 
 def test_workflow_phases_match_arch_52():
     assert set(R.WORKFLOW_PHASES) == {"run.started", "handoff.sent", "invocation.received", "intent", "judgment",
-                                      "handoff.received", "escalation", "run.finished", "stop"}
+                                      "handoff.received", "escalation", "negotiation", "run.finished", "stop"}
     assert load("handoff.json")["phase"] == "handoff.sent"
     assert load("handoff_received.json")["phase"] == "handoff.received"
 
