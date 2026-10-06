@@ -1,4 +1,4 @@
-"""STUB prooflab.adapters.runtime.hooks (tests/bundle/stubs)."""
+"""STUB adapters.runtime.hooks (tests/bundle/stubs)."""
 
 
 def providers(inv):

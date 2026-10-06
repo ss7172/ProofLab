@@ -43,23 +43,26 @@ DEFAULT_REQUIRED = [
     "prooflab/contract/record.py",
     "prooflab/contract/transports.py",
     "prooflab/contract/verdicts.py",
-    "prooflab/adapters/runtime/model_call.py",
-    "prooflab/adapters/runtime/action_id.py",
-    "prooflab/adapters/runtime/tally.py",
-    "prooflab/adapters/runtime/hooks.py",
-    "prooflab/adapters/runtime/emit_client.py",
-    "prooflab/adapters/runtime/tool_call.py",
-    "prooflab/adapters/runtime/judgment.py",
-    "prooflab/adapters/runtime/startup.py",
+    "adapters/runtime/model_call.py",
+    "adapters/runtime/action_id.py",
+    "adapters/runtime/tally.py",
+    "adapters/runtime/hooks.py",
+    "adapters/runtime/emit_client.py",
+    "adapters/runtime/tool_call.py",
+    "adapters/runtime/judgment.py",
+    "adapters/runtime/startup.py",
 ]
 DEFAULT_OPTIONAL = [
     "prooflab/contract/clocks.py",
+    "prooflab/contract/ids.py",
+    "prooflab/contract/register.py",
+    "prooflab/contract/pin.py",
     "prooflab/evaluators/__init__.py",
-    "prooflab/adapters/__init__.py",
-    "prooflab/adapters/runtime/__init__.py",
-    "prooflab/adapters/runtime/rails.py",
-    "prooflab/adapters/runtime/egress.py",
-    "prooflab/adapters/runtime/j2.py",
+    "adapters/__init__.py",
+    "adapters/runtime/__init__.py",
+    "adapters/runtime/rails.py",
+    "adapters/runtime/egress.py",
+    "adapters/runtime/j2.py",
 ]
 # The shared trio app: one canonical copy (agents/ifabric-customer/ifabric_app.py), embedded as the
 # module "ifabric_app" in every role's bundle. Paths below are relative to the AGENT root (--agents-root).
@@ -182,6 +185,46 @@ def collect(manifest, src_root, agents_root):
     return sources, packages, missing_opt, synthesized
 
 
+def _imports(text):
+    import ast
+    names = set()
+    for n in ast.walk(ast.parse(text)):
+        if isinstance(n, ast.Import):
+            names.update(a.name for a in n.names)
+        elif isinstance(n, ast.ImportFrom) and n.module and not n.level:
+            names.add(n.module)
+            names.update(n.module + "." + a.name for a in n.names)
+    return names
+
+
+def prune(sources, entry_text):
+    """Keep only modules statically reachable from the entry (and the c16 core). A module loaded only
+    through importlib by a computed name would be dropped: opt-in (--prune), checked by the import smoke."""
+    keep, stack = set(), [CORE_MODULE] + sorted(m for m in _imports(entry_text) if m in sources)
+    while stack:
+        m = stack.pop()
+        if m in keep or m not in sources:
+            continue
+        keep.add(m)
+        parts = m.split(".")
+        stack += [".".join(parts[:i]) for i in range(1, len(parts))]
+        stack += sorted(d for d in _imports(sources[m]) if d in sources)
+    return dict((m, t) for m, t in sources.items() if m in keep), sorted(set(sources) - keep)
+
+
+def strip_docstrings(text):
+    """NOT byte-identical (opt-in, --strip-docstrings): docstrings and comments removed via ast.unparse.
+    Never applied to the c16 core, whose literal must equal the repo file (ARCH 7.1, 11.1)."""
+    import ast
+    tree = ast.parse(text)
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.Module, ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)) and n.body \
+                and isinstance(n.body[0], ast.Expr) and isinstance(getattr(n.body[0], "value", None), ast.Constant) \
+                and isinstance(n.body[0].value.value, str):
+            n.body = n.body[1:] or [ast.Pass()]
+    return ast.unparse(tree) + "\n"
+
+
 def render(sources, packages, entry_text, header):
     sha = dict((m, hashlib.sha256(t.encode("utf-8")).hexdigest()) for m, t in sorted(sources.items()))
     body = ["_SOURCES = {\n"]
@@ -207,7 +250,8 @@ def gz_b64_len(text):
     return len(base64.b64encode(gz)), len(gz), how
 
 
-def bundle(manifest, src_root=REPO, agents_root=REPO, out_dir=None, gate=GATE_CHARS, write=True):
+def bundle(manifest, src_root=REPO, agents_root=REPO, out_dir=None, gate=GATE_CHARS, write=True,
+           do_prune=False, do_strip=False):
     role = manifest["role"]
     name = manifest.get("name") or "ifabric-" + role
     if not re.match(r"^ifabric-[a-z][a-z0-9-]*$", name):
@@ -220,6 +264,15 @@ def bundle(manifest, src_root=REPO, agents_root=REPO, out_dir=None, gate=GATE_CH
         raise BundleError("refusing an entry file named %s" % _FORBIDDEN_NAME)
     entry_text = _read_utf8(entry_path)[0]
     sources, packages, missing_opt, synthesized = collect(manifest, src_root, agents_root)
+    pruned, stripped = [], []
+    if do_prune:
+        sources, pruned = prune(sources, entry_text)
+        packages = set(p for p in packages if p in sources)
+    if do_strip:
+        for mod in sorted(sources):
+            if mod != CORE_MODULE and sources[mod].strip() and mod != "ifabric_app":
+                sources[mod] = strip_docstrings(sources[mod])
+                stripped.append(mod)
     core_sha = hashlib.sha256(open(os.path.join(src_root, CORE_PATH), "rb").read()).hexdigest()
     if hashlib.sha256(sources[CORE_MODULE].encode("utf-8")).hexdigest() != core_sha:
         raise BundleError("embedded c16 core differs from %s" % CORE_PATH)
@@ -231,7 +284,8 @@ def bundle(manifest, src_root=REPO, agents_root=REPO, out_dir=None, gate=GATE_CH
         "name": name, "file": out_name, "raw_bytes": len(text.encode("utf-8")), "gzip_bytes": gz,
         "gzip_base64_chars": b64, "measured_with": how, "gate": gate, "hard_cap": HARD_CAP_CHARS,
         "c16_core_sha256": core_sha, "modules": sorted(sources), "missing_optional": missing_opt,
-        "synthesized_empty_packages": synthesized, "ok": b64 <= gate,
+        "synthesized_empty_packages": synthesized, "pruned": pruned, "stripped_not_byte_identical": stripped,
+        "ok": b64 <= gate,
     }
     out_path = None
     if write and report["ok"]:
@@ -265,6 +319,9 @@ def main(argv=None):
     p.add_argument("--gate", type=int, default=GATE_CHARS)
     p.add_argument("--no-write", action="store_true", help="measure only")
     p.add_argument("--json", action="store_true", help="print the reports as JSON")
+    p.add_argument("--prune", action="store_true", help="drop modules the entry cannot reach statically")
+    p.add_argument("--strip-docstrings", action="store_true",
+                   help="strip docstrings/comments of every module EXCEPT the c16 core (not byte-identical)")
     a = p.parse_args(argv)
     if a.gate > HARD_CAP_CHARS:
         p.error("--gate above the hard cap %d" % HARD_CAP_CHARS)
@@ -275,7 +332,8 @@ def main(argv=None):
     for role in roles or [None]:
         try:
             m = _load_manifest(a.manifest, role)
-            r, _ = bundle(m, a.src_root, a.agents_root, a.out_dir, a.gate, write=not a.no_write)
+            r, _ = bundle(m, a.src_root, a.agents_root, a.out_dir, a.gate, write=not a.no_write,
+                          do_prune=a.prune, do_strip=a.strip_docstrings)
         except BundleError as e:
             print("bundle_agent: %s" % e, file=sys.stderr)
             return 2
@@ -292,6 +350,10 @@ def main(argv=None):
                 print("     missing optional (not embedded): %s" % ", ".join(r["missing_optional"]))
             if r["synthesized_empty_packages"]:
                 print("     empty package markers served: %s" % ", ".join(r["synthesized_empty_packages"]))
+            if r["pruned"]:
+                print("     pruned (unreachable): %s" % ", ".join(r["pruned"]))
+            if r["stripped_not_byte_identical"]:
+                print("     docstrings stripped (NOT byte-identical): %d modules" % len(r["stripped_not_byte_identical"]))
             if r["out"]:
                 print("     wrote %s" % r["out"])
     if a.json:

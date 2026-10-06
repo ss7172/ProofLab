@@ -36,7 +36,7 @@ def _wire():
     hooks.http_event_hooks(inv) -> dict  (httpx event_hooks: x-modaas-action-id per call)
     tool_call.wrap(tools, inv) -> list   (one tool record before and after each actual call)
     judgment.decide(inv, text, spec, ask) -> dict   (J2 parse, one re-ask via ask(), precedence)"""
-    from prooflab.adapters.runtime import hooks, judgment, startup, tool_call
+    from adapters.runtime import hooks, judgment, startup, tool_call
     return startup, hooks, tool_call, judgment
 
 

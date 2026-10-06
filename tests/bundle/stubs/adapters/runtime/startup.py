@@ -1,4 +1,4 @@
-"""STUB prooflab.adapters.runtime.startup (tests/bundle/stubs): the surface ifabric_app._wire() expects."""
+"""STUB adapters.runtime.startup (tests/bundle/stubs): the surface ifabric_app._wire() expects."""
 import json
 import time
 import uuid

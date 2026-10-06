@@ -1,4 +1,4 @@
-"""STUB prooflab.adapters.runtime.judgment (tests/bundle/stubs): last JSON line, else escalate."""
+"""STUB adapters.runtime.judgment (tests/bundle/stubs): last JSON line, else escalate."""
 import json
 
 

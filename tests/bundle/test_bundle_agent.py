@@ -58,7 +58,7 @@ def _import_file(path, name="ifabric_bundle_ut"):
 
 ENTRY = (
     "import prooflab.evaluators.c16_core as core\n"
-    "import prooflab.adapters.runtime.startup as st\n"
+    "import adapters.runtime.startup as st\n"
     "import ifabric_app\n"
     "RESULT = core.decide_inline(None, None).action\n"
     "CORE_FILE = core.__file__\n"
@@ -115,7 +115,7 @@ def test_over_the_gate_fails_and_writes_nothing(tmp_path):
     src = tmp_path / "src"
     shutil.copytree(STUBS, str(src))
     pad = os.urandom(20000).hex()  # incompressible
-    (src / "prooflab" / "adapters" / "runtime" / "tally.py").write_text("PAD = %r\n" % pad)
+    (src / "adapters" / "runtime" / "tally.py").write_text("PAD = %r\n" % pad)
     root = _agents_root(tmp_path, ENTRY)
     out = tmp_path / "out"
     report, _ = BA.bundle(BA.default_manifest("customer"), src_root=str(src), agents_root=root, out_dir=str(out))
@@ -129,7 +129,7 @@ def test_missing_required_module_is_refused(tmp_path):
     import shutil
     src = tmp_path / "src"
     shutil.copytree(STUBS, str(src))
-    os.remove(str(src / "prooflab" / "adapters" / "runtime" / "hooks.py"))
+    os.remove(str(src / "adapters" / "runtime" / "hooks.py"))
     root = _agents_root(tmp_path, ENTRY)
     with pytest.raises(BA.BundleError):
         BA.bundle(BA.default_manifest("customer"), src_root=str(src), agents_root=root, write=False)
@@ -155,7 +155,7 @@ def test_manifest_file_and_missing_optional_reported(tmp_path):
     mf = tmp_path / "m.json"
     mf.write_text(json.dumps(m))
     report, _ = BA.bundle(BA._load_manifest(str(mf), None), src_root=STUBS, agents_root=root, write=False)
-    assert "prooflab/adapters/runtime/rails.py" in report["missing_optional"]
+    assert "adapters/runtime/rails.py" in report["missing_optional"]
     assert "prooflab" in report["synthesized_empty_packages"]
 
 
@@ -172,3 +172,17 @@ def test_no_trio_source_is_named_like_the_reference():
     for role in BA.ROLES:
         names = os.listdir(os.path.join(REPO, "agents", "ifabric-" + role))
         assert FORBIDDEN not in names
+
+
+def test_strip_keeps_core_byte_identical_and_prune_drops_unreached(tmp_path):
+    root = _agents_root(tmp_path, ENTRY)
+    report, text = BA.bundle(BA.default_manifest("customer"), src_root=STUBS, agents_root=root,
+                             out_dir=str(tmp_path / "out"), do_prune=True, do_strip=True)
+    assert report["ok"]
+    assert "adapters.runtime.tally" in report["pruned"]           # nothing imports the stub tally
+    assert BA.CORE_MODULE not in report["stripped_not_byte_identical"]
+    core_bytes = open(os.path.join(STUBS, BA.CORE_PATH), "rb").read()
+    with _Isolated():
+        mod = _import_file(report["out"])
+        assert mod._SOURCES[BA.CORE_MODULE].encode("utf-8") == core_bytes
+        assert mod.RESULT == "proceed"
