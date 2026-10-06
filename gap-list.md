@@ -1,6 +1,6 @@
 # Gap list: team iFabric
 
-*One file, two sections, each in its own format. Section A is Arth's, merged as handed over (handoffs/ifabric-handoff-3, unchanged). Section B is ours. Status: drafted 2026-10-06 at build time; no named run has happened yet, so every "what we show instead" below is a plan, not a result. Statuses are updated before each submit.*
+*One file, two sections, each in its own format. Section A is Arth's, merged as handed over (handoffs/ifabric-handoff-3, unchanged). Section B is ours. Status: drafted 2026-10-06 at build time and updated at the final submit (16:30Z), after the named runs. Section A is kept byte-identical to Arth's handover, so its `<update …>` status slots are his template text, not results; section B (B26-B38) carries the results.*
 
 ## A. ServiceNow, AI Control Tower and the Assurance Agent
 
@@ -449,7 +449,7 @@
 
 **Why:** time. They are planned and kept under `reviews/`.
 
-**Status:** `<update before each submit: list which exist, and which do not>`. Anything not produced by the final submit stays listed here.
+**Status:** see the pack (README section 2 lists what is in it). Anything not produced by the final submit stays listed here.
 
 ---
 

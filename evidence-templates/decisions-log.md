@@ -110,3 +110,9 @@ Status of this file: filled. Section 3 was filled from the freeze records (regis
 |---|---|---|---|---|
 | 2026-10-06 12:39:29Z (v1); 13:36:43Z (v1.1) | v1: C16 cap 20,000 tokens/run, C7 coverage 100% with max gap 29,000 ms, C9 two-sided ±75% latency change with 0 errors. v1.1 (declared post-hoc, rule C16-cap/2): C16 cap 25,000; C7/C9 unchanged | From the eligible pilots P1c 15,248 / P3 16,052 / P5 24,430 tokens and their latency baselines (derivation rules in register/experiments/rules.json); v1.1 because v1's cap ignored the enforce reservation and halted N1b (rules-v1.1.json) | the build (orchestrator), decided by the captain | `register/versions/v1.yaml`, `v1.1.yaml`, `*.head.json` (S3 T1 12:40:22Z, 13:38:05Z) |
 | 2026-10-06 13:02:37Z (v1); 15:09:49Z (v1.1) | v1 approved by the owner on INC0010321; v1.1 approved on INC0010338 (first posted on INC0010321 at 13:44:39Z by mistake, then on INC0010338). The v1.1 approval came AFTER N1 (13:56Z); its S3 date proof (13:38:05Z) is before N1 | Owner approval (T2 corroborates T1); the late v1.1 note is stated, not hidden | Sree (account annapurna@invences.com; B37) | `register/approval*/`, `servicenow/export/` |
+
+## 4. Corrections (dated; the rows above are not edited)
+
+| Date | Decision | Why | Who | Reference |
+|---|---|---|---|---|
+| 2026-10-06 16:30Z | Correction to the ~13:50Z "APPROVED notes" row: v1's note is on INC0010321 at 13:02:37Z; v1.1's note was first posted on INC0010321 at 13:44:39Z by mistake, then on INC0010338 at 15:09:49Z, which is AFTER N1 (13:56:15Z). v1.1 was frozen at 13:36:43Z and dated in S3 at 13:38:05Z, before N1 | The ~13:50Z row gave one approximate time for both notes | Sree (account annapurna@invences.com; B37) | `servicenow/export/INC0010321.json`, `INC0010338.json`; `register/versions/v1.1.head.json` |

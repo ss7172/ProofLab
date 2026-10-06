@@ -207,7 +207,19 @@ def _tick_text(ok, manifest_status, a, rc, rule, corr=None):
             "A": "agreed to MANIFEST.json (%s)" % manifest_status,
             "T": ("corroboration report: %d mismatches" % len(corr.get("mismatches", []))) if isinstance(corr, dict)
                  else "not traced: no corroboration report for this scope in the pack",
-            "V": _vouch_text(rule)}
+            "V": _vouch_text(rule, a)}
+
+
+def _authority(rule, ctx):
+    """Register owner and approval, with the approval time stated against the run: an approval after the run is said so."""
+    ap = rule["approval"]
+    at, start = ap.get("at"), ctx.get("start")
+    after = bool(at and start and E._utc_key(at) and E._utc_key(start) and E._utc_key(at) > E._utc_key(start))
+    words = "register owner %s; approval %s%s%s%s" % (
+        rule["owner"]["name"], ap["status"], (" on " + str(ap["ref"])) if ap.get("ref") else "", (" at " + str(at)) if at else "",
+        " (AFTER this run; the register was dated before it by S3)" if after and rule.get("date_before_scope") else
+        " (AFTER this run)" if after else "")
+    return _txt(words, [rule["source_ref"]], "OK" if ap["status"] == "APPROVED" and not after else "FLAG")
 
 
 def date_words(rule):
@@ -223,11 +235,14 @@ def date_words(rule):
             "GAP")
 
 
-def _vouch_text(rule):
+def _vouch_text(rule, a=None):
     words, _ = date_words(rule)
     approved = rule["approval"]["status"] == "APPROVED"
+    at, start = rule["approval"].get("at"), (a or {}).get("scope_start")
+    if approved and at and start and E._utc_key(at) and E._utc_key(start) and E._utc_key(at) > E._utc_key(start):
+        return "not vouched before the run: owner approval at %s came AFTER the run; register %s" % (at, words)
     if approved and rule["date_before_scope"]:
-        return "vouched: owner approval, register %s" % words
+        return "vouched: owner approval%s, register %s" % ((" at " + str(at)) if at else "", words)
     return "not vouched: %s; register %s" % ("owner approval on record" if approved else "no owner approval record in the pack", words)
 
 
@@ -359,13 +374,14 @@ def _audit_question(control, a, rule, ctx):
         "where": _txt("by the evaluator named in the assessment; EPs seen: %s" % (", ".join(sorted(set(str(r["ep.id"]) for r in recs if r.get("ep.id")))) or "none recorded"),
                       rid([r for r in recs if r.get("ep.id")])),
         "when": _txt("%s .. %s (UTC)" % (E.UNKNOWN if not ctx["start"] else ctx["start"], E.UNKNOWN if not ctx["end"] else ctx["end"])),
-        "under_whose_authority": _txt("register owner %s; approval %s" % (rule["owner"]["name"], rule["approval"]["status"]),
-                                      [rule["source_ref"]], "OK" if rule["approval"]["status"] == "APPROVED" else "FLAG"),
+        "under_whose_authority": _authority(rule, ctx),
         "rule_checked": _txt("%s %s: %s" % (control, rule["threshold_version"], rule["statement"]), [rule["source_ref"]]),
         "limit_in_force": _txt("%s %s %s per run, version %s, %s" % (
             rule["observation_limit"]["operator"], rule["observation_limit"]["value"], rule["observation_limit"]["unit"], rule["threshold_version"],
             date_words(rule)[0]), [rule["source_ref"]], date_words(rule)[1]),
-        "decision": {"text": "control test %s (%s)%s" % (a["verdict"], V.display(a["verdict"]), "; a call was DENIED inline" if stopped else ""),
+        "decision": {"text": "control test %s (%s)%s" % (a["verdict"], V.display(a["verdict"]), (
+                         "; the inline guard stopped the denied call(s) before they were sent, so the run's spend stayed within the limit"
+                         if a["verdict"] == V.SATISFIED else "; a call was DENIED inline") if stopped else ""),
                      "refs": ["assessment:%s" % a["assessment_id"]] if a.get("assessment_id") else [],
                      # the outcome follows THIS control's assessment: a stop, else a breach escalated to a human, else allowed
                      "outcome": "STOPPED" if stopped else "ESCALATED" if (a["verdict"] == V.BREACHED and (told or staged)) else "ALLOWED"},

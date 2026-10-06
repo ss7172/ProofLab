@@ -642,7 +642,8 @@ def r8(pack):
             out.append(Finding("R8", rel + " @comparison.within_limit", "%s with within_limit %s" % (
                 verdict, comp.get("within_limit")), "verdict and comparison disagree"))
         dec = (ans.get("audit_question") or {}).get("decision") or {}
-        if verdict == SATISFIED and str(dec.get("outcome")) in ("STOPPED", "DENIED", "BLOCKED"):
+        if verdict == SATISFIED and str(dec.get("outcome")) in ("STOPPED", "DENIED", "BLOCKED") and \
+                "stayed within the limit" not in str(dec.get("text") or ""):  # the halt and why the requirement held are said
             out.append(Finding("R8", rel + " @audit_question.decision", "outcome %s / %s" % (
                 dec.get("outcome"), dec.get("text")), "a halted run shown as SATISFIED: say what was halted and "
                 "why the requirement still held"))

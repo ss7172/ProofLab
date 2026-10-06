@@ -664,7 +664,7 @@ def incident(pack, ident):
             for r in recs if r.get("record_kind") == "approval" or r.get("ep.id") in ("EP-0", "EP-10")]
     manifest = os.path.exists(pack.p("MANIFEST.json"))
     corr = read_json(pack.p("derived", "corroboration", cid + ".json"))
-    integ = ["MANIFEST.json %s" % ("present" if manifest else "missing (gap)"),
+    integ = ["MANIFEST.json %s" % ("present" if manifest else "not yet written when this view was built (it is written last at pack build; verify: python3 tools/manifest.py verify .)"),
              ("corroboration report: %s mismatches" % len(corr.get("mismatches", []))) if isinstance(corr, dict)
              else "no corroboration report for this run (gap)"]
     timeline = ["%s %s %s %s" % (r.get("ts"), r.get("record_kind"), r.get("ep.id") or "-", r.get("record_id")) for r in recs]

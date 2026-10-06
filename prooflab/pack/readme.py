@@ -128,7 +128,9 @@ def values(root, label=None):
         n = len(glob.glob(os.path.join(root, "assessments", ref, "*.json")))
         vs = [a.get("verdict") for a in idx.get("answers") or [] if a.get("control_ref") == ref and "|run|" in str(a.get("key"))]
         tally = ", ".join("%d %s" % (vs.count(x), x) for x in sorted(set(vs)))
-        per.append("%s %s" % (ref, ("assessed over %d run(s)%s" % (n, (" (" + tally + ")") if tally else "")) if n else "not assessed yet"))
+        nw = n - len(vs)  # files that are not per-run answers: hourly windows
+        per.append("%s %s" % (ref, ("assessed over %d run(s)%s%s" % (len(vs), (" (" + tally + ")") if tally else "",
+                                     ("; plus %d hourly window(s)" % nw) if nw > 0 else "")) if n else "not assessed yet"))
         if n:
             assessed.append(ref)
     v["per control: assessed / not assessed yet"] = "; ".join(per)

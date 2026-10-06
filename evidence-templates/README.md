@@ -20,8 +20,8 @@ network.
 - **Named runs** (written down before judging): `run-ids.txt` (one correlation id per line) and
   `named-runs.md` (control, role, every attempt, window, register and control version, mode,
   condition, incident).
-- **Who owns what:** the accountable owner approves the thresholds; the builder does not approve
-  their own work (section 10).
+- **Who owns what:** the accountable owner approves the thresholds. She also builds, so separation of
+  duties is procedural only and the records cannot show it (section 10; gap-list B37).
 
 **The pillars, and where each is in this pack.** One row per pillar; no row is empty. A cell that
 names a file is a claim only if that file is in the pack; the status column is filled at build from
@@ -195,8 +195,9 @@ result and is excluded from every verdict.
 - **ServiceNow integration and the Assurance Agent:** built and integrated by Arth, from the
   owner's account (he has no separate identity in ServiceNow or AWS)
 
-Nobody approves their own work, by procedure: Arth reviews before the owner approves. The records
-cannot show it. There is one ServiceNow account (`annapurna@invences.com`, the owner's) and one
+The owner approves thresholds she also built. Arth's review before her approval is procedure only; the records
+cannot show it. There is one human ServiceNow account (`annapurna@invences.com`, the owner's; the service user
+`ifabric.integration` opens incidents and writes the integration's notes) and one
 shared AWS role (`WSParticipantRole`), so a `RESPONDED` state or an approval shows which account
 acted, not which person (`gap-list.md` B37). Approvals are the accountable owner's acts on her own
 account. The governance-assurance role is vacant (stated in `gap-list.md`).
