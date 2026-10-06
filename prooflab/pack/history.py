@@ -362,8 +362,10 @@ def run_catalogue(src, run_ids, window=None, store_records=None):
     for r in store_records:
         cid = r.get("run.id") or r.get("correlation_id")
         if cid:
-            c = counts.setdefault(cid, {"n": 0, "first": None, "last": None})
+            c = counts.setdefault(cid, {"n": 0, "first": None, "last": None, "declared": {}})
             c["n"] += 1
+            if r.get("provenance"):
+                c["declared"][r["provenance"]] = c["declared"].get(r["provenance"], 0) + 1
             ts = r.get("ts") if isinstance(r.get("ts"), str) and UTC_RE.match(r.get("ts")) else None
             if ts:
                 c["first"] = min(c["first"] or ts, ts)
@@ -406,6 +408,15 @@ def run_catalogue(src, run_ids, window=None, store_records=None):
         if x["provenance"] != "ASSESSED":
             x["provenance"] = PROV_BY_LABEL.get(c.get("label"), "EXPLORATORY")
         x["label"] = c.get("label")
+        # PR-51b: a run whose own records declare its provenance is never 'role undeclared' (the catalogue's
+        # ROLE_LABELS lacks EXPLORATORY); the view says where the label comes from, the catalogue row is not edited
+        dec = (counts.get(cid) or {}).get("declared") or {}
+        if str(c.get("label") or "") in ("", "OURS-ROLE-UNDECLARED") and dec:
+            declared = max(dec, key=lambda k: dec[k])
+            x["label"] = declared
+            x["label_source"] = "recorded (provenance field on %d of the run's records); catalogue said %s" % (
+                dec[declared], c.get("label") or "nothing")
+            c = dict(c, label=declared)
         if not x.get("purpose"):
             x["purpose"] = "%s (%s)" % ("warm-up / exploratory run" if c.get("label") != "WIRING_TEST" else "wiring test",
                                         c.get("label") or "unlabelled")

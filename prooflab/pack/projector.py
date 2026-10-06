@@ -733,7 +733,12 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
         cid = row["cid"]
         row["verdicts"] = dict((p["control_ref"], p["verdict"]) for p in docs if p["scope"].get("cid") == cid)
         runs.append(row)
-    named = {"written_at": cx["as_of"], "entries": [
+    # PR-51b: never the last record's time; the named runs' own start (run-ids.txt carries no dated proof in the pack)
+    named_starts = sorted(r["started_at"] for r in runs if r.get("provenance") == "ASSESSED" and _utc(r.get("started_at")))
+    named = {"written_at": named_starts[0] if named_starts else cx["as_of"],
+             "written_at_basis": ("the first named run's own start (recorded: run.started ts); run-ids.txt has no dated proof here"
+                                  if named_starts else "no named run start recorded; the last record's time"),
+             "entries": [
         {"control": p["control_ref"], "expected": "BREACH" if p["verdict"] == _V.BREACHED else "PASS",
          "scope": p["scope"], "observed": p["verdict"], "answer_ref": "assessment:%s" % p["assessment_id"]}
         for p in docs if p["scope"].get("cid") in cx["run_ids"]]}
@@ -789,6 +794,7 @@ def main(argv=None):
     ap.add_argument("--src", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--as-of", default=None)
+    ap.add_argument("--generated-at", default=None, help="the pack build time (UTC); default: --as-of")
     ap.add_argument("--answers", default=None, help="JSON list of pack-index answers[] entries (from pack build)")
     ap.add_argument("--assessments-dir", default="assessments", help="where projected assessments go (default assessments)")
     ap.add_argument("--auditor", default=None, help="JSON list of pack-index auditor[] entries (from pack build)")
@@ -801,7 +807,7 @@ def main(argv=None):
         with open(args.auditor, "r", encoding="utf-8") as fh:
             auditor = json.load(fh)
     try:
-        res = project(args.src, args.out, args.as_of, answers=answers, assessments_dir=args.assessments_dir, auditor=auditor)
+        res = project(args.src, args.out, args.as_of, generated_at=args.generated_at, answers=answers, assessments_dir=args.assessments_dir, auditor=auditor)
     except ValueError as exc:
         sys.stderr.write("projector: %s\n" % exc)
         return 2

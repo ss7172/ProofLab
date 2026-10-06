@@ -49,3 +49,15 @@ def test_txt_carries_source_tag():
     assert A._txt("x", source="recorded (actor.id)")["source"] == "recorded (actor.id)"
     assert "source" not in A._txt("x")
     assert E.NOT_RECORDED == "not recorded"
+
+
+def test_none_leaks_read_not_recorded():
+    assert A._clean("valid=True position=None") == "valid=True position=not recorded"
+    assert A._clean("received None") == "received not recorded"
+    rows = A._record_rows([{"record_id": "x", "record_kind": "handoff", "detail": "received None"}], {}, "UNVERIFIED", False)
+    assert rows[0]["summary"] == "received not recorded" and rows[0]["source"].startswith("recorded")
+
+
+def test_warmup_label_from_its_records():
+    assert E.run_label(None, "c", "OURS-ROLE-UNDECLARED", "EXPLORATORY") == "EXPLORATORY (declared in the run's records)"
+    assert E.run_label(None, "c", "LIVE_SUBJECT", "LIVE_SUBJECT") == "LIVE_SUBJECT"

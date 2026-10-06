@@ -78,7 +78,7 @@ function bars(series, unit, limitLabel) {
 }
 /* ---------------- views ---------------- */
 function ribbon(compact) {
-  const r = P.register, pts = [r.first_exploratory_at ? ["exploratory runs (excluded)", r.first_exploratory_at, "--ink-4"] : null, ["register frozen", r.frozen_at, "--trace"], ap(r).at ? ["owner approved (" + String((ap(r).ref || ":").split(":")[1]) + ")", ap(r).at, "--held"] : null, ["first assessed run", r.first_assessed_run_at, "--ink"], (P.named_runs || {}).written_at ? ["named runs written", P.named_runs.written_at, "--ink-2"] : null, P.pack.judging_starts_at ? ["judging", P.pack.judging_starts_at, "--unknown"] : null].filter(p => p && p[1]);
+  const r = P.register, pts = [r.first_exploratory_at ? ["exploratory runs (excluded)", r.first_exploratory_at, "--ink-4"] : null, ["register frozen", r.frozen_at, "--trace"], ap(r).at ? ["owner approved (" + String((ap(r).ref || ":").split(":")[1]) + ")", ap(r).at, "--held"] : null, ["first assessed run", r.first_assessed_run_at, "--ink"], (P.named_runs || {}).written_at ? [P.named_runs.written_at_basis ? "first named run started" : "named runs written", P.named_runs.written_at, "--ink-2"] : null, P.pack.judging_starts_at ? ["judging", P.pack.judging_starts_at, "--unknown"] : null].filter(p => p && p[1]);
   if (!pts.length) return h("p", { class: "muted" }, "no dated register events in this pack");
   const t0 = Date.parse(pts[0][1]), t1 = Date.parse(pts[pts.length - 1][1]), W = 860, x = t => 30 + (W - 60) * Math.sqrt((Date.parse(t) - t0) / (t1 - t0)), g = s("svg", { viewBox: `0 0 ${W} 86`, width: "100%", role: "img", "aria-label": "Register freeze and approval precede every assessed run" });
   g.append(s("line", { x1: 30, x2: W - 30, y1: 34, y2: 34, stroke: css("--rule-strong"), "stroke-width": 2 }));
@@ -187,7 +187,7 @@ const ROUTES = [["B", "answer", "Ask · Answer"], ["D", "ledger", "Evidence Ledg
 const VIEWS = Object.assign({ answer: answerView, ledger, auditor, register, loop, architecture, enforcement: architecture, gaps, runs: runsView }, window.PROOFLAB_P1_VIEWS || {});
 function rail(active) {
   const counts = { gaps: (P.gaps || []).length, loop: D.cases.length, runs: (D.runList || []).length, auditor: (P.auditor || []).length, answer: (P.answers || []).length };
-  const lvl = (P.levels || []).map(l => h("span", { class: "pill " + (l.status === "VERIFIED" ? "p-good" : "p-warn"), title: l.level }, l.level.slice(0, 2)));
+  const lvl = (P.levels || []).map(l => h("span", { class: "pill " + (l.status === "VERIFIED" ? "p-good" : "p-warn"), title: l.level + ": " + (l.status === "NOT_SHOWN" ? (l.note || "not evaluated in this pack") : l.status) }, l.level.slice(0, 2) + (l.status === "NOT_SHOWN" ? " not evaluated" : "")));
   $("rail").replaceChildren(h("div", { class: "label grp" }, "Exhibit index"), ...ROUTES.concat(window.PROOFLAB_P1_ROUTES || []).map(([l, r, n]) => h("a", { href: "#/" + r, class: active === r ? "on" : "" }, h("span", { class: "ltr" }, l), n, h("span", { class: "cnt" }, counts[r] ?? ""))),
     h("div", { class: "railnote" }, h("div", { class: "label" }, "Judging levels"), h("div", { class: "lv" }, lvl), "This console sees everything and can refuse nothing."));
 }

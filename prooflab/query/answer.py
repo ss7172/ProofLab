@@ -231,6 +231,15 @@ def _tick_text(ok, manifest_status, a, rc, rule, corr=None, run_start=None):
                  else "not vouched: no owner approval proven dated before the scope"}
 
 
+_NONE = re.compile(r"\bNone\b")
+
+
+def _clean(text):
+    """A Python None leaking from a recorded detail string ('position=None', 'received None') reads 'not recorded'.
+    The record itself is never changed; only the displayed summary."""
+    return _NONE.sub("not recorded", str(text))
+
+
 def _record_rows(recs, ok, manifest_status, rc_matches):
     rows = []
     in_manifest = ok.get("store/records.jsonl")
@@ -239,7 +248,8 @@ def _record_rows(recs, ok, manifest_status, rc_matches):
         ticks = (["A"] if in_manifest else []) + (["R"] if (r.get("record_kind") == "assessment" and rc_matches) else [])
         rows.append({"ref": "record:%s" % r.get("record_id"), "role": _ROLE.get(r.get("record_kind"), "context"),
                      "surface": str(r.get("emitter") or r.get("record_kind") or ""), "manifest": mf, "tickmarks": ticks,
-                     "summary": str(r.get("detail") or r.get("record_kind") or "")})
+                     "summary": _clean(r.get("detail") or r.get("record_kind") or ""),
+                     "source": "recorded (detail of record:%s)" % r.get("record_id") if r.get("detail") else "recorded (record_kind)"})
     return rows
 
 
@@ -605,7 +615,7 @@ def compose_auditor(pack, parse, now=None, only=None):
         facts, refs, gaps = [], [], []
         for q in parts:
             for line in q["lines"]:
-                facts.append({"label": q["q"], "value": line, "refs": ["record:%s" % r for r in q["records"][:3]], "flag": "OK",
+                facts.append({"label": q["q"], "value": _clean(line), "refs": ["record:%s" % r for r in q["records"][:3]], "flag": "OK",
                               "source": "not-recorded" if q.get("gap") else _QSOURCE.get(q["q"], "recorded")})
             refs += ["record:%s" % r for r in q["records"]]
             if q.get("gap"):

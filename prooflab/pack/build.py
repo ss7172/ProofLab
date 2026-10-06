@@ -20,6 +20,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 PACK_TOP = ("store", "raw", "derived", "assessments", "findings", "register", "kit-crosscheck",
             "reviews", "servicenow", "adversarial", "answers", "architecture", "records", "runs", "auditor", "gaps",
@@ -367,7 +368,9 @@ def _project_console(out, warnings):
         # the projector runs as its own process: nothing imports it (the one-way grep in tests/projector)
         env = dict(os.environ, PYTHONPATH=_repo_root(), PYTHONDONTWRITEBYTECODE="1")
         r = subprocess.run([sys.executable, "-m", "prooflab.pack." + "projector", "--src", out, "--out", pj,
-                            "--answers", idx, "--auditor", aidx, "--assessments-dir", "projected-assessments"],
+                            "--answers", idx, "--auditor", aidx, "--assessments-dir", "projected-assessments",
+                            # PR-51b: the pack time is the build time, never the last record's time
+                            "--generated-at", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())],
                            env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         if r.returncode != 0:
             raise RuntimeError("projector exit %d: %s" % (r.returncode, r.stderr.strip()[-300:]))

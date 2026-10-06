@@ -27,3 +27,8 @@ def test_projection_and_deny_wording():
 def test_provenance_tag_rendered():
     js = _js()
     assert "function srcTag(" in js and "srcTag(q.source)" in js and "srcTag(f.source)" in js
+
+
+def test_levels_say_not_evaluated():
+    js = _js()
+    assert '"not evaluated in this pack"' in js and "first named run started" in js

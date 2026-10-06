@@ -690,6 +690,10 @@ def run_label(pack, cid, label, provenance):
         if missing and "suppress-record" in kinds:
             kinds = ["suppress-record"]
         return "declared fault: " + (", ".join(kinds) if kinds else "kind not recorded (no pin declares one)")
+    if str(label or "") in ("", "OURS-ROLE-UNDECLARED", "unlabelled (gap)") and provenance in (
+            "EXPLORATORY", "PILOT", "BASELINE", "AUTHORIZED_TEST", "WIRING_TEST"):
+        # PR-51b: the run's own records declare it (a warm-up is EXPLORATORY), never 'role undeclared'
+        return "%s (declared in the run's records)" % provenance
     return label
 
 
