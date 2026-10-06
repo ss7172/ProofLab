@@ -666,8 +666,11 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
     for path in sorted(glob.glob(os.path.join(src, "servicenow", "cases", "*.json"))):
         c = _read_json(path) or {}
         data = _read_bytes(path)
-        if c.get("finding_id") and c.get("incident") and data is not None:
-            cases.append({"finding_id": c["finding_id"], "incident": str(c["incident"]),
+        # the case snapshot (ifabric.servicenow.case/v1) carries the incident number at servicenow.number (or delivery.number);
+        # a top-level "incident" is the older shape. Any of them lists the case (PR-54: cases[] was [] on the real snapshots)
+        inc = c.get("incident") or (c.get("servicenow") or {}).get("number") or (c.get("delivery") or {}).get("number")
+        if c.get("finding_id") and inc and data is not None:
+            cases.append({"finding_id": c["finding_id"], "incident": str(inc),
                           "path": os.path.relpath(path, src), "sha256": hashlib.sha256(data).hexdigest()})
     findings = []
     delivered = delivery_by_finding(src)
