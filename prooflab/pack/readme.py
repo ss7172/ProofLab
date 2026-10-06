@@ -199,20 +199,38 @@ def _hm(ts):
     return (m.group(1) + "Z") if m else "?"
 
 
+def _short_note(note):
+    """The reason a NOT COUNTED attempt is not counted, as named-runs.md words it (INFRA-FAILED, halted ...)."""
+    n = str(note or "")
+    for key in ("INFRA-FAILED", "INFRA FAILED"):
+        if key in n.upper():
+            return "INFRA-FAILED"
+    m = re.search(r"(halted by [^(.;,|]*)", n, re.I)
+    return m.group(1).strip().replace("HALTED", "halted") if m else ""
+
+
 def servicenow_text(root, idx, appr, deliv, states):
     """README section 8: each register approval with its incident and time stated against the named runs (an
     approval after a run is said to be after it), then the control findings delivered, apart from approval requests."""
     runs = sorted((r.get("started_at"), r.get("cid")) for r in idx.get("runs") or []
                   if r.get("provenance") == "ASSESSED" and r.get("started_at"))
     nmd = {}
+    nc = {}
     try:
         from prooflab.pack import history as _h
         for r in _h.named_runs_md(root)["rows"]:
-            m = re.match(r"(N\d+[a-z]?)\b", r.get("note") or "")
+            m = re.match(r"(N\d+[a-z]?)\b", r.get("note") or "") or re.search(r"\blabel (N\d+[a-z]?)\b", r.get("note") or "")
             if m and r.get("cid"):
                 nmd.setdefault(r["cid"], m.group(1))
+            if r.get("not_counted") and r.get("cid") and r.get("start"):
+                nc.setdefault(r["cid"], r)
     except Exception:
         pass
+    for r in idx.get("runs") or []:
+        if "NOT COUNTED" in str(r.get("provenance") or "").upper() and r.get("cid") and r.get("started_at"):
+            nc.setdefault(r["cid"], {"cid": r["cid"], "start": r["started_at"], "note": r.get("reason") or r.get("note") or ""})
+    counted = set(c for _, c in runs)
+    nc = dict((c, r) for c, r in nc.items() if c not in counted)
     reg_hist = {}
     try:
         reg_hist = dict((x.get("version"), x) for x in (idx.get("register") or {}).get("versions") or [])
@@ -227,10 +245,17 @@ def servicenow_text(root, idx, appr, deliv, states):
             txt += " (frozen %s)" % _hm(rv["frozen_at"])
         if at and runs:
             before = [nmd.get(c) or c for s, c in runs if s < at]
+            nc_before = sorted((r["start"], c, r) for c, r in nc.items() if str(r.get("start")) < at
+                               and (not r.get("register") or str(r.get("register")) == str(ver)))
             if not before:
-                txt += ", before every named run"
+                txt += ", before every counted named run" if nc_before else ", before every named run"
             else:
                 txt += ", AFTER named run(s) %s, which ran under it frozen but not yet approved" % ", ".join(before)
+            if nc_before:
+                txt += "; AFTER the NOT COUNTED attempt(s) %s, which ran under it frozen but not yet approved" % ", ".join(
+                    "%s (%s%s%s)" % (c, (nmd[c] + ", ") if nmd.get(c) else "", _hm(st),
+                                     (", " + _short_note(r.get("note"))) if _short_note(r.get("note")) else "")
+                    for st, c, r in nc_before)
         resp = a.get("responded") or {}
         if resp.get("at") and resp.get("at") != at:
             txt += "; the incident was last updated %s (a later note on it, not the approval of record)" % _hm(resp["at"])

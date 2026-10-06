@@ -466,6 +466,6 @@ def named_runs_md(root):
             mm = re.match(r"(\d\d:\d\d:\d\d(?:\.\d+)?Z)", s or "")
             return "%sT%s" % (day, mm.group(1)) if (mm and day) else None
         rows.append({"control": cells[0], "role": cells[1].upper(), "attempt": cells[2], "cid": cm.group(1) if cm else None,
-                     "start": t(cells[4]), "end": t(cells[5]), "note": note,
+                     "start": t(cells[4]), "end": t(cells[5]), "register": cells[6], "note": note,
                      "not_counted": "NOT COUNTED" in note.upper()})
     return {"window": win, "rows": rows}

@@ -784,6 +784,34 @@ def r10(pack):
     if "named-runs.md" in wins and len(set(wins.values())) > 1:
         out.append(Finding("R10", "README.md / pack-index.json / named-runs.md", "; ".join(
             "%s %s..%s" % (k, a, b) for k, (a, b) in sorted(wins.items())), "state one declared event window everywhere"))
+    out.extend(_r10_approval_before(pack, wins))
+    return out
+
+
+_APPR_RE = re.compile(r"register (\S+) approval \S+ on \S+ at (\d\d:\d\d:\d\d)Z[^;]*?, before every named run")
+_NC_ROW = re.compile(r"`(ifabric-run-\d+-[0-9a-f]+)`")
+
+
+def _r10_approval_before(pack, wins):
+    """'before every named run' must not stand beside an approval when a NOT COUNTED attempt under that register version
+    (named-runs.md) started before it: an approval after a run is always said so."""
+    out = []
+    readme = pack.text("README.md") or ""
+    nr = pack.text("named-runs.md") or ""
+    day = (wins.get("named-runs.md") or ("",))[0][:10]
+    for m in _APPR_RE.finditer(readme):
+        ver, hms = m.group(1), m.group(2)
+        for line in nr.split("\n"):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
+            if len(cells) < 12 or "NOT COUNTED" not in cells[11].upper() or cells[6] != ver:
+                continue
+            st = re.match(r"(\d\d:\d\d:\d\d)", cells[4])
+            cm = _NC_ROW.search(cells[3])
+            if st and st.group(1) < hms:
+                out.append(Finding("R10", "README.md section 8", "register %s approval at %sZ is called 'before every named "
+                                   "run', but NOT COUNTED attempt %s started %sZ under it%s" % (
+                                       ver, hms, cm.group(1) if cm else "?", st.group(1), (" (" + day + ")") if day else ""),
+                                   "say the approval came AFTER that attempt"))
     return out
 
 

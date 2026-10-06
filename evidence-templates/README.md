@@ -12,8 +12,11 @@ network.
 - **Claim:** "During fault resolution, the three collaborating agents meet our declared
   event-recording, drift and token-spend requirements." (the slides' wording, verbatim)
 - **Declared event window (UTC):** `<WINDOW_START>` to `<WINDOW_END>`, the same window as `named-runs.md`
-  and `pack-index.json` (pack.event_window). Only runs inside this window are in scope; `--runs` (section 4) lists every
-  run in it, including pilots, baselines and adversarial runs, each labelled as what it is.
+  and `pack-index.json` (pack.event_window); the window's ends are named-runs.md's second-resolution times, so a run
+  that ends within the last second of the window is inside it. `--runs` (section 4) lists every run in the
+  pack's run catalogue, including the pilots that ran before this window and the baselines and adversarial runs, each
+  labelled as what it is. The NOT COUNTED attempts that have no records in `store/` are listed in `named-runs.md` and
+  in `pack-index.json` runs[] with their reasons, not in `--runs`.
 - **Controls:** C16 (per-run token cap), C7 (event recording), C9 (drift and performance). Each
   control's threshold, owner and version is in `register/`; its date proof is the write-once object
   recorded in section 7.
