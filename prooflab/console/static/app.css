@@ -79,3 +79,6 @@ pre.raw{margin:0;padding:10px 12px;background:var(--vault);border:1px solid var(
 @media (max-width:980px){.grid3,.grid2,.split,.aq,.pop{grid-template-columns:minmax(0,1fr)}.body{grid-template-columns:minmax(0,1fr)}.rail{display:none}.top{grid-template-columns:auto minmax(0,1fr)}.topr{display:none}}
 .ribbon.real{background:var(--held-dim);color:var(--held)}.ribbon.warn{background:var(--unknown-dim);color:var(--unknown)}.ribbon.bad{background:var(--breach-dim);color:var(--breach)}
 .small{font-size:11px}.mla{margin-left:auto}
+
+/* PR-51b provenance tag: small, grey, never louder than the fact */
+.srctag{display:inline-block;margin-left:6px;padding:0 5px;border-radius:3px;font-size:10.5px;color:var(--ink-3);border:1px solid var(--line, rgba(127,127,127,.3));font-family:ui-monospace,monospace;vertical-align:middle}

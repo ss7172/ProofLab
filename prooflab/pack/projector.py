@@ -120,8 +120,17 @@ def provenance_of(rec_provenance, run_id, assessed):
     return PROV_BY_VALUE.get(rec_provenance, "EXPLORATORY")
 
 
+def is_gateway_llm(rec):
+    """A gateway llm span stored as a 'metric' record (prooflab.store.observations, figure of record): it is a served model
+    call witnessed by the gateway span, never a C9 runtime window."""
+    return rec.get("record_kind") == "metric" and (rec.get("measured.source") == "gateway-figure-of-record"
+                                                   or str(rec.get("detail") or "").startswith("gateway llm call"))
+
+
 def record_kind_of(rec):
     k = rec.get("record_kind")
+    if is_gateway_llm(rec):
+        return "model-call"
     if k == "action":
         return "tool-call" if (rec.get("tool.name") or rec.get("tool.args_sha256")) and not rec.get("model.id") else "model-call"
     return KIND_MAP.get(k)
@@ -145,6 +154,7 @@ def infer_control(rec, kind):
 
 # records that carry no ep.id but whose kind names the enforcement point (the record is never rewritten; the view says how)
 EP_BY_KIND = (("EP-2", lambda r: r.get("record_kind") == "observation", "ep.id not recorded; identified by record kind (observation = gateway span)"),
+              ("EP-2", is_gateway_llm, "ep.id not recorded; identified by record kind (gateway llm span)"),
               ("EP-11", lambda r: r.get("record_kind") == "metric", "ep.id not recorded; identified by record kind (metric = AgentCore metric)"),
               ("EP-13", lambda r: r.get("record_kind") == "notification", "ep.id not recorded; identified by record kind (notification)"),
               ("EP-0", lambda r: str(r.get("phase") or "").startswith("ep0."), "ep.id not recorded; identified by record kind (phase ep0.*)"))
@@ -566,9 +576,11 @@ def project_records(cx, projected_assessments, report, lines=None):
             continue
         tokens = (r.get("tokens.in") or 0) + (r.get("tokens.out") or 0)
         measured_call = None
+        gw = is_gateway_llm(r)
         if ref == "C16" and kind == "model-call":
-            cum[rid] = cum.get(rid, 0) + tokens
-            value, measured_call, unit = cum[rid], tokens, "tokens"
+            key = ("gateway", rid) if gw else rid      # the gateway's own running total, never mixed with the agent tally
+            cum[key] = cum.get(key, 0) + tokens
+            value, measured_call, unit = cum[key], tokens, "tokens"
         else:
             mv = r.get("measured.value")
             value = mv if isinstance(mv, (int, float)) and not isinstance(mv, bool) else None
@@ -602,12 +614,19 @@ def project_records(cx, projected_assessments, report, lines=None):
                       "finding_id": r.get("finding.id")},
             "facts": {"our_record_kind": r.get("record_kind"), "our_verdict": r.get("verdict"),
                       "our_provenance": r.get("provenance"), "record_id": rec_id},
-            "source": {"surface": _surface(refs, r), "raw_ref": raw_ref, "sha256": sha, "captured_at": at, "clock": clock},
+            "source": {"surface": "spans" if gw else _surface(refs, r), "raw_ref": raw_ref, "sha256": sha, "captured_at": at, "clock": clock},
             "seal": "out-of-scope",
         }
         if measured_call is not None:
             doc["measured.call"] = measured_call
         doc["facts"].update(disposition_of(r))
+        if gw:
+            doc["facts"]["witnessed_by"] = "gateway span"
+            doc["facts"]["measured_basis"] = "gateway span tokens.in + tokens.out, running total for the run (figure of record)"
+        elif kind == "decision" and r.get("inline.bound_basis") == "projected":
+            doc["facts"]["measured_basis"] = "projected (committed + reserved + bound): a projection before the call, not spend"
+        elif kind == "model-call":
+            doc["facts"]["measured_basis"] = "agent adapter tally (running total), recorded by the EP-1 adapter"
         if r.get("hop.via") or r.get("record_kind") == "handoff":
             doc["facts"]["hop.via"] = "orchestrator-handoff"
         if len(refs) > 1:
@@ -662,6 +681,9 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
             ep_seen.setdefault(ep, []).append("record:%s" % r.get("record_id"))
             if how:
                 ep_notes.setdefault(ep, how)
+    if os.path.isdir(os.path.join(src, "raw", "agentcore-metrics")):
+        ep_seen.setdefault("EP-11", []).append("file:raw/agentcore-metrics/")
+        ep_notes.setdefault("EP-11", "identified by the AgentCore metric captures (witnessed-by: AWS, joined-from: raw/agentcore-metrics/)")
     if os.path.exists(os.path.join(src, "servicenow", "delivery-log.jsonl")):
         ep_seen.setdefault("EP-13", []).append("file:servicenow/delivery-log.jsonl")
         ep_notes.setdefault("EP-13", "identified by the ServiceNow delivery log (joined-from: servicenow/delivery-log.jsonl)")
