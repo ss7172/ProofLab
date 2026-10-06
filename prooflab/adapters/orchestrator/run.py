@@ -199,16 +199,17 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
     spool = os.path.join(run_dir, "spool", cid + ".jsonl")
     index_entries = common.read_jsonl(index_path)
     versions = _json_file(args.versions_file)
-    exp = common.parse_utc(args.creds_expiry) if args.creds_expiry else preflight.credential_expiry(runner)
+    exp = preflight.resolve_expiry(runner, args.creds_expiry)
     tokens = args.tokens_last_hour if args.tokens_last_hour is not None else preflight.tokens_in_window(
         runner, when, budget, **({"sleep": sleep} if sleep else {}))
+    treatments = []
     ep0_steps, _ = preflight.ep0(
-        versions, provenance == "LIVE_SUBJECT", agents,
+        versions, provenance == "LIVE_SUBJECT", agents, treatments=treatments,
         meta={"register_version": pin.get("register_version"), "pin_sha256": pin.get("pin_sha256")})
     base = {"cid": cid, "scenario": args.scenario, "mode": args.mode, "only": args.only, "condition": cond["name"],
             "condition_sha256": cond["sha256"], "fault": args.fault, "provenance": provenance,
             "register_version": pin.get("register_version"), "register_sha256": pin.get("register_sha256"),
-            "agent_versions": (versions or {}).get("running"), "bound_tokens": bound,
+            "agent_versions": (versions or {}).get("running"), "ep0_treatments": treatments or None, "bound_tokens": bound,
             "started_at": when.strftime("%Y-%m-%dT%H:%M:%S.000Z")}
     try:
         steps = preflight.run_preflight(
@@ -235,6 +236,12 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
                                                  "run.condition": cond["name"]}, **kw))
     _emit(mk("lifecycle", "run started: scenario %s mode %s" % (args.scenario, args.mode), phase="run.started"),
           spool, sink)
+
+    for t in treatments:
+        _emit(mk("lifecycle", "EP-0 declared treatment for %s: pin %s -> %s, rails %s -> %s, generation %s (%s)" % (
+            t["agent"], (t.get("from_pin_sha256") or "unknown")[:12], (t.get("to_pin_sha256") or "unknown")[:12],
+            t.get("from_rails_mode"), t.get("to_rails_mode"), t["generation"], t["basis"].split(":")[0]),
+            phase="ep0.declared_treatment"), spool, sink)
 
     tally, prev_text, prev_agent, statuses, status = (0, 0), None, "orchestrator", [], "FINISHED"
     proposal = _json_file(args.proposal_file) if args.only == GATEWAY_C else None
