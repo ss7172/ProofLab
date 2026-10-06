@@ -514,9 +514,27 @@ class PackSource(_Base):
             return None
         return {"line": hit[1], "sha256": sha256_text(hit[1]), "capture": None, "path": rel, "line_no": hit[0]}
 
+    def _pack_file(self, ref):
+        """register:/manifest:/assessment-file refs (<scheme>:<path in the pack>[#section]) -> the file as sealed,
+        with the sha256 of its bytes, so the inspector shows it instead of 'unresolved'. Only MANIFEST-listed files."""
+        scheme, _, rest = (ref or "").partition(":")
+        rel = rest.split("#", 1)[0]
+        if scheme not in ("register", "manifest", "file") or not rel or self._manifest is None or (rel not in self._manifest and rel != "MANIFEST.json"):
+            return None
+        path = safe_join(self.root, rel)
+        if path is None or not os.path.isfile(path) or os.path.getsize(path) > RAW_CAP_BYTES:
+            return None
+        with open(path, "rb") as handle:
+            data = handle.read()
+        return {"line": data.decode("utf-8", errors="replace"), "sha256": sha256_bytes(data), "path": rel,
+                "capture": {"note": "whole file as sealed in the pack; sha256 is of the file bytes (= its MANIFEST entry)"}}
+
     def raw(self, ref):
         if (ref or "").startswith("record:"):
             return self._store_line(ref[len("record:"):])
+        got = self._pack_file(ref)
+        if got is not None:
+            return got
         parsed = parse_raw_ref(ref)
         if not parsed:
             return None
