@@ -9,7 +9,7 @@ SURFACE = "gateway-stdout"
 
 def pull(ctx: capture.Ctx, cid: str, selector: str, namespace: str = pdp_logs.DEFAULT_NAMESPACE,
          trace_ids=(), pods=None, expected_replicas: int = 1) -> "list | None":
-    if capture.skip_cid(cid):
+    if capture.skip_cid(cid, ctx):
         return None
     needles = ['"%s"' % cid] + [str(t) for t in trace_ids]
     return pdp_logs.pull_pods(ctx, SURFACE, cid, namespace, selector, needles=needles,
