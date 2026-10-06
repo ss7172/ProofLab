@@ -603,6 +603,7 @@ def ask(pack, text, now=None):
         doc = compose_run(pack, parse, now=now)
     elif kind == "controltest-window":
         doc = compose_window(pack, parse, now=now)
+    elif kind == "controltest-run-window": doc = __import__("prooflab.query.run_window", fromlist=["ask_doc"]).ask_doc(pack, parse)   # PR-53
     elif kind in ("auditor", "who"):
         doc = compose_auditor(pack, parse, now=now)
         if kind == "who" and doc.get("schema") == "ifabric.auditor/v1":

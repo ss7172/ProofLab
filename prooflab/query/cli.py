@@ -148,12 +148,12 @@ def _run_window(pack, args, G, RW):
     """--run with --window: T1/T2 resolved exactly as the grammar does (HH:MMZ inside the pack's event window)."""
     if ".." not in args.window:
         return {"kind": "error", "verdict": "NOT_ASSESSED", "message": "--window needs <T1>..<T2>"}
-    t1, t2, err = G.resolve_times(pack, *args.window.split("..", 1))
-    if err:
-        return {"kind": "error", "verdict": "NOT_ASSESSED", "message": err}
     cid, cands = G.resolve_run(pack, args.run)
     if cid is None and cands:
         return {"kind": "error", "verdict": "NOT_ASSESSED", "message": "ambiguous run %r: %s" % (args.run, ", ".join(cands))}
+    t1, t2, err = G.resolve_times(pack, *args.window.split("..", 1), anchor=G.run_anchor(pack, cid or args.run))
+    if err:
+        return {"kind": "error", "verdict": "NOT_ASSESSED", "message": err}
     return RW.compose(pack, args.control, cid or args.run, t1, t2)
 
 

@@ -274,3 +274,14 @@ def annotate_window(pack, control, bounds, counted, listed, gaps):
     if added and any(str(g).startswith("no run in scope") for g in gaps):
         gaps.append("%d run(s) overlap the window but start before it: listed, not counted (per-run control)" % len(added))
     return added
+
+
+def ask_doc(pack, parse):
+    """The grammar route (answer.ask / the console): the answer dict plus the query and the text block render() prints.
+    `message` carries the same text so a renderer that only knows message/verdict still shows the whole answer."""
+    ans = compose(pack, parse["control"], parse["run"], parse["t1"], parse["t2"])
+    lines = render(ans)
+    ans["query"] = {"text": parse.get("text"), "normalized": parse.get("normalized"), "grammar_version": parse.get("grammar_version")}
+    ans["text"] = lines
+    ans["message"] = "\n".join(lines)
+    return ans
