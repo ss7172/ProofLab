@@ -89,6 +89,14 @@ class GapList(unittest.TestCase):
                        "Readiness records", "Design gaps"):
             self.assertIn(needle, self.b)
 
+    def test_section_b_no_duplicates(self):
+        import re
+        for n in range(12, 19):
+            self.assertEqual(len(re.findall(r"(?m)^## B%d\. " % n, self.text)), 1, n)
+        rows = re.findall(r"(?m)^\| (G-\d+) \|", self.text)
+        self.assertEqual(len(rows), len(set(rows)))
+        self.assertNotIn("What we do instead", self.text)
+
     def test_no_false_entry(self):
         self.assertNotIn("no durable exporter?", self.b)
         self.assertRegex(self.b, r"(?s)Dropped, on purpose.*no durable exporter")
