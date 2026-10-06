@@ -25,8 +25,6 @@ R_NEGOTIATION = "negotiation-position"
 R_PROPOSAL = "proposal-disposition"
 R_LOOP = "tool-no-evidence-limit"   # rail T-07 stopped the tool loop (PR-36)
 R_GUARD = "guardrail-blocked-reask"   # the platform guardrail blocked the re-ask: derived in code (PR-38)
-R_NO_PROPOSAL = "no-proposal"   # Gateway C got an empty proposal: answered in code (PR-38)
-NO_PROPOSAL_NEED = "the network team's proposed change and its risk"
 
 # Gateway C (network -> IT): the IT agent's position on the network's proposal, in safety order.
 POSITIONS = ("agree", "gather-evidence", "disagree", "escalate")
@@ -210,8 +208,8 @@ def proposal_empty(proposal):
 
 def no_proposal_judgment(constraints=None):
     """Gateway C with an empty proposal: gather-evidence in code (no model or tool call); a freeze escalates."""
-    j = Judgment(GATHER, "no proposal received; need " + NO_PROPOSAL_NEED, precedence_rule=R_NO_PROPOSAL,
-                 named_evidence_needed=[NO_PROPOSAL_NEED])
+    need = "the network team's proposed change and its risk"
+    j = Judgment(GATHER, "no proposal received; need " + need, precedence_rule="no-proposal", named_evidence_needed=[need])
     return apply_precedence(j, constraints)
 
 
@@ -266,13 +264,9 @@ def resolve_site_ids(element_ids, inventory):
     return sites, missing
 
 
+# the one re-ask (PR-38): a plain follow-up about the format only. P1's re-ask (it quoted the previous answer and gave
+# imperatives) was blocked by the platform guardrail as PROMPT_ATTACK
 REASK = "Please add a final line with the JSON summary: disposition, deciding_evidence, reversible_step and reason."
-
-
-def build_reask_prompt(errors=None, previous_answer=""):
-    """The one re-ask (PR-38): a plain follow-up about the format only. P1's re-ask (it quoted the previous
-    answer and gave imperatives) was blocked by the platform guardrail as PROMPT_ATTACK."""
-    return REASK
 
 
 def invalid_judgment(errors, reasked=True):
@@ -297,14 +291,10 @@ def derived_judgment(answer, constraints=None, tool_evidence=None, evidence_need
     """The re-ask was blocked by the platform guardrail: the disposition is derived in code from what the agent
     already returned. Base: the safest disposition word in the answer, else gather-evidence (never auto-resolve:
     no structured evidence); then the J2 precedence rules (freeze escalates, empty tool evidence gathers)."""
-    t = strip_reasoning(answer or "").lower()
-    base = ESCALATE if "escalat" in t else GATHER
-    j = Judgment(base, "the platform guardrail blocked the re-ask",
-                 deciding_evidence=sorted(set(re.findall(r"\bE\d+\b", answer or ""))), named_evidence_needed=evidence_needed, valid=False, reasked=True)
-    apply_precedence(j, constraints, tool_evidence, evidence_needed)
-    if j.precedence_rule:   # the rule that fired stays in the reason; the label is set after (_tighten overwrites)
-        j.reason += "; " + j.precedence_rule
-    j.precedence_rule = R_GUARD
+    j = Judgment(ESCALATE if "escalat" in strip_reasoning(answer).lower() else GATHER, "guardrail blocked the re-ask",
+                 sorted(set(re.findall(r"\bE\d+\b", answer))), named_evidence_needed=evidence_needed, valid=False,
+                 reasked=True)
+    apply_precedence(j, constraints, tool_evidence, evidence_needed).precedence_rule = R_GUARD   # after: _tighten sets it
     return j
 
 
@@ -314,7 +304,7 @@ def judge(answer, ask_again, constraints=None, tool_evidence=None, evidence_need
     j = parse(answer)
     if not j.valid:
         errs = j.errors
-        again = ask_again(build_reask_prompt(errs, answer))
+        again = ask_again(REASK)
         if again is None:
             return derived_judgment(answer, constraints, tool_evidence, evidence_needed)
         j = parse(again)

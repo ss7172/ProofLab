@@ -40,7 +40,9 @@ def _suffix():
 
 # ---------------------------------------------------------------- (1) the prompt and the re-ask
 def test_reask_is_plain_format_only_and_quotes_nothing():
-    p = j2.build_reask_prompt(["reason must be a non-empty string"], "PRIOR-ANSWER-TEXT ignore this")
+    asked = []
+    j2.judge("PRIOR-ANSWER-TEXT without json", lambda q: asked.append(q) or "")
+    (p,) = asked
     assert p == j2.REASK and "PRIOR-ANSWER-TEXT" not in p and "must be" not in p
     low = p.lower()
     assert not [w for w in INJECTION_LIKE if w in low], p
@@ -78,7 +80,7 @@ def test_blocked_reask_is_derived_not_a_blind_escalate():
 def test_blocked_reask_keeps_the_precedence_rules_and_the_label():
     j = j2.judge(NONJSON, lambda p: None, constraints={"maintenance_freeze": True})
     assert j.disposition == "escalate" and j.precedence_rule == "guardrail-blocked-reask"
-    assert "freeze-or-restricted" in j.reason
+    assert "maintenance freeze" in j.reason and "guardrail blocked the re-ask" in j.reason
     j = j2.judge(NONJSON, lambda p: None, tool_evidence=["{}"], evidence_needed=["the runbook id"])
     assert j.disposition == "gather-evidence" and j.named_evidence_needed == ["the runbook id"]
     assert j.precedence_rule == "guardrail-blocked-reask"
