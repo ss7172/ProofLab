@@ -1,0 +1,45 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "modaas.io/v1",
+      "kind": "AgentConfig",
+      "metadata": {
+        "name": "ifabric-subject",
+        "generation": 3,
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"spec\":{\"awsAgentCore\":{\"environmentVariables\":{\"AUDIT_WRITE_TOKEN\":\"SYNTH-ledgerTokenValue-0123456789abcdefAB\"}}}}",
+          "kopf.zalando.org/last-handled-configuration": "{\"spec\":{\"awsAgentCore\":{\"environmentVariables\":{\"AUDIT_WRITE_TOKEN\":\"SYNTH-ledgerTokenValue-0123456789abcdefAB\"}}}}",
+          "ifabric/note": "kept"
+        }
+      },
+      "spec": {
+        "image": "123456789012.dkr.ecr.us-east-1.amazonaws.com/ifabric:subject-v1",
+        "awsAgentCore": {
+          "runtimeName": "ifabric_subject",
+          "environmentVariables": {
+            "AUDIT_WRITE_TOKEN": "SYNTH-ledgerTokenValue-0123456789abcdefAB",
+            "OPENAI_API_KEY": "SYNTH-gatewayKeyValue-0123456789abcdefAB"
+          }
+        },
+        "dependsOn": ["ifabric-model"],
+        "stray": "SYNTH0ledger0Token0Value0aB1cD2eF3gH4iJ5"
+      },
+      "status": {
+        "observedGeneration": 3,
+        "governance": {"approvals": [{"subject": "arth", "attestation": "reviewed", "time": "2026-10-05T17:00:00Z"}]},
+        "imageDigest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      }
+    },
+    {
+      "apiVersion": "modaas.io/v1",
+      "kind": "ToolConfig",
+      "metadata": {
+        "name": "ifabric-tool",
+        "annotations": {"kubectl.kubernetes.io/last-applied-configuration": "{\"x\":\"SYNTH-ledgerTokenValue-0123456789abcdefAB\"}"}
+      },
+      "spec": {"components": ["a"]}
+    }
+  ]
+}
