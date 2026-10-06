@@ -165,10 +165,10 @@ class NamedRunsAndAdv(unittest.TestCase):
 
 class Hygiene(unittest.TestCase):
     def test_no_secret_shaped_literals(self):
-        pats = [r"AKIA[0-9A-Z]{16}", r"ASIA[0-9A-Z]{16}", r"ghp_[A-Za-z0-9]{20,}", r"github_pat_",
-                r"-----BEGIN [A-Z ]*PRIVATE KEY", r"sk-[A-Za-z0-9]{20,}", r"xox[a-z]-[A-Za-z0-9-]{10,}",
-                r"Bearer [A-Za-z0-9._-]{20,}", "tk" + "n=", "aws_secret" + "_access_key",
-                "aws_session" + "_token"]
+        pats = ["AK" + "IA[0-9A-Z]{16}", "AS" + "IA[0-9A-Z]{16}", "gh" + "p_[A-Za-z0-9]{20,}",
+                "github" + "_pat_", "-----" + "BEGIN [A-Z ]*PRIVATE" + " KEY", "s" + "k-[A-Za-z0-9]{20,}",
+                "x" + "ox[a-z]-[A-Za-z0-9-]{10,}", "Bear" + "er [A-Za-z0-9._-]{20,}", "tk" + "n=",
+                "aws_secret" + "_access_key", "aws_session" + "_token"]
         files = ["gap-list.md", "evidence-templates/README.md", "evidence-templates/decisions-log.md",
                  "evidence-templates/named-runs.md", "evidence/adversarial/cases/ADV-H-01.md",
                  "evidence/adversarial/README.md"]
