@@ -75,3 +75,42 @@ def test_c9_largest_change_pct():
     top, n = A._c9_largest({"windows": [{"change_pct": "8.641", "runtime": "c"}, {"change_pct": "-41.4513", "runtime": "it"}]})
     assert top == (41.4513, "it") and n == 2
     assert A._c9_largest({}) == (None, 0)
+
+
+def test_window_before_v1_approval_names_each_register_date_and_never_vouches():
+    """Fix round: v1.1 (dated 13:38:05Z) must never be printed next to v1's S3 date (12:40:22Z); a window starting at
+    13:00Z, before v1's approval (13:02:37Z) and v1.1's approval (15:09:49Z), is never vouched."""
+    rule = dict(RULE, threshold_version="C9-v1", frozen_at="2026-10-06T12:40:22Z", t1_register="v1",
+                register_t1="2026-10-06T13:38:05Z")
+    start = "2026-10-06T13:00:00Z"
+    t = A._authority_text(rule, start, "scope start")
+    assert "threshold version C9-v1 first dated by S3 (T1) 2026-10-06T12:40:22Z in register v1, before the scope start" in t
+    assert "register v1.1 (the rule shown) dated by S3 (T1) 2026-10-06T13:38:05Z, after the scope start" in t
+    assert "register v1.1 dated by S3 (T1) 2026-10-06T12:40:22Z" not in t
+    assert "approved after the scope start; dated before the scope start by S3" in t
+    v = A._tick_text({}, "VERIFIED", {}, "", rule, run_start=start, label="scope start")["V"]
+    assert v.startswith("not vouched") and "after the scope start" in v and "register v1)" in v
+    assert A._tick_text({}, "VERIFIED", {}, "", rule, label="scope start")["V"].startswith("not vouched")
+
+
+def test_register_owner_prefers_owner_account():
+    class P:
+        registers = {"v1.1": {"doc": {"top": {"register_owner": "Sree", "owner": "annapurna@invences.com"}}},
+                     "v1": {"doc": {"top": {"register_owner": "Sree"}}}}
+    assert E._register_owner(P()) == "annapurna@invences.com"
+    P.registers["v1.1"]["doc"]["top"]["owner_name"] = "Sree Annapurna Rallabandi"
+    assert E._register_owner(P()) == "annapurna@invences.com (Sree Annapurna Rallabandi)"
+    P.registers = {"v1": {"doc": {"top": {"register_owner": "Sree"}}}}
+    assert E._register_owner(P()) == "Sree"
+
+
+def test_c9_what_was_done_never_unknown():
+    ctx = {"recs": [], "cid": "c", "scope_kind": "run", "scope_label": "N1", "start": "2026-10-06T13:56:15Z", "end": None,
+           "manifest_status": "VERIFIED", "mval": 41.4513, "munit": "% relative change vs baseline (largest |change_pct|, runtime it)",
+           "msource": "recorded (measured.windows[].change_pct of the stored assessment; largest of 3)"}
+    rule = dict(RULE, threshold_version="C9-v1", statement="s", source_ref="register:x",
+                observation_limit={"operator": "<=", "value": 50, "unit": "%"})
+    q = A._audit_question("C9", {"verdict": "SATISFIED", "measured": {"windows": []}}, rule, ctx)
+    w = q["what_was_done"]["text"]
+    assert "unknown" not in w and "measured 41.4513 %" in w
+    assert "change_pct" in q["what_was_done"]["source"]

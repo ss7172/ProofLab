@@ -552,13 +552,17 @@ NOT_RECORDED = "not recorded"
 
 
 def _register_owner(pack):
-    """The register owner (register_owner of the newest frozen register in the pack), None when absent."""
+    """The register owner: the `owner` account (e.g. annapurna@invences.com) of the newest register that carries one,
+    with owner_name in brackets when recorded; the bare register_owner name only when no register carries `owner`."""
     try:
         names = sorted(pack.registers, key=lambda n: [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", str(n))])
     except Exception:
         return None
-    for n in reversed(names):
-        top = ((pack.registers[n] or {}).get("doc") or {}).get("top") or {}
+    tops = [((pack.registers[n] or {}).get("doc") or {}).get("top") or {} for n in reversed(names)]
+    for top in tops:
+        if top.get("owner"):
+            return "%s (%s)" % (top["owner"], top["owner_name"]) if top.get("owner_name") else str(top["owner"])
+    for top in tops:
         if top.get("register_owner"):
             return str(top["register_owner"])
     return None

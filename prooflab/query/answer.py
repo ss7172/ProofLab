@@ -199,19 +199,50 @@ def _approved_before(rule, run_start):
     return bool(at and start and at <= start)
 
 
-def _authority_text(rule, run_start):
-    """Who authorised the rule and WHEN, stated exactly: the S3 date (T1) and the ServiceNow approval time, each vs the run."""
+def _dated_before(at, start):
+    """True / False when both UTC times are recorded, None when either is missing."""
+    a, b = E._utc_key(at), E._utc_key(start)
+    return None if not (a and b) else a <= b
+
+
+def _cmp(at, start):
+    b = _dated_before(at, start)
+    return "before" if b else "after" if b is False else "not proven before"
+
+
+def _with_dates(pack, control, rule):
+    """The rule plus WHICH register frozen_at belongs to: frozen_at is the S3 (T1) date of the FIRST register that carried
+    the threshold version (t1_register); register_t1 is the S3 (T1) date of the register named in register_version.
+    Read from the T1 heads; nothing is rewritten."""
+    try:
+        first, _t = pack.t1_for(rule.get("threshold_version"), control)
+        head = (pack.registers.get(rule.get("register_version")) or {}).get("head") or {}
+    except Exception:
+        return rule
+    own = head.get("LastModified") or head.get("last_modified") or head.get("t1")
+    own = E._utc_key(own) and own or (re.sub(r"\+00:00$", "Z", own) if isinstance(own, str) else None)
+    return dict(rule, t1_register=first or rule.get("register_version"), register_t1=_utc_or(own))
+
+
+def _authority_text(rule, run_start, label="run start"):
+    """Who authorised the rule and WHEN, stated exactly: the S3 (T1) date of the register that FIRST carried the threshold
+    version, the S3 date of the register named (when different), and the ServiceNow approval time, each vs the scope start."""
     ap = rule.get("approval") or {}
     who = "register owner: %s" % ((rule.get("owner") or {}).get("id") or (rule.get("owner") or {}).get("name") or E.UNKNOWN)
-    t1 = "register %s dated by S3 (T1) %s, %s the run start %s" % (
-        rule.get("register_version"), rule.get("frozen_at"), "before" if rule.get("date_before_scope") else "not proven before",
-        run_start or "not recorded")
+    first = rule.get("t1_register") or rule.get("register_version")
+    t1 = "threshold version %s first dated by S3 (T1) %s in register %s, %s the %s %s" % (
+        rule.get("threshold_version") or "not recorded", rule.get("frozen_at"), first, _cmp(rule.get("frozen_at"), run_start),
+        label, run_start or "not recorded")
+    if rule.get("register_version") and rule.get("register_version") != first:
+        t1 += "; register %s (the rule shown) dated by S3 (T1) %s, %s the %s" % (
+            rule["register_version"], rule.get("register_t1") or "not recorded", _cmp(rule.get("register_t1"), run_start), label)
     if rule.get("bound_by"):
         who += "; threshold version bound by %s" % rule["bound_by"]
     if ap.get("status") == "APPROVED" and ap.get("at"):
-        when = ("approved before the run" if _approved_before(rule, run_start)
-                else "approved after the run; dated before the run by S3" if rule.get("date_before_scope")
-                else "approved after the run")
+        noun = "run" if label == "run start" else label
+        when = ("approved before the %s" % noun if _approved_before(rule, run_start)
+                else "approved after the %s; dated before the %s by S3" % (noun, noun)
+                if _dated_before(rule.get("frozen_at"), run_start) else "approved after the %s" % noun)
         appr = "ServiceNow approval note %s on %s, responded from account %s (%s)" % (ap["at"], str(ap.get("ref") or "").replace("servicenow:", ""),
                                                              (ap.get("approver") or {}).get("id") or "not recorded", when)
     else:
@@ -247,18 +278,28 @@ def _bound_rule(pack, control, rule, run_start):
     return dict(rule, approval=ap, register_version=name, bound_by="register %s (first carried %s)" % (name, rule.get("threshold_version")))
 
 
-def _tick_text(ok, manifest_status, a, rc, rule, corr=None, run_start=None):
-    if rule["approval"]["status"] == "APPROVED" and rule["date_before_scope"] and run_start and not _approved_before(rule, run_start):
-        vtext = ("not vouched: register dated by S3 %s before the run, but the owner's approval (%s) is after the run start %s"
-                 % (rule["frozen_at"], rule["approval"].get("at") or "time not recorded", run_start))
-        return dict(_tick_text(ok, manifest_status, a, rc, rule, corr), V=vtext)
+def _tick_text(ok, manifest_status, a, rc, rule, corr=None, run_start=None, label="run start"):
+    """V is lit only when the owner's approval is recorded at or before the scope start AND the threshold version was
+    dated by S3 before it; an approval after the scope start is stated, never vouched."""
+    ap = rule.get("approval") or {}
+    first = rule.get("t1_register") or rule.get("register_version")
+    dated = "threshold version %s dated by S3 %s (register %s)" % (rule.get("threshold_version") or "not recorded", rule.get("frozen_at"), first)
+    if ap.get("status") != "APPROVED":
+        v = "not vouched: no owner approval recorded (%s)" % (ap.get("status") or "MISSING")
+    elif run_start is None:
+        v = "not vouched: the %s is not recorded, so the approval cannot be placed before it" % label
+    elif not _dated_before(rule.get("frozen_at"), run_start):
+        v = "not vouched: %s, not proven before the %s %s" % (dated, label, run_start)
+    elif not _approved_before(rule, run_start):
+        v = ("not vouched: %s, before the %s, but the owner's approval (%s) is after the %s %s"
+             % (dated, label, ap.get("at") or "time not recorded", label, run_start))
+    else:
+        v = "vouched: owner approval %s, before the %s %s; %s" % (ap.get("at"), label, run_start, dated)
     return {"R": ("recomputed by the evaluator: %s" % rc) if rc else "not recomputed (no evaluator entry point)",
             "A": "agreed to MANIFEST.json (%s)" % manifest_status,
             "T": ("corroboration report: %d mismatches" % len(corr.get("mismatches", []))) if isinstance(corr, dict)
                  else "not traced: no corroboration report for this scope in the pack",
-            "V": ("vouched: owner approval, register dated %s, before the scope" % rule["frozen_at"])
-                 if (rule["date_before_scope"] and rule["approval"]["status"] == "APPROVED")
-                 else "not vouched: no owner approval proven dated before the scope"}
+            "V": v}
 
 
 _NONE = re.compile(r"\bNone\b")
@@ -423,10 +464,14 @@ def _audit_question(control, a, rule, ctx):
     agents = "; ".join(_agent(x) for x in actors)
     vr = ctx.get("vrule") or rule
     meas = a.get("measured") or {}
+    mval = ctx["mval"] if "mval" in ctx else meas.get("value")
+    munit = (ctx.get("munit") if "mval" in ctx else meas.get("unit")) or ""
+    mshow = "not recorded" if mval is None else (round(mval, 4) if isinstance(mval, float) else mval)
+    lbl = "run start" if ctx["scope_kind"] == "run" else "scope start"
     return {
         "what_was_done": _txt("%s over %s %s: %d records, measured %s %s." % (
-            control, ctx["scope_kind"], ctx["scope_label"], len(recs), E.UNKNOWN if meas.get("value") is None else meas["value"], meas.get("unit") or ""),
-            rid(recs), source="recorded (measured.value of the stored assessment; record count from store/records.jsonl)"),
+            control, ctx["scope_kind"], ctx["scope_label"], len(recs), mshow, munit),
+            rid(recs), source="%s; record count from store/records.jsonl" % (ctx.get("msource") or "recorded (measured.value of the stored assessment)")),
         "by_which_agent": _txt(agents or "not recorded (gap: no actor records for this scope)", rid([r for r in recs if r.get("actor.id")]),
                                None if agents else "GAP",
                                source="recorded (actor.id); version joined-from: register inventory (actor.version not recorded)"),
@@ -434,7 +479,7 @@ def _audit_question(control, a, rule, ctx):
                       rid([r for r in recs if r.get("ep.id")]), source="recorded (ep.id)"),
         "when": _txt("%s .. %s (UTC)" % ("not recorded" if not ctx["start"] else ctx["start"], "not recorded" if not ctx["end"] else ctx["end"]),
                      source="recorded (ts of the scope's records)"),
-        "under_whose_authority": _txt(_authority_text(vr, ctx["start"]),
+        "under_whose_authority": _txt(_authority_text(vr, ctx["start"], lbl),
                                       [rule["source_ref"]] + ([vr["approval"]["ref"]] if vr["approval"].get("ref") else []),
                                       "OK" if (vr["approval"]["status"] == "APPROVED" and _approved_before(vr, ctx["start"])) else "FLAG",
                                       source="joined-from: register/versions + register/t1 (witnessed-by:S3) + register/approval* (witnessed-by:ServiceNow)"),
@@ -510,12 +555,12 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
         gaps.append({"id": "G-POP", "text": "the assessment carries no completeness counts: the population is unknown, zeros shown", "affects": "population"})
     rc = ans.get("recompute") or ""
     rc_match = rc.startswith("matches")
-    vrule = _bound_rule(pack, control, rule, ans.get("run_start"))
+    vrule = _with_dates(pack, control, _bound_rule(pack, control, rule, ans.get("run_start")))
     tick = _tick_text(ok, src["manifest_status"], a, rc, vrule, E.read_json(pack.p("derived", "corroboration", cid + ".json")),
                       run_start=ans.get("run_start"))
     ctx = {"recs": recs, "cid": cid, "scope_kind": "run", "scope_label": parse.get("alias") or cid, "start": ans.get("run_start"),
            "end": E.run_end(pack, cid), "manifest_status": src["manifest_status"], "findings": stored_findings(pack, cid),
-           "inventory": _inventory_versions(pack), "vrule": vrule}
+           "inventory": _inventory_versions(pack), "vrule": vrule, "mval": mval, "munit": ms.get("unit") or "", "msource": msource}
     scope = {"kind": "run", "id": parse.get("alias") or cid, "cid": cid}
     if parse.get("alias"):
         scope["alias"] = parse["alias"]
@@ -591,8 +636,12 @@ def compose_window(pack, parse, ans=None, now=None):
                        "violates": a["verdict"] == V.BREACHED if a["verdict"] in (V.BREACHED, V.SATISFIED) else None,
                        "status": "VIOLATES" if a["verdict"] == V.BREACHED else "OK" if a["verdict"] == V.SATISFIED else "UNKNOWN",
                        "ref": "assessment:%s" % a["assessment_id"] if a.get("assessment_id") else "run:%s" % a["scope_id"]})
+    vrule = _with_dates(pack, control, _bound_rule(pack, control, rule, parse["t1"]))
+    top_s = max([x for x in series if x["value"] is not None], key=lambda x: abs(x["value"]), default=None)
     ctx = {"recs": [], "cid": win, "scope_kind": "window", "scope_label": win, "start": parse["t1"], "end": parse["t2"],
-           "manifest_status": src["manifest_status"]}
+           "manifest_status": src["manifest_status"], "vrule": vrule, "mval": len(breached),
+           "munit": "breached runs of %d counted%s" % (len(counted), ("; largest per-run value %s (run %s)" % (top_s["value"], top_s["id"])) if top_s else ""),
+           "msource": "recorded (verdict and measured value of each counted run's stored assessment)"}
     verdict = ans["verdict"]
     reason = "%d of %d counted runs breached; tolerance %s per register version" % (len(breached), len(counted), E.UNKNOWN if allowed is None else allowed)
     recs = []
@@ -625,7 +674,7 @@ def compose_window(pack, parse, ans=None, now=None):
         "records": [{"ref": "assessment:%s" % a["assessment_id"], "role": "measurement", "manifest": "OK" if ok.get("store/records.jsonl") else "MISSING",
                      "tickmarks": []} for a in counted[:RECORD_LIMIT] if a.get("assessment_id")],
         "gaps": gaps,
-        "tickmarks": _tick_text(ok, src["manifest_status"], first, "", rule),
+        "tickmarks": _tick_text(ok, src["manifest_status"], first, "", vrule, run_start=parse["t1"], label="scope start"),
     }
     doc["answer_id"] = answer_id_of(doc)
     return doc
