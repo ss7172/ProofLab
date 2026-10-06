@@ -1,0 +1,18 @@
+{
+ "kit_id": "S1-fronthaul-degradation",
+ "prompt": "Trouble ticket (kit scenario S1-fronthaul-degradation): Fronthaul degradation at SITE-DEN-12. Element DU-DEN-12-A, packet loss 4.2 percent, p95 latency 31 ms, alarm ALM-9931 major PACKET_LOSS. Affected customer: CUST-1001 Meridian Logistics (gold). Operational constraints: none.",
+ "scenario": "S1",
+ "source": "workshop-assets/data/network-inventory.json fault_scenarios (verbatim symptoms; prompt built by the ops lane B3)",
+ "symptoms": {
+  "affected_customers": [
+   "CUST-1001 Meridian Logistics (gold)"
+  ],
+  "alarms": [
+   "ALM-9931 major PACKET_LOSS"
+  ],
+  "element": "DU-DEN-12-A",
+  "latency_ms_p95": 31,
+  "packet_loss_pct": 4.2
+ },
+ "tier": "default"
+}
