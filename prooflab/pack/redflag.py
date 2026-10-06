@@ -11,13 +11,15 @@ Rules (each one is something a judge could read as disqualifying, or a false sta
   R1  the rule is said to be dated after / not proven before the test (date_before_scope false, 'RULE DATED
       AFTER TEST', 'NOT proven before', PROVEN_AFTER, NOT_PROVEN). Always fails; R1-TRUE when the register's
       <v>.head.json is in the pack AND its LastModified is later than the run's scope start (a real finding).
-  R2  'approval MISSING' / approval.status MISSING. Always fails; the hint says whether the approval evidence
-      (register/approval*, servicenow/) is in the pack (then the text is false) or omitted from it.
+  R2  'approval MISSING' / approval.status MISSING, per version (a register.versions[N] entry's own version).
+      Fails, and the hint says whether that version's approval evidence (register/approval*, servicenow/) is in the
+      pack (then the text is false) or omitted; a non-FROZEN pilot register with no evidence is honestly MISSING.
   R3  NOT_ASSESSED / INDETERMINATE shown for a run+control that has assessments/<C>/<cid>.json with a verdict.
   R4  the register shown is not the head of the frozen chain (by supersedes / frozen_at, never by name sort);
-      a .sha256 sidecar that does not match its yaml.
-  R5  run catalogue honesty: every CID in run-ids.txt exactly once and LIVE_SUBJECT; no EXPLORATORY / PILOT /
-      undeclared run named or assessed; every shipped run labelled.
+      a .sha256 sidecar that does not match its yaml. The whole chain ships under register/versions/ (main's layout).
+  R5  run catalogue honesty over pack-index runs[] (every run, with provenance) and derived/run-catalogue.jsonl:
+      every CID in run-ids.txt once and ASSESSED / LIVE_SUBJECT; no EXPLORATORY / PILOT run named or judged;
+      every other run carries a declared role; infra-failed runs say why.
   R6  numbers: each answer's measured value / limit / verdict equals the stored assessment's; the run catalogue's
       token figure does not contradict the C16 verdict.
   R7  README: no <UPPER_SNAKE> placeholders outside backticks; every file it names exists in the pack.
@@ -257,9 +259,9 @@ def r1(pack):
         if isinstance(doc, dict):
             for jp, v in _strings(doc):
                 if jp.endswith("date_before_scope") and v is False:
-                    hits.append((jp, "date_before_scope: false", _version_of(doc, jp)))
+                    hits.append((jp, "date_before_scope: false", _hit_version(pack, doc, jp)))
                 elif isinstance(v, str) and R1_TEXT.search(v):
-                    hits.append((jp, v, _version_of(doc, jp)))
+                    hits.append((jp, v, _hit_version(pack, doc, jp)))
         elif raw:
             for line in raw.splitlines():
                 if R1_TEXT.search(line):
@@ -308,32 +310,65 @@ def _r1_one(pack, regs, rel, jp, text, version, cid):
 R2_TEXT = re.compile(r"approval\s+MISSING", re.I)
 
 
+JP_PART = re.compile(r"[^.\[\]]+|\[\d+\]")
+
+
+def _jp_get(doc, parts):
+    """The value at json path parts like ['register', 'versions', '[2]'] (None when absent)."""
+    cur = doc
+    for part in parts:
+        if part.startswith("["):
+            i = int(part[1:-1])
+            cur = cur[i] if isinstance(cur, list) and i < len(cur) else None
+        else:
+            cur = cur.get(part) if isinstance(cur, dict) else None
+        if cur is None:
+            return None
+    return cur
+
+
+def _hit_version(pack, doc, jp):
+    """The register version a hit is about: the nearest enclosing object's own `version` (a register.versions[N]
+    entry), else the doc's rule.register_version / register.version, else the pack-index head."""
+    parts = JP_PART.findall(jp or "")
+    for n in range(len(parts) - 1, 0, -1):
+        node = _jp_get(doc, parts[:n])
+        if isinstance(node, dict) and node.get("version") and ("register" in parts[:n] or "versions" in parts[:n]):
+            return str(node["version"])
+    return _version_of(doc, jp) or (pack.pidx.get("register") or {}).get("version")
+
+
 def r2(pack):
-    out = []
+    out, regs = [], registers(pack)
     for rel, doc, raw in _served_docs(pack):
         hits = []
         if isinstance(doc, dict):
             for jp, v in _strings(doc):
                 if jp.endswith("approval.status") and v == "MISSING":
-                    hits.append((jp, "approval.status MISSING", _version_of(doc, jp)))
+                    hits.append((jp, "approval.status MISSING", _hit_version(pack, doc, jp)))
                 elif isinstance(v, str) and R2_TEXT.search(v):
-                    hits.append((jp, v, _version_of(doc, jp)))
+                    hits.append((jp, v, _hit_version(pack, doc, jp)))
         elif raw:
-            hits += [("", l, None) for l in raw.splitlines() if R2_TEXT.search(l)]
-        if not hits:
-            continue
-        jp, text, version = hits[0]
-        version = version or (pack.pidx.get("register") or {}).get("version")
-        ev = approval_evidence(pack, version)
-        where = "%s%s" % (rel, (" @" + jp) if jp else "")
-        more = (" (+%d more in this file)" % (len(hits) - 1)) if len(hits) > 1 else ""
-        if ev:
-            out.append(Finding("R2", where, text + more, "FALSE: approval evidence for %s is in the pack (%s); "
-                               "rebuild the answers so they read it" % (version, ", ".join(ev[:3]))))
-        else:
-            out.append(Finding("R2", where, text + more, "approval evidence for %s is omitted from the pack: copy "
-                               "register/approval-finding.json + its delivery / ServiceNow export into the pack and "
-                               "rebuild, or confirm with the owner that it truly does not exist" % version))
+            hits += [("", l, (pack.pidx.get("register") or {}).get("version"))
+                     for l in raw.splitlines() if R2_TEXT.search(l)]
+        by_version = {}
+        for jp, text, version in hits:
+            by_version.setdefault(version, []).append((jp, text))
+        for version, vhits in sorted(by_version.items(), key=lambda kv: str(kv[0])):
+            jp, text = vhits[0]
+            ev = approval_evidence(pack, version)
+            status = ((regs.get(version) or {}).get("top") or {}).get("status") or ""
+            if not ev and status and status != "FROZEN":
+                continue  # an EXPLORATORY / pilot register that was never sent for approval: MISSING is the truth
+            where = "%s%s" % (rel, (" @" + jp) if jp else "")
+            more = (" (+%d more for %s in this file)" % (len(vhits) - 1, version)) if len(vhits) > 1 else ""
+            if ev:
+                out.append(Finding("R2", where, text + more, "FALSE: approval evidence for %s is in the pack (%s); "
+                                   "rebuild the answers so they read it" % (version, ", ".join(ev[:3]))))
+            else:
+                out.append(Finding("R2", where, text + more, "approval evidence for %s is omitted from the pack: "
+                                   "copy register/approval-finding.json + its delivery / ServiceNow export into the "
+                                   "pack and rebuild, or confirm with the owner that it truly does not exist" % version))
     return out
 
 
@@ -394,12 +429,10 @@ def r4(pack):
                            "the frozen chain must have exactly one head (fix supersedes)"))
         heads = sorted(heads, key=lambda v: _tkey(regs[v]["top"].get("frozen_at")))[-1:]
     head = heads[0] if heads else None
+    # The whole chain (pilot registers included) ships under register/versions/: history.register_history,
+    # engine.date_proof and build._missing_t1 read only there, so neither the layout nor a non-FROZEN pilot status
+    # is a red flag. Only the head shown and the sidecars are checked.
     for v, r in regs.items():
-        if r["path"].startswith("register/versions/") and v != head:
-            out.append(Finding("R4", r["path"], "superseded register %s under register/versions/" % v,
-                               "move it to register/superseded/ (head is %s)" % head))
-        if r["top"].get("status") and r["top"].get("status") != "FROZEN":
-            out.append(Finding("R4", r["path"], "status %s" % r["top"].get("status"), "ship frozen registers only"))
         side = pack.text(r["path"][:-5] + ".sha256")
         if side is not None:
             import hashlib
@@ -419,41 +452,87 @@ def r4(pack):
 
 
 # ---------------------------------------------------------------- R5
+NAMED_PROV = ("ASSESSED", "LIVE_SUBJECT")          # pack-index runs[].provenance of a named run (PR-47)
+NOT_NAMED = ("EXPLORATORY", "PILOT", "BASELINE")    # honest catalogue entries, never a named run
+UNDECLARED = ("", "OURS-ROLE-UNDECLARED", "unlabelled (gap)")
+
+
+def _declared(lab):
+    return str(lab or "") not in UNDECLARED
+
+
 def r5(pack):
+    """Run catalogue honesty. pack-index runs[] lists EVERY run (pilots and warm-ups included), each with its
+    provenance (PR-47); derived/run-catalogue.jsonl lists the runs the stitcher saw. A run is NAMED when it is in
+    named_runs.entries or in runs[] with provenance ASSESSED / LIVE_SUBJECT; an EXPLORATORY / PILOT entry is an
+    honest catalogue line, not a red flag."""
     out = []
-    rows = {}
+    rows, idx = {}, {}
     for row in pack.catalogue:
         rows.setdefault(row.get("run_id"), []).append(row)
-    for cid in pack.run_ids:
-        got = rows.get(cid) or []
-        if len(got) != 1:
-            out.append(Finding("R5", "derived/run-catalogue.jsonl", "%s appears %d times" % (cid, len(got)),
-                               "every CID in run-ids.txt appears exactly once"))
-        elif got[0].get("label") not in NAMED_OK:
-            out.append(Finding("R5", "derived/run-catalogue.jsonl", "%s labelled %s" % (cid, got[0].get("label")),
-                               "a named run must be LIVE_SUBJECT (declare it in the provenance)"))
+    for i, r in enumerate(pack.pidx.get("runs") or []):
+        if isinstance(r, dict):
+            idx.setdefault(r.get("cid"), []).append((i, r))
+
+    def labels(cid):
+        """Every label the pack gives this run: the index's provenance and label, the catalogue's label."""
+        labs = []
+        for _, r in idx.get(cid) or []:
+            labs += [str(r.get("provenance") or ""), str(r.get("label") or "")]
+        labs += [str(row.get("label") or "") for row in rows.get(cid) or []]
+        return [l for l in labs if l]
+
+    def is_named_label(cid):
+        labs = labels(cid)
+        return bool(labs) and any(l in NAMED_OK + NAMED_PROV for l in labs) and not any(l in NOT_NAMED for l in labs)
+
+    # 1. every CID in run-ids.txt: listed exactly once per source, and labelled as a named run everywhere
     if len(set(pack.run_ids)) != len(pack.run_ids):
         out.append(Finding("R5", "run-ids.txt", "duplicate CID", "list each named run once"))
-    for cid, got in sorted(rows.items(), key=lambda kv: str(kv[0])):
-        for row in got:
-            lab = str(row.get("label") or "")
-            if not lab or lab in ("OURS-ROLE-UNDECLARED", "unlabelled (gap)"):
-                out.append(Finding("R5", "derived/run-catalogue.jsonl", "%s labelled %s" % (cid, lab or "nothing"),
-                                   "declare its role (PILOT / BASELINE / warm-up EXPLORATORY / infra-failed) in the "
-                                   "provenance, or drop its records from the pack"))
-            if cid not in pack.run_ids and row.get("assessed"):
-                out.append(Finding("R5", "derived/run-catalogue.jsonl", "%s assessed but not in run-ids.txt" % cid,
-                                   "only named runs are assessed"))
-    named = [((e.get("scope") or {}).get("cid"), i) for i, e in enumerate((pack.pidx.get("named_runs") or {})
-                                                                            .get("entries") or [])]
-    named += [(r.get("cid"), "runs[%d]" % i) for i, r in enumerate(pack.pidx.get("runs") or [])]
-    for cid, where in named:
-        lab = (rows.get(cid) or [{}])[0].get("label")
-        if cid not in pack.run_ids or lab in ("EXPLORATORY", "PILOT", "OURS-ROLE-UNDECLARED"):
-            out.append(Finding("R5", "pack-index.json @%s" % (where if isinstance(where, str) else
-                                                            "named_runs.entries[%d]" % where),
-                               "%s (%s)" % (cid, lab or "not catalogued"),
-                               "a named run must be in run-ids.txt and LIVE_SUBJECT; no warm-up or pilot"))
+    for cid in pack.run_ids:
+        n_idx, n_cat = len(idx.get(cid) or []), len(rows.get(cid) or [])
+        if n_idx + n_cat == 0:
+            out.append(Finding("R5", "pack-index.json @runs", "%s not catalogued" % cid,
+                               "every CID in run-ids.txt appears in the run catalogue (pack-index runs[])"))
+        for src, n in (("pack-index.json @runs", n_idx), ("derived/run-catalogue.jsonl", n_cat)):
+            if n > 1:
+                out.append(Finding("R5", src, "%s appears %d times" % (cid, n), "list each run exactly once"))
+        if n_idx + n_cat and not is_named_label(cid):
+            out.append(Finding("R5", "pack-index.json @runs", "%s labelled %s" % (cid, "/".join(labels(cid)) or
+                                                                                   "nothing"),
+                               "a named run (run-ids.txt) must be ASSESSED / LIVE_SUBJECT, never a warm-up or pilot"))
+    # 2. every other run carries a declared role somewhere in the pack, and is not shown as assessed
+    for cid in sorted(set(rows) | set(idx), key=str):
+        if cid in pack.run_ids:
+            continue
+        if not any(_declared(l) for l in labels(cid)):
+            out.append(Finding("R5", "derived/run-catalogue.jsonl", "%s labelled %s" % (cid, "/".join(labels(cid)) or "nothing"),
+                               "declare its role (PILOT / BASELINE / warm-up EXPLORATORY / infra-failed) in the "
+                               "provenance, or drop its records from the pack"))
+        elif "ASSESSED" in labels(cid) and not any(l in NOT_NAMED for l in labels(cid)):
+            out.append(Finding("R5", "pack-index.json @runs", "%s labelled %s but not in run-ids.txt" % (
+                cid, "/".join(labels(cid))), "label it EXPLORATORY / PILOT, or name it in run-ids.txt"))
+        if any(row.get("assessed") for row in rows.get(cid) or []):
+            out.append(Finding("R5", "derived/run-catalogue.jsonl", "%s assessed but not in run-ids.txt" % cid,
+                               "only named runs are assessed"))
+        for i, r in idx.get(cid) or []:
+            if r.get("verdicts"):
+                out.append(Finding("R5", "pack-index.json @runs[%d].verdicts" % i, "%s %s" % (cid, r["verdicts"]),
+                                   "a run outside run-ids.txt is not judged: drop its verdicts"))
+    # 3. infra-failed attempts are labelled as such
+    for cid, entries in sorted(idx.items(), key=lambda kv: str(kv[0])):
+        for i, r in entries:
+            if str(r.get("state") or "").upper() == "FAILED" and not (
+                    r.get("failure_class") or "FAIL" in str(r.get("purpose") or "").upper()):
+                out.append(Finding("R5", "pack-index.json @runs[%d]" % i, "%s state FAILED" % cid,
+                                   "say why it failed (failure_class) so it is not read as a subject failure"))
+    # 4. named_runs.entries: every scope is a named run
+    for i, e in enumerate((pack.pidx.get("named_runs") or {}).get("entries") or []):
+        cid = (e.get("scope") or {}).get("cid")
+        if cid and cid not in pack.run_ids:
+            out.append(Finding("R5", "pack-index.json @named_runs.entries[%d]" % i, "%s (%s)" % (
+                cid, "/".join(labels(cid)) or "not catalogued"),
+                "a named run must be in run-ids.txt; no warm-up or pilot"))
     return out
 
 
@@ -518,7 +597,7 @@ PLACEHOLDER = re.compile(r"<[A-Z][A-Z0-9_]*>")
 PATHLIKE = re.compile(r"^[A-Za-z0-9_.\-/]+\.(md|json|jsonl|txt|py|png|yaml|sha256|zip)$|^[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-/]*$")
 README_SIDECARS = ("pack-root.json",)  # uploaded AFTER the pack, never inside it
 PLATFORM_NAMES = ("aws/", "/aws/")      # CloudWatch log group names, not pack paths
-NOT_IN_PACK = re.compile(r"^\s*\(not in (this|the) pack\)", re.I)
+NOT_IN_PACK = re.compile(r"^\s*\((not|none) in (this|the) pack\b", re.I)
 
 
 def r7(pack):
