@@ -98,22 +98,49 @@ def merge_counts(a: dict, b: dict) -> dict:
     return out
 
 
+_NEXT_JSON = re.compile(r"[{\[]")
+_TRUNC_CONTENT = re.compile(r'("content"\s*:\s*)"(?:[^"\\]|\\.)*(?:"|$)')
+
+
 def _clean_embedded(s, p, token_shaped, counts, paths):
-    """Log line = text + JSON object(s): drop span content inside each decodable object, keep the rest."""
+    """Log line = text + JSON object/array(s): drop span content inside each decodable value, keep the rest.
+
+    Tolerates any leading text or whitespace; never raises on non-JSON. If the line mentions span attributes
+    but no JSON value decodes (truncated line), fail safe: mask every "content" string value.
+    """
     dec = json.JSONDecoder()
-    out, i = [], 0
+    out, i, found = [], 0, False
     while i < len(s):
-        j = s.find("{", i)
-        if j < 0:
+        m = _NEXT_JSON.search(s, i)
+        if not m:
             break
+        j = m.start()
+        if j > 0 and s[j - 1] == '"':                      # a quoted (doubly encoded) JSON value: decode the string
+            q = j - 1
+            try:
+                inner, qend = dec.raw_decode(s, q)
+            except (ValueError, RecursionError):
+                inner = None
+            if isinstance(inner, str) and "content" in inner:
+                sub0: dict = {}
+                cl = redact_obj(inner, token_shaped, p, sub0, paths)[0]
+                if sub0.get("span-content"):
+                    found = True
+                    for r, n in sub0.items():
+                        _bump(counts, r, n)
+                    out.append(s[i:q]); out.append(json.dumps(cl, ensure_ascii=False)); i = qend
+                    continue
         try:
             obj, end = dec.raw_decode(s, j)
-        except ValueError:
+        except (ValueError, RecursionError):
+            out.append(s[i:j + 1]); i = j + 1; continue
+        if not isinstance(obj, (dict, list)):
             out.append(s[i:j + 1]); i = j + 1; continue
         sub: dict = {}
         cleaned = redact_obj(obj, token_shaped, p, sub, paths)[0]
         out.append(s[i:j])
         if sub.get("span-content"):
+            found = True
             for r, n in sub.items():
                 _bump(counts, r, n)
             out.append(json.dumps(cleaned, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
@@ -121,7 +148,13 @@ def _clean_embedded(s, p, token_shaped, counts, paths):
             out.append(s[j:end])
         i = end
     out.append(s[i:])
-    return "".join(out)
+    res = "".join(out)
+    if not found and '"attributes"' in res and '"events"' in res:
+        res, n = _TRUNC_CONTENT.subn(lambda m: m.group(1) + '"[REDACTED:span-content]"', res)
+        if n:
+            _bump(counts, "span-content", n)
+            paths.append(p)
+    return res
 
 
 _SPAN_ATTR_RE = re.compile(r"(^|\.)events\[\d+\]\.attributes$")
@@ -160,21 +193,8 @@ def redact_obj(obj, token_shaped: bool = False, _path: str = "", _counts: "dict 
             return [walk(v, "%s[%d]" % (p, i)) for i, v in enumerate(o)]
         if isinstance(o, str):
             s = o
-            st = s.lstrip()
-            if st[:1] in "{[" and ("\"content\"" in s):          # a span carried as a JSON string
-                try:
-                    inner = json.loads(s)
-                except ValueError:
-                    inner = None
-                if inner is None:                                # prefix/suffix text around an embedded JSON span
-                    s = _clean_embedded(s, p, token_shaped, counts, paths)
-                if inner is not None:
-                    sub: dict = {}
-                    cleaned = redact_obj(inner, token_shaped, p, sub, paths)[0]
-                    if sub.get("span-content"):
-                        for r, n in sub.items():
-                            _bump(counts, r, n)
-                        s = json.dumps(cleaned, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+            if "content" in s and ("{" in s or "[" in s):      # a span carried in a string, any prefix/suffix
+                s = _clean_embedded(s, p, token_shaped, counts, paths)
             if token_shaped and is_token_shaped(s):
                 _bump(counts, "token-shaped"); paths.append(p); return "[REDACTED:token]"
             s2, c = redact_text(s)
@@ -186,7 +206,7 @@ def redact_obj(obj, token_shaped: bool = False, _path: str = "", _counts: "dict 
         return o
 
     clean = walk(obj, _path)
-    return (clean, counts, paths) if top else (clean, counts, paths)
+    return clean, counts, paths
 
 
 def drop_cr_paths(cr: dict) -> tuple:

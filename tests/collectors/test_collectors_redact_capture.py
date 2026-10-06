@@ -261,3 +261,47 @@ def test_redact_obj_top_level_span_dict():
     assert "PII" not in json.dumps(clean) and counts.get("span-content") == 1 and clean["events"][0]["attributes"]["k"] == "v"
     clean, counts, _ = redact.redact_obj({"notevents": {"attributes": {"content": "keep"}}})
     assert counts.get("span-content") is None
+
+
+_SPAN = {"events": [{"attributes": {"content": "PII-customer-record", "k": "v"}}]}
+
+
+@pytest.mark.parametrize("line", [
+    "2026-10-05T17:00:00Z INFO " + json.dumps(_SPAN),
+    "   \n\t" + json.dumps(_SPAN) + "  trailing text",
+    "[INFO] [2026-10-05T17:00:00Z] span=" + json.dumps(_SPAN) + " done",
+    "2026-10-05 stdout F " + json.dumps([_SPAN, {"a": 1}]),
+    json.dumps([_SPAN]),
+    "level=info msg=" + json.dumps(json.dumps(_SPAN)),
+    "pre " + json.dumps(_SPAN) + " mid " + json.dumps(_SPAN) + " post",
+    "2026-10-05T17:00:00Z INFO " + json.dumps(_SPAN)[:-6],            # truncated line: fail safe
+])
+def test_embedded_span_any_prefix_shape(line):
+    clean, counts, _ = redact.redact_obj({"message": line})
+    assert "PII-customer-record" not in json.dumps(clean)
+    assert counts.get("span-content", 0) >= 1
+
+
+@pytest.mark.parametrize("line", ["", "plain text", "[INFO] no json {oops", '"content" but {not json', "{", "[",
+                                  "x" * 50 + " [[[[ {{{{ \"content\""])
+def test_non_json_never_crashes_and_non_span_kept(line):
+    clean, counts, _ = redact.redact_obj({"message": line, "list": [line]})
+    assert counts.get("span-content") is None
+    assert clean["message"] == line
+
+
+def test_embedded_non_span_json_untouched():
+    line = '2026-10-05 INFO {"attributes": {"content": "keep"}} tail'
+    clean, counts, _ = redact.redact_obj(line)
+    assert clean == line and counts.get("span-content") is None
+
+
+def test_prefixed_span_through_both_log_collectors(tmp_path):
+    msg = "2026-10-05T17:00:00Z INFO " + json.dumps(_SPAN) + " " + CID
+    page = json.dumps({"events": [{"timestamp": 1, "ingestionTime": 2, "logStreamName": "s", "message": msg}]}).encode()
+    ctx = _ctx(tmp_path, lambda argv: (0, page, b""))
+    for sc in (runtime_logs.pull(ctx, "rt-abc", CID, "2026-10-05T17:00:00Z", "2026-10-05T17:30:00Z"),
+               modaas_evidence.pull(ctx, CID, "2026-10-05T17:00:00Z", "2026-10-05T17:30:00Z")):
+        body = open(os.path.join(str(tmp_path), sc["path"]), "rb").read().decode()
+        assert "PII-customer-record" not in body
+        assert any(r["rule"] == "span-content" and r["count"] > 0 for r in sc["redactions"])
