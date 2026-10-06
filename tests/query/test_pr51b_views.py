@@ -29,7 +29,7 @@ def test_approval_after_run_is_stated_never_vouched():
     start = "2026-10-06T13:56:15Z"
     assert not A._approved_before(RULE, start)
     t = A._authority_text(RULE, start)
-    assert "15:09:49Z on INC0010338" in t and "approved after the run; dated before the run by S3" in t
+    assert "15:09:49Z on INC0010338, responded from account annapurna@invences.com" in t and "approved after the run; dated before the run by S3" in t
     assert "register owner: annapurna@invences.com" in t
     v = A._tick_text({}, "VERIFIED", {}, "", RULE, run_start=start)["V"]
     assert v.startswith("not vouched") and "after the run start" in v
@@ -61,3 +61,11 @@ def test_none_leaks_read_not_recorded():
 def test_warmup_label_from_its_records():
     assert E.run_label(None, "c", "OURS-ROLE-UNDECLARED", "EXPLORATORY") == "EXPLORATORY (declared in the run's records)"
     assert E.run_label(None, "c", "LIVE_SUBJECT", "LIVE_SUBJECT") == "LIVE_SUBJECT"
+
+
+def test_threshold_version_bound_by_first_carrier_register():
+    bound = dict(RULE, register_version="v1", frozen_at="2026-10-06T12:40:22Z", bound_by="register v1 (first carried C7-v1)",
+                 approval={"status": "APPROVED", "at": "2026-10-06T13:02:37Z", "ref": "servicenow:INC0010321",
+                           "approver": {"id": "annapurna@invences.com"}})
+    t = A._authority_text(bound, "2026-10-06T13:56:15Z")
+    assert "bound by register v1" in t and "13:02:37Z on INC0010321" in t and "(approved before the run)" in t

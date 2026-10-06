@@ -578,7 +578,7 @@ def _approval_lines(pack, start):
         rel = ""
         if _utc_key(at) and _utc_key(start):
             rel = " (before the run start %s)" % start if _utc_key(at) <= _utc_key(start) else " (after the run start %s)" % start
-        out.append("register %s approval %s at %s on %s by %s%s (joined-from: register/approval*, witnessed-by:ServiceNow)" % (
+        out.append("register %s approval %s at %s on %s, responded from account %s%s (joined-from: register/approval*, witnessed-by:ServiceNow)" % (
             ver, a.get("status") or NOT_RECORDED, at or NOT_RECORDED, str(a.get("ref") or NOT_RECORDED).replace("servicenow:", ""),
             ((a.get("approver") or {}).get("id") if isinstance(a.get("approver"), dict) else a.get("approver")) or NOT_RECORDED, rel))
     return out
@@ -618,9 +618,10 @@ def incident(pack, ident):
     who = ["actor %s (recorded: actor.id), runtime %s, version %s, principal %s, on behalf of %s" % (
         a["actor"] or NOT_RECORDED, a["runtime"] or NOT_RECORDED, _ver(a), a["principal"] or NOT_RECORDED, a["on_behalf_of"] or NOT_RECORDED)
         for a in actors]
-    owns = sorted(set("%s owned by %s (joined-from: inventory %s)" % (a["actor"], (comp.get(a["actor"]) or {}).get("owner") or NOT_RECORDED, inv_name)
-                      for a in actors if a["actor"]))
     reg_owner = _register_owner(pack)
+    owns = sorted(set("%s owned by %s (joined-from: inventory %s owner field; register owner: %s)" % (
+        a["actor"], (comp.get(a["actor"]) or {}).get("owner") or NOT_RECORDED, inv_name, reg_owner or NOT_RECORDED)
+        for a in actors if a["actor"]))
     for ctl in sorted(set(r.get("control.ref") for r in recs if r.get("control.owner"))):
         owns.append("control %s: recorded: %s (field control.owner, agent-written); register owner: %s" % (
             ctl, _first([r for r in recs if r.get("control.ref") == ctl], "control.owner"), reg_owner or NOT_RECORDED))

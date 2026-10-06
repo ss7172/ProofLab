@@ -206,15 +206,45 @@ def _authority_text(rule, run_start):
     t1 = "register %s dated by S3 (T1) %s, %s the run start %s" % (
         rule.get("register_version"), rule.get("frozen_at"), "before" if rule.get("date_before_scope") else "not proven before",
         run_start or "not recorded")
+    if rule.get("bound_by"):
+        who += "; threshold version bound by %s" % rule["bound_by"]
     if ap.get("status") == "APPROVED" and ap.get("at"):
         when = ("approved before the run" if _approved_before(rule, run_start)
                 else "approved after the run; dated before the run by S3" if rule.get("date_before_scope")
                 else "approved after the run")
-        appr = "ServiceNow approval note %s on %s by %s (%s)" % (ap["at"], str(ap.get("ref") or "").replace("servicenow:", ""),
+        appr = "ServiceNow approval note %s on %s, responded from account %s (%s)" % (ap["at"], str(ap.get("ref") or "").replace("servicenow:", ""),
                                                              (ap.get("approver") or {}).get("id") or "not recorded", when)
     else:
         appr = "approval %s" % (ap.get("status") or "MISSING")
     return "%s; %s; %s" % (who, t1, appr)
+
+
+def _first_carrier_approval(pack, control, threshold_version):
+    """(register, approval) of the FIRST register that carried this threshold version (the approval that bound it), from
+    the T2 files; (None, None) when the pack has none. A later register re-carrying the same version does not re-date it."""
+    try:
+        from prooflab.pack import history as _h
+        appr = _h.approvals(pack.root) or {}
+        names = sorted(pack.registers, key=lambda n: pack._reg_date(n))
+    except Exception:
+        return None, None
+    for name in names:
+        if any(e.get("control_ref") == control and e.get("threshold_version") == threshold_version
+               for e in pack.registers[name]["doc"]["entries"]):
+            a = appr.get(str(name))
+            return (str(name), dict((k, a[k]) for k in ("status", "ref", "at", "approver") if a.get(k))) if a else (str(name), None)
+    return None, None
+
+
+def _bound_rule(pack, control, rule, run_start):
+    """The rule as the approval that FIRST bound its threshold version sees it (C7-v1/C9-v1 carried by v1, approved before
+    the run, are re-carried unchanged by v1.1); the rule itself when no earlier approval applies."""
+    name, ap = _first_carrier_approval(pack, control, rule.get("threshold_version"))
+    if not name or not ap or name == rule.get("register_version") or ap.get("status") != "APPROVED":
+        return rule
+    if not _approved_before(dict(rule, approval=ap), run_start):
+        return rule
+    return dict(rule, approval=ap, register_version=name, bound_by="register %s (first carried %s)" % (name, rule.get("threshold_version")))
 
 
 def _tick_text(ok, manifest_status, a, rc, rule, corr=None, run_start=None):
@@ -382,6 +412,7 @@ def _audit_question(control, a, rule, ctx):
             x["actor"] or E.UNKNOWN, x["runtime"] or "not recorded", ver or "not recorded",
             x["principal"] or "not recorded in the records")
     agents = "; ".join(_agent(x) for x in actors)
+    vr = ctx.get("vrule") or rule
     meas = a.get("measured") or {}
     return {
         "what_was_done": _txt("%s over %s %s: %d records, measured %s %s." % (
@@ -394,9 +425,9 @@ def _audit_question(control, a, rule, ctx):
                       rid([r for r in recs if r.get("ep.id")]), source="recorded (ep.id)"),
         "when": _txt("%s .. %s (UTC)" % ("not recorded" if not ctx["start"] else ctx["start"], "not recorded" if not ctx["end"] else ctx["end"]),
                      source="recorded (ts of the scope's records)"),
-        "under_whose_authority": _txt(_authority_text(rule, ctx["start"]),
-                                      [rule["source_ref"]] + ([rule["approval"]["ref"]] if rule["approval"].get("ref") else []),
-                                      "OK" if (rule["approval"]["status"] == "APPROVED" and _approved_before(rule, ctx["start"])) else "FLAG",
+        "under_whose_authority": _txt(_authority_text(vr, ctx["start"]),
+                                      [rule["source_ref"]] + ([vr["approval"]["ref"]] if vr["approval"].get("ref") else []),
+                                      "OK" if (vr["approval"]["status"] == "APPROVED" and _approved_before(vr, ctx["start"])) else "FLAG",
                                       source="joined-from: register/versions + register/t1 (witnessed-by:S3) + register/approval* (witnessed-by:ServiceNow)"),
         "rule_checked": _txt("%s %s: %s" % (control, rule["threshold_version"], rule["statement"]), [rule["source_ref"]],
                              source="joined-from: register/versions/%s.yaml" % rule["register_version"]),
@@ -471,11 +502,12 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
         gaps.append({"id": "G-POP", "text": "the assessment carries no completeness counts: the population is unknown, zeros shown", "affects": "population"})
     rc = ans.get("recompute") or ""
     rc_match = rc.startswith("matches")
-    tick = _tick_text(ok, src["manifest_status"], a, rc, rule, E.read_json(pack.p("derived", "corroboration", cid + ".json")),
+    vrule = _bound_rule(pack, control, rule, ans.get("run_start"))
+    tick = _tick_text(ok, src["manifest_status"], a, rc, vrule, E.read_json(pack.p("derived", "corroboration", cid + ".json")),
                       run_start=ans.get("run_start"))
     ctx = {"recs": recs, "cid": cid, "scope_kind": "run", "scope_label": parse.get("alias") or cid, "start": ans.get("run_start"),
            "end": E.run_end(pack, cid), "manifest_status": src["manifest_status"], "findings": stored_findings(pack, cid),
-           "inventory": _inventory_versions(pack)}
+           "inventory": _inventory_versions(pack), "vrule": vrule}
     scope = {"kind": "run", "id": parse.get("alias") or cid, "cid": cid}
     if parse.get("alias"):
         scope["alias"] = parse["alias"]
