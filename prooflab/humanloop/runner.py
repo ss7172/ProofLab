@@ -83,8 +83,54 @@ def run_batch(findings: List[dict], client, config: cfg.HumanLoopConfig, dry_run
     return rows
 
 
+def _ph2(args, config, findings, client_factory, analyzer_factory) -> int:
+    """The Phase 2 verbs: check, snapshot, export, analyze, mirror (T6.5 Ph2, T6.6)."""
+    from prooflab.humanloop import analysis, check_loop, mirror, snapshots
+    if args.command == "mirror":
+        records = mirror.mirror_file(config.delivery_log)
+        if config.approval_log and os.path.exists(config.approval_log):
+            records += mirror.mirror_file(config.approval_log, {r["record_id"] for r in records})
+        os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+        existing = set()
+        if os.path.exists(args.out):
+            with open(args.out, encoding="utf-8") as handle:
+                existing = {json.loads(l)["record_id"] for l in handle if l.strip()}
+        new = [r for r in records if r["record_id"] not in existing]
+        with open(args.out, "a", encoding="utf-8") as handle:
+            for rec in new:
+                handle.write(json.dumps(rec, sort_keys=True) + "\n")
+        print(json.dumps({"mirrored": len(new), "already": len(records) - len(new)}))
+        return EXIT_OK
+    client = client_factory() if client_factory else ServiceNowClient.from_env()
+    if args.command == "check":
+        passes = check_loop.run_loop(findings, client, config, args.cutoff, interval_s=args.interval,
+                                     max_passes=1 if args.once else None)
+        print(json.dumps(passes[-1], indent=2, sort_keys=True))
+        bad = [r for r in passes[-1] if r.get("state") in ("NOT_DELIVERED", "RESPONSE_UNKNOWN")]
+        return EXIT_SERVICENOW if bad else EXIT_OK
+    if args.command == "snapshot":
+        rows = snapshots.snapshot_cases(findings, client, config, args.cutoff, args.out)
+        print(json.dumps(rows, indent=2, sort_keys=True))
+        return EXIT_SERVICENOW if any(r["servicenow"] == "unreachable" for r in rows) else EXIT_OK
+    if args.command == "export":
+        result = snapshots.export_all(findings, client, config, args.out)
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return EXIT_OK
+    if args.command == "analyze":
+        analyzer = analyzer_factory() if analyzer_factory else None
+        if analyzer is None:
+            from prooflab.humanloop.invoke import assurance_analyzer
+            analyzer = assurance_analyzer()
+        rows = analysis.analyze_between_runs(findings, client, config, analyzer,
+                                             run_active=lambda: args.run_active, out_dir=args.out)
+        print(json.dumps(rows, indent=2, sort_keys=True))
+        return EXIT_OK
+    return EXIT_INPUT
+
+
 def main(argv: Optional[List[str]] = None, env: Optional[Mapping[str, str]] = None,
-         client_factory: Optional[Callable[[], object]] = None) -> int:
+         client_factory: Optional[Callable[[], object]] = None,
+         analyzer_factory: Optional[Callable[[], object]] = None) -> int:
     parser = argparse.ArgumentParser(prog="prooflab humanloop", description="human loop: notify")
     sub = parser.add_subparsers(dest="command", required=True)
     notify_p = sub.add_parser("notify", help="selftest, then notify new notify-due findings")
@@ -92,10 +138,30 @@ def main(argv: Optional[List[str]] = None, env: Optional[Mapping[str, str]] = No
     notify_p.add_argument("--findings-dir", help="directory of finding *.json files")
     notify_p.add_argument("--dry-run", action="store_true",
                           help="refused unless the delivery log is under wiring-tests/ (guard a)")
+    for name, helptext in (("check", "check loop: poll each open finding (<= 60 s) until the cutoff"),
+                           ("snapshot", "write Arth's case view per finding"),
+                           ("export", "export each incident as evidence JSON"),
+                           ("analyze", "Assurance analysis, only between subject runs"),
+                           ("mirror", "delivery log -> notification records (JSONL)")):
+        p = sub.add_parser(name, help=helptext)
+        p.add_argument("--finding", action="append", default=[], help="finding JSON file (repeatable)")
+        p.add_argument("--findings-dir", help="directory of finding *.json files")
+        if name in ("check", "snapshot"):
+            p.add_argument("--cutoff", required=True, help="ISO-8601 UTC response cutoff")
+        if name == "check":
+            p.add_argument("--interval", type=float, default=60, help="seconds between passes (capped at 60)")
+            p.add_argument("--once", action="store_true", help="one pass, then the cutoff rule")
+        if name in ("snapshot", "export", "analyze", "mirror"):
+            p.add_argument("--out", required=True, help="output directory (file for mirror)")
+        if name == "analyze":
+            p.add_argument("--run-active", action="store_true", help="a subject run is active: defer")
     args = parser.parse_args(argv)
     try:
         config = cfg.HumanLoopConfig.from_env(env)
-        findings = _load(args.finding, args.findings_dir)
+        findings = [] if args.command == "mirror" and not (args.finding or args.findings_dir) \
+            else _load(args.finding, args.findings_dir)
+        if args.command != "notify":
+            return _ph2(args, config, findings, client_factory, analyzer_factory)
         if args.dry_run and not cfg.under_wiring_tests(config.delivery_log):
             raise cfg.ConfigError("--dry-run refused: guard (a), the log %r is not under %s/"
                                   % (config.delivery_log, cfg.WIRING_TESTS_DIR))
