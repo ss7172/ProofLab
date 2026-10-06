@@ -100,6 +100,17 @@ def test_dry_run_calls_nothing_and_prints_no_payload(req_path, fake):
     assert "/aws/codebuild/a-01-eks-cluster-modaas-image-build" in r.stdout
 
 
+def test_default_uri_file_matches_make_ifabric_agents(req_path, fake):
+    """The runner's default URI file is the one make_ifabric_agents reads (/tmp/ifabric-image-uri-<role>)."""
+    out, req = req_path
+    env, tmp = fake
+    r = _run(["--request", out, "--dry-run"], env)
+    assert r.returncode == 0, r.stderr
+    assert "-> /tmp/ifabric-image-uri-customer" in r.stdout
+    src = open(os.path.join(REPO, "tools", "make_ifabric_agents.py")).read()
+    assert '"/tmp/ifabric-image-uri-%s" % r' in src
+
+
 def test_live_path_with_fake_aws(req_path, fake):
     out, req = req_path
     env, tmp = fake

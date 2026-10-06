@@ -249,7 +249,10 @@ BUILDSPEC_CAP = 25600                        # CodeBuild's buildspecOverride lim
 KIT_BASE_IMAGE = "public.ecr.aws/docker/library/python:3.12-slim"
 KIT_SDK_PIP = ("strands-agents[openai]==1.57.2 bedrock-agentcore==1.24.0 mcp==1.30.0 boto3==1.43.103 "
                "aws-opentelemetry-distro==0.21.0")
-KIT_SDK_ENV = "ENV OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=urllib,urllib3,botocore,boto3\n"
+# Kit line + aws_mcp: ADOT 0.21.0's McpInstrumentor (entry point aws_mcp, amazon/opentelemetry/distro/instrumentation/
+# mcp/_wrappers.py) sets gen_ai.tool.call.arguments / gen_ai.tool.call.result on the "mcp tools/call" span in clear
+# (live S-2: customer records in the runtime log group). Disabling it removes the producer (R-GR-02, T-SPAN-01).
+KIT_SDK_ENV = "ENV OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=urllib,urllib3,botocore,boto3,aws_mcp\n"
 KIT_ENTRY_PATH = "/app/" + REFERENCE_FILE    # the in-image path the kit's ENTRYPOINT runs; our files keep their names
 BASE_FILE = "agents/ifabric-base/ifabric-base.py"
 BASE_IN_IMAGE = "ifabric_base.py"            # /app/ifabric_base.py, where the role loader looks

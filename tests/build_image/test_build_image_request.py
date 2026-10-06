@@ -199,7 +199,9 @@ def test_dockerfile_is_the_kit_shape(br, requests_by_role):
     assert lines[0] == "FROM public.ecr.aws/docker/library/python:3.12-slim"
     assert lines[2] == ("RUN pip install --no-cache-dir strands-agents[openai]==1.57.2 bedrock-agentcore==1.24.0 "
                         "mcp==1.30.0 boto3==1.43.103 aws-opentelemetry-distro==0.21.0 'openai==2.54.0'")
-    assert "ENV OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=urllib,urllib3,botocore,boto3" in lines
+    # aws_mcp off: ADOT 0.21.0's McpInstrumentor records tool arguments + results in clear on "mcp tools/call" spans
+    assert "ENV OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=urllib,urllib3,botocore,boto3,aws_mcp" in lines
+    assert sum(l.startswith("ENV OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=") for l in lines) == 1
     assert "COPY ifabric_base.py /app/ifabric_base.py" in lines
     assert "COPY ifabric-customer.py /app/%s" % FORBIDDEN in lines
     assert lines[-1] == 'ENTRYPOINT ["opentelemetry-instrument", "python3", "/app/%s"]' % FORBIDDEN

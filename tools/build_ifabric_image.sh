@@ -81,7 +81,10 @@ PY
 read -r PROJECT REPO TAG ROLE <<EOF
 $FIELDS
 EOF
-URI_FILE="${URI_FILE:-/tmp/ifabric-${ROLE}-image-uri}"
+# One name, shared with tools/make_ifabric_agents.py (_read_uri): /tmp/ifabric-image-uri-<role>; the base image
+# keeps /tmp/ifabric-base-image-uri.
+if [ "$ROLE" = "base" ]; then DEFAULT_URI_FILE="/tmp/ifabric-base-image-uri"; else DEFAULT_URI_FILE="/tmp/ifabric-image-uri-${ROLE}"; fi
+URI_FILE="${URI_FILE:-$DEFAULT_URI_FILE}"
 LOG_GROUP="/aws/codebuild/${PROJECT}"
 
 if [ "$DRY_RUN" = "1" ]; then
