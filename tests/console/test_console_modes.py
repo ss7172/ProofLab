@@ -190,7 +190,8 @@ def test_run_catalogue_prefers_derived_catalogue_and_labels_unknowns(pack):
     server = C.start(S.PackSource(pack))
     try:
         got = C.Client(server).login().json("/api/v1/runs")[1]["data"]
-        assert [r["cid"] for r in got] == ["fault-1-aaaaaa", "fault-2-bbbbbb"]
+        assert [r["cid"] for r in got][:2] == ["fault-1-aaaaaa", "fault-2-bbbbbb"]     # catalogue rows first
+        assert all(r["source"].startswith("pack-index") for r in got[2:])      # PR-56: then every other pack-index run, none hidden
         assert got[0]["in_window"] is None and got[0]["assessed"] is False     # unknown stays unknown, not green
     finally:
         server.shutdown(); server.server_close()
