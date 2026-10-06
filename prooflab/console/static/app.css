@@ -129,7 +129,7 @@ table.t td:first-child{white-space:nowrap}
 table.t tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--surface-2) 60%,transparent)}
 table.t tr.click{cursor:pointer}table.t tr.click:hover td{background:var(--accent-bg)}
 table.t td.mono,table.t td .mono{font-size:13px}
-table.t td.cut{white-space:nowrap;max-width:28ch;overflow:hidden;text-overflow:ellipsis}
+table.t td.cut{white-space:nowrap;max-width:22ch;overflow:hidden;text-overflow:ellipsis}
 table.t tr.dim td{color:var(--ink-3)}
 table.idx td{vertical-align:middle}
 select.runsel{height:36px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface);padding:0 10px;font:13px var(--mono);max-width:460px}
