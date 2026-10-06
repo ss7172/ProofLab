@@ -55,6 +55,10 @@ DEFECTS = {
     "D7": "pack build does not stage findings/ (PACK_TOP lacks it; ARCH 9.1 lists assessments/... findings/)",
     "D8": "EP-1 decision records carry evaluator.sha256 = null (model_call._evaluate never passes it to"
           " decide_inline), so EP-2's replay cannot be reconciled on the same evaluator.sha256 (G5)",
+    "D10": "nothing writes kit-crosscheck/<CID>/gateway-log.json (ARCH 9.1: refresh writes it); pack build only"
+           " copies the directory if present",
+    "D11": "query --control --run prints the T1 LastModified and the run start but never compares them: a register"
+           " dated after the run still answers BREACHED/SATISFIED with no gap (G5 date check)",
     "D9": "`registry inventory` freezes to register/versions/inv-N.yaml but the query engine (and ARCH 9.1) read"
           " register/inventory/*.yaml: `query --inventory` finds no inventory in the pack",
 }
@@ -86,8 +90,7 @@ class Rehearsal(object):
         return ok
 
     def cli(self, args, cwd=None, env_extra=None, timeout=300):
-        env = dict(os.environ)
-        env.pop("PYTHONPATH", None)
+        env = dict((k, v) for k, v in os.environ.items() if k in ("PATH", "HOME", "LANG", "LC_ALL", "TMPDIR", "USER"))
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         if env_extra:
             env.update(env_extra)
@@ -592,7 +595,8 @@ def assess_glue(R, snap):
         if name == "N5":
             pin_reg, entry = c7_pin(R, faithful=False)
             wf = [{"agent": ag, "event": ev.strip(), "stream": "%s:all" % ag, "order": i}
-                  for ag in ROLES for i, ev in enumerate(entry["workflow_events"].split(","))]
+                  for ag in ROLES for i, ev in enumerate(entry["workflow_events"].split(","))
+                  if ev.strip() not in ("escalation", "decision")]   # conditional / per-call events: not per agent
             af = c7.assess_run(cid, c7.expected_events(cid, run["actions"], [], wf, [], pin_reg), obs, [], pin_reg,
                                _iso(time.time()))
             out["N5-register-events"] = (af.requirement_verdict, [x.get("key") for x in af.exceptions][:4])
@@ -748,6 +752,17 @@ def step_query(R):
         if "N2 (BREACHED)" in label:
             ok = ok and "T1 proof" in out and "unknown" not in out.split("T1 proof", 1)[1].split("\n", 1)[0]
         R.check("query %s from the fresh unzip" % label, ok, "rc=%d in %.1fs %s" % (rc, dt, err.strip()[:60]))
+    late = _p(w, "late-t1")             # a copy whose T1 is AFTER the runs: the date check must not pass
+    shutil.copytree(ev, late)
+    hp = _p(late, "register", "versions", "v1.head.json")
+    h = json.loads(_read(hp))
+    h["LastModified"] = _iso(time.time() + 3600)
+    _write(hp, json.dumps(h))
+    rc, out, err, dt = R.cli(["query", "--control", "C16", "--run", runs["N2"]["cid"]], cwd=late)
+    R.check("date check: a T1 later than the run is not a clean answer", rc == 2 or not any(l.strip() == "gaps: none" for l in out.splitlines()), "rc=%d %s" % (rc, [l for l in out.splitlines() if l.startswith("gaps:")]),
+            xfail="D11")
+    R.check("kit-crosscheck/<CID>/gateway-log.json produced", os.path.isdir(_p(ev, "kit-crosscheck")),
+            "no producer in prooflab/", xfail="D10")
     rc, out, err, dt = R.cli(["query", "--claim"], cwd=ev)
     R.check("query --claim", rc == 0 and "partial" in out.lower(), out.strip().splitlines()[0][:100] if out.strip() else err[:80])
     win = "%s..%s" % (_iso(R.state["t1"]), _iso(time.time() + 60))
