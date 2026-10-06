@@ -67,9 +67,12 @@ def _fail_closed(core, q, pin, exc, evaluator_sha256=None):
     maker = getattr(core, "fail_closed_decision", None)
     if maker is not None:
         try:
-            return maker(q, pin, EVALUATOR_ERROR, sha)
-        except TypeError:          # an older core: (q, pin, reason)
-            return maker(q, pin, EVALUATOR_ERROR)
+            try:
+                return maker(q, pin, EVALUATOR_ERROR, sha)
+            except TypeError:          # an older core: (q, pin, reason)
+                return maker(q, pin, EVALUATOR_ERROR)
+        except Exception:  # noqa: BLE001 - a broken maker falls through to the built-in fail-closed Decision
+            pass
     total = 0
     for k in ("committed_tokens", "reserved_tokens", "bound_tokens"):
         try:

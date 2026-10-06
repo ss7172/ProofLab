@@ -199,3 +199,13 @@ def test_fail_closed_passes_sha_to_the_cores_maker(fake_core):
     fake_core.decide_inline = lambda q, pin, sha=None: 1 / 0
     fake_core.fail_closed_decision = lambda q, pin, reason, sha: ("core", reason, sha)
     assert T.evaluate(None, None, "b" * 64) == ("core", T.EVALUATOR_ERROR, "b" * 64)
+
+
+def test_fail_closed_survives_a_broken_core_maker(fake_core):
+    fake_core.decide_inline = lambda q, pin, sha=None: 1 / 0
+
+    def bad_maker(*a):
+        raise KeyError("maker bug")
+    fake_core.fail_closed_decision = bad_maker
+    d = T.evaluate(None, _Pin(), "b" * 64)
+    assert d.verdict == "DENY" and d.action == "halt" and d.evaluator_sha256 == "b" * 64
