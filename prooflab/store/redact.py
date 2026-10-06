@@ -98,6 +98,35 @@ def merge_counts(a: dict, b: dict) -> dict:
     return out
 
 
+def _clean_embedded(s, p, token_shaped, counts, paths):
+    """Log line = text + JSON object(s): drop span content inside each decodable object, keep the rest."""
+    dec = json.JSONDecoder()
+    out, i = [], 0
+    while i < len(s):
+        j = s.find("{", i)
+        if j < 0:
+            break
+        try:
+            obj, end = dec.raw_decode(s, j)
+        except ValueError:
+            out.append(s[i:j + 1]); i = j + 1; continue
+        sub: dict = {}
+        cleaned = redact_obj(obj, token_shaped, p, sub, paths)[0]
+        out.append(s[i:j])
+        if sub.get("span-content"):
+            for r, n in sub.items():
+                _bump(counts, r, n)
+            out.append(json.dumps(cleaned, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
+        else:
+            out.append(s[j:end])
+        i = end
+    out.append(s[i:])
+    return "".join(out)
+
+
+_SPAN_ATTR_RE = re.compile(r"(^|\.)events\[\d+\]\.attributes$")
+
+
 def redact_obj(obj, token_shaped: bool = False, _path: str = "", _counts: "dict | None" = None, _paths: "list | None" = None):
     """Walk parsed JSON. -> (clean obj, {rule: count}, [paths touched]). Never mutates the input.
 
@@ -119,7 +148,7 @@ def redact_obj(obj, token_shaped: bool = False, _path: str = "", _counts: "dict 
                     tagged = o[tag]
             for k, v in o.items():
                 kp = "%s.%s" % (p, k) if p else str(k)
-                if k == "content" and p.endswith("attributes") and ".events[" in p:
+                if k == "content" and _SPAN_ATTR_RE.search(p):
                     _bump(counts, "span-content"); paths.append(kp); continue
                 if tagged is not None and k == "value":
                     _bump(counts, "env-secret"); paths.append(kp); out[k] = "[REDACTED:env:%s]" % tagged; continue
@@ -137,6 +166,8 @@ def redact_obj(obj, token_shaped: bool = False, _path: str = "", _counts: "dict 
                     inner = json.loads(s)
                 except ValueError:
                     inner = None
+                if inner is None:                                # prefix/suffix text around an embedded JSON span
+                    s = _clean_embedded(s, p, token_shaped, counts, paths)
                 if inner is not None:
                     sub: dict = {}
                     cleaned = redact_obj(inner, token_shaped, p, sub, paths)[0]

@@ -237,3 +237,27 @@ def test_seam_rules_and_no_forbidden_verbs(tmp_path):
             src += open(os.path.join(cdir, f)).read()
     assert "agent" + "-runtime" not in src.replace("bedrock-agentcore", "")
     assert not re.search(r"\b(get|describe)-agent", src)
+
+
+def test_span_content_dropped_in_log_collectors_and_top_level_span(tmp_path):
+    span = json.dumps({"events": [{"attributes": {"content": "PII-customer-record", "k": "v"}}]})
+    page = json.dumps({"events": [{"timestamp": 1, "ingestionTime": 2, "logStreamName": "s",
+                                   "message": span + " " + CID}]}).encode()
+    ctx = _ctx(tmp_path, lambda argv: (0, page, b""))
+    for sc in (runtime_logs.pull(ctx, "rt-abc", CID, "2026-10-05T17:00:00Z", "2026-10-05T17:30:00Z"),
+               modaas_evidence.pull(ctx, CID, "2026-10-05T17:00:00Z", "2026-10-05T17:30:00Z")):
+        body = open(os.path.join(str(tmp_path), sc["path"]), "rb").read().decode()
+        assert "PII-customer-record" not in body
+        assert any(r["rule"] == "span-content" and r["count"] > 0 for r in sc["redactions"])
+    # a pure-JSON message (no trailing text) too
+    page2 = json.dumps({"events": [{"timestamp": 1, "ingestionTime": 2, "logStreamName": "s", "message": span}]}).encode()
+    ctx2 = _ctx(tmp_path, lambda argv: (0, page2, b""))
+    sc = runtime_logs.pull(ctx2, "rt-abc", CID, "2026-10-05T17:00:00Z", "2026-10-05T17:30:00Z")
+    assert "PII-customer-record" not in open(os.path.join(str(tmp_path), sc["path"]), "rb").read().decode()
+
+
+def test_redact_obj_top_level_span_dict():
+    clean, counts, _ = redact.redact_obj({"events": [{"attributes": {"content": "PII", "k": "v"}}]})
+    assert "PII" not in json.dumps(clean) and counts.get("span-content") == 1 and clean["events"][0]["attributes"]["k"] == "v"
+    clean, counts, _ = redact.redact_obj({"notevents": {"attributes": {"content": "keep"}}})
+    assert counts.get("span-content") is None
