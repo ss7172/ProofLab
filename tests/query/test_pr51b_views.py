@@ -87,7 +87,7 @@ def test_window_before_v1_approval_names_each_register_date_and_never_vouches():
     assert "threshold version C9-v1 first dated by S3 (T1) 2026-10-06T12:40:22Z in register v1, before the scope start" in t
     assert "register v1.1 (the rule shown) dated by S3 (T1) 2026-10-06T13:38:05Z, after the scope start" in t
     assert "register v1.1 dated by S3 (T1) 2026-10-06T12:40:22Z" not in t
-    assert "approved after the scope start; dated before the scope start by S3" in t
+    assert "approved after the scope start; threshold version C9-v1 (register v1) dated before the scope start by S3" in t
     v = A._tick_text({}, "VERIFIED", {}, "", rule, run_start=start, label="scope start")["V"]
     assert v.startswith("not vouched") and "after the scope start" in v and "register v1)" in v
     assert A._tick_text({}, "VERIFIED", {}, "", rule, label="scope start")["V"].startswith("not vouched")

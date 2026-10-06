@@ -241,7 +241,8 @@ def _authority_text(rule, run_start, label="run start"):
     if ap.get("status") == "APPROVED" and ap.get("at"):
         noun = "run" if label == "run start" else label
         when = ("approved before the %s" % noun if _approved_before(rule, run_start)
-                else "approved after the %s; dated before the %s by S3" % (noun, noun)
+                else "approved after the %s; %sdated before the %s by S3" % (
+                    noun, "" if first == rule.get("register_version") else "threshold version %s (register %s) " % (rule.get("threshold_version"), first), noun)
                 if _dated_before(rule.get("frozen_at"), run_start) else "approved after the %s" % noun)
         appr = "ServiceNow approval note %s on %s, responded from account %s (%s)" % (ap["at"], str(ap.get("ref") or "").replace("servicenow:", ""),
                                                              (ap.get("approver") or {}).get("id") or "not recorded", when)
