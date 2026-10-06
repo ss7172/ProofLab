@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-theme="instrument">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProofLab Evidence Console</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/panel/ifabric-case-panel.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="mark" aria-hidden="true">PL</div><div><b>ProofLab Evidence Console</b><br><small>read-only · loopback</small></div></div>
+    <button class="ask" id="askBtn" aria-label="Ask the evidence"><span aria-hidden="true">⌕</span><span>Ask the evidence — “Show me control 16 for run &lt;alias&gt;”</span><kbd>⌘K</kbd></button>
+    <div class="topr"><span class="chip trace" id="modeChip" title="Read-only: this console sees everything and can refuse nothing">PACK · read-only</span><button class="chip btn" id="integrityBtn">MANIFEST …</button><button class="chip btn" id="themeBtn" aria-label="Toggle theme">◐</button></div>
+  </header>
+  <div class="ribbon" id="ribbon" role="status"></div>
+  <div class="body">
+    <nav class="rail" id="rail" aria-label="Exhibits"></nav>
+    <main id="main" tabindex="-1"><p class="muted">loading…</p></main>
+  </div>
+  <footer class="foot" id="foot"></footer>
+</div>
+<aside class="drawer" id="drawer" aria-label="Record inspector"><header><b id="drTitle">Record</b><span class="muted small">Record inspector</span><button class="chip btn mla" id="drClose">Esc</button></header><div class="in" id="drBody"></div></aside>
+<div class="palette" id="palette" role="dialog" aria-label="Ask the evidence"><div class="pbox"><input id="pIn" placeholder="Show me control 16 for run FM-B" autocomplete="off" aria-label="Question"><div class="parse" id="pParse">deterministic grammar · no LLM in the answer path</div><ul id="pList"></ul></div></div>
+<script src="/static/panel/ifabric-case-panel.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
