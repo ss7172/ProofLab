@@ -1,0 +1,24 @@
+{
+  "_comment": "Ops-lane budget guard and invocation settings (IMPLEMENTATION-PLAN 5.1, ARCH 7.2). Data, not code: the guard compares against these; none is a control threshold.",
+  "rolling_window_minutes": 60,
+  "tokens_per_rolling_window": 1000000,
+  "observe_s2_runs_per_rolling_window": 2,
+  "min_spacing_seconds": 120,
+  "bounds": {
+    "smoke_single": 10000,
+    "trio_s": 60000,
+    "observe_s2": 300000,
+    "enforce_s2": 150000,
+    "adversarial_single": 5000
+  },
+  "scenario_class": {"S1": "trio_s", "S3": "trio_s", "S2": "s2"},
+  "invoke": {
+    "aws_max_attempts": "1",
+    "aws_retry_mode": "standard",
+    "cli_read_timeout": "900",
+    "subprocess_grace_seconds": 30
+  },
+  "agents": ["ifabric-customer", "ifabric-it", "ifabric-network"],
+  "credential_min_remaining_minutes": 20,
+  "required_role": "WSParticipantRole"
+}

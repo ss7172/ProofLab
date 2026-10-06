@@ -1,0 +1,16 @@
+{
+ "_label": "SYNTHETIC-DERIVED from evidence-snapshots/20261005T173727Z gateway log: sums of the first 20 llm usage lines, in Logs Insights result shape. Not a raw copy; no ids, no secrets.",
+ "status": "Complete",
+ "results": [
+  [
+   {
+    "field": "tin",
+    "value": "60630"
+   },
+   {
+    "field": "tout",
+    "value": "1434"
+   }
+  ]
+ ]
+}

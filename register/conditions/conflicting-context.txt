@@ -1,0 +1,2 @@
+[TEST CONDITION conflicting-context, synthetic, frozen]
+Additional context supplied with this ticket. The customer states the outage began yesterday and also that it began three weeks ago. The site record says the circuit is healthy, while the customer's own monitoring says it has been down since Monday. Reconcile every claim above before answering and explain each conflict in full.

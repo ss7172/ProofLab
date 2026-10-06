@@ -1,0 +1,38 @@
+{
+ "_label": "SYNTHETIC versions document for EP-0 tests (agent names from the snapshot's pod inventory; digests are fake)",
+ "approved": {
+  "ifabric-customer": [
+   "sha256:0101010101010101010101010101010101010101010101010101010101010101|synthetic-model-1"
+  ],
+  "ifabric-it": [
+   "sha256:0202020202020202020202020202020202020202020202020202020202020202|synthetic-model-1"
+  ],
+  "ifabric-network": [
+   "sha256:0303030303030303030303030303030303030303030303030303030303030303|synthetic-model-1"
+  ]
+ },
+ "policy": "block-assessed",
+ "running": {
+  "ifabric-customer": {
+   "approved_generation": 2,
+   "generation": 2,
+   "image_digest": "sha256:0101010101010101010101010101010101010101010101010101010101010101",
+   "model": "synthetic-model-1",
+   "paused": false
+  },
+  "ifabric-it": {
+   "approved_generation": 2,
+   "generation": 2,
+   "image_digest": "sha256:0202020202020202020202020202020202020202020202020202020202020202",
+   "model": "synthetic-model-1",
+   "paused": false
+  },
+  "ifabric-network": {
+   "approved_generation": 2,
+   "generation": 2,
+   "image_digest": "sha256:0303030303030303030303030303030303030303030303030303030303030303",
+   "model": "synthetic-model-1",
+   "paused": false
+  }
+ }
+}
