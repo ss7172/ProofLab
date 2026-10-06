@@ -39,7 +39,8 @@ def test_j2_result_to_judgment_record_passes_the_contract():
     assert rec["judgment.valid"] is True and rec["judgment.reasked"] is False
     assert rec["judgment.reversible_step"] == "roll back the change"
     assert rec["judgment.precedence_rule"] is None and rec["null_reasons"]["judgment.precedence_rule"]
-    assert rec["detail"] == "disposition=auto-resolve; proposed: restart the CPE"
+    assert rec["detail"] == ("disposition=auto-resolve; proposed: restart the CPE; reversible step: roll back the change; "
+                             "needs more evidence: ticket history")
     assert not [k for k in fields if k in rec and k != "reason"]       # no un-prefixed J2 key leaks into the record
 
 

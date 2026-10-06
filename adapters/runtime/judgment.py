@@ -43,8 +43,12 @@ def record_judgment(client, ctx, disposition, reason, evidence_ids=(), result_di
              "judgment.precedence_rule": precedence_rule, "reason": reason,
              "run.condition": "none", **j2}
     detail = "disposition=%s" % disp   # the key=value form score-run.py reads (kit grader parity)
-    if proposed_action:   # the agent's proposed action, folded into detail (bounded, one line)
-        detail += "; proposed: " + " ".join(str(proposed_action).split())[:PROPOSED_MAX]
+    # the kit grades `detail` only: the proposed action, the reversible step and the evidence named as needed
+    # are folded in (bounded, one line each); the structured judgment.* fields stay the record of truth
+    for label, v in (("proposed", proposed_action), ("reversible step", reversible_step),
+                     ("needs more evidence", "; ".join(str(x) for x in (evidence_needed or ())))):
+        if v:
+            detail += "; %s: %s" % (label, " ".join(str(v).split())[:PROPOSED_MAX])
     receipt = client.emit(ec.new_record(ctx, "judgment", EP_ID, EP_KIND, "emit", detail, "RECORDED",
                                         control_ref="C7", control_id="AIA-LOG-001", extra=extra,
                                         null_reasons=nr))
@@ -104,3 +108,15 @@ def record_negotiation(client, ctx, position, fields=None):
     return client.emit(ec.new_record(ctx, "judgment", EP_ID, EP_KIND, "emit", detail, "RECORDED",
                                      control_ref="C7", control_id="AIA-LOG-001", extra=extra,
                                      null_reasons=nr))
+
+
+def record_result_inspection(client, ctx, fields, position=None):
+    """The reference shape's `result-inspection` step (ARCH 3.5): the answer was inspected (J2 parse + precedence
+    + output rails) before it left the agent. Phase `ifabric.result-inspection`; content-free."""
+    f = fields or {}
+    detail = "result inspected: J2 valid=%s reasked=%s precedence=%s model_said=%s" % (
+        f.get("valid"), f.get("reasked"), f.get("precedence_rule") or "none", f.get("model_disposition"))
+    if position:
+        detail += " negotiation_position=%s" % position
+    return client.emit(ec.lifecycle_record(ctx, "result-inspection", detail,
+                                           extra={"phase": "ifabric.result-inspection"}))

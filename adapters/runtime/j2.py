@@ -201,16 +201,19 @@ def negotiation_question(proposal):
 
 
 def position_of(disposition, model_position=""):
-    """The safer of the model's stated position and the one its (precedence-applied) disposition implies."""
+    """The model's stated position unless the (precedence-applied) disposition is safer; then the position that
+    disposition implies. Ranked by disposition, so disagree and escalate (both escalate) are equally safe."""
     floor = _POSITION_OF.get(disposition, "escalate")
     m = (model_position or "").strip().lower()
     if m not in POSITIONS:
         return floor
-    return m if POSITIONS.index(m) > POSITIONS.index(floor) else floor
+    return m if _RANK[POSITION_DISPOSITION[m]] >= _RANK.get(disposition, _RANK[HALTED]) else floor
 
 
 def negotiate(j, text):
-    """(position) for Gateway C; moves `j` toward safety to the position's disposition (a disagree escalates)."""
+    """Gateway C: the position (agree | disagree | gather-evidence | escalate); moves `j` toward safety to that
+    position's disposition (disagree and escalate escalate; gather-evidence names the evidence). Never canned:
+    it reads the model's answer and the precedence already applied to `j` (freeze/restricted -> escalate)."""
     pos = position_of(j.disposition, _last_key(text, "position"))
     disp = POSITION_DISPOSITION[pos]
     need = (j.named_evidence_needed or ["the evidence that settles the proposal"]) if disp == GATHER else None

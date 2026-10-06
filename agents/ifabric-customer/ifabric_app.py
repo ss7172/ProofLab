@@ -7,6 +7,7 @@ the envelope / duplicate guard / intent, the rails (PR-05) at ingress, tools and
 and gateway model (PR-03), EP-3 tool records (PR-04), J2 (PR-07) and the EP-4 judgment record (PR-04).
 No limit is written here: max_tokens comes from the pin.
 """
+import hashlib
 import importlib
 import json
 import os
@@ -25,10 +26,12 @@ SURFACE = {
     "adapters.runtime.tally": ("RunTally",),
     "adapters.runtime.model_call": ("ModelCallAdapter", "make_gateway_model"),
     "adapters.runtime.tool_call": ("ToolCallRecorder", "args_sha256"),
-    "adapters.runtime.judgment": ("record_judgment", "record_from_j2", "record_intent"),
+    "adapters.runtime.judgment": ("record_judgment", "record_from_j2", "record_intent", "record_negotiation",
+                                  "record_result_inspection"),
     "adapters.runtime.rails": ("Rails", "startup"),
     "adapters.runtime.egress": ("install",),
-    "adapters.runtime.j2": ("judge", "halted_judgment"),
+    "adapters.runtime.j2": ("judge", "halted_judgment", "negotiation_question", "negotiate", "position_of",
+                            "proposal_of"),
 }
 
 J2_SUFFIX = (
@@ -78,10 +81,12 @@ def _envelope(payload):
     if not isinstance(e, dict):
         return {}, {}
     return {"envelope": {"run_id": e.get("run_id"), "handoff_id": e.get("handoff_id"), "tier": e.get("tier"),
-                         "tally": e.get("tally_tokens"), "from": e.get("from")}}, e
+                         "tally": e.get("tally_tokens"), "from": e.get("from"), "fault": e.get("fault")}}, e
 
 
 def _question(p):
+    if isinstance(p, dict) and isinstance(p.get("prompt"), str):   # the orchestrator's body (ARCH 7.2)
+        return p["prompt"][:6000]
     ctx = p.get("context", p) if isinstance(p, dict) else p
     if isinstance(ctx, dict):
         return ctx.get("question") or json.dumps(ctx)[:6000]
@@ -106,6 +111,56 @@ def _drop_empty_tools(model):
 
     model.format_request = format_request
     return model
+
+
+def _echo(st, tally=None):
+    """The pin echo on EVERY response, refusals included (ARCH 7.2 preflight reads it): the verified pin sha256
+    and register version; after a start-up failure only the unverified env value, labelled so."""
+    cfg = st.get("cfg")
+    e = {"pin_sha256": cfg.pin_sha256 if cfg else os.environ.get("IFABRIC_PIN_SHA256"), "pin_verified": bool(cfg),
+         "register_version": cfg.register_version if cfg else os.environ.get("IFABRIC_REGISTER_VERSION")}
+    if tally is not None:
+        e.update(tally_tokens=tally.committed, tally_calls=tally.calls)
+    return {"pin_sha256": e["pin_sha256"], "register_version": e["register_version"], "ifabric": e}
+
+
+def _fault(W, client, ctx, cfg, raw, name):
+    """The declared fault (ARCH 7.2; DC-8) from the envelope, applied ONLY when the pin's c7.declared_faults lists
+    its spec and it names this agent; anything else is refused and recorded. Returns the fault or None."""
+    f = raw.get("fault")
+    if not isinstance(f, dict) or f.get("agent") != name:
+        return None
+    declared = ((cfg.pin or {}).get("c7") or {}).get("declared_faults") or []
+    why = None if f.get("spec") in declared else "not declared in the pin"
+    if not why and f.get("kind") == "inject-tool-output":
+        t = f.get("fixture_text")
+        if not isinstance(t, str) or hashlib.sha256(t.encode("utf-8")).hexdigest() != f.get("fixture_sha256"):
+            why = "fixture text missing or sha256 differs"
+    if not why and f.get("kind") == "suppress-record" and (f.get("event") != "tool.call"
+                                                           or not str(f.get("count")).isdigit()):
+        why = "only suppress-record:<agent>:tool.call:<n> is supported"
+    ev = "fault-refused" if why else "fault-applied"
+    client.emit(W.emit_client.lifecycle_record(ctx, ev, "%s %s%s" % (ev, f.get("spec"), (": " + why) if why else ""),
+                                               reason=why or "declared fault"))
+    return None if why else f
+
+
+class _Suppress(object):
+    """suppress-record:<agent>:tool.call:<count> (N4): drops the <count>-th EP-3 AFTER record (tool.phase after)
+    of a tool call, so C7 finds that expected event missing (BREACHED). Every other record passes through."""
+
+    def __init__(self, client, count):
+        self._c, self._left = client, int(count)
+
+    def __getattr__(self, k):
+        return getattr(self._c, k)
+
+    def emit(self, rec):
+        if rec.get("ep.id") == "EP-3" and rec.get("tool.phase") == "after":
+            self._left -= 1
+            if self._left == 0:
+                return "SUPPRESSED"
+        return self._c.emit(rec)
 
 
 _TOOLS = None
@@ -139,11 +194,14 @@ def load_tools():
 class _Inv(object):
     """One invocation: its context, client, rails and EP-3 recorder; rails records drained as they come."""
 
-    def __init__(self, W, ctx, client, name):
+    def __init__(self, W, ctx, client, name, fault=None):
         self.W, self.ctx, self.client = W, ctx, client
         self.rails = W.rails.Rails(name)
         declared = (getattr(W.rails, "POLICY", None) or {}).get(name, {}).get("tools", ())
-        self.rec = W.tool_call.ToolCallRecorder(client, ctx, declared_tools=declared)
+        f = fault or {}
+        sup = _Suppress(client, f["count"]) if f.get("kind") == "suppress-record" else client
+        self.rec = W.tool_call.ToolCallRecorder(sup, ctx, declared_tools=declared)
+        self.inject = f if f.get("kind") == "inject-tool-output" else None
         self.evidence = []
         self._n = 0
 
@@ -181,6 +239,9 @@ class _ToolHooks(object):
         inv, tu, res = self.inv, event.tool_use, event.result or {}
         parts = [c.get("text") for c in res.get("content") or [] if isinstance(c, dict) and "text" in c]
         text = "\n".join(parts) if parts else json.dumps(res.get("content"), default=str)
+        name, ij = tu.get("name") or "", inv.inject
+        if ij and (name == ij["tool"] or name.endswith("_" + ij["tool"])):   # ADV-H-02: appended BEFORE the rails
+            text += "\n" + ij["fixture_text"]
         n0 = len(inv.rails.records)
         wrapped = inv.rails.after_tool(tu.get("name"), text)
         suspicious = any(r.get("rail.id") == "T-03" and r.get("verdict") == "FLAG"
@@ -216,7 +277,7 @@ def build(spec):
     @app.entrypoint
     def invoke(payload, context=None):
         if st["error"]:
-            return {"agent": name, "role": spec["role"], "refused": "startup-failed", "detail": st["error"]}
+            return dict(_echo(st), agent=name, role=spec["role"], refused="startup-failed", detail=st["error"])
         payload = payload if isinstance(payload, dict) else {"context": payload}
         envp, raw = _envelope(payload)
         e = W.startup.resolve_envelope(envp)
@@ -231,16 +292,19 @@ def build(spec):
             client.emit(_complete(W, ctx, st["egress"].pop(0)))
         if not e.enveloped:
             W.startup.record_no_envelope(client, ctx)
+        client.emit(W.emit_client.lifecycle_record(   # C7 workflow event (ARCH 3.6 key 4: echoes the handoff id)
+            ctx, "invocation.received", "invocation of %s received: handoff %s from %s" % (
+                name, e.handoff_id or "(none)", e.from_agent), extra={"phase": "invocation.received"}))
         if not st["guard"].begin(e.handoff_id):
             W.startup.refuse_duplicate(client, ctx, st["guard"])
             client.flush()
-            return {"agent": name, "correlation_id": e.run_id, "handoff_id": e.handoff_id,
-                    "refused": "duplicate-invocation"}
-        result = {"agent": name, "role": spec["role"], "correlation_id": e.run_id, "handoff_id": e.handoff_id}
+            return dict(_echo(st), agent=name, correlation_id=e.run_id, handoff_id=e.handoff_id,
+                        refused="duplicate-invocation")
+        result = dict(_echo(st), agent=name, role=spec["role"], correlation_id=e.run_id, handoff_id=e.handoff_id)
         inv = None
         try:
             W.judgment.record_intent(client, ctx, "%s answers handoff %s" % (name, e.handoff_id or "(none)"))
-            inv = _Inv(W, ctx, client, name)
+            inv = _Inv(W, ctx, client, name, _fault(W, client, ctx, cfg, raw, name))
             clean, blocked = inv.rails.ingress(payload)
             inv.drain()
             if blocked:
@@ -262,18 +326,28 @@ def build(spec):
             inv.drain()
             agent = Agent(model=model, tools=tools, system_prompt=prompt, hooks=[mc, _ToolHooks(inv)],
                           callback_handler=None)
-            text = str(agent(_question(clean))).strip()
+            neg = clean.get("negotiate") if spec.get("negotiates") and isinstance(clean, dict) else None
+            neg = neg if isinstance(neg, dict) else None   # Gateway C: evaluate the proposal, never a canned agree
+            text = str(agent(W.j2.negotiation_question(neg.get("proposal")) if neg else _question(clean))).strip()
             if tally.halted:   # C16 halt: escalate in code, no re-ask
                 j = W.j2.halted_judgment()
             else:
                 j = W.j2.judge(text, lambda p: "" if tally.halted else str(agent(p)).strip(),
                                constraints=_constraints(clean), tool_evidence=list(inv.evidence))
+            pos = W.j2.negotiate(j, text) if neg else None
             fields = inv.rails.ground(j.to_record_fields())
             answer = inv.rails.output(text, prompts=[prompt])
             inv.drain()
+            if neg:   # the output rails only move toward safety: the position follows them
+                pos = W.j2.position_of(fields["disposition"], pos)
+                W.judgment.record_negotiation(client, ctx, pos, fields)
+                result.update(position=pos, negotiation={"position": pos, "handoff_id": e.handoff_id})
             W.judgment.record_from_j2(client, ctx, fields,
                                       result_digests=[W.tool_call.args_sha256(t) for t in inv.evidence])
-            result.update(answer=answer, judgment=fields, disposition=fields["disposition"],
+            W.judgment.record_result_inspection(client, ctx, fields, pos)
+            if spec.get("proposes"):   # Gateway C's input: the network's structured proposal
+                result["proposal"] = W.j2.proposal_of(fields, text)
+            result.update(_echo(st, tally), answer=answer, judgment=fields, disposition=fields["disposition"],
                           halted=tally.halted, tally_tokens=tally.committed, tally_calls=tally.calls)
         except Exception as exc:  # the true status, never "500 on the model"
             result.update(error=type(exc).__name__, http_status=getattr(exc, "status_code", None),
