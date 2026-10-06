@@ -304,7 +304,7 @@ def readme_placeholders(path):
     except (IOError, OSError):
         return ["(README.md missing)"]
     found = re.findall(r"<(?:[A-Z][A-Z0-9_]+|INC[a-z]+|\.\.\.|YYYY-MM-DD|[a-z][a-z0-9 ,/;.\-]{8,}[a-z.])>", t)
-    found = [f for f in found if f not in ("<CID>", "<T1>", "<T2>", "<CID-or-time>")]    # the reader's own command arguments
+    found = [f for f in found if f not in ("<CID>", "<T1>", "<T2>", "<CID-or-time>", "<port>")]    # the reader's own command arguments
     if "Delete this note when filled" in t:
         found.append("Delete this note when filled")
     return found
@@ -377,12 +377,6 @@ def cmd_build(argv):
     except SketchMissing as exc:
         print("pack: " + str(exc), file=sys.stderr)
         return 2
-    if a.strict_readme:
-        left = readme_placeholders(os.path.join(out, "README.md"))
-        if left:
-            print("pack: README.md still holds %d placeholder(s), e.g. %s (--strict-readme)" % (len(left), ", ".join(left[:4])),
-                  file=sys.stderr)
-            return 2
     redactor = _load_redactor()
     if redactor:
         redactor(out)
@@ -392,6 +386,23 @@ def cmd_build(argv):
             _project_console(out, warnings)
         except Exception as exc:       # the pack is still valid without the console entry point; say so loudly
             warnings.append("console projection FAILED (%s: %s): pack-index.json not written" % (type(exc).__name__, exc))
+    if not redact_errors:
+        try:
+            from prooflab.pack import readme as _readme
+            rf = _readme.fill(out)
+            if rf["not_available"]:
+                warnings.append("README: %d placeholder(s) not fillable from the pack, stated as 'not yet available': %s"
+                                % (len(rf["not_available"]), "; ".join(rf["not_available"][:6])))
+            if rf["absent_files"]:
+                warnings.append("README names files not in the pack (marked so): " + ", ".join(rf["absent_files"]))
+        except Exception as exc:       # the README stays as staged; strict mode below then refuses it
+            warnings.append("README fill FAILED (%s: %s)" % (type(exc).__name__, exc))
+    if a.strict_readme:
+        left = readme_placeholders(os.path.join(out, "README.md"))
+        if left:
+            print("pack: README.md still holds %d placeholder(s), e.g. %s (--strict-readme)" % (len(left), ", ".join(left[:4])),
+                  file=sys.stderr)
+            return 2
     if redact_errors:
         for rel in redact_errors:
             print("REDACT FAIL: cannot parse and redact " + rel, file=sys.stderr)
