@@ -306,7 +306,10 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
                      or json.dumps(output, sort_keys=True))
         prev_agent = agent
         if agent == GATEWAY_C_FROM:   # what Gateway C relays: the network's structured proposal (or its answer)
-            proposal = output.get("proposal") or {"resolution": str(output.get("answer") or prev_text)[:3000]}
+            proposal = output.get("proposal") if isinstance(output.get("proposal"), dict) else {}
+            if not str(proposal.get("resolution") or "").strip():   # PR-38: an empty proposal is no proposal
+                said = output.get("answer") or output.get("text") or output.get("response") or ""
+                proposal = dict(proposal, resolution=str(said)[:3000])   # still empty: IT answers no-proposal
     _emit(mk("lifecycle", "run finished: status %s" % status, phase="run.finished"), spool, sink)
     common.append_jsonl(index_path, dict(base, event="run.finished", status=status, handoffs=statuses,
                                          tally_tokens=tally[0], tally_calls=tally[1], finished_at=common.utc_now()))

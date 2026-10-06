@@ -9,7 +9,8 @@ it and compare byte for byte). Shape:
    "c16": {"control_id": "ACN-COST-001", "threshold_version": "C16-v1", "version_date": "<UTC>",
            "tiers": ["high", "standard"], "default_tier": "standard", "caps": {"high": N, "standard": M},
            "safety_ceiling": S, "modes": ["enforce", "observe"], "mode": "enforce",
-           "bound": {"inline_bound_margin_pct": P, "inline_bound_fallback_tokens": F, "max_tokens": T}},
+           "bound": {"inline_bound_margin_pct": P, "inline_bound_fallback_tokens": F, "max_tokens": T},
+           "tool_no_evidence_limit": K},   # optional: only when the register's C16 entry declares it (PR-36)
    "c7": {"declared_faults": ["suppress-record:ifabric-it:tool.call:1", ...]}}
 
 The env block (the only way in-path values are set): IFABRIC_PIN_JSON, IFABRIC_PIN_SHA256,
@@ -93,6 +94,9 @@ def validate_pin(pin) -> list:
         m = bound["inline_bound_margin_pct"]
         if isinstance(m, bool) or not isinstance(m, (int, float)) or m < 0:
             errors.append("c16.bound.inline_bound_margin_pct: non-negative number")
+    k = c16.get("tool_no_evidence_limit")
+    if "tool_no_evidence_limit" in c16 and not (_is_int(k) and k > 0):
+        errors.append("c16.tool_no_evidence_limit: positive integer when present")
     c7 = pin.get("c7")
     if not isinstance(c7, dict) or not isinstance(c7.get("declared_faults"), list) or \
             not all(isinstance(f, str) for f in c7["declared_faults"]):
@@ -151,6 +155,8 @@ def derive_pin(doc: dict, register_sha256: str, mode: str) -> dict:
             },
             "c7": {"declared_faults": _reg.as_list(c7.get("declared_faults", ""))},
         }
+        if "tool_no_evidence_limit" in c16:   # optional: a register without it derives the same pin as before
+            pin["c16"]["tool_no_evidence_limit"] = _reg.as_int(c16["tool_no_evidence_limit"])
     except (KeyError, ValueError) as exc:
         raise PinError("register cannot be pinned: %s" % exc)
     errors = validate_pin(pin)

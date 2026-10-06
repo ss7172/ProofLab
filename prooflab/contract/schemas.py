@@ -96,7 +96,8 @@ def pin_schema() -> dict:
                 "mode": {"enum": list(_v.C16_MODES)},
                 "bound": {"type": "object", "required": list(_pin.BOUND_KEYS), "additionalProperties": False,
                           "properties": {"inline_bound_margin_pct": {"type": "number", "minimum": 0},
-                                         "inline_bound_fallback_tokens": integer, "max_tokens": integer}}}},
+                                         "inline_bound_fallback_tokens": integer, "max_tokens": integer}},
+                "tool_no_evidence_limit": {"type": "integer", "minimum": 1}}},
             "c7": {"type": "object", "required": ["declared_faults"], "properties": {
                 "declared_faults": {"type": "array", "items": {"type": "string"}}}},
         },

@@ -109,6 +109,10 @@
        "type": "integer"
       }
      }
+    },
+    "tool_no_evidence_limit": {
+     "type": "integer",
+     "minimum": 1
     }
    }
   },

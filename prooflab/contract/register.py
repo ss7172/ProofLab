@@ -35,6 +35,7 @@ CONTROL_KNOWN = CONTROL_REQUIRED + (
     # C16
     "tier_rule", "default_tier", "inline_modes", "safety_ceiling", "inline_bound_margin_pct",
     "inline_bound_fallback_tokens", "max_tokens", "declared_conditions", "breach_protocol",
+    "tool_no_evidence_limit",   # optional (PR-36): consecutive no-evidence tool results before rail T-04 stops the loop
     # C7
     "expected_sources", "workflow_events", "workflow_events_after_stop", "gap_clock", "declared_faults",
     # C9
@@ -161,8 +162,9 @@ def validate_register(doc: dict) -> list:
         if entry.get("in_claim") and entry["in_claim"] not in ("true", "false"):
             errors.append("%s.in_claim: true|false" % where)
         for k, v in entry.items():
-            if k.startswith("cap_tier_") or k in ("safety_ceiling", "inline_bound_fallback_tokens", "max_tokens"):
-                if not INT_RE.match(v):
+            if k.startswith("cap_tier_") or k in ("safety_ceiling", "inline_bound_fallback_tokens", "max_tokens",
+                                                           "tool_no_evidence_limit"):
+                if not INT_RE.match(v) or k == "tool_no_evidence_limit" and int(v) < 1:
                     errors.append("%s.%s: must be an integer" % (where, k))
             if k == "inline_bound_margin_pct" and not NUM_RE.match(v):
                 errors.append("%s.%s: must be a number" % (where, k))

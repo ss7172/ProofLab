@@ -223,6 +223,9 @@
      "breach_protocol": {
       "type": "string"
      },
+     "tool_no_evidence_limit": {
+      "type": "string"
+     },
      "expected_sources": {
       "type": "string"
      },

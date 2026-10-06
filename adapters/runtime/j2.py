@@ -23,6 +23,8 @@ R_INVALID = "invalid-structured-output"
 R_C16 = "c16-budget-halt"
 R_NEGOTIATION = "negotiation-position"
 R_PROPOSAL = "proposal-disposition"
+R_LOOP = "tool-no-evidence-limit"   # rail T-07 stopped the tool loop (PR-36)
+R_GUARD = "guardrail-blocked-reask"   # the platform guardrail blocked the re-ask: derived in code (PR-38)
 
 # Gateway C (network -> IT): the IT agent's position on the network's proposal, in safety order.
 POSITIONS = ("agree", "gather-evidence", "disagree", "escalate")
@@ -178,13 +180,37 @@ def _last_key(text, key):
     return ""
 
 
+def _said(text, words=()):
+    """The answer's sentences (think blocks and flat JSON removed) that name one of `words` (all if none)."""
+    t = re.sub(r"\{[^{}]*\}", " ", strip_reasoning(text or ""))
+    return " ".join(x for x in (y.strip(" -*") for y in re.split(r"(?<=[.!?])\s+|\n+", t))
+                    if x and (not words or any(w in x.lower() for w in words)))[:1500]
+
+
 def proposal_of(fields, text):
     """The network agent's structured proposal for Gateway C: resolution + change risk, with its disposition and
-    the evidence it needs, so "no twin data: do not guess" travels with it (data for the script to relay)."""
+    the evidence it needs, so "no twin data: do not guess" travels with it (data for the script to relay).
+    Never empty while the answer has text: without a J2 resolution it carries the answer's resolution and risk
+    sentences (else the whole answer)."""
     f = fields or {}
-    return {"resolution": f.get("proposed_action") or _last_key(text, "proposed_action") or f.get("reversible_step"),
-            "change_risk": _last_key(text, "change_risk") or "not stated", "disposition": f.get("disposition"),
-            "reason": f.get("reason"), "evidence_needed": f.get("named_evidence_needed")}
+    return {"resolution": f.get("proposed_action") or _last_key(text, "proposed_action") or f.get("reversible_step")
+            or _said(text, ("resol", "propos")) or _said(text),
+            "change_risk": _last_key(text, "change_risk") or _said(text, ("risk",)) or "not stated",
+            "disposition": f.get("disposition"), "reason": f.get("reason"),
+            "evidence_needed": f.get("named_evidence_needed")}
+
+
+def proposal_empty(proposal):
+    """Gateway C: True when there is no proposed change to evaluate (None, blank, or no resolution)."""
+    r = proposal.get("resolution") if isinstance(proposal, dict) else proposal
+    return not str(r or "").strip()
+
+
+def no_proposal_judgment(constraints=None):
+    """Gateway C with an empty proposal: gather-evidence in code (no model or tool call); a freeze escalates."""
+    need = "the network team's proposed change and its risk"
+    j = Judgment(GATHER, "no proposal received; need " + need, precedence_rule="no-proposal", named_evidence_needed=[need])
+    return apply_precedence(j, constraints)
 
 
 def negotiation_question(proposal):
@@ -238,14 +264,9 @@ def resolve_site_ids(element_ids, inventory):
     return sites, missing
 
 
-def build_reask_prompt(errors, previous_answer=""):
-    tail = (previous_answer or "").strip()[-600:]
-    return ("Your last answer did not contain a valid disposition. Problems: %s.\n"
-            "Reply again ending with exactly one JSON object with keys disposition "
-            "(gather-evidence | escalate | resolve), deciding_evidence (list of E<n> or record ids), "
-            "reversible_step, reason, and optionally named_evidence_needed and proposed_action. "
-            "No other JSON objects.\nYour previous answer ended: %s"
-            % ("; ".join(errors) or "unparseable", tail))
+# the one re-ask (PR-38): a plain follow-up about the format only. P1's re-ask (it quoted the previous answer and gave
+# imperatives) was blocked by the platform guardrail as PROMPT_ATTACK
+REASK = "Please add a final line with the JSON summary: disposition, deciding_evidence, reversible_step and reason."
 
 
 def invalid_judgment(errors, reasked=True):
@@ -258,12 +279,39 @@ def halted_judgment():
     return Judgment(ESCALATE, R_C16, precedence_rule=R_C16, valid=True)
 
 
+def loop_judgment(k, need, constraints=None):
+    """Rail T-07 (PR-36): k consecutive tool results held no evidence, so the agent loop was ended in code with no
+    further model call. gather-evidence, naming what would settle it; the freeze rule still escalates."""
+    j = Judgment(GATHER, "%d consecutive tool results held no evidence: the tool loop was stopped" % k,
+                 reversible_step="none: no change was made", precedence_rule=R_LOOP, named_evidence_needed=[need])
+    return apply_precedence(j, constraints)
+
+
+def derived_judgment(answer, constraints=None, tool_evidence=None, evidence_needed=None, reasked=True):
+    """A guardrail block (the re-ask, or the task call: the app then passes no text, never the platform's canned
+    refusal): the disposition is derived in code from what the agent already returned. Base: escalate when there is
+    no answer text or it names escalation, else gather-evidence
+    (never auto-resolve: no structured evidence); then the J2 precedence rules (freeze escalates, empty evidence
+    gathers)."""
+    t = strip_reasoning(answer).lower()   # no answer at all (its task call was blocked): escalate, as before
+    j = Judgment(ESCALATE if not t.strip() or "escalat" in t else GATHER, "a guardrail block",
+                 sorted(set(re.findall(r"\bE\d+\b", answer))), named_evidence_needed=evidence_needed, valid=False,
+                 reasked=reasked)
+    apply_precedence(j, constraints, tool_evidence, evidence_needed).precedence_rule = R_GUARD   # after: _tighten sets it
+    return j
+
+
 def judge(answer, ask_again, constraints=None, tool_evidence=None, evidence_needed=None):
-    """Parse; on failure one re-ask via ask_again(prompt)->text; then escalate invalid-structured-output."""
+    """Parse; on failure one re-ask via ask_again(prompt)->text; then escalate invalid-structured-output.
+    ask_again returns None when the platform guardrail blocked the re-ask, and is None itself when it blocked the
+    task call (no re-ask is made): derived_judgment, not a blind escalate."""
     j = parse(answer)
     if not j.valid:
         errs = j.errors
-        j = parse(ask_again(build_reask_prompt(errs, answer)))
+        again = ask_again(REASK) if ask_again else None
+        if again is None:
+            return derived_judgment(answer, constraints, tool_evidence, evidence_needed, bool(ask_again))
+        j = parse(again)
         if not j.valid:
             return invalid_judgment(j.errors or errs)
         j.reasked = True
