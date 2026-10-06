@@ -62,6 +62,7 @@ controls:
     inline_bound_margin_pct: 10
     inline_bound_fallback_tokens: 6000
     max_tokens: 2048
+    tool_no_evidence_limit: 3
     declared_conditions: "conflicting-context:sha256=PENDING-CONDITION-TEXT"
     breach_protocol: "Switch the EP setting to enforce with the owner's OK and re-run the identical scenario (N3); the first SATISFIED re-test closes the finding"
   - control_id: "7"
