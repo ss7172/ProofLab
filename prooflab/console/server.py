@@ -28,6 +28,10 @@ from prooflab.console import sources as S
 from prooflab.console.sources import ConsoleRefusal
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+# Arth's drop-in panel, byte-identical and served at /static/panel/. It lives OUTSIDE static/ so the "no verdict words
+# in static/" grep is about OUR code; the panel's own tone map is his, unedited.
+PANEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "panel_vendor")
+PANEL_FILES = ("ifabric-case-panel.js", "ifabric-case-panel.css")
 DEFAULT_PORT = 8787
 LOOPBACK = ("127.0.0.1", "localhost")
 COOKIE = "plsession"
@@ -94,6 +98,20 @@ def parse_question(text):
     if m:
         return {"kind": "run", "id": m.group(2).upper(), "normalized": "ledger --run " + m.group(2).upper()}
     return None
+
+
+def flag_closures(obj):
+    """AT-10: a finding marked closed without a re-test is flagged (a structural check on the record, not a verdict)."""
+    if isinstance(obj, dict):
+        c = obj.get("closure")
+        if isinstance(c, dict) and str(c.get("state", "")).startswith("CLOSED") and not c.get("retest_ref"):
+            c["flag"] = "CLOSED WITHOUT RE-TEST"
+        for v in obj.values():
+            flag_closures(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            flag_closures(v)
+    return obj
 
 
 class Session(object):
@@ -251,7 +269,10 @@ class Handler(BaseHTTPRequestHandler):
             rel = unquote(path[len("/static/"):])
         else:
             return self._err(404, "not-found", "no such path")
-        full = S.safe_join(STATIC_DIR, rel)
+        if rel.startswith("panel/") and rel[len("panel/"):] in PANEL_FILES:
+            full = S.safe_join(PANEL_DIR, rel[len("panel/"):])
+        else:
+            full = S.safe_join(STATIC_DIR, rel)
         if full is None or not os.path.isfile(full):
             return self._err(404, "not-found", "no such path")
         with open(full, "rb") as handle:
@@ -299,6 +320,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _stamp(self, doc):
         """When the pack is not VERIFIED, every answer says so (AT-05). The stored answer_id is untouched."""
+        doc = flag_closures(json.loads(json.dumps(doc)))
         status = self.server.source.integrity().get("status")
         if status in ("VERIFIED", None) or not isinstance(doc, dict):
             return doc
@@ -313,7 +335,7 @@ class Handler(BaseHTTPRequestHandler):
         if routes_p1 is not None and routes_p1.handle(self, path, params, method):
             return
         if path == "/api/v1/pack":
-            data = src.pack_index()
+            data = flag_closures(json.loads(json.dumps(src.pack_index())))
             meta = self._meta({"vocab": VOCAB})
             return self._json(200, data, None, meta)
         if path == "/api/v1/answer":

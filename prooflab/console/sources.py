@@ -388,6 +388,8 @@ class PackSource(_Base):
         return self._records
 
     def _raw_allowed(self, rel):
+        if not rel.startswith("raw/"):
+            return False
         if self._manifest is not None:
             return rel in self._manifest
         return any((parse_raw_ref((r.get("source") or {}).get("raw_ref")) or ("",))[0] == rel for r in self._records)
