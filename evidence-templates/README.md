@@ -23,6 +23,21 @@ network.
 - **Who owns what:** the accountable owner approves the thresholds; the builder does not approve
   their own work (section 10).
 
+**The pillars, and where each is in this pack.** One row per pillar; no row is empty. A cell that
+names a file is a claim only if that file is in the pack; `<...>` is filled at submit from what
+the pack holds, and a pillar with nothing yet says so in the status column.
+
+| Pillar | What we claim | Files that show it | Status at this submit |
+|---|---|---|---|
+| Close the gap (judgment) | The agents' dispositions carry deciding evidence and a reason, validated by code | `store/` judgment records, `answers/`, `gap-list.md` gap 1 | `<FULL / PARTIAL; if J2 did not ship, gap 1 is open and this row says so>` |
+| Build a control | C16, C7 and C9 each run against a dated, versioned register with two named runs | `register/`, `named-runs.md`, `assessments/`, `security-matrix.md` | `<per control: assessed / not assessed yet>` |
+| Handover proof | A stranger answers the six auditor questions from the pack alone | `prooflab query --incident`, `store/`, `gap-list.md` | `<per question: FULL / PARTIAL, and what arrives later>` |
+
+**Second enforcement point.** The same C16 core function runs at EP-1 (inline, in the agent) and at
+EP-2 (after the run, over the gateway's log). `<adapter-diff PR sha, its git diff --stat, and the
+core's sha256 at EP-1 and EP-2; filled at submit, and the two hashes must be equal>`. The
+full list of enforcement points is `security-matrix.md`.
+
 ## 2. Retention
 
 Kept for `<RETENTION_RULE>` from the submission date (`<YYYY-MM-DD>`). *(Hackathon note: the event
