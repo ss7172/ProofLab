@@ -357,7 +357,7 @@
 | AICT's usage count is 0; Monitor covers Managed agents only. Its usage query filters `InvokeAgent` (our traffic is `InvokeAgentRuntime`) and groups by `requestParameters.sessionId`, which is always empty [08 AI-03; 10-f11 §1] | AICT | Recorded; the AWS-written invocation log used instead, joined exactly by `responseElements` |
 | Others' admission decisions are invisible (EKS audit off) | Platform | Our own applies, recorded by the deploy wrapper |
 | C9: per-run attribution needs spaced runs; the baseline n is small; the swap lever is unproven | Time; platform | Declared in the register; pilot P8 |
-| Separation of duties: the owner also builds, and also rates the risks she owns; AI reviewers are not the GRC assurance role | Team size | The roles table (§12.2): Sree is accountable management and operations; Arth is assurance (a "reviewed" note on each T2 before Sree approves; the assurance check on each control result); GRC is vacant (R-D-02). If Arth is unavailable overnight, each check he would have made is recorded "not independently reviewed" |
+| Separation of duties: the owner also builds, and also rates the risks she owns; AI reviewers are not the GRC assurance role | Team size | The roles table (§12.2): Sree is accountable management and operations; Arth is assurance (a "reviewed" note on each T2 before Sree approves; the assurance check on each control result), **by procedure only: both act from the one ServiceNow account `annapurna@invences.com` and the one shared AWS role, so the records cannot show who reviewed and who approved (B37)**; GRC is vacant (R-D-02). If Arth is unavailable overnight, each check he would have made is recorded "not independently reviewed" |
 | AICT approvals carry no approver, time or version link: "Approved" is an editable Status [AICT notes §2.6] | AICT | The repo inventory is the source (D14); AICT gets a mirror of owners and the tier |
 | Owners and approvals of platform components (models, shared tools) are not confirmed by their owners | Organisers | The inventory marks them as our declaration, with the CR approval it read (§3.10) |
 | The EU AI Act tier has no primary source in hand (OC-21) | Sources | Recorded as UNVERIFIED and cited to the playbook line (§3.9) |
@@ -746,5 +746,23 @@ AgentCore `Errors`, `SystemErrors`, `UserErrors` and `Throttles` stayed 0 on eve
 **What we plan instead:** leave it; fill the date and window fields from the real data at pack time.
 
 **Status:** open, cosmetic.
+
+---
+
+## B37. Separation of duties is procedural, not identity-proven
+
+**What's missing:** an identity record that tells the two team members apart.
+
+**Why:** there is one ServiceNow account, `annapurna@invences.com` (Sree's); Arth used the same account while connecting the integration (captain, 2026-10-06 ~15:45Z). On AWS everyone works as the one shared `WSParticipantRole`, and the gateway sees one key identity (entry 2). The integration writes as the service user `ifabric.integration`, which is not a person.
+
+**Evidence:** the captain's fact (decisions log section 2, ~15:45Z); `register/inventory.yaml` (inv-3 draft: owners are accounts, and `ifabric-assurance-agent` and `servicenow-integration` carry a `contributors` note naming Arth as builder with no separate identity).
+
+**Affects:** WHO and APPROVED; the human loop (L3); the roles table in B12 (separation of duties).
+
+**Impact:** a `RESPONDED` state proves the account `annapurna@invences.com` answered, not which person did. The review-before-approve rule (Arth reviews, Sree approves) cannot be shown from identities: a "reviewed" note and the approval come from the same account, and the AgentConfig approval annotations come from the same shared role. Where the decisions log's section 1 rows marked "Who: Arth" were acts on the instance or in AWS, they were performed from that shared account or role.
+
+**Next:** state it everywhere (the inventory, the README's people section, this entry, the B12 row). Approvals remain the accountable owner's acts on her own account; we claim no more than that. With one more day: a separate ServiceNow user for Arth and per-person AWS roles, so a review and an approval carry different identities.
+
+**Status:** open, accepted; stated, not hidden.
 
 ---
