@@ -681,11 +681,12 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
             ep_seen.setdefault(ep, []).append("record:%s" % r.get("record_id"))
             if how:
                 ep_notes.setdefault(ep, how)
-    if os.path.isdir(os.path.join(src, "raw", "agentcore-metrics")):
-        ep_seen.setdefault("EP-11", []).append("file:raw/agentcore-metrics/")
+    acm = sorted(glob.glob(os.path.join(src, "raw", "agentcore-metrics", "*", "*.json")))
+    if acm:
+        ep_seen.setdefault("EP-11", []).append("raw:%s" % os.path.relpath(acm[0], src).replace(os.sep, "/"))
         ep_notes.setdefault("EP-11", "identified by the AgentCore metric captures (witnessed-by: AWS, joined-from: raw/agentcore-metrics/)")
     if os.path.exists(os.path.join(src, "servicenow", "delivery-log.jsonl")):
-        ep_seen.setdefault("EP-13", []).append("file:servicenow/delivery-log.jsonl")
+        ep_seen.setdefault("EP-13", []).append("raw:servicenow/delivery-log.jsonl")
         ep_notes.setdefault("EP-13", "identified by the ServiceNow delivery log (joined-from: servicenow/delivery-log.jsonl)")
     report["written"] = {"records": len(proj_records), "assessments": len(docs)}
 

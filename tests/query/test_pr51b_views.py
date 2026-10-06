@@ -69,3 +69,9 @@ def test_threshold_version_bound_by_first_carrier_register():
                            "approver": {"id": "annapurna@invences.com"}})
     t = A._authority_text(bound, "2026-10-06T13:56:15Z")
     assert "bound by register v1" in t and "13:02:37Z on INC0010321" in t and "(approved before the run)" in t
+
+
+def test_c9_largest_change_pct():
+    top, n = A._c9_largest({"windows": [{"change_pct": "8.641", "runtime": "c"}, {"change_pct": "-41.4513", "runtime": "it"}]})
+    assert top == (41.4513, "it") and n == 2
+    assert A._c9_largest({}) == (None, 0)

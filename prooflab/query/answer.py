@@ -298,6 +298,15 @@ def _human_loops(recs):
 _BRACKET = re.compile(r"\b(committed|reserved|bound)=(\d+(?:\.\d+)?)")
 
 
+def _c9_largest(measured):
+    """((largest |change_pct|, runtime), n windows) from a stored C9 assessment's measured.windows; (None, 0) when none."""
+    wins = [w for w in ((measured or {}).get("windows") or []) if isinstance(w, dict) and _num(w.get("change_pct")) is not None]
+    if not wins:
+        return None, 0
+    top = max(wins, key=lambda w: abs(_num(w["change_pct"])))
+    return (round(abs(_num(top["change_pct"])), 4), top.get("runtime")), len(wins)
+
+
 def _decision_numbers(r):
     """committed / reserved / bound from the decision's own detail bracket (recorded: detail), limit from inline.limit_value,
     and the projected total = committed + reserved + bound (the decision's measured.value is this projection, not spend)."""
@@ -473,12 +482,11 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
     msource = "recorded (measured.value of the stored assessment)"
     if mval is None and control == "C9":
         # C9 stores one change_pct per runtime window: the judged figure is the largest |change_pct| (never 'unknown' next to a verdict)
-        wins = [w for w in ((a.get("measured") or {}).get("windows") or []) if isinstance(w, dict) and _num(w.get("change_pct")) is not None]
-        if wins:
-            top = max(wins, key=lambda w: abs(_num(w["change_pct"])))
-            mval = round(abs(_num(top["change_pct"])), 4)
-            ms = dict(ms, unit="%% relative change vs baseline (largest |change_pct|, runtime %s)" % top.get("runtime"))
-            msource = "recorded (measured.windows[].change_pct of the stored assessment; largest of %d)" % len(wins)
+        top, n = _c9_largest(a.get("measured"))
+        if top is not None:
+            mval = top[0]
+            ms = dict(ms, unit="%% relative change vs baseline (largest |change_pct|, runtime %s)" % top[1])
+            msource = "recorded (measured.windows[].change_pct of the stored assessment; largest of %d)" % n
     lim = _num(ans["limit"])
     op = "<="
     if lim is None:
@@ -575,7 +583,11 @@ def compose_window(pack, parse, ans=None, now=None):
     series = []
     for a in counted:
         m = a.get("measured") or {}
-        series.append({"id": str(a["scope_id"]), "value": _num(m.get("value")), "limit": _num(a["limit"]),
+        sval = _num(m.get("value"))
+        if sval is None and control == "C9":
+            top, _n = _c9_largest(m)
+            sval = top[0] if top else None
+        series.append({"id": str(a["scope_id"]), "value": sval, "limit": _num(a["limit"]),
                        "violates": a["verdict"] == V.BREACHED if a["verdict"] in (V.BREACHED, V.SATISFIED) else None,
                        "status": "VIOLATES" if a["verdict"] == V.BREACHED else "OK" if a["verdict"] == V.SATISFIED else "UNKNOWN",
                        "ref": "assessment:%s" % a["assessment_id"] if a.get("assessment_id") else "run:%s" % a["scope_id"]})
