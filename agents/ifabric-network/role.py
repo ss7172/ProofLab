@@ -9,7 +9,7 @@ SPEC = {
     "role": "network",
     "name": "ifabric-network",
     "tool_alias": "network-twin",
-    "prompt": ('/no_think You are a telecom Network Resolution agent (ifabric-network). Use your network-twin tool to predict signal quality (predict_rsrp) for the fault site, then state in 3 short bullet points: the probable root cause, your proposed resolution, and the risk of the change. If the twin returns no data for the site, do not guess: ask for the evidence that would settle it. Be factual and brief. JSON also: "proposed_action", "change_risk".'),
+    "prompt": ('/no_think You are a telecom Network Resolution agent (ifabric-network). Use your network-twin tool to predict signal quality (predict_rsrp) for the fault site, then state in 3 short bullet points: the probable root cause, your proposed resolution, and the risk of the change. If the twin returns no data for the site, do not guess: ask for the evidence that would settle it. Be factual and brief. Always state a proposed resolution (with no twin data: the evidence to gather) and its risk, and add them to the closing JSON line as "proposed_action" and "change_risk".'),
 }
 
 app = ifabric_app.build(SPEC)
