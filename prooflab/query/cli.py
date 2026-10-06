@@ -171,6 +171,10 @@ def build_parser():
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
+    from prooflab.query import grammar as G
+    if argv and argv[0].lower() in G.VERBS:       # PR-15b: ask "<question>" | controltest | auditor | trail
+        from prooflab.query import answer as A
+        return A.verb_main(argv)
     p = build_parser()
     try:
         args = p.parse_args(argv)
