@@ -230,11 +230,13 @@ def _spec_view(spec):
             "mode": env.get("IFABRIC_RAILS_MODE"), "has_env": "env" in spec}
 
 
-def pin_treatment(agent, live, approved, generation, approved_generation, approved_keys=None):
+def pin_treatment(agent, live, approved, generation, approved_generation, approved_keys=None, declared_swap=None):
     """Compare the LIVE spec with the spec at the APPROVED generation.
 
-    Returns (verdict, record): verdict "pin-only" (PASS, a declared treatment), "unchanged", or "block" with the
-    reasons; `record` holds only digests, key names and the pin sha values (never other env values).
+    Returns (verdict, record): verdict "pin-only" (PASS, a declared treatment), "model-swap" (PASS, the declared
+    named-run swap: `declared_swap` = {label, from_model, to_model} for THIS agent and THIS run, read from the
+    pinned register), "unchanged", or "block" with the reasons; `record` holds only digests, key names, models and
+    the pin sha values (never other env values).
     live/approved = {"image_digest", "models", "tools", "env"}; `approved` None = the approved spec cannot be
     reconstructed: fall back to the attestation (same image digest + model as an approved key; tools if known)."""
     keys = set(PIN_ENV_KEYS)      # fixed by ARCH; never extended from runtime input
@@ -247,7 +249,13 @@ def pin_treatment(agent, live, approved, generation, approved_generation, approv
         if lv["image"] != av["image"]:
             reasons.append("image digest differs from the approved generation")
         if lv["models"] != av["models"]:
-            reasons.append("model differs from the approved generation")
+            if declared_swap and av["models"] == [declared_swap["from_model"]] \
+                    and lv["models"] == [declared_swap["to_model"]]:
+                rec["model_swap"] = dict(declared_swap)
+            else:
+                reasons.append("model differs from the approved generation" + (
+                    "" if not declared_swap else " and is not the declared %s swap %s -> %s" % (
+                        declared_swap["label"], declared_swap["from_model"], declared_swap["to_model"])))
         if lv["tools"] != av["tools"]:
             reasons.append("tools differ from the approved generation")
         changed = sorted(k for k in set(lv["env_fp"]) | set(av["env_fp"]) if lv["env_fp"].get(k) != av["env_fp"].get(k))
@@ -267,7 +275,11 @@ def pin_treatment(agent, live, approved, generation, approved_generation, approv
         if not (digest and any(k.split("|")[0] == digest for k in have)):
             reasons.append("live image digest is not the approval's image")
         if model and have and not any(k.split("|", 1)[-1] == model for k in have if k.split("|")[0] == digest):
-            reasons.append("live model is not the approval's model")
+            if declared_swap and model == declared_swap["to_model"] and \
+                    "%s|%s" % (digest, declared_swap["from_model"]) in have:
+                rec["model_swap"] = dict(declared_swap)
+            else:
+                reasons.append("live model is not the approval's model")
         rec["pin_keys_changed"] = [k for k in sorted(keys) if k in lv["env_fp"]]
         rec["to_pin_sha256"] = lv["pins"].get("IFABRIC_PIN_SHA256")
         rec["from_pin_sha256"] = None
@@ -275,14 +287,29 @@ def pin_treatment(agent, live, approved, generation, approved_generation, approv
     if reasons:
         rec["reasons"] = reasons
         return "block", rec
+    if rec.get("model_swap"):
+        return "model-swap", rec
     if rec["pin_keys_changed"] or generation != approved_generation:
         return "pin-only", rec
     return "unchanged", rec
 
 
-def _apply_pin_rule(versions, running, agents, treatments):
+def declared_swaps_for(declarations, named_run):
+    """{agent: {label, from_model, to_model}}: the pinned register's C9 `named_run_treatments` that name THIS run's
+    label. No label (an ordinary run) -> {} : no model change can pass."""
+    out = {}
+    if not named_run:
+        return out
+    for d in declarations or ():
+        if d.get("label") == named_run and d.get("kind", "model-swap") == "model-swap":
+            out[d["agent"]] = {"label": d["label"], "from_model": d["from_model"], "to_model": d["to_model"]}
+    return out
+
+
+def _apply_pin_rule(versions, running, agents, treatments, swaps=None):
     """For a stale generation, replace the blanket stale rule by the spec comparison. Returns blocks {agent: reason}."""
     blocks = {}
+    swaps = swaps or {}
     specs = versions.get("specs") or {}
     approved_keys = versions.get("approved") or {}
     for a in agents:
@@ -297,7 +324,7 @@ def _apply_pin_rule(versions, running, agents, treatments):
         if not sp.get("live"):
             blocks[a] = "stale approval: approved at generation %d, running generation %d (no live spec to compare)" % (agen, gen)
             continue
-        verdict, rec = pin_treatment(a, sp["live"], sp.get("approved"), gen, agen, approved_keys.get(a))
+        verdict, rec = pin_treatment(a, sp["live"], sp.get("approved"), gen, agen, approved_keys.get(a), swaps.get(a))
         if verdict == "block":
             blocks[a] = "stale approval and not a pin-only change: " + "; ".join(rec["reasons"])
         else:
@@ -306,7 +333,29 @@ def _apply_pin_rule(versions, running, agents, treatments):
     return blocks
 
 
-def ep0(versions, assessed, agents, check_versions=None, meta=None, treatments=None):
+def _apply_declared_swaps(running, approved, agents, swaps, treatments):
+    """The declared named-run swap also satisfies approval.check_versions for THIS run only: when the agent runs
+    the declared `to` model on an image approved with the declared `from` model, `<digest>|<to>` joins that agent's
+    approved set for this decision (never written back). Anything else is left for check_versions to DENY."""
+    from prooflab.evaluators import approval as _approval
+    for a in agents:
+        sw = swaps.get(a)
+        if not sw:
+            continue
+        rv = running[a]
+        digest, model = rv.get("image_digest"), rv.get("model")
+        if model != sw["to_model"] or _approval.version_key(digest, sw["from_model"]) not in _approval._approved_keys(approved[a]):
+            continue
+        approved[a].append(_approval.version_key(digest, sw["to_model"]))
+        if not any(t["agent"] == a and t.get("model_swap") for t in treatments):
+            treatments.append({"agent": a, "generation": rv.get("generation"),
+                               "approved_generation": rv.get("approved_generation"), "basis": "declared-model-swap",
+                               "pin_keys_changed": [], "model_swap": dict(sw), "verdict": "model-swap",
+                               "kind": "declared_treatment"})
+
+
+def ep0(versions, assessed, agents, check_versions=None, meta=None, treatments=None, named_run=None,
+        declarations=None):
     """EP-0 input contract (matches PR-09a approval.check_versions(running, approved, policy, assessed, meta)):
 
         versions = {"running":  {agent: {"image_digest": str, "model": str, "paused": bool,
@@ -315,7 +364,9 @@ def ep0(versions, assessed, agents, check_versions=None, meta=None, treatments=N
                     "policy":   "block-assessed" | "record-only"}
 
     captured by the ops lane through filtered reads (never env values). `meta` (e.g. register_version, pin_sha256)
-    is stamped on each Decision. Returns (steps, decisions); one step per agent, named ep0.<agent>."""
+    is stamped on each Decision. `named_run` (e.g. "N8") + `declarations` (the PINNED register's C9
+    named_run_treatments, parsed): a model change passes only when declared for that label (PR-41).
+    Returns (steps, decisions); one step per agent, named ep0.<agent>."""
     try:
         fn = check_versions or load_check_versions()
     except RuntimeError as exc:
@@ -328,7 +379,9 @@ def ep0(versions, assessed, agents, check_versions=None, meta=None, treatments=N
         return [step("ep0", False, "no running-version read for %s" % ", ".join(missing))], []
     approved = {a: list(versions.get("approved", {}).get(a, [])) for a in agents}
     treatments = treatments if treatments is not None else []
-    blocks = _apply_pin_rule(versions, running, agents, treatments)
+    swaps = declared_swaps_for(declarations, named_run)
+    blocks = _apply_pin_rule(versions, running, agents, treatments, swaps)
+    _apply_declared_swaps(running, approved, [a for a in agents if a not in blocks], swaps, treatments)
     decisions = list(fn(running, approved, versions.get("policy"), assessed, meta) if meta is not None
                      else fn(running, approved, versions.get("policy"), assessed))
     steps = []
@@ -341,9 +394,14 @@ def ep0(versions, assessed, agents, check_versions=None, meta=None, treatments=N
         if agent in blocks:
             detail += ("; BLOCK: " if gating else "; RECORDED (not gating): ") + blocks[agent]
         t = [x for x in treatments if x["agent"] == agent]
-        if ok and t:
+        if ok and t and t[0].get("model_swap"):
+            sw = t[0]["model_swap"]
+            detail += "; declared treatment: model-swap %s -> %s for named run %s (generation %s)" % (
+                sw["from_model"], sw["to_model"], sw["label"], t[0]["generation"])
+        elif ok and t:
             detail += "; declared treatment: pin %s -> %s (generation %s)" % (
                 (t[0].get("from_pin_sha256") or "unknown")[:12], (t[0].get("to_pin_sha256") or "unknown")[:12], t[0]["generation"])
+        if ok and t and not t[0].get("model_swap"):
             if t[0]["basis"].startswith("attestation-fallback"):
                 detail += " [basis: attestation fallback, approved spec not reconstructable]"
         steps.append(step("ep0.%s" % agent, ok, detail))
