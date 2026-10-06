@@ -494,9 +494,10 @@ def _audit_question(control, a, rule, ctx):
     mshow = "not recorded" if mval is None else (round(mval, 4) if isinstance(mval, float) else mval)
     lbl = "run start" if ctx["scope_kind"] == "run" else "scope start"
     return {
-        "what_was_done": _txt("%s over %s %s: %d records, measured %s %s." % (
+        "what_was_done": (_txt(ctx["what_text"] + ".", [], source="recorded (stored assessments)") if ctx.get("what_text") else
+                          _txt("%s over %s %s: %d records, measured %s %s." % (
             control, ctx["scope_kind"], ctx["scope_label"], len(recs), mshow, munit),
-            rid(recs), source="%s; record count from store/records.jsonl" % (ctx.get("msource") or "recorded (measured.value of the stored assessment)")),
+            rid(recs), source="%s; record count from store/records.jsonl" % (ctx.get("msource") or "recorded (measured.value of the stored assessment)"))),
         "by_which_agent": _txt(agents or "not recorded (gap: no actor records for this scope)", rid([r for r in recs if r.get("actor.id")]),
                                None if agents else "GAP",
                                source="recorded (actor.id); version joined-from: register inventory (actor.version not recorded)"),
@@ -625,6 +626,16 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
     return doc
 
 
+def _counted_words(counted, breached):
+    """'N breached of M counted assessments (x runs, y hourly roll-ups)': a window roll-up is never called a run."""
+    runs = sum(1 for a in counted if a.get("scope_kind") == "run")
+    rolls = len(counted) - runs
+    parts = (["%d run%s" % (runs, "" if runs == 1 else "s")] if runs else []) + (
+        ["%d hourly roll-up%s" % (rolls, "" if rolls == 1 else "s")] if rolls else [])
+    return "%d breached of %d counted assessment%s (%s)" % (len(breached), len(counted), "" if len(counted) == 1 else "s",
+                                                           ", ".join(parts) or "none")
+
+
 # ---------------------------------------------------------------- answer/v1: one window
 def compose_window(pack, parse, ans=None, now=None):
     control = parse["control"]
@@ -666,10 +677,11 @@ def compose_window(pack, parse, ans=None, now=None):
     top_s = max([x for x in series if x["value"] is not None], key=lambda x: abs(x["value"]), default=None)
     ctx = {"recs": [], "cid": win, "scope_kind": "window", "scope_label": win, "start": parse["t1"], "end": parse["t2"],
            "manifest_status": src["manifest_status"], "vrule": vrule, "mval": len(breached),
-           "munit": "breached runs of %d counted%s" % (len(counted), ("; largest per-run value %s (run %s)" % (top_s["value"], top_s["id"])) if top_s else ""),
+           "munit": "(%s)%s" % (_counted_words(counted, breached), ("; largest per-assessment value %s (%s)" % (top_s["value"], top_s["id"])) if top_s else ""),
+           "what_text": "%s over window %s: %s, from the stored assessments" % (control, win, _counted_words(counted, breached)),
            "msource": "recorded (verdict and measured value of each counted run's stored assessment)"}
     verdict = ans["verdict"]
-    reason = "%d of %d counted runs breached; tolerance %s per register version" % (len(breached), len(counted), E.UNKNOWN if allowed is None else allowed)
+    reason = "%s; tolerance %s per register version" % (_counted_words(counted, breached), E.UNKNOWN if allowed is None else allowed)
     recs = []
     for a in counted:
         recs += [r for r in pack.by_cid.get(a["scope_id"], []) if r.get("record_kind") == "finding"]
@@ -685,12 +697,12 @@ def compose_window(pack, parse, ans=None, now=None):
         "rule": rule, "scope": scope,
         "population": {"expected": {"count": len(counted) + len(ans["listed"]), "source": "assessments and run index inside the window (E-06)"},
                        "observed": len(counted) + len(ans["listed"]), "matched": len(counted), "missing": 0, "unmatched": len(ans["listed"])},
-        "measurement": {"value": len(breached), "unit": "breached runs",
-                        "formula": "count of counted runs whose stored verdict is BREACHED (window rule E-06)", "series": series},
+        "measurement": {"value": len(breached), "unit": "breached assessments",
+                        "formula": "count of counted assessments (runs and hourly roll-ups) whose stored verdict is BREACHED (window rule E-06)", "series": series},
         "comparison": {"limit": allowed, "operator": "<=", "delta": len(breached) - allowed,
                        "within_limit": len(breached) <= allowed, "exceptions_count": len(breached), "exceptions_allowed": allowed,
-                       "exceptions_unit": "breached runs"},
-        "exceptions": [{"id": str(a["scope_id"]), "ref": "run:%s" % a["scope_id"], "value": _num((a.get("measured") or {}).get("value")),
+                       "exceptions_unit": "breached assessments"},
+        "exceptions": [{"id": str(a["scope_id"]), "ref": ("run:%s" if a.get("scope_kind") == "run" else "assessment-scope:%s") % a["scope_id"], "value": _num((a.get("measured") or {}).get("value")),
                         "why": "stored verdict %s" % a["verdict"]} for a in breached],
         "verdict": {"value": verdict, "label": V.display(verdict), "reason": reason,
                     "evidence_sufficiency": "PARTIAL" if ans["listed"] or ans["gaps"] else "COMPLETE"},
