@@ -1,0 +1,290 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "ifabric.register/1",
+ "title": "ProofLab control register: the flat-YAML file read as JSON (top keys + a controls list)",
+ "description": "Scalars are strings in the strict flat-YAML subset (registry/parse.py); the typed accessors in register.py convert them. register.validate_register is the authority.",
+ "type": "object",
+ "required": [
+  "version",
+  "version_date",
+  "controls"
+ ],
+ "properties": {
+  "version": {
+   "type": "string",
+   "pattern": "^v[0-9]+(\\.[0-9]+)*(-[a-z0-9-]+)?$"
+  },
+  "version_date": {
+   "type": "string"
+  },
+  "supersedes": {
+   "type": "string"
+  },
+  "claim_id": {
+   "type": "string"
+  },
+  "register_owner": {
+   "type": "string"
+  },
+  "pre_run_gate": {
+   "enum": [
+    "block-assessed",
+    "record-only"
+   ]
+  },
+  "join_tolerance_s": {
+   "type": "string"
+  },
+  "register_version": {
+   "type": "string"
+  },
+  "status": {
+   "type": "string"
+  },
+  "frozen_at": {
+   "type": "string"
+  },
+  "builder": {
+   "type": "string"
+  },
+  "assurance": {
+   "type": "string"
+  },
+  "retention": {
+   "type": "string"
+  },
+  "owner": {
+   "type": "string"
+  },
+  "owner_name": {
+   "type": "string"
+  },
+  "controls": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "control_id",
+     "name",
+     "metric",
+     "observation_limit",
+     "exception_tolerance",
+     "measurement_basis",
+     "owner",
+     "version_date",
+     "enforcement_point",
+     "control_ref",
+     "library_id",
+     "threshold_version"
+    ],
+    "properties": {
+     "control_id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "metric": {
+      "type": "string"
+     },
+     "observation_limit": {
+      "type": "string"
+     },
+     "exception_tolerance": {
+      "type": "string"
+     },
+     "measurement_basis": {
+      "type": "string"
+     },
+     "owner": {
+      "type": "string"
+     },
+     "version_date": {
+      "type": "string"
+     },
+     "enforcement_point": {
+      "type": "string"
+     },
+     "control_ref": {
+      "type": "string"
+     },
+     "library_id": {
+      "type": "string"
+     },
+     "threshold_version": {
+      "type": "string",
+      "pattern": "^(C16|C7|C9|INV|APPROVAL|ESC)-v[0-9]+(\\.[0-9]+)*$"
+     },
+     "mode": {
+      "enum": [
+       "static",
+       "scheduled",
+       "event-driven",
+       "in-transaction",
+       "continuous"
+      ]
+     },
+     "in_claim": {
+      "type": "string"
+     },
+     "objective": {
+      "type": "string"
+     },
+     "risk": {
+      "type": "string"
+     },
+     "risk_ref": {
+      "type": "string"
+     },
+     "scope": {
+      "type": "string"
+     },
+     "applies_to": {
+      "type": "string"
+     },
+     "metric_unit": {
+      "type": "string"
+     },
+     "calculation": {
+      "type": "string"
+     },
+     "exception_denominator": {
+      "type": "string"
+     },
+     "why_metric": {
+      "type": "string"
+     },
+     "why_value": {
+      "type": "string"
+     },
+     "measured_on": {
+      "type": "string"
+     },
+     "stops_holding_when": {
+      "type": "string"
+     },
+     "missing_data_rule": {
+      "type": "string"
+     },
+     "late_data_rule": {
+      "type": "string"
+     },
+     "duplicate_rule": {
+      "type": "string"
+     },
+     "invalid_data_rule": {
+      "type": "string"
+     },
+     "transport_inline": {
+      "type": "string"
+     },
+     "transport_postrun": {
+      "type": "string"
+     },
+     "evaluator_module": {
+      "type": "string"
+     },
+     "evaluator_sha256": {
+      "type": "string"
+     },
+     "alert_recipient": {
+      "type": "string"
+     },
+     "alert_volume_bound": {
+      "type": "string"
+     },
+     "owner_name": {
+      "type": "string"
+     },
+     "tier_rule": {
+      "type": "string"
+     },
+     "default_tier": {
+      "type": "string"
+     },
+     "inline_modes": {
+      "type": "string"
+     },
+     "safety_ceiling": {
+      "type": "string"
+     },
+     "inline_bound_margin_pct": {
+      "type": "string"
+     },
+     "inline_bound_fallback_tokens": {
+      "type": "string"
+     },
+     "max_tokens": {
+      "type": "string"
+     },
+     "declared_conditions": {
+      "type": "string"
+     },
+     "breach_protocol": {
+      "type": "string"
+     },
+     "expected_sources": {
+      "type": "string"
+     },
+     "workflow_events": {
+      "type": "string"
+     },
+     "workflow_events_after_stop": {
+      "type": "string"
+     },
+     "gap_clock": {
+      "type": "string"
+     },
+     "declared_faults": {
+      "type": "string"
+     },
+     "metric_namespace": {
+      "type": "string"
+     },
+     "statistic": {
+      "type": "string"
+     },
+     "window_rule": {
+      "type": "string"
+     },
+     "baseline_procedure": {
+      "type": "string"
+     },
+     "limit_direction": {
+      "type": "string"
+     },
+     "comparability": {
+      "type": "string"
+     },
+     "declared_treatments": {
+      "type": "string"
+     }
+    },
+    "patternProperties": {
+     "^cap_tier_": {
+      "type": "string"
+     },
+     "^handoff_class_": {
+      "type": "string"
+     },
+     "^baseline_value_": {
+      "type": "string"
+     }
+    },
+    "additionalProperties": false
+   }
+  }
+ },
+ "additionalProperties": false,
+ "x-kit-fields": [
+  "control_id",
+  "name",
+  "metric",
+  "observation_limit",
+  "exception_tolerance",
+  "measurement_basis",
+  "owner",
+  "version_date",
+  "enforcement_point"
+ ]
+}

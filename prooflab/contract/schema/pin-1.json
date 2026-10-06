@@ -1,0 +1,136 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "ifabric.pin/1",
+ "title": "ProofLab in-path pin (pin.validate_pin is the authority)",
+ "type": "object",
+ "required": [
+  "schema",
+  "register",
+  "c16",
+  "c7"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "schema": {
+   "const": "ifabric.pin/1"
+  },
+  "register": {
+   "type": "object",
+   "required": [
+    "version",
+    "sha256"
+   ],
+   "properties": {
+    "version": {
+     "type": "string"
+    },
+    "sha256": {
+     "type": "string",
+     "pattern": "^[0-9a-f]{64}$"
+    }
+   }
+  },
+  "c16": {
+   "type": "object",
+   "required": [
+    "control_id",
+    "threshold_version",
+    "version_date",
+    "tiers",
+    "default_tier",
+    "caps",
+    "safety_ceiling",
+    "modes",
+    "mode",
+    "bound"
+   ],
+   "properties": {
+    "control_id": {
+     "type": "string"
+    },
+    "threshold_version": {
+     "type": "string"
+    },
+    "version_date": {
+     "type": "string"
+    },
+    "tiers": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "default_tier": {
+     "type": "string"
+    },
+    "caps": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "integer",
+      "minimum": 1
+     }
+    },
+    "safety_ceiling": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "modes": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "enforce",
+       "observe"
+      ]
+     }
+    },
+    "mode": {
+     "enum": [
+      "enforce",
+      "observe"
+     ]
+    },
+    "bound": {
+     "type": "object",
+     "required": [
+      "inline_bound_margin_pct",
+      "inline_bound_fallback_tokens",
+      "max_tokens"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "inline_bound_margin_pct": {
+       "type": "number",
+       "minimum": 0
+      },
+      "inline_bound_fallback_tokens": {
+       "type": "integer"
+      },
+      "max_tokens": {
+       "type": "integer"
+      }
+     }
+    }
+   }
+  },
+  "c7": {
+   "type": "object",
+   "required": [
+    "declared_faults"
+   ],
+   "properties": {
+    "declared_faults": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ },
+ "x-env-keys": [
+  "IFABRIC_PIN_JSON",
+  "IFABRIC_PIN_SHA256",
+  "IFABRIC_REGISTER_VERSION",
+  "IFABRIC_REGISTER_SHA256"
+ ]
+}

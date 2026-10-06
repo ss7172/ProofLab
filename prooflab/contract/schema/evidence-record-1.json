@@ -2,7 +2,7 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "ifabric.evidence/1",
  "title": "ProofLab evidence record (team iFabric)",
- "description": "One flat record, dotted keys (ARCH \u00a74). Table-A fields are present as a value or null with a null_reasons entry. prooflab/contract/record.py validate_record is the authority.",
+ "description": "One flat record, dotted keys (ARCH §4). Table-A fields are present as a value or null with a null_reasons entry. prooflab/contract/record.py validate_record is the authority.",
  "type": "object",
  "required": [
   "schema",
