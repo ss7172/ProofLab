@@ -126,6 +126,22 @@ def record_kind_of(rec):
     return KIND_MAP.get(k)
 
 
+def infer_control(rec, kind):
+    """Which control a record is evidence for when it names none: model calls -> C16, handoffs and judgments -> C7,
+    metrics -> C9, EP-1 decisions -> C16. Anything else (EP-0 and approvals, platform records) is not bound."""
+    if kind == "model-call":
+        return "C16"
+    if kind == "decision":
+        return "C16" if rec.get("ep.id") == "EP-1" else None
+    if kind == "event":
+        return None if rec.get("record_kind") == "notification" else "C7"
+    if kind == "tool-call":
+        return "C7"
+    if kind == "window":
+        return "C9"
+    return None
+
+
 def decision_of(rec):
     """Inline decision -> ALLOW | ALERT | DENY | None (DENY under observe is an ALERT)."""
     verdict = rec.get("verdict")
@@ -161,19 +177,53 @@ def disposition_of(rec):
 
 
 # ------------------------------------------------------------------ context loading
+def _flat_parse(text):
+    """Fallback for the flat register subset (top-level `key: value`, then `controls:` and `- control_id:` entries)
+    when prooflab.registry.parse is not importable. Values stay strings; it never raises."""
+    top, entries, cur, in_list = {}, [], None, False
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        body = line.strip()
+        if not line[:1].isspace() and body.rstrip(":") == "controls" and body.endswith(":"):
+            in_list = True
+            continue
+        if body.startswith("- "):
+            if cur is not None:
+                entries.append(cur)
+            cur = {}
+            body = body[2:]
+        if ":" not in body:
+            continue
+        k, v = body.split(":", 1)
+        v = v.strip()
+        if " #" in v:
+            v = v.split(" #", 1)[0].strip()
+        if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+            v = v[1:-1]
+        (cur if (in_list and cur is not None) else top)[k.strip()] = v
+    if cur is not None:
+        entries.append(cur)
+    return {"top": top, "entries": entries}
+
+
 def load_register_ctx(src):
-    """(register ctx, controls-by-ref, versions) from register/versions/*.yaml via prooflab.registry.parse (lazy)."""
+    """(register ctx, controls-by-ref, versions) from register/versions/*.yaml. Uses prooflab.registry.parse when it
+    is importable (PR-01), else the flat fallback above; the sha256 is over the file bytes either way."""
     try:
         from prooflab.registry import parse as _parse
+        parse = _parse.parse_register
     except ImportError:
-        return None, {}, []
+        parse = None
     best = None
     for path in sorted(glob.glob(os.path.join(src, "register", "versions", "*.yaml"))):
         data = _read_bytes(path)
         if data is None or os.path.basename(path).endswith(".risks.yaml"):
             continue
         try:
-            doc = _parse.parse_register(data.decode("utf-8"))
+            text = data.decode("utf-8")
+            doc = parse(text) if parse else _flat_parse(text)
         except (ValueError, UnicodeDecodeError):
             continue
         best = (path, data, doc)   # the last (highest-named) file is the current one
@@ -349,11 +399,15 @@ def project_records(cx, projected_assessments, report):
             continue
         controls = by_run.get(rid) or {}
         if ref not in PROJECTED_CONTROLS:
-            ref = {"model-call": "C16", "tool-call": "C7", "event": "C7", "window": "C9"}.get(kind)
-            if ref not in controls:
-                _bump(report, "no %s assessment bound to run %s" % (ref, rid))
+            ref = infer_control(r, kind)
+            if ref is None:
+                _bump(report, "no control to bind a %s record to (ep.id %s)" % (kind, r.get("ep.id")))
                 continue
         a = controls.get(ref)
+        reg = (cx["register_controls"] or {}).get(ref)
+        if a is None and reg is None:
+            _bump(report, "no %s assessment for run %s and no register entry for %s" % (ref, rid, ref))
+            continue
         prov = provenance_of(r.get("provenance"), rid, cx["run_ids"])
         if prov is None:
             _bump(report, "SYNTHETIC never enters the pack")
@@ -367,7 +421,8 @@ def project_records(cx, projected_assessments, report):
             mv = r.get("measured.value")
             value = mv if isinstance(mv, (int, float)) and not isinstance(mv, bool) else None
             unit = r.get("measured.unit") or "none"
-        limit = ((a or {}).get("threshold") or {}).get("observation_limit") or {}
+        limit = ((a or {}).get("threshold") or {}).get("observation_limit") or (_limit(reg, "observation_limit", unit) if reg else None) or {}
+        tver = (a or {}).get("threshold_version") or (reg or {}).get("threshold_version") or r.get("threshold.version") or "unbound"
         refs = _index.good_refs(r.get("source.refs"))
         at = r.get("emitted.at") or r.get("observed.at") or r.get("ts")
         if not _utc(at):
@@ -378,10 +433,10 @@ def project_records(cx, projected_assessments, report):
         sha = r.get("source.sha256") if _index.SHA_RE.match(str(r.get("source.sha256") or "")) else hashlib.sha256(canon(r).encode("utf-8")).hexdigest()
         alias = cx["run_ids"].get(rid)
         doc = {
-            "schema": PROJ_SCHEMA_RECORD, "evidence_id": "ev:%s:%s:%s:%s" % (ref, (a or {}).get("threshold_version", "unbound"), alias or rid, rec_id),
+            "schema": PROJ_SCHEMA_RECORD, "evidence_id": "ev:%s:%s:%s:%s" % (ref, tver, alias or rid, rec_id),
             "provenance": prov, "record_kind": kind, "run.id": alias or rid, "call.id": r.get("call.id"),
             "control.id": CONTROL_LIBRARY[ref], "control.ref": ref,
-            "threshold.version": (a or {}).get("threshold_version") or r.get("threshold.version") or "unbound",
+            "threshold.version": tver,
             "threshold.value": limit.get("value") if limit.get("value") is not None else "n/a",
             "measured.value": value, "measured.unit": unit,
             "verdict": "NOT_ASSESSED",   # a record is not a verdict; the control test's verdict lives in the assessment
