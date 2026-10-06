@@ -452,3 +452,147 @@
 **Status:** `<update before each submit: list which exist, and which do not>`. Anything not produced by the final submit stays listed here.
 
 ---
+
+## B19. A numeric `site` is refused for every caller on `customer-records` since the SP-1 forbid
+
+**What's missing:** a Cedar rule that refuses `SITE-ADV-*` without also refusing legitimate numeric `site` values.
+
+**Why:** the SP-1 `forbid` uses `context.arguments.site like "SITE-ADV-*"`. When `site` is a number, `like` is a type error, and authz fails closed (403 `PolicyEngineUnavailable`) for any caller, ours and the reference trio's. Cedar has no primitive-type guard. How a numeric site behaved before the rule was not tested.
+
+**Evidence:** `ops-lane/sp1-report.md` (probe 4: `site=12` gives 403 `PolicyEngineUnavailable`, `type error: expected string, got long`); `ops-lane/sp1-probes.txt`; restore text `ops-lane/sp1-patch-restore.json`.
+
+**Impact:** the PDP log line for that call says `decision=ALLOW matched=policy0`, while `/modaas/evidence` says DENY / `PolicyEngineUnavailable`. The PDP line is not a reliable record of the final decision; an auditor must read `/modaas/evidence`. Our scenarios send string sites, so none is affected (not yet proven on a full run).
+
+**What we plan instead:** take decisions from `/modaas/evidence` only; keep the rule through judging (DG-4); restore after judging (Hold-4).
+
+**Status:** open, accepted; the rule is live.
+
+---
+
+## B20. The MCP `tools/call` span logged tool arguments and results in clear
+
+**What's missing:** a platform switch that keeps tool arguments and results out of the runtime's spans.
+
+**Why:** the ADOT `aws_mcp` instrumentor writes them into the runtime log group's `spans` stream. Found at S-2 on the first image build (canary seen in clear); the tool half of gap 9.
+
+**Evidence:** `ops-lane/b2b-report.md` item 6; after the fix, `ops-lane/b2d-report.md` S-2 row (canary absent from 22 log groups, run on `3bfc5ad`).
+
+**Impact:** on the reference agents, which we do not change, customer data in tool results is still written to their spans.
+
+**What we plan instead:** our images disable `aws_mcp` (PR-30a). Fixed in our images and verified live at S-2 on `3bfc5ad`. The reference agents still have it, and we say so.
+
+**Status:** fixed for `ifabric-*`; open for the reference agents.
+
+---
+
+## B21. Model-call records lack `pin.sha256` and `runtime.session_id`
+
+**What's missing:** the pin hash and the runtime session id on each `model_call` action record.
+
+**Why:** the images are frozen; changing the record shape needs a rebuild and a new approval.
+
+**Evidence:** `ops-lane/b2b-report.md` item 9; still true in `ops-lane/b2d-report.md` ("Other observations").
+
+**Impact:** a model-call record cannot name its pin or session on its own.
+
+**What we plan instead:** join through the start-up record (`pin.sha256=... register=...`, on all 11 start-up lines at S-2) and the response's pin echo (`pin_sha256`, `pin_verified`), then by run id.
+
+**Status:** open, accepted.
+
+---
+
+## B22. EP-0's fallback checks only image and model when the approved spec is unavailable
+
+**What's missing:** a full approved-spec comparison when the platform gives EP-0 no approved spec.
+
+**Why:** without `specs.<agent>.approved`, EP-0 falls back to the approval attestation, which covers image and model only (PR-30b, `68217bb`). With the spec, it compares spec by spec and passes only the declared pin keys.
+
+**Evidence:** `ops-lane/b2d-report.md` (PR-30b note; the row-11 versions file needs the `specs` input).
+
+**Impact:** an env change other than the pin keys could pass the fallback unseen.
+
+**What we plan instead:** the ops lane records approved-spec env fingerprints (sha256, never values) in the G3 freeze record so EP-0 stays strict.
+
+**Status:** open until the fingerprints are in the freeze record; they are not in `ops-lane/b2d/freeze-g3.json` (provisional) as of the B2d report.
+
+---
+
+## B23. Nothing in the path enforces the smoke budget; only the pin's ceiling stops a run
+
+**What's missing:** an in-path stop at the smoke budget (about 10K tokens).
+
+**Why:** the observe-mode cap only records DENY; the halt comes from the safety ceiling in the pin.
+
+**Evidence:** `ops-lane/b2d-report.md` (IT smoke, CID `ifabric-test-1791272730-5ab393`): 21,467 tokens against a smoke authorization of 10K; the 25,000 ceiling halted it (`DENY (halt): committed 21467 + bound 5268 = 26735`).
+
+**Impact:** a smoke can spend the whole ceiling. The captain set a 100K ceiling for P1 and P3 (re-pinned to 300K for P5 only), so one run can spend up to that.
+
+**What we plan instead:** keep the pin ceiling always on; the S-3 halt on a low cap is proven (cap 3,700: call 2 denied at 3,992, no span after).
+
+**Status:** open, accepted.
+
+---
+
+## B24. The `ifabric-it` tool loop on a bare ticket
+
+**What's missing:** a stop condition when the runbook has no match.
+
+**Why:** on a bare ticket the IT agent made 12 `runbook-lookup` calls (7 distinct arguments), and rail T-02 flagged `no-evidence` 9 times. It does not choose "gather evidence" or "escalate" on its own.
+
+**Evidence:** `ops-lane/b2d-report.md` (the IT run, 07:45:25-07:46:00Z; 12 model calls in 28.8 s, about 25 requests a minute).
+
+**Impact:** about 21K tokens for one smoke; a natural run could also loop.
+
+**What we plan instead:** the pin ceiling halts a loop; the run is judged by C16 as it is.
+
+**Status:** under observation in P1; no fix claimed.
+
+---
+
+## B25. The platform keeps an AgentConfig Approved with the old approval when its image is patched
+
+**What's missing:** a new approval record after an image or env patch (gap 5, confirmed again).
+
+**Why:** a patch raises the generation; the old approval stays and the phase stays Approved.
+
+**Evidence:** `ops-lane/b2c-report.md` (delete and re-create of `ifabric-customer`, captain-approved about 07:05Z; new uid; the operator re-created the Component and its children). The IT and network agents were patched (generation 2) and approved again by the captain's annotations at 07:28:50-07:29:25Z.
+
+**Impact:** an approval alone does not show that it covers the running image.
+
+**What we plan instead:** EP-0 compares model, generation and image digest with the approval record. We deleted and re-created `ifabric-customer`, so its approval matches its image. Deleting an AgentConfig also deleted its Component (B2c note 1).
+
+**Status:** platform limit; handled for our three agents.
+
+---
+
+## B26. The build carrier: a 25,600-character buildspec cap and no layer pull
+
+**What's missing:** a way to build an image from our own base image and a way to send a buildspec over 25,600 characters.
+
+**Why:** CodeBuild caps `buildspecOverride` at 25,600 characters, and the ImageBuildRole lacks `ecr:GetDownloadUrlForLayer`, so `FROM` our own image fails (D-B).
+
+**Evidence:** `ops-lane/build-probe-report.md`: one env-var override of 46,548 characters decoded byte-exact (sha256 checked) and built an arm64 image.
+
+**Impact:** each role is built from a base file and a role file that ride as environment-variable overrides; the total is gated at 46,000 characters (D-B'') and each value at 44,000. The limit was not searched above 46,548.
+
+**What we plan instead:** this carrier (PR-26), one build per role. All three rebuilt from `3bfc5ad` (env about 44.4K of 46,000).
+
+**Status:** worked around; a size above the proven value is untested.
+
+---
+
+## B27. `GetObjectVersion` is denied to participants
+
+**What's missing:** a readback of a specific object version.
+
+**Why:** the participant role has no `s3:GetObjectVersion`. A zip's content is also not scannable in place.
+
+**Evidence:** `ops-lane/safety-submit-report.md` (the 07:00Z safety submit; readback used `get-object --if-match <ETag>` with `head-object` before and after).
+
+**Impact:** a version id alone cannot be read back by us; a judge with a role that allows it can.
+
+**What we plan instead:** `head-object`, then `get-object --if-match`, then `head-object`; scans run on unzipped copies (PR-34).
+
+**Status:** worked around.
+
+---
