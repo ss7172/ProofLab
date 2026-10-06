@@ -623,6 +623,46 @@ def _inventory(pack):
     return None, None
 
 
+NOT_RECORDED = "not recorded"
+
+
+def _register_owner(pack):
+    """The register owner: the `owner` account (e.g. annapurna@invences.com) of the newest register that carries one,
+    with owner_name in brackets when recorded; the bare register_owner name only when no register carries `owner`."""
+    try:
+        names = sorted(pack.registers, key=lambda n: [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", str(n))])
+    except Exception:
+        return None
+    tops = [((pack.registers[n] or {}).get("doc") or {}).get("top") or {} for n in reversed(names)]
+    for top in tops:
+        if top.get("owner"):
+            return "%s (%s)" % (top["owner"], top["owner_name"]) if top.get("owner_name") else str(top["owner"])
+    for top in tops:
+        if top.get("register_owner"):
+            return str(top["register_owner"])
+    return None
+
+
+def _approval_lines(pack, start):
+    """One line per register approval from the T2 files (joined-from), with its time stated against the run start."""
+    try:
+        from prooflab.pack import history as _h
+        appr = _h.approvals(pack.root) or {}
+    except Exception:
+        return []
+    out = []
+    for ver in sorted(appr):
+        a = appr[ver] or {}
+        at = a.get("at")
+        rel = ""
+        if _utc_key(at) and _utc_key(start):
+            rel = " (before the run start %s)" % start if _utc_key(at) <= _utc_key(start) else " (after the run start %s)" % start
+        out.append("register %s approval %s at %s on %s, responded from account %s%s (joined-from: register/approval*, witnessed-by:ServiceNow)" % (
+            ver, a.get("status") or NOT_RECORDED, at or NOT_RECORDED, str(a.get("ref") or NOT_RECORDED).replace("servicenow:", ""),
+            ((a.get("approver") or {}).get("id") if isinstance(a.get("approver"), dict) else a.get("approver")) or NOT_RECORDED, rel))
+    return out
+
+
 def _q(name, lines, recs, limit, gap=None):
     shown, more = _ids(recs)
     return {"q": name, "lines": lines or [("%s (gap: %s)" % (UNKNOWN, gap or "no evidence in the pack"))],
@@ -649,19 +689,30 @@ def incident(pack, ident):
     inv_name, inv = _inventory(pack)
     comp = dict((e.get("component_id"), e) for e in (inv or {"entries": []})["entries"])
     actors = _actors(recs)
-    who = ["actor %s on %s v%s, principal %s, on behalf of %s" % tuple(x or UNKNOWN for x in (
-        a["actor"], a["runtime"], a["version"], a["principal"], a["on_behalf_of"])) for a in actors]
-    owns = sorted(set("%s owned by %s" % (a["actor"], (comp.get(a["actor"]) or {}).get("owner") or UNKNOWN)
-                      for a in actors if a["actor"]))
+    def _ver(a):
+        if a["version"]:
+            return "%s (recorded: actor.version)" % a["version"]
+        inv_v = (comp.get(a["actor"]) or {}).get("approved_version")
+        return ("%s (joined-from: inventory %s; actor.version not recorded)" % (inv_v, inv_name)) if inv_v else "not recorded"
+    who = ["actor %s (recorded: actor.id), runtime %s, version %s, principal %s, on behalf of %s" % (
+        a["actor"] or NOT_RECORDED, a["runtime"] or NOT_RECORDED, _ver(a), a["principal"] or NOT_RECORDED, a["on_behalf_of"] or NOT_RECORDED)
+        for a in actors]
+    reg_owner = _register_owner(pack)
+    owns = sorted(set("%s owned by %s (joined-from: inventory %s owner field; register owner: %s)" % (
+        a["actor"], (comp.get(a["actor"]) or {}).get("owner") or NOT_RECORDED, inv_name, reg_owner or NOT_RECORDED)
+        for a in actors if a["actor"]))
     for ctl in sorted(set(r.get("control.ref") for r in recs if r.get("control.owner"))):
-        owns.append("control %s owner %s" % (ctl, _first([r for r in recs if r.get("control.ref") == ctl], "control.owner")))
+        owns.append("control %s: recorded: %s (field control.owner, agent-written); register owner: %s" % (
+            ctl, _first([r for r in recs if r.get("control.ref") == ctl], "control.owner"), reg_owner or NOT_RECORDED))
     what = sorted(set(["model %s" % r["model.id"] for r in recs if r.get("model.id")]
                       + ["tool %s%s" % (r["tool.name"], "" if r.get("tool.declared") in (None, True) else " (undeclared)")
                          for r in recs if r.get("tool.name")]))
     authz = ["%s %s %s -> real outcome %s" % (r.get("ep.id"), r.get("record_kind"), r.get("verdict"), r.get("outcome.real") or UNKNOWN)
              for r in recs if r.get("record_kind") == "platform_decision"]
-    appr = ["%s %s %s" % (r.get("ep.id"), r.get("record_kind"), r.get("verdict"))
-            for r in recs if r.get("record_kind") == "approval" or r.get("ep.id") in ("EP-0", "EP-10")]
+    is_appr = lambda r: (r.get("record_kind") == "approval" or r.get("ep.id") in ("EP-0", "EP-10")
+                         or str(r.get("phase") or "").startswith("ep0."))
+    appr = _approval_lines(pack, run_start(pack, cid)) + [("%s (recorded: detail; ep.id not recorded, identified by record kind)" % r.get("detail")) if not r.get("ep.id")
+            else "%s %s %s" % (r.get("ep.id"), r.get("record_kind"), r.get("verdict")) for r in recs if is_appr(r)]
     manifest = os.path.exists(pack.p("MANIFEST.json"))
     corr = read_json(pack.p("derived", "corroboration", cid + ".json"))
     integ = ["MANIFEST.json %s" % ("present" if manifest else "not yet written when this view was built (it is written last at pack build; verify: python3 tools/manifest.py verify .)"),
@@ -680,7 +731,7 @@ def incident(pack, ident):
            "Undeclared tools are allowed unless a Cedar rule forbids them (gap 3)"),
         _q("AUTHORIZED", authz, pick(lambda r: r.get("record_kind") == "platform_decision"),
            "The platform records blocks and pauses as ALLOW (gap 4)", None if authz else "no platform_decision records"),
-        _q("APPROVED", appr, pick(lambda r: r.get("record_kind") == "approval" or r.get("ep.id") in ("EP-0", "EP-10")),
+        _q("APPROVED", appr, pick(is_appr),
            "Approvals are self-asserted (gap 5)", None if appr else "no approval or EP-0 records"),
         _q("INTEGRITY", integ, [], "Corroboration, not proof (gap 6)"),
         _q("RECONSTRUCT", timeline, recs, "Refusals carry no run id (gap 7): joined by trace id", None if recs else "no records"),
@@ -719,6 +770,10 @@ def run_label(pack, cid, label, provenance):
         if missing and "suppress-record" in kinds:
             kinds = ["suppress-record"]
         return "declared fault: " + (", ".join(kinds) if kinds else "kind not recorded (no pin declares one)")
+    if str(label or "") in ("", "OURS-ROLE-UNDECLARED", "unlabelled (gap)") and provenance in (
+            "EXPLORATORY", "PILOT", "BASELINE", "AUTHORIZED_TEST", "WIRING_TEST"):
+        # PR-51b: the run's own records declare it (a warm-up is EXPLORATORY), never 'role undeclared'
+        return "%s (declared in the run's records)" % provenance
     return label
 
 
