@@ -318,7 +318,8 @@ def _project_console(out, warnings):
     import tempfile
     from prooflab.pack import answers as _answers
     entries, skipped = _answers.compose(out)
-    for sk in skipped:
+    aud, aud_skipped = _answers.compose_auditor(out)
+    for sk in skipped + aud_skipped:
         warnings.append("answer not composed (%s): %s" % (sk["query"], sk["reason"]))
     tmp = tempfile.mkdtemp(prefix="prooflab-proj-")
     try:
@@ -326,10 +327,13 @@ def _project_console(out, warnings):
         idx = os.path.join(tmp, "answers.json")
         with open(idx, "w", encoding="utf-8") as fh:
             json.dump(entries, fh)
+        aidx = os.path.join(tmp, "auditor.json")
+        with open(aidx, "w", encoding="utf-8") as fh:
+            json.dump(aud, fh)
         # the projector runs as its own process: nothing imports it (the one-way grep in tests/projector)
         env = dict(os.environ, PYTHONPATH=_repo_root(), PYTHONDONTWRITEBYTECODE="1")
         r = subprocess.run([sys.executable, "-m", "prooflab.pack." + "projector", "--src", out, "--out", pj,
-                            "--answers", idx, "--assessments-dir", "projected-assessments"],
+                            "--answers", idx, "--auditor", aidx, "--assessments-dir", "projected-assessments"],
                            env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         if r.returncode != 0:
             raise RuntimeError("projector exit %d: %s" % (r.returncode, r.stderr.strip()[-300:]))

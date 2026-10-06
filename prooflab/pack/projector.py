@@ -379,7 +379,77 @@ def latest_revisions(assessments):
 
 
 # ------------------------------------------------------------------ records
-def project_records(cx, projected_assessments, report):
+class RawLines(object):
+    """The exact captured lines a record's raw_ref can point at, so the console resolves it and the browser can
+    recompute its sha256: store/records.jsonl by record_id, raw/**/*.jsonl lines by gateway action id."""
+
+    def __init__(self, src):
+        self.src = src
+        self.store = {}
+        for n, text in enumerate(self._lines(os.path.join(src, "store", "records.jsonl")), 1):
+            try:
+                rid = json.loads(text).get("record_id")
+            except (ValueError, AttributeError):
+                continue
+            if rid and rid not in self.store:
+                self.store[rid] = (n, text)
+        self.files = {}
+
+    @staticmethod
+    def _lines(path):
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                return fh.read().split("\n")
+        except (IOError, OSError):
+            return []
+
+    def file_lines(self, rel):
+        if rel not in self.files:
+            full = os.path.normpath(os.path.join(self.src, rel))
+            ok = rel.startswith("raw/") and full.startswith(os.path.join(self.src, "raw") + os.sep)
+            self.files[rel] = self._lines(full) if ok else []
+        return self.files[rel]
+
+    def find(self, rel, needle):
+        for n, text in enumerate(self.file_lines(rel), 1):
+            if text and (needle is None or ('"%s"' % needle) in text or ('\\"%s\\"' % needle) in text):
+                return n, text
+        return None
+
+    def span(self, act, cid=None):
+        pats = (["raw/aws-spans/%s/spans.jsonl" % cid] if cid else []) + sorted(
+            os.path.relpath(p, self.src) for p in glob.glob(os.path.join(self.src, "raw", "aws-spans", "*", "*.jsonl")))
+        for rel in pats:
+            hit = self.find(rel, act)
+            if hit:
+                return rel, hit[0], hit[1]
+        return None
+
+
+def resolve_raw(refs, r, rec_id, lines):
+    """(raw_ref, line text or None): the first ref the console can serve, pointing at one exact captured line."""
+    cid = r.get("run.id") or r.get("correlation_id")
+    for ref in refs:
+        if ref.startswith("gateway-span:"):
+            hit = lines.span(ref.split(":", 1)[1], cid)
+            if hit:
+                return "raw:%s#L%d" % (hit[0], hit[1]), hit[2]
+        elif ref.startswith("raw:"):
+            rel, _, ln = ref[4:].partition("#L")
+            if ln.isdigit():
+                got = lines.file_lines(rel)
+                if 0 < int(ln) <= len(got) and got[int(ln) - 1]:
+                    return ref, got[int(ln) - 1]
+            else:
+                hit = lines.find(rel, r.get("call.id")) or lines.find(rel, None)
+                if hit:
+                    return "raw:%s#L%d" % (rel, hit[0]), hit[1]
+    if rec_id in lines.store:
+        return "record:%s" % rec_id, lines.store[rec_id][1]
+    return (refs[0] if refs else "record:%s" % rec_id), None
+
+
+def project_records(cx, projected_assessments, report, lines=None):
     """Yield (relative path, evidence record). C16: cumulative run tokens after each call (MC-33)."""
     by_run = {}
     for a in projected_assessments:
@@ -430,8 +500,11 @@ def project_records(cx, projected_assessments, report):
             _bump(report, "no UTC timestamp")
             continue
         clock = CLOCK_MAP.get(r.get("emitted.clock") or r.get("observed.clock"), "capture")
-        raw_ref = refs[0] if refs else "record:%s" % rec_id
-        sha = r.get("source.sha256") if _index.SHA_RE.match(str(r.get("source.sha256") or "")) else hashlib.sha256(canon(r).encode("utf-8")).hexdigest()
+        raw_ref, line = resolve_raw(refs, r, rec_id, lines) if lines is not None else ((refs[0] if refs else "record:%s" % rec_id), None)
+        if line is not None:       # the sha256 of the exact line the raw_ref resolves to: the browser recomputes it
+            sha = hashlib.sha256(line.encode("utf-8")).hexdigest()
+        else:
+            sha = r.get("source.sha256") if _index.SHA_RE.match(str(r.get("source.sha256") or "")) else hashlib.sha256(canon(r).encode("utf-8")).hexdigest()
         alias = cx["run_ids"].get(rid)
         doc = {
             "schema": PROJ_SCHEMA_RECORD, "evidence_id": "ev:%s:%s:%s:%s" % (ref, tver, alias or rid, rec_id),
@@ -467,7 +540,7 @@ def _bump(report, why):
 
 
 # ------------------------------------------------------------------ the projection
-def project(src, out, as_of=None, generated_at=None, answers=None, assessments_dir="assessments"):
+def project(src, out, as_of=None, generated_at=None, answers=None, assessments_dir="assessments", auditor=None):
     src, out = os.path.abspath(src), os.path.abspath(out)
     if out == src or out.startswith(src + os.sep) or src.startswith(out + os.sep):
         raise ValueError("projection is one-way: --out must be a directory apart from --src (and not contain it)")
@@ -493,7 +566,7 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
     for p in docs:
         rel = "%s/%s/%s.json" % (assessments_dir, p["control_ref"], safe(p["assessment_id"]))
         files.append((rel, p))
-    proj_records = project_records(cx, docs, report)
+    proj_records = project_records(cx, docs, report, RawLines(src))
     ep_seen, counts = {}, {}
     for rel, doc, src_rec in proj_records:
         files.append((rel, doc))
@@ -563,7 +636,7 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
             "first_assessed_run_at": min((r["started_at"] for r in runs if r.get("started_at")), default=None),
             "exploratory_runs": len(set(r.get("run.id") for r in cx["records"] if r.get("run.id") and r.get("run.id") not in cx["run_ids"]
                                        and provenance_of(r.get("provenance"), r.get("run.id"), cx["run_ids"]) == "EXPLORATORY")),
-            "gaps": [], "answers": list(answers or [])}
+            "gaps": _gaps(src), "answers": list(answers or []), "auditor": list(auditor or [])}
     index_doc = _index.build_index(ictx)
     os.makedirs(out, exist_ok=True)
     for rel, doc in files:
@@ -571,6 +644,13 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
     _write(os.path.join(out, "pack-index.json"), index_doc)
     _write(os.path.join(out, "projection-report.json"), report)
     return {"index": index_doc, "report": report, "files": [rel for rel, _ in files] + ["pack-index.json"]}
+
+
+def _gaps(src):
+    """pack-index gaps[] parsed from the staged gap-list.md (empty when the pack has none)."""
+    from prooflab.pack import gaps as _g
+    data = _read_bytes(os.path.join(src, "gap-list.md"))
+    return _g.parse(data.decode("utf-8", "replace")) if data else []
 
 
 def _write(path, doc):
@@ -586,13 +666,17 @@ def main(argv=None):
     ap.add_argument("--as-of", default=None)
     ap.add_argument("--answers", default=None, help="JSON list of pack-index answers[] entries (from pack build)")
     ap.add_argument("--assessments-dir", default="assessments", help="where projected assessments go (default assessments)")
+    ap.add_argument("--auditor", default=None, help="JSON list of pack-index auditor[] entries (from pack build)")
     args = ap.parse_args(argv)
-    answers = None
+    answers = auditor = None
     if args.answers:
         with open(args.answers, "r", encoding="utf-8") as fh:
             answers = json.load(fh)
+    if args.auditor:
+        with open(args.auditor, "r", encoding="utf-8") as fh:
+            auditor = json.load(fh)
     try:
-        res = project(args.src, args.out, args.as_of, answers=answers, assessments_dir=args.assessments_dir)
+        res = project(args.src, args.out, args.as_of, answers=answers, assessments_dir=args.assessments_dir, auditor=auditor)
     except ValueError as exc:
         sys.stderr.write("projector: %s\n" % exc)
         return 2
