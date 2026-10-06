@@ -1,0 +1,122 @@
+{
+"_note": "SYNTHETIC: derived from the 20261005T173727Z gateway log run fault-1791177843-fde682 (first 9 llm calls); ids relabelled",
+"rows": [
+{
+"attributes.listener": "llm",
+"attributes.modaas.run_id": "ifabric-test-1791260100-d4e5f6",
+"attributes.modaas.action_id": "act-N3-0001",
+"attributes.gen_ai.usage.input_tokens": "3811",
+"attributes.gen_ai.usage.output_tokens": "35",
+"attributes.http.status": "200",
+"startTimeUnixNano": "1791177845366000000",
+"endTimeUnixNano": "1791177847631000000",
+"durationNano": "2265000000",
+"traceId": "7a1c0d2e9f3b48c5a6d7e8f901234567",
+"spanId": "0000000000001eef"
+},
+{
+"attributes.listener": "llm",
+"attributes.modaas.run_id": "ifabric-test-1791260100-d4e5f6",
+"attributes.modaas.action_id": "act-N3-0002",
+"attributes.gen_ai.usage.input_tokens": "4361",
+"attributes.gen_ai.usage.output_tokens": "197",
+"attributes.http.status": "200",
+"startTimeUnixNano": "1791177847859000000",
+"endTimeUnixNano": "1791177851945000000",
+"durationNano": "4086000000",
+"traceId": "7a1c0d2e9f3b48c5a6d7e8f901234567",
+"spanId": "0000000000003dde"
+},
+{
+"attributes.listener": "llm",
+"attributes.modaas.run_id": "ifabric-test-1791260100-d4e5f6",
+"attributes.modaas.action_id": "act-N3-0003",
+"attributes.gen_ai.usage.input_tokens": "3872",
+"attributes.gen_ai.usage.output_tokens": "51",
+"attributes.http.status": "200",
+"startTimeUnixNano": "1791177854252000000",
+"endTimeUnixNano": "1791177856674000000",
+"durationNano": "2422000000",
+"traceId": "7a1c0d2e9f3b48c5a6d7e8f901234567",
+"spanId": "0000000000005ccd"
+},
+{
+"attributes.listener": "llm",
+"attributes.modaas.run_id": "ifabric-test-1791260100-d4e5f6",
+"attributes.modaas.action_id": "act-N3-0004",
+"attributes.gen_ai.usage.input_tokens": "3981",
+"attributes.gen_ai.usage.output_tokens": "53",
+"attributes.http.status": "200",
+"startTimeUnixNano": "1791177856863000000",
+"endTimeUnixNano": "1791177858510000000",
+"durationNano": "1647000000",
+"traceId": "7a1c0d2e9f3b48c5a6d7e8f901234567",
+"spanId": "0000000000007bbc"
+},
+{
+"attributes.listener": "llm",
+"attributes.modaas.run_id": "ifabric-test-1791260100-d4e5f6",
+"attributes.modaas.action_id": "act-N3-0005",
+"attributes.gen_ai.usage.input_tokens": "4098",
+"attributes.gen_ai.usage.output_tokens": "52",
+"attributes.http.status": "200",
+"startTimeUnixNano": "1791177858647000000",
+"endTimeUnixNano": "1791177861045000000",
+"durationNano": "2398000000",
+"traceId": "7a1c0d2e9f3b48c5a6d7e8f901234567",
+"spanId": "0000000000009aab"
+},
+{
+"attributes.listener": "llm",
+"attributes.modaas.run_id": "ifabric-test-1791260100-d4e5f6",
+"attributes.modaas.action_id": "act-N3-0006",
+"attributes.gen_ai.usage.input_tokens": "4214",
+"attributes.gen_ai.usage.output_tokens": "45",
+"attributes.http.status": "200",
+"startTimeUnixNano": "1791177861176000000",
+"endTimeUnixNano": "1791177864769000000",
+"durationNano": "3593000000",
+"traceId": "7a1c0d2e9f3b48c5a6d7e8f901234567",
+"spanId": "000000000000b99a"
+},
+{
+"attributes.listener": "llm",
+"attributes.modaas.run_id": "ifabric-test-1791260100-d4e5f6",
+"attributes.modaas.action_id": "act-N3-0007",
+"attributes.gen_ai.usage.input_tokens": "4369",
+"attributes.gen_ai.usage.output_tokens": "50",
+"attributes.http.status": "200",
+"startTimeUnixNano": "1791177864935000000",
+"endTimeUnixNano": "1791177868430000000",
+"durationNano": "3495000000",
+"traceId": "7a1c0d2e9f3b48c5a6d7e8f901234567",
+"spanId": "000000000000d889"
+},
+{
+"attributes.listener": "llm",
+"attributes.modaas.run_id": "ifabric-test-1791260100-d4e5f6",
+"attributes.modaas.action_id": "act-N3-0008",
+"attributes.gen_ai.usage.input_tokens": "4515",
+"attributes.gen_ai.usage.output_tokens": "174",
+"attributes.http.status": "200",
+"startTimeUnixNano": "1791177868614000000",
+"endTimeUnixNano": "1791177871710000000",
+"durationNano": "3096000000",
+"traceId": "7a1c0d2e9f3b48c5a6d7e8f901234567",
+"spanId": "000000000000f778"
+},
+{
+"attributes.listener": "llm",
+"attributes.modaas.run_id": "ifabric-test-1791260100-d4e5f6",
+"attributes.modaas.action_id": "act-N3-0009",
+"attributes.gen_ai.usage.input_tokens": "3765",
+"attributes.gen_ai.usage.output_tokens": "37",
+"attributes.http.status": "200",
+"startTimeUnixNano": "1791177874096000000",
+"endTimeUnixNano": "1791177875836000000",
+"durationNano": "1740000000",
+"traceId": "7a1c0d2e9f3b48c5a6d7e8f901234567",
+"spanId": "0000000000011667"
+}
+]
+}
