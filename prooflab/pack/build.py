@@ -3,6 +3,7 @@
   python3 -m prooflab pack build --out <dir> [--src <tree>] [--workdir <dir>] ...
   python3 -m prooflab pack scan <dir>          # exact-value scan only (exit 1 on any hit)
   python3 -m prooflab pack verify <dir>        # manifest.py verify
+  python3 -m prooflab pack root ...            # root published (unsigned): MANIFEST sha256 to ServiceNow (PR-32)
 
 Exact-value scan values are injected by the caller: PROOFLAB_SCAN_VALUES (one value per
 line) or --scan-values-stdin. This module never reads a secret file. A scan hit reports the
@@ -317,6 +318,9 @@ def cmd_verify(argv):
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "root":
+        from prooflab.pack import root_publish
+        return root_publish.main(argv[1:])
     if argv and argv[0] in ("build", "scan", "verify"):
         verb, rest = argv[0], argv[1:]
     else:
