@@ -141,7 +141,7 @@ def test_wrapper_refuses_tampered_pack(inputs):
     out = inputs[3] / "pack"
     assert _build(inputs, out) == 0
     (out / "run-ids.txt").write_text("changed\n")
-    r = _run_wrapper(["--dry-run", "--evidence", str(out), "t"], inputs[3])
+    r = _run_wrapper(["--dry-run", "--evidence", str(out), "t"], inputs[3], KEY)
     assert r.returncode != 0 and "manifest verify failed" in r.stderr
 
 
@@ -166,3 +166,37 @@ def test_readback(inputs):
 def test_no_threshold_or_secret_literals():
     src = open(os.path.join(REPO, "prooflab", "pack", "build.py")).read()
     assert "AK" + "IA" not in src and "BEGIN " + "PRIV" not in src
+
+
+def test_wrapper_refuses_empty_scan_values(inputs):
+    out = inputs[3] / "pack"
+    assert _build(inputs, out) == 0
+    r = _run_wrapper(["--evidence", str(out), "team-x"], inputs[3], "")
+    assert r.returncode != 0 and "no scan values injected" in r.stderr and "SUBMITTED" not in r.stdout
+    r = _run_wrapper(["--allow-empty-scan", "--dry-run", "--evidence", str(out), "team-x"], inputs[3], "")
+    assert r.returncode == 0 and "DRY-RUN" in r.stdout
+
+
+def test_build_reports_scan_skipped_without_values(inputs, capsys):
+    assert _build(inputs, inputs[3] / "pack") == 0
+    assert "scan skipped: no values" in capsys.readouterr().out
+
+
+def test_jsonl_token_paths_redacted(inputs):
+    src = inputs[0]
+    line = {"metadata": {"annotations": {"kubectl.kubernetes.io/last-applied-configuration": TOK}}}
+    _w(str(src / "raw" / "cr.jsonl"), json.dumps(line) + "\n" + json.dumps(line) + "\n")
+    out = inputs[3] / "pack"
+    assert _build(inputs, out, [TOK]) == 0
+    assert TOK.encode() not in (out / "raw" / "cr.jsonl").read_bytes()
+
+
+def test_unparseable_cr_status_file_fails_build(inputs):
+    src = inputs[0]
+    _w(str(src / "raw" / "cr-status" / "bad.yaml"), "x: kubectl.kubernetes.io/last-applied-configuration\n")
+    out = inputs[3] / "pack"
+    assert _build(inputs, out) == 1
+    assert not (out / "MANIFEST.json").exists()
+    _w(str(src / "raw" / "cr-status" / "bad.yaml"), "ok: 1\n")
+    _w(str(src / "raw" / "cr-status" / "broken.json"), "{not json")
+    assert _build(inputs, inputs[3] / "pack2") == 1

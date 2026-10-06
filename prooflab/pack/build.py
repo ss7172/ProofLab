@@ -81,25 +81,80 @@ def _strip(obj):
     return changed
 
 
+def _redact_json_file(p):
+    """Returns (changed, parsed_ok)."""
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (ValueError, OSError):
+        return False, False
+    if _strip(data):
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, sort_keys=True)
+            f.write("\n")
+        return True, True
+    return False, True
+
+
+def _redact_jsonl_file(p):
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            lines = f.read().split("\n")
+    except (ValueError, OSError):
+        return False, False
+    changed, ok = False, True
+    for i, ln in enumerate(lines):
+        if not ln.strip():
+            continue
+        try:
+            obj = json.loads(ln)
+        except ValueError:
+            ok = False
+            continue
+        if _strip(obj):
+            lines[i] = json.dumps(obj, sort_keys=True)
+            changed = True
+    if changed:
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+    return changed, ok
+
+
 def builtin_redact(root):
-    """Fallback redaction of the three CR token paths in every .json file; returns dropped files."""
-    touched = []
+    """Fallback redaction of the three CR token paths in .json and .jsonl files.
+
+    Returns (touched files, errors). Fail closed: a file under raw/cr-status/ that cannot be
+    parsed and redacted, or any other file under raw/ that is not json/jsonl yet names one of
+    the token paths, is an error (the build must not continue).
+    """
+    touched, errors = [], []
     for d, _, names in os.walk(root):
         for n in names:
-            if not n.endswith(".json"):
-                continue
             p = os.path.join(d, n)
-            try:
-                with open(p, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except (ValueError, OSError):
-                continue
-            if _strip(data):
-                with open(p, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2, sort_keys=True)
-                    f.write("\n")
-                touched.append(os.path.relpath(p, root))
-    return sorted(touched)
+            rel = os.path.relpath(p, root)
+            parts = rel.split(os.sep)
+            in_cr = parts[:2] == ["raw", "cr-status"]
+            in_raw = parts[0] == "raw"
+            if n.endswith(".json"):
+                changed, ok = _redact_json_file(p)
+            elif n.endswith(".jsonl"):
+                changed, ok = _redact_jsonl_file(p)
+            else:
+                changed, ok = False, True
+                if in_raw:
+                    try:
+                        with open(p, "rb") as f:
+                            blob = f.read()
+                    except OSError:
+                        blob = b""
+                    marked = any(a.encode() in blob for a in DROP_ANNOTATIONS)
+                    if in_cr or marked:
+                        ok = False
+            if changed:
+                touched.append(rel)
+            if not ok and (in_cr or in_raw):
+                errors.append(rel)
+    return sorted(touched), sorted(errors)
 
 
 def read_scan_values(stdin=False):
@@ -196,8 +251,14 @@ def cmd_build(argv):
     redactor = _load_redactor()
     if redactor:
         redactor(out)
-    dropped = builtin_redact(out)
-    hits = scan_tree(out, read_scan_values(a.scan_values_stdin))
+    dropped, redact_errors = builtin_redact(out)
+    if redact_errors:
+        for rel in redact_errors:
+            print("REDACT FAIL: cannot parse and redact " + rel, file=sys.stderr)
+        print("pack: redaction incomplete; MANIFEST.json not written", file=sys.stderr)
+        return 1
+    values = read_scan_values(a.scan_values_stdin)
+    hits = scan_tree(out, values)
     for w in warnings:
         print("warning: " + w)
     if dropped:
@@ -209,18 +270,25 @@ def cmd_build(argv):
         return 1
     m = _load_manifest_tool()
     manifest = m.build_manifest(out)
-    print("OK: staged %d files in %s; exact-value scan: 0 hits" % (len(manifest["files"]), out))
+    scanmsg = "exact-value scan: 0 hits" if values else "scan skipped: no values"
+    print("OK: staged %d files in %s; %s" % (len(manifest["files"]), out, scanmsg))
     return 0
 
 
 def cmd_scan(argv):
+    allow = "--allow-empty-scan" in argv or os.environ.get("PROOFLAB_ALLOW_EMPTY_SCAN") == "1"
+    argv = [x for x in argv if x != "--allow-empty-scan"]
     if len(argv) != 1:
-        print("usage: pack scan <dir> (values in PROOFLAB_SCAN_VALUES)", file=sys.stderr)
+        print("usage: pack scan [--allow-empty-scan] <dir> (values in PROOFLAB_SCAN_VALUES)", file=sys.stderr)
         return 2
-    hits = scan_tree(argv[0], read_scan_values())
+    values = read_scan_values()
+    if not values and not allow:
+        print("REFUSED: no scan values injected", file=sys.stderr)
+        return 1
+    hits = scan_tree(argv[0], values)
     for rel, c in hits:
         print("SCAN HIT: %s (%d)" % (rel, c), file=sys.stderr)
-    print("exact-value scan: %d hit(s)" % sum(c for _, c in hits))
+    print("exact-value scan: %d hit(s)%s" % (sum(c for _, c in hits), "" if values else " (skipped: no values)"))
     return 1 if hits else 0
 
 
