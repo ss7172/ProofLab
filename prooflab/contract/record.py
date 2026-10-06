@@ -48,7 +48,17 @@ RAIL_FIELDS = (
     "rail.subject", "rail.subject_sha256_in", "rail.subject_sha256_out", "rail.matches", "rail.values",
     "rail.evidence_id", "rail.llm_call_id", "rail.llm_outcome", "rail.latency_ms", "rail.error",
 )
-RAILS_COMPACT_FIELDS = ("rails.allow", "rails.policy_sha256", "rails.counts")
+RAILS_COMPACT_FIELDS = ("rails.allow", "rails.policy_sha256", "rails.counts", "rails.mode")
+
+# Content fields ARCH §3.1 / §7.2 name for EP-3, EP-4, EP-5 and RT-01 (names ratified in PR-01 fix round 1;
+# ARCH leaves most unnamed). All optional; closed vocabularies are enforced below.
+JUDGMENT_FIELDS = (
+    "judgment.disposition", "judgment.evidence_ids", "judgment.result_digests", "judgment.reversible_step",
+    "judgment.precedence_rule",
+)
+TOOL_CONTENT_FIELDS = ("tool.use_id", "suspicious_tool_output")
+HANDOFF_RESULT_FIELDS = ("handoff.status", "handoff.halted", "handoff.duration_ms", "tally.tokens", "tally.calls")
+STARTUP_FIELDS = ("prompt.sha256", "lifecycle.event")
 
 OPTIONAL = (
     "supersedes", "span.id", "seq.in_stream", "seq", "runtime.arn", "runtime.session_id", "aws.request_id",
@@ -56,7 +66,7 @@ OPTIONAL = (
     "emitted.at", "emitted.clock", "observed.at", "observed.clock",
     "model.id", "tokens.in", "tokens.out", "outcome.http_status", "outcome.finish_reason",
     "tool.name", "tool.declared", "tool.args_sha256", "data_classification",
-) + RAIL_FIELDS + RAILS_COMPACT_FIELDS
+) + RAIL_FIELDS + RAILS_COMPACT_FIELDS + JUDGMENT_FIELDS + TOOL_CONTENT_FIELDS + HANDOFF_RESULT_FIELDS + STARTUP_FIELDS
 
 DERIVED = (
     "system.id", "system.risk_tier", "component.id", "component.owner", "component.approved_version",
@@ -98,6 +108,23 @@ RAIL_HOOKS = (
     "after_model_call", "after_invocation", "startup", "audit_hook",
 )
 RAIL_MECHANISMS = ("code", "llm-self-check", "platform-guardrail-observed")
+JUDGMENT_DISPOSITIONS = ("auto-resolve", "gather-evidence", "escalate", "halted")   # = PR-04 DISPOSITIONS
+HANDOFF_STATUSES = ("OK", "ERROR", "TIMEOUT", "HALTED", "REFUSED")   # handoff.received status (EP-5)
+
+# The workflow event vocabulary (ARCH §5.2): C7 matches expected events by (agent, phase, seq.in_stream).
+# The register's `workflow_events` / `workflow_events_after_stop` use these exact names. A record whose
+# phase is one of these MUST have the mapped record_kind; any other record keeps `ifabric.<kind>`.
+WORKFLOW_PHASES = {
+    "run.started": "lifecycle",
+    "handoff.sent": "handoff",
+    "invocation.received": "lifecycle",
+    "intent": "lifecycle",
+    "judgment": "judgment",
+    "handoff.received": "handoff",
+    "escalation": "judgment",
+    "run.finished": "lifecycle",
+    "stop": "lifecycle",
+}
 
 EMITTED_RECORD_ID_RE = re.compile(r"^[0-9]{8}T[0-9]{9}Z-[a-z0-9][a-z0-9.\-]{0,31}-[0-9a-f]{8}$")
 OBS_RECORD_ID_RE = re.compile(r"^obs-[0-9a-f]{32}$")
@@ -313,6 +340,25 @@ def _validate(rec, require_table_a):
     _enum(errors, rec, "rail.stage", RAIL_STAGES)
     _enum(errors, rec, "rail.hook", RAIL_HOOKS)
     _enum(errors, rec, "rail.mechanism", RAIL_MECHANISMS)
+    _enum(errors, rec, "rails.mode", _v.C16_MODES)
+    _enum(errors, rec, "judgment.disposition", JUDGMENT_DISPOSITIONS)
+    _enum(errors, rec, "handoff.status", HANDOFF_STATUSES)
+    phase = rec.get("phase")
+    if isinstance(phase, str) and phase in WORKFLOW_PHASES and kind != WORKFLOW_PHASES[phase]:
+        errors.append("phase: %r is a workflow event of record_kind %r, not %r" % (phase, WORKFLOW_PHASES[phase], kind))
+    for name in ("tally.tokens", "tally.calls", "handoff.duration_ms"):
+        value = rec.get(name)
+        if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
+            errors.append("%s: must be an int >= 0" % name)
+    for name in ("suspicious_tool_output", "handoff.halted"):
+        if rec.get(name) is not None and not isinstance(rec[name], bool):
+            errors.append("%s: must be a boolean" % name)
+    for name in ("judgment.evidence_ids", "judgment.result_digests"):
+        value = rec.get(name)
+        if value is not None and (not isinstance(value, list) or not all(isinstance(x, str) for x in value)):
+            errors.append("%s: must be a list of strings" % name)
+    if any(k in rec for k in JUDGMENT_FIELDS) and kind != "judgment":
+        errors.append("judgment.*: only on judgment records")
     verdict = rec.get("verdict")
     if kind in _v.VERDICTS_BY_KIND and verdict is not None and not _v.is_verdict_allowed(kind, verdict):
         errors.append("verdict: %r is not a %s verdict (allowed %s)" % (verdict, kind, list(_v.VERDICTS_BY_KIND[kind])))
@@ -341,7 +387,7 @@ def _validate(rec, require_table_a):
         if isinstance(rid, str) and not OBS_RECORD_ID_RE.match(rid):
             errors.append("record_id: a pulled platform record needs the deterministic obs- id")
     for name in ("handoff.payload_sha256", "evaluator.sha256", "pin.sha256", "threshold.sha256",
-                 "tool.args_sha256", "rail.policy_sha256", "rails.policy_sha256",
+                 "tool.args_sha256", "rail.policy_sha256", "rails.policy_sha256", "prompt.sha256",
                  "rail.subject_sha256_in", "rail.subject_sha256_out"):
         _sha(errors, rec, name)
     refs = rec.get("source.refs")
@@ -455,7 +501,15 @@ def json_schema() -> dict:
     props["rails.counts"] = {"type": "object"}
     for name in ("emitted.at", "observed.at", "ts"):
         props[name] = {"type": "string", "pattern": _clocks.UTC_RE.pattern}
-    for name in ("seq.in_stream", "seq", "tokens.in", "tokens.out", "outcome.http_status", "rail.latency_ms"):
+    props["rails.mode"] = {"enum": list(_v.C16_MODES) + [None]}
+    props["judgment.disposition"] = {"enum": list(JUDGMENT_DISPOSITIONS) + [None]}
+    props["handoff.status"] = {"enum": list(HANDOFF_STATUSES) + [None]}
+    for name in ("judgment.evidence_ids", "judgment.result_digests"):
+        props[name] = {"type": ["array", "null"], "items": {"type": "string"}}
+    for name in ("suspicious_tool_output", "handoff.halted"):
+        props[name] = nullable("boolean")
+    for name in ("seq.in_stream", "seq", "tokens.in", "tokens.out", "outcome.http_status", "rail.latency_ms",
+                 "tally.tokens", "tally.calls", "handoff.duration_ms"):
         props[name] = nullable("integer")
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -471,4 +525,5 @@ def json_schema() -> dict:
         "x-table-a": list(TABLE_A),
         "x-derived-never-stored": list(DERIVED),
         "x-time-pairs": [list(p) for p in TIME_PAIRS],
+        "x-workflow-phases": dict(WORKFLOW_PHASES),
     }

@@ -23,7 +23,7 @@
  "run.condition": "none",
  "schema": "ifabric.evidence/1",
  "record_kind": "handoff",
- "phase": "ifabric.handoff",
+ "phase": "handoff.sent",
  "correlation_id": "ifabric-run-1791260000-ab12cd",
  "ts": "2026-10-06T04:30:00.001Z",
  "source.refs": [],
@@ -82,5 +82,7 @@
   "on_behalf_of": "not applicable: handoff",
   "principal.platform": "not applicable: handoff",
   "control.owner": "not applicable: handoff"
- }
+ },
+ "tally.tokens": 0,
+ "tally.calls": 0
 }

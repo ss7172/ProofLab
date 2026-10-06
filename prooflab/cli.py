@@ -10,21 +10,28 @@ import importlib
 import importlib.util
 import sys
 
-# verb -> (target "module:function", one-line help, owning PR)
+# verb -> (target "module:function", one-line help, owning PR). Every target lives under prooflab.* (FEATURE-MAP R1).
 VERBS = {
-    "run": ("adapters.orchestrator.run:main", "drive one run of the ifabric- trio (EP-5; EP-0 preflight)", "PR-08"),
-    "query": ("prooflab.query.cli:main", "the control test: query a control for a run or window", "PR-15"),
+    "run": ("prooflab.adapters.orchestrator.run:main", "drive one run of the ifabric- trio (EP-5; EP-0 preflight)",
+            "PR-08a"),
+    "registry": ("prooflab.registry.cli:main", "registry tooling: freeze, pin, check (needs cli.py in PR-11's owns)",
+                 "PR-11"),
+    "query": ("prooflab.query.cli:main", "the control test: query a control for a run or window", "PR-15a"),
+    "assess": ("prooflab.query.cli:assess_main", "run the control tests and write assessments", "PR-15a"),
+    "refresh": ("prooflab.store.snapshot:main", "snapshot the one store (with the check poller)", "PR-13a"),
     "pack": ("prooflab.pack.build:main", "build / index / verify the Evidence Pack", "PR-21"),
+    "humanloop": ("prooflab.humanloop.runner:main", "the human loop: findings -> ServiceNow, mirror", "PR-20a"),
+    "console": ("prooflab.console.server:main", "the Evidence Console (loopback; PACK and LIVE)", "PR-17"),
     "watch": ("prooflab.watch.cli:main", "live feed + the response poller (check --cutoff)", "PR-14"),
     "tail": ("prooflab.watch.tail:main", "tail the live index", "PR-14"),
     "recheck": ("prooflab.recheck.cli:main", "independent arithmetic recheck of assessments", "PR-10"),
-    "register": ("prooflab.registry.cli:main", "registry tooling: freeze, pin, check", "PR-11"),
-    "humanloop": ("prooflab.humanloop.cli:main", "the human loop: findings -> ServiceNow, mirror", "PR-20"),
-    "assess": ("prooflab.query.assess:main", "run the control tests and write assessments", "PR-15"),
-    "collect": ("adapters.collectors.cli:main", "pull platform evidence (by run id and time window)", "PR-12"),
-    "console": ("prooflab.console.server:main", "the Evidence Console (loopback; PACK and LIVE)", "PR-17"),
+    "collect": ("prooflab.adapters.collectors.cli:main",
+                "pull platform evidence by run id and window (needs cli.py in PR-12a's owns)", "PR-12a"),
+    "postrun": ("prooflab.adapters.postrun.cli:main", "EP-2 post-run replay of the C16 decisions", "PR-23"),
     "servicenow": ("prooflab.servicenow.cli:main", "Arth's ServiceNow adapter CLI (handoff-3, unchanged)", "Arth"),
 }
+# Aliases: an old spelling -> its verb.
+ALIASES = {"register": "registry"}
 
 EXIT_USAGE = 2
 EXIT_NOT_BUILT = 3
@@ -60,6 +67,7 @@ def main(argv=None) -> int:
         print(usage())
         return 0 if argv else EXIT_USAGE
     verb, rest = argv[0], argv[1:]
+    verb = ALIASES.get(verb, verb)
     if verb not in VERBS:
         print("prooflab: unknown verb %r\n\n%s" % (verb, usage()), file=sys.stderr)
         return EXIT_USAGE

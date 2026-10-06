@@ -79,3 +79,99 @@ def test_from_assessment_four_rows():
     assert F.finding_from_assessment(dict(a, requirement_verdict="NOT_ASSESSED"), "x", "y") is None
     ok = F.finding_from_assessment(dict(a, requirement_verdict="SATISFIED"), "within cap", "2026-10-06T06:05:00Z")
     assert ok["verdict"] == "SATISFIED" and not V.notify_due("SATISFIED")
+
+
+# --- fix round 1: parity with handoff-3 finding_context.parse_context ---------------------------
+import json  # noqa: E402
+import os  # noqa: E402
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+HANDOFF3_CODE = os.path.join(ROOT, "handoffs", "ifabric-handoff-3", "code")
+
+# The six shapes the reviewer found the v1 contract accepted and Arth's finding_from_dict refuses.
+CONTEXT_REFUSALS = [
+    dict(measured={"value": "10", "unit": "tokens"}),
+    dict(limit={"value": 1, "operator": "<="}),
+    dict(register={"version_date": "2026-10-06T03:52:10Z"}),
+    dict(trace=[{"at": "2026-10-06T04:31:12Z", "zone": "it", "action": "model_call"}]),
+    dict(retest={"assessment": "a", "verdict": "NOPE", "threshold_version": "C16-v1"}),
+    dict(measured={"value": 10, "unit": "u" * 201}),
+]
+# More parse_context refusals, same rule set.
+MORE_REFUSALS = [
+    dict(measured={"value": True, "unit": "tokens"}),
+    dict(measured=[1, 2]),
+    dict(retest={"verdict": "SATISFIED", "threshold_version": "C16-v1"}),
+    dict(register={"version_date": "x", "owner": "Sree\nX"}),
+    dict(trace={"at": "x"}),
+    dict(trace=[{"at": "x", "actor": "a", "zone": "z", "action": "y"}] * 201),
+    dict(trace=["step"]),
+]
+CONTEXT_ACCEPTED = [
+    dict(measured={"value": 10.5, "unit": "tokens"}, limit={"value": 10, "operator": "<=", "unit": "tokens"},
+         register={"version_date": "2026-10-06T03:52:10Z", "owner": "Sree", "approval": "INC0010231"},
+         retest={"assessment": "C16:C16-v1:run:x:r2", "verdict": "SATISFIED", "threshold_version": "C16-v1"},
+         trace=[{"at": "2026-10-06T04:31:12Z", "actor": "ifabric-it", "zone": "it", "action": "model_call"}]),
+]
+
+
+def _raw(context):
+    raw = dict(sample())
+    raw.update(context)
+    return raw
+
+
+def _arth_refusals(cases):
+    """[True if Arth's handoff-3 finding_from_dict refuses] per case, or None when no handoff-3 copy exists."""
+    if hasattr(arth, "parse_context"):
+        out = []
+        for raw in cases:
+            try:
+                arth.finding_from_dict(raw)
+                out.append(False)
+            except (ValueError, KeyError, TypeError):
+                out.append(True)
+        return out
+    if not os.path.isfile(os.path.join(HANDOFF3_CODE, "prooflab", "servicenow", "finding_context.py")):
+        return None
+    script = (
+        "import json,sys\n"
+        "from prooflab.servicenow.finding import finding_from_dict\n"
+        "out=[]\n"
+        "for raw in json.load(sys.stdin):\n"
+        "    try:\n"
+        "        finding_from_dict(raw); out.append(False)\n"
+        "    except (ValueError, KeyError, TypeError):\n"
+        "        out.append(True)\n"
+        "print(json.dumps(out))\n")
+    env = dict(os.environ, PYTHONPATH=HANDOFF3_CODE)
+    proc = subprocess.run([sys.executable, "-c", script], input=json.dumps(cases), env=env,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd=HANDOFF3_CODE)
+    assert proc.returncode == 0, proc.stderr
+    return json.loads(proc.stdout)
+
+
+@pytest.mark.parametrize("bad", CONTEXT_REFUSALS + MORE_REFUSALS)
+def test_contract_refuses_what_parse_context_refuses(bad):
+    assert F.validate_finding(_raw(bad)) != []
+    with pytest.raises(ValueError):
+        sample(**bad)
+
+
+def test_arths_handoff3_code_refuses_the_same_cases():
+    cases = [_raw(c) for c in CONTEXT_REFUSALS + MORE_REFUSALS]
+    refused = _arth_refusals(cases)
+    if refused is None:
+        pytest.skip("no handoff-3 finding_context available")
+    assert refused == [True] * len(cases)
+
+
+def test_parity_on_accepted_context():
+    cases = [_raw(c) for c in CONTEXT_ACCEPTED]
+    assert all(F.validate_finding(c) == [] for c in cases)
+    refused = _arth_refusals(cases)
+    if refused is None:
+        pytest.skip("no handoff-3 finding_context available")
+    assert refused == [False] * len(cases)

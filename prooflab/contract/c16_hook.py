@@ -68,10 +68,19 @@ def decision_record(decision, ctx: dict) -> dict:
     return _rec.new_record("decision", null_reason="not applicable: C16 decision", **fields)
 
 
-def stop_record(ctx: dict, reason: str) -> dict:
-    """A call cancelled by the stop state (C16-halted or X-05-quarantined): recorded once, no evaluate()."""
+STOP_OUTCOMES = ("CANCELLED_C16", "CANCELLED_RAIL")
+
+
+def stop_record(ctx: dict, reason: str, outcome_real: str = "CANCELLED_C16") -> dict:
+    """A call cancelled by the stop state: recorded once, no evaluate(). Phase `stop` (ARCH §5.2).
+
+    outcome_real is CANCELLED_C16 after a C16 halt, CANCELLED_RAIL after an X-05 rail quarantine
+    (reason "rail-quarantine"); nothing else. C7 counts one decision per CANCELLED_C16 call only.
+    """
+    if outcome_real not in STOP_OUTCOMES:
+        raise ValueError("stop_record: outcome_real must be one of %s, got %r" % (STOP_OUTCOMES, outcome_real))
     fields = dict(ctx)
-    fields.update({"verdict": "RECORDED", "reason": reason, "outcome.real": "CANCELLED_C16",
+    fields.update({"verdict": "RECORDED", "reason": reason, "outcome.real": outcome_real, "phase": "stop",
                    "detail": "model call cancelled: stop state (%s)" % reason})
     fields.setdefault("authorship", "TESTIMONY")
     return _rec.new_record("lifecycle", null_reason="not applicable: stop state", **fields)

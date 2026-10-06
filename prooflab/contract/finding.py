@@ -20,11 +20,84 @@ SCOPE_KINDS = ("run", "window", "interval", "escalation")
 KINDS = ("finding", "monitoring-gap")
 CONTEXT_KEYS = ("measured", "limit", "register", "trace", "retest")
 LIMIT_OPERATORS = ("<=", "<", ">=", ">", "==")
+TRACE_MAX = 200
+TEXT_MAX = 200
+# Context sub-keys, as finding_context.parse_context reads them: (key, required?)
+_CONTEXT_TEXT = {
+    "measured": (("unit", True),),
+    "limit": (("unit", True),),
+    "register": (("version_date", True), ("owner", True), ("approval", False)),
+    "retest": (("assessment", True), ("threshold_version", True), ("at", False)),
+}
+_TRACE_TEXT = (("at", True), ("actor", True), ("zone", True), ("action", True), ("decision", False),
+               ("ref", False), ("run_id", False))
 _ID_UNSAFE = ("^", "\n", "\r")
 
 
+def _text_errors(errors, data, key, where, required):
+    """finding_context._text: stripped, non-empty when required, no newline, at most TEXT_MAX chars."""
+    value = data.get(key)
+    if value is None or str(value).strip() == "":
+        if required:
+            errors.append("%s.%s: required" % (where, key))
+        return
+    text = str(value).strip()
+    if "\n" in text or "\r" in text:
+        errors.append("%s.%s: must not contain a newline" % (where, key))
+    if len(text) > TEXT_MAX:
+        errors.append("%s.%s: longer than %d characters" % (where, key, TEXT_MAX))
+
+
+def _number_errors(errors, data, key, where):
+    value = data.get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        errors.append("%s.%s: must be a number" % (where, key))
+
+
+def context_errors(data: dict) -> list:
+    """The refusals of Arth's finding_context.parse_context (handoff-3), as a list (never raises)."""
+    errors = []
+    present = {}
+    for key in ("measured", "limit", "register", "retest"):
+        value = data.get(key)
+        if value is None:
+            continue
+        if not isinstance(value, dict):
+            errors.append("%s: must be an object" % key)
+            continue
+        present[key] = value
+    lim = present.get("limit")
+    if lim is not None and lim.get("operator") not in LIMIT_OPERATORS:
+        errors.append("limit.operator: must be one of %s" % list(LIMIT_OPERATORS))
+    for key in ("measured", "limit"):
+        if key in present:
+            _number_errors(errors, present[key], "value", key)
+    for key, subkeys in _CONTEXT_TEXT.items():
+        if key in present:
+            for sub, required in subkeys:
+                _text_errors(errors, present[key], sub, key, required)
+    if "retest" in present and present["retest"].get("verdict") not in VERDICTS:
+        errors.append("retest.verdict: must be one of %s" % list(VERDICTS))
+    trace = data.get("trace")
+    if trace is not None:
+        if not isinstance(trace, (list, tuple)):
+            errors.append("trace: must be a list of steps")
+        elif len(trace) > TRACE_MAX:
+            errors.append("trace: at most %d steps (keep the rest in the Evidence Pack)" % TRACE_MAX)
+        else:
+            for index, step in enumerate(trace):
+                where = "trace[%d]" % index
+                if not isinstance(step, dict):
+                    errors.append("%s: must be an object" % where)
+                    continue
+                for sub, required in _TRACE_TEXT:
+                    _text_errors(errors, step, sub, where, required)
+    return errors
+
+
 def validate_finding(data) -> list:
-    """The same refusals as Arth's finding_from_dict (required core; context shapes checked lightly)."""
+    """The same refusals as Arth's finding_from_dict (handoff-3): the required core plus every
+    finding_context.parse_context check on measured/limit/register/trace/retest. Never raises."""
     if not isinstance(data, dict):
         return ["finding must be an object"]
     errors = []
@@ -44,9 +117,7 @@ def validate_finding(data) -> list:
     unknown = set(data) - set(REQUIRED_FIELDS) - {"evidence", "kind"} - set(CONTEXT_KEYS)
     if unknown:
         errors.append("unknown keys: %s" % sorted(unknown))
-    lim = data.get("limit")
-    if lim is not None and (not isinstance(lim, dict) or lim.get("operator") not in LIMIT_OPERATORS):
-        errors.append("limit.operator: must be one of %s" % list(LIMIT_OPERATORS))
+    errors.extend(context_errors(data))
     return errors
 
 

@@ -34,30 +34,57 @@ def __getattr__(name):  # PEP 562: C16Question, Decision, PinnedC16 re-exported 
 def evaluate(q, pin, evaluator_sha256=None):
     """Pure. Delegates to c16_core.decide_inline(q, pin[, evaluator_sha256]); the sha256 is the embedded
     core's own (the bundle records it; the core cannot hash itself). An exception inside becomes a
-    fail-closed Decision (verdict DENY, action halt, reason evaluator-error), decided here, never in the adapter."""
+    fail-closed Decision (verdict DENY, action halt, reason evaluator-error), decided here, never in the
+    adapter. The fail-closed Decision carries the same evaluator_sha256, so its record still validates."""
     core = _core()
     try:
         if evaluator_sha256 is not None:
             return core.decide_inline(q, pin, evaluator_sha256)
         return core.decide_inline(q, pin)
     except Exception as exc:  # noqa: BLE001 - fail closed on anything
-        return _fail_closed(core, q, pin, exc)
+        return _fail_closed(core, q, pin, exc, evaluator_sha256)
 
 
-def _fail_closed(core, q, pin, exc):
+def _safe(obj, name, default=None):
+    try:
+        return getattr(obj, name, default)
+    except Exception:  # noqa: BLE001 - a raising attribute must not escape the fail-closed path
+        return default
+
+
+def _cap_for(q, pin):
+    """The pin's cap for q.tier, or None when it does not resolve (never raises)."""
+    try:
+        caps = dict(_safe(pin, "caps", None) or ())
+        cap = caps.get(_safe(q, "tier"))
+        return cap if isinstance(cap, int) and not isinstance(cap, bool) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _fail_closed(core, q, pin, exc, evaluator_sha256=None):
+    sha = evaluator_sha256 if evaluator_sha256 is not None else (_safe(core, "CORE_SHA256", None) or None)
     maker = getattr(core, "fail_closed_decision", None)
     if maker is not None:
-        return maker(q, pin, EVALUATOR_ERROR)
-    g = lambda obj, name, default=None: getattr(obj, name, default)
-    total = sum(int(g(q, k, 0) or 0) for k in ("committed_tokens", "reserved_tokens", "bound_tokens"))
+        try:
+            return maker(q, pin, EVALUATOR_ERROR, sha)
+        except TypeError:          # an older core: (q, pin, reason)
+            return maker(q, pin, EVALUATOR_ERROR)
+    total = 0
+    for k in ("committed_tokens", "reserved_tokens", "bound_tokens"):
+        try:
+            total += int(_safe(q, k, 0) or 0)
+        except (TypeError, ValueError):
+            pass
+    cap = _cap_for(q, pin)
     return core.Decision(
-        control_ref="C16", control_id=g(pin, "control_id", "ACN-COST-001"), verdict="DENY",
+        control_ref="C16", control_id=_safe(pin, "control_id", "ACN-COST-001"), verdict="DENY",
         reason="%s: %s" % (EVALUATOR_ERROR, type(exc).__name__), measured_value=total,
-        threshold_value=0, tier=g(q, "tier", ""), mode=g(pin, "mode", "enforce"), limit_applied="cap",
-        limit_value=None, action="halt", bound_basis=g(q, "bound_basis"),
-        threshold_version=g(pin, "threshold_version", ""), register_version=g(pin, "register_version", ""),
-        threshold_sha256=g(pin, "register_sha256", ""), pin_sha256=g(pin, "pin_sha256", ""),
-        evaluator_name=CORE_MODULE, evaluator_sha256=g(core, "CORE_SHA256", ""),
+        threshold_value=cap if cap is not None else 0, tier=_safe(q, "tier", ""), mode=_safe(pin, "mode", "enforce"),
+        limit_applied="cap", limit_value=cap, action="halt", bound_basis=_safe(q, "bound_basis"),
+        threshold_version=_safe(pin, "threshold_version", ""), register_version=_safe(pin, "register_version", ""),
+        threshold_sha256=_safe(pin, "register_sha256", None) or None, pin_sha256=_safe(pin, "pin_sha256", None) or None,
+        evaluator_name=CORE_MODULE, evaluator_sha256=sha,
     )
 
 

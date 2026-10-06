@@ -88,9 +88,13 @@ def exit_code(verdict: str) -> int:
     return VERDICT_MAP[verdict][5]
 
 
+NOTIFY_VERDICTS = ("BREACHED", "INDETERMINATE", "ESCALATED")
+
+
 def notify_due(verdict: str) -> bool:
-    """A finding is raised for BREACHED and INDETERMINATE only (SATISFIED: no notify)."""
-    return verdict in ("BREACHED", "INDETERMINATE")
+    """True when a finding is notified (ARCH §3.8): BREACHED, INDETERMINATE (monitoring gap) and ESCALATED.
+    Takes an assessment verdict or a finding verdict; SATISFIED and NOT_ASSESSED never notify."""
+    return verdict in NOTIFY_VERDICTS
 
 
 def display(verdict: str) -> str:

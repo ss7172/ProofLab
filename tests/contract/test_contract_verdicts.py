@@ -50,3 +50,10 @@ def test_rail_action():
     assert V.rail_action("FLAG", "enforce") == "proceed"
     with pytest.raises(ValueError):
         V.rail_action("DENY", "enforce")
+
+
+def test_notify_due_includes_escalated():
+    """ARCH §3.8 and PR-20a: notify BREACHED, ESCALATED and monitoring gaps (INDETERMINATE)."""
+    assert V.notify_due("ESCALATED") is True
+    assert V.notify_due("SATISFIED") is False and V.notify_due("NOT_ASSESSED") is False
+    assert set(V.NOTIFY_VERDICTS) == {"BREACHED", "INDETERMINATE", "ESCALATED"}

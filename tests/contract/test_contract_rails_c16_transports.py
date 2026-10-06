@@ -75,6 +75,18 @@ def test_stop_record_is_valid():
     rec = H.stop_record(dict(C16_CTX, record_id="20261006T043113000Z-ep1-0a0b0c0d", **{
         "emitted.at": "2026-10-06T04:31:13.000Z"}), "c16-halted")
     assert R.validate_record(rec) == [] and rec["verdict"] == "RECORDED"
+    assert rec["outcome.real"] == "CANCELLED_C16" and rec["phase"] == "stop"
+
+
+def test_stop_record_after_a_rail_quarantine():
+    rec = H.stop_record(dict(C16_CTX, record_id="20261006T043113000Z-ep1-0a0b0c0e", **{
+        "emitted.at": "2026-10-06T04:31:13.000Z"}), "rail-quarantine", outcome_real="CANCELLED_RAIL")
+    assert R.validate_record(rec) == [] and rec["outcome.real"] == "CANCELLED_RAIL" and rec["phase"] == "stop"
+
+
+def test_stop_record_refuses_other_outcomes():
+    with pytest.raises(ValueError):
+        H.stop_record(dict(C16_CTX), "x", outcome_real="SERVED")
 
 
 @pytest.fixture
@@ -145,3 +157,45 @@ def test_only_model_call_may_import_evaluate():
                     if pattern.search(handle.read()) and rel != os.path.join("adapters", "runtime", "model_call.py"):
                         offenders.append(rel)
     assert offenders == []
+
+
+class _Pin(object):
+    caps = (("high", 80000), ("standard", 50000))
+    mode = "enforce"
+    control_id = "ACN-COST-001"
+    threshold_version = "C16-v1"
+    register_version = "v1"
+    register_sha256 = "c" * 64
+    pin_sha256 = "e" * 64
+
+
+def test_fail_closed_record_validates_with_the_given_sha(fake_core):
+    """Reviewer fix: the fail-closed Decision carries the caller's evaluator_sha256 and the pin's cap,
+    so its decision record validates (it is the halt evidence, never REJECTED_SCHEMA)."""
+    del fake_core.CORE_SHA256
+
+    def boom(q, pin, sha=None):
+        raise RuntimeError("core bug")
+    fake_core.decide_inline = boom
+    q = fake_core.C16Question("ifabric-run-1791260000-ab12cd", "standard", 49000, 0, 2000, "projected")
+    d = T.evaluate(q, _Pin(), "b" * 64)
+    assert d.verdict == "DENY" and d.action == "halt" and d.evaluator_sha256 == "b" * 64
+    assert d.threshold_value == 50000 and d.limit_value == 50000 and d.measured_value == 51000
+    rec = H.decision_record(d, C16_CTX)
+    assert R.validate_record(rec) == []
+    assert rec["evaluator.sha256"] == "b" * 64 and rec["outcome.real"] == "CANCELLED_C16"
+
+
+def test_fail_closed_without_any_sha_is_null_not_empty(fake_core):
+    del fake_core.CORE_SHA256
+    fake_core.decide_inline = lambda q, pin: 1 / 0
+    q = fake_core.C16Question("ifabric-run-1791260000-ab12cd", "nosuchtier", 1, 0, 1, "projected")
+    d = T.evaluate(q, _Pin())
+    assert d.evaluator_sha256 is None and d.threshold_value == 0 and d.limit_value is None
+    assert R.validate_record(H.decision_record(d, C16_CTX)) == []
+
+
+def test_fail_closed_passes_sha_to_the_cores_maker(fake_core):
+    fake_core.decide_inline = lambda q, pin, sha=None: 1 / 0
+    fake_core.fail_closed_decision = lambda q, pin, reason, sha: ("core", reason, sha)
+    assert T.evaluate(None, None, "b" * 64) == ("core", T.EVALUATOR_ERROR, "b" * 64)

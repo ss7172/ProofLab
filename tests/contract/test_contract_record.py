@@ -212,3 +212,53 @@ def test_golden_records_carry_no_unknown_keys_after_roundtrip():
     rec = load("decision_c16_deny.json")
     assert json.loads(R.canonical_json(rec)) == rec
     assert copy.deepcopy(rec) == rec
+
+
+# --- fix round 1: content fields (EP-3, EP-4, EP-5, RT-01) and the workflow phase vocabulary ----
+
+def test_workflow_phases_match_arch_52():
+    assert set(R.WORKFLOW_PHASES) == {"run.started", "handoff.sent", "invocation.received", "intent", "judgment",
+                                      "handoff.received", "escalation", "run.finished", "stop"}
+    assert load("handoff.json")["phase"] == "handoff.sent"
+    assert load("handoff_received.json")["phase"] == "handoff.received"
+
+
+def test_workflow_phase_requires_its_record_kind():
+    rec = load("handoff.json")
+    rec["phase"] = "judgment"
+    assert any(e.startswith("phase:") for e in R.validate_record(rec))
+    rec["phase"] = "ifabric.handoff"           # a non-workflow phase stays free
+    assert R.validate_record(rec) == []
+
+
+def test_new_content_fields_are_accepted_and_typed():
+    j = load("judgment.json")
+    assert j["judgment.disposition"] == "escalate"
+    bad = dict(j, **{"judgment.disposition": "shrug"})
+    assert any("judgment.disposition" in e for e in R.validate_record(bad))
+    h = load("handoff_received.json")
+    for field, value in (("tally.tokens", -1), ("tally.calls", True), ("handoff.duration_ms", "1"),
+                         ("handoff.halted", "no"), ("handoff.status", "MAYBE")):
+        assert any(field in e for e in R.validate_record(dict(h, **{field: value}))), field
+    a = load("action_tool_suspicious.json")
+    assert a["suspicious_tool_output"] is True and a["tool.use_id"] == "tu-0001"
+    assert any("suspicious_tool_output" in e for e in R.validate_record(dict(a, suspicious_tool_output="yes")))
+
+
+def test_judgment_fields_only_on_judgment_records():
+    h = load("handoff_received.json")
+    assert any(e.startswith("judgment.*") for e in R.validate_record(dict(h, **{"judgment.disposition": "escalate"})))
+
+
+def test_startup_echo_rt01():
+    s = load("lifecycle_startup.json")
+    assert R.validate_record(s) == []
+    assert any("prompt.sha256" in e for e in R.validate_record(dict(s, **{"prompt.sha256": "nothex"})))
+    assert any("rails.mode" in e for e in R.validate_record(dict(s, **{"rails.mode": "audit"})))
+    # rail.* stays refused outside rail_decision; the echo uses rails.policy_sha256
+    assert any(e.startswith("rail.*") for e in R.validate_record(dict(s, **{"rail.policy_sha256": "e" * 64})))
+
+
+def test_null_reasons_allowed_on_optional_judgment_fields():
+    j = load("judgment.json")
+    assert j["judgment.reversible_step"] is None and j["null_reasons"]["judgment.reversible_step"]

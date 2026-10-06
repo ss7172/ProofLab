@@ -2,7 +2,7 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "ifabric.evidence/1",
  "title": "ProofLab evidence record (team iFabric)",
- "description": "One flat record, dotted keys (ARCH §4). Table-A fields are present as a value or null with a null_reasons entry. prooflab/contract/record.py validate_record is the authority.",
+ "description": "One flat record, dotted keys (ARCH \u00a74). Table-A fields are present as a value or null with a null_reasons entry. prooflab/contract/record.py validate_record is the authority.",
  "type": "object",
  "required": [
   "schema",
@@ -375,7 +375,86 @@
   "rails.policy_sha256": {},
   "rails.counts": {
    "type": "object"
-  }
+  },
+  "rails.mode": {
+   "enum": [
+    "enforce",
+    "observe",
+    null
+   ]
+  },
+  "judgment.disposition": {
+   "enum": [
+    "auto-resolve",
+    "gather-evidence",
+    "escalate",
+    "halted",
+    null
+   ]
+  },
+  "judgment.evidence_ids": {
+   "type": [
+    "array",
+    "null"
+   ],
+   "items": {
+    "type": "string"
+   }
+  },
+  "judgment.result_digests": {
+   "type": [
+    "array",
+    "null"
+   ],
+   "items": {
+    "type": "string"
+   }
+  },
+  "judgment.reversible_step": {},
+  "judgment.precedence_rule": {},
+  "tool.use_id": {},
+  "suspicious_tool_output": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "handoff.status": {
+   "enum": [
+    "OK",
+    "ERROR",
+    "TIMEOUT",
+    "HALTED",
+    "REFUSED",
+    null
+   ]
+  },
+  "handoff.halted": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "handoff.duration_ms": {
+   "type": [
+    "integer",
+    "null"
+   ]
+  },
+  "tally.tokens": {
+   "type": [
+    "integer",
+    "null"
+   ]
+  },
+  "tally.calls": {
+   "type": [
+    "integer",
+    "null"
+   ]
+  },
+  "prompt.sha256": {},
+  "lifecycle.event": {}
  },
  "patternProperties": {
   "^assessment\\.": {}
@@ -442,5 +521,16 @@
    "observed.at",
    "observed.clock"
   ]
- ]
+ ],
+ "x-workflow-phases": {
+  "run.started": "lifecycle",
+  "handoff.sent": "handoff",
+  "invocation.received": "lifecycle",
+  "intent": "lifecycle",
+  "judgment": "judgment",
+  "handoff.received": "handoff",
+  "escalation": "judgment",
+  "run.finished": "lifecycle",
+  "stop": "lifecycle"
+ }
 }

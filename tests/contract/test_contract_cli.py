@@ -6,7 +6,9 @@ import sys
 from prooflab import cli
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PLANNED = ("run", "query", "pack", "watch", "tail", "recheck", "register", "humanloop", "assess", "collect")
+# FEATURE-MAP risk line: run, registry, query, refresh, pack, humanloop, console, watch, tail, recheck.
+PLANNED = ("run", "registry", "query", "refresh", "pack", "humanloop", "console", "watch", "tail", "recheck",
+           "assess", "collect", "postrun")
 
 
 def test_planned_verbs_are_registered():
@@ -52,3 +54,29 @@ def test_module_entry_point():
     proc = subprocess.run([sys.executable, "-m", "prooflab", "--help"], cwd=ROOT, stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE, universal_newlines=True)
     assert proc.returncode == 0 and "humanloop" in proc.stdout
+
+
+def test_every_target_lives_under_prooflab():
+    """FEATURE-MAP R1: laptop-side code imports as prooflab.* (the judge runs it from the unzipped pack)."""
+    for verb, (target, _text, _owner) in cli.VERBS.items():
+        assert target.startswith("prooflab."), (verb, target)
+
+
+def test_routes_match_the_owners_modules():
+    expected = {
+        "run": "prooflab.adapters.orchestrator.run:main", "refresh": "prooflab.store.snapshot:main",
+        "postrun": "prooflab.adapters.postrun.cli:main", "humanloop": "prooflab.humanloop.runner:main",
+        "collect": "prooflab.adapters.collectors.cli:main", "registry": "prooflab.registry.cli:main",
+        "assess": "prooflab.query.cli:assess_main", "query": "prooflab.query.cli:main",
+    }
+    for verb, target in expected.items():
+        assert cli.VERBS[verb][0] == target
+
+
+def test_register_is_an_alias_of_registry(monkeypatch):
+    seen = {}
+    monkeypatch.setitem(cli.VERBS, "registry", ("prooflab.contract.ids:mint_cid", "x", "PR-11"))
+    import prooflab.contract.ids as ids
+    monkeypatch.setattr(ids, "mint_cid", lambda argv: seen.setdefault("argv", argv) and 0)
+    assert cli.main(["register", "freeze", "v1"]) == 0
+    assert seen["argv"] == ["freeze", "v1"]
