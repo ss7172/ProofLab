@@ -26,6 +26,11 @@ BUILTIN_PROMPTS = {   # synthetic placeholders until the registry PR freezes the
     "S2": "Customer reports repeated outages across several sites. Investigate each and summarise.",
     "S3": "Customer asks for the status of circuit CKT-0001 and the open ticket.",
 }
+# The run's structured constraints (J2 precedence: freeze/restricted -> escalate), per the kit inventory's S3
+# constraints (an active maintenance freeze; a regulated customer whose change needs named approval).
+BUILTIN_CONSTRAINTS = {"S3": {"maintenance_freeze": True, "restricted_change": True}}
+_CONSTRAINT_WORDS = (("maintenance_freeze", ("freeze", "frozen")),
+                     ("restricted_change", ("restricted", "regulated", "requires named", "approval")))
 
 
 def build_parser():
@@ -70,14 +75,29 @@ def _provenance(args, family, has_condition):
     return "AUTHORIZED_TEST" if family == "test" else "LIVE_SUBJECT"
 
 
+def constraint_flags(raw):
+    """{maintenance_freeze, restricted_change} booleans from a scenario's constraints: a dict of flags as is, or
+    the kit's list of constraint sentences read by keyword. None when there are none."""
+    if isinstance(raw, dict):
+        flags = {k: bool(raw.get(k)) for k, _ in _CONSTRAINT_WORDS}
+    elif isinstance(raw, (list, tuple)):
+        text = " ".join(str(x) for x in raw).lower()
+        flags = {k: any(w in text for w in words) for k, words in _CONSTRAINT_WORDS}
+    else:
+        return None
+    return flags if any(flags.values()) else None
+
+
 def _scenario(args):
+    """(prompt, tier, source, constraints) from the frozen scenario file, else the builtin placeholder."""
     doc = _json_file(args.scenario_file) if args.scenario_file else None
     if doc is None:
         path = os.path.join(common.REPO_ROOT, *SCENARIO_FILE_DIR, args.scenario + ".json")
         doc = _json_file(path) if os.path.exists(path) else None
     if doc:
-        return doc.get("prompt", ""), doc.get("tier"), "register/scenarios"
-    return BUILTIN_PROMPTS[args.scenario], None, "builtin-placeholder"
+        raw = doc.get("constraints", (doc.get("symptoms") or {}).get("constraints"))
+        return doc.get("prompt", ""), doc.get("tier"), "register/scenarios", constraint_flags(raw)
+    return BUILTIN_PROMPTS[args.scenario], None, "builtin-placeholder", BUILTIN_CONSTRAINTS.get(args.scenario)
 
 
 def plan_agents(args, budget):
@@ -101,10 +121,13 @@ def plan_steps(args, budget, cid):
     return steps
 
 
-def negotiate_payload(cid, hid, traceparent, proposal, env):
-    """Gateway C's body: the reference's {"negotiate": {...}} shape plus our envelope (ARCH 7.2)."""
-    return {"negotiate": {"correlation_id": cid, "proposal": proposal, "traceparent": traceparent,
-                          "handoff_id": hid}, "ifabric": env}
+def negotiate_payload(cid, hid, traceparent, proposal, env, constraints=None):
+    """Gateway C's body: the reference's {"negotiate": {...}} shape plus our envelope (ARCH 7.2), and the run's
+    structured constraints so the IT agent's J2 precedence sees a freeze or restricted change."""
+    neg = {"correlation_id": cid, "proposal": proposal, "traceparent": traceparent, "handoff_id": hid}
+    if constraints:
+        neg["constraints"] = constraints
+    return {"negotiate": neg, "ifabric": env}
 
 
 def build_envelope(cid, hid, frm, to, args, pin, cond, fault, tier, provenance, tally):
@@ -140,7 +163,7 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
         return 2
     family = args.family or ("adv" if cond["name"] in conditions.CONDITIONS[:3] else "run")
     provenance = _provenance(args, family, bool(cond["sha256"] or fault))
-    prompt, scen_tier, scen_source = _scenario(args)
+    prompt, scen_tier, scen_source, constraints = _scenario(args)
     tier = args.tier or scen_tier
     pin = _json_file(args.pin_file) or {}
     if args.only == GATEWAY_C and not args.proposal_file and not args.dry_run:
@@ -163,7 +186,7 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
         doc = {"dry_run": True, "cid": cid, "envelope": env0, "plan": plan, "bound_tokens": bound,
                "bound_class": bound_class, "baggage": baggage, "traceparent": traceparent,
                "condition": {"name": cond["name"], "sha256": cond["sha256"], "path": cond["path"]},
-               "fault": fault, "scenario_source": scen_source,
+               "fault": fault, "scenario_source": scen_source, "constraints": constraints,
                "invoke": {"AWS_MAX_ATTEMPTS": budget["invoke"]["aws_max_attempts"],
                           "AWS_RETRY_MODE": budget["invoke"]["aws_retry_mode"],
                           "cli_read_timeout": budget["invoke"]["cli_read_timeout"]},
@@ -223,10 +246,11 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
         env = build_envelope(cid, hid, frm, agent, args, pin, cond,
                              fault if (not negotiate or args.only == GATEWAY_C) else None, tier, provenance, tally)
         if negotiate:
-            payload = negotiate_payload(cid, hid, traceparent, proposal, env)
+            payload = negotiate_payload(cid, hid, traceparent, proposal, env, constraints)
         else:
             body = full_prompt if prev_text is None else full_prompt + "\n\nOutput of the previous agent:\n" + prev_text
-            payload = {"context": {"question": body}, "ifabric": env}
+            payload = {"context": dict({"question": body}, **({"constraints": constraints} if constraints else {})),
+                       "ifabric": env}
         payload_sha = common.sha256_text(common.canonical(payload))   # the raw payload's sha256 (EP-5)
         prev_agent = frm
         if hid:
