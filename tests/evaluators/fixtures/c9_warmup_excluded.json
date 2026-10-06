@@ -1,0 +1,39 @@
+{
+ "evaluator": "c9.assess_run",
+ "expect": {
+  "measured.excluded": 1,
+  "requirement_verdict": "SATISFIED"
+ },
+ "inputs": {
+  "as_of": "2026-10-06T06:00:00.000Z",
+  "run_id": "ifabric-run-1791260000-ab12cd",
+  "windows": {
+   "ifabric-it": {
+    "condition": "warm-up",
+    "datapoints": 1,
+    "errors": 0,
+    "invocations_expected": 1,
+    "latency_max": 40000
+   },
+   "ifabric-net": {
+    "datapoints": 1,
+    "errors": 0,
+    "invocations_expected": 1,
+    "latency_max": 2000
+   }
+  }
+ },
+ "name": "c9_warmup_excluded",
+ "note": "SYNTHETIC fixture; token magnitudes shaped like the 20261005T173727Z gateway llm lines, never a raw copy",
+ "pin": {
+  "baseline_value_ifabric-it": 4000,
+  "baseline_value_ifabric-net": 2000,
+  "control_id": "AIA-ARC-006",
+  "errors_max": 0,
+  "max_relative_change_pct": 10,
+  "register_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "register_version": "v1.1",
+  "threshold_version": "C9-v1.1",
+  "violating_windows_max_pct": 0
+ }
+}

@@ -1,0 +1,112 @@
+{
+ "evaluator": "c7.assess_run",
+ "expect": {
+  "measured.gaps_measured": 0,
+  "measured.gaps_unmeasurable": 2,
+  "requirement_verdict": "BREACHED"
+ },
+ "inputs": {
+  "as_of": "2026-10-06T05:30:00.000Z",
+  "gateway_actions": [
+   {
+    "action_id": "m1",
+    "agent": "it",
+    "end": "2026-10-06T05:10:02.000Z",
+    "kind": "model.call"
+   },
+   {
+    "action_id": "t1",
+    "agent": "it",
+    "end": "2026-10-06T05:10:04.000Z",
+    "kind": "tool.call"
+   }
+  ],
+  "link_gaps": [],
+  "observed": [
+   {
+    "actor.id": "it",
+    "authorship": "TESTIMONY",
+    "call.id": null,
+    "emitted.at": "2026-10-06T05:10:00.000Z",
+    "ep.id": null,
+    "handoff.id": "h1",
+    "outcome.real": null,
+    "phase": "ifabric.invocation.received",
+    "record_kind": "lifecycle"
+   },
+   {
+    "actor.id": "it",
+    "authorship": "TESTIMONY",
+    "call.id": "m1",
+    "emitted.at": "2026-10-06T05:10:02.100Z",
+    "ep.id": null,
+    "handoff.id": "h1",
+    "outcome.real": null,
+    "phase": "ifabric.action",
+    "record_kind": "action"
+   },
+   {
+    "actor.id": "it",
+    "authorship": "TESTIMONY",
+    "call.id": "t1",
+    "emitted.at": "2026-10-06T05:10:04.100Z",
+    "ep.id": null,
+    "handoff.id": "h1",
+    "outcome.real": null,
+    "phase": "ifabric.action",
+    "record_kind": "action"
+   },
+   {
+    "actor.id": "it",
+    "authorship": "TESTIMONY",
+    "call.id": null,
+    "emitted.at": "2026-10-06T05:10:06.000Z",
+    "ep.id": null,
+    "handoff.id": "h1",
+    "outcome.real": null,
+    "phase": "ifabric.judgment",
+    "record_kind": "judgment"
+   }
+  ],
+  "refusals": [],
+  "run_id": "ifabric-run-1791260000-ab12cd",
+  "stops": [],
+  "workflow_events": [
+   {
+    "agent": "it",
+    "event": "invocation.received",
+    "order": 0,
+    "stream": "it:h1"
+   },
+   {
+    "agent": "it",
+    "event": "intent",
+    "order": 1,
+    "stream": "it:h1"
+   },
+   {
+    "agent": "it",
+    "event": "judgment",
+    "order": 2,
+    "stream": "it:h1"
+   }
+  ]
+ },
+ "name": "c7_missing_middle_event_makes_gaps_unmeasurable",
+ "note": "SYNTHETIC fixture; token magnitudes shaped like the 20261005T173727Z gateway llm lines, never a raw copy",
+ "pin": {
+  "control_id": "AIA-LOG-001",
+  "coverage_min_pct": 100,
+  "ep1_deployed": false,
+  "exception_tolerance": 0,
+  "gap_max_ms": 5000,
+  "register_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "register_version": "v1",
+  "threshold_version": "C7-v1",
+  "violating_gap_share_max_pct": 10,
+  "workflow_events_after_stop": [
+   "decision",
+   "lifecycle"
+  ]
+ }
+}
