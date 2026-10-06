@@ -1,0 +1,5 @@
+{"_status": "LANE PLACEHOLDER written by the ops lane at 2026-10-06T08:11:00Z, BEFORE P1 (no pilot data existed). The numbers are NOT the owner's: register/experiments/rules.json did not exist in the repo at main 68217bb and the owner's C16 appetite in tokens is PENDING-OWNER in risks.yaml. Values copied from tests/registry/fixtures/rules.synthetic.json; appetite_tokens = the captain's P1/P3 safety ceiling (08:02Z). The captain adopts or replaces them at Hold-3 before v1; a replacement after the pilots is post-hoc and must be declared so.",
+ "_plan": "register/experiments/plan.md section 3 (C16-cap, C7-gap, C9-baseline)",
+ "c16_rule_id": "C16-cap/1", "c16_headroom_pct": 20, "c16_round_up_to": 1000, "appetite_tokens": 100000,
+ "c7_rule_id": "C7-gap/1", "c7_headroom_pct": 50, "c7_round_up_to": 1000,
+ "c9_rule_id": "C9-baseline/1", "eligible_scenarios": ["S1", "S3"]}

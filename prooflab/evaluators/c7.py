@@ -15,6 +15,11 @@ violating_gap_share_max_pct=.." (claim.parse_limits). OPEN: contract/register.py
 
 ExpectedEvent (dict): key (a string; the match key), kind, agent, stream (the invocation stream or None), order
 (position in the stream or None), span_end (gateway events), source.
+Expected tool events (ARCH 5.2): ONLY an MCP `tools/call` gateway span is a governed ACTION. The MCP handshake spans
+(initialize, tools/list, notifications/*) are not, and an action dict naming any other `method` is dropped from E (an
+action with no `method` key is taken as it is, so older callers see no change). Our EP-3 tool records carry no gateway
+action id; prooflab.stitch.toolcalls joins them to the `tools/call` spans (tool name + time window + run/trace,
+one to one) and stamps the span's action id on copies before `observed_events`, so the key below matches.
 Matching (set semantics, so extras and duplicates cannot inflate coverage):
   gateway action  -> key "call:<action_id>"   observed: record_kind action with that call.id
   EP-1 decision   -> key "decision:<call_id>" observed: decision record with that call.id
@@ -44,6 +49,7 @@ from prooflab.evaluators import claim as _claim
 NAME = "prooflab.evaluators.c7"
 CONTROL_REF = "C7"
 OBSERVED_KINDS = ("action", "decision", "handoff", "lifecycle", "judgment")
+TOOL_METHOD = "tools/call"
 REFUSAL_OUTCOMES = ("REFUSED_403", "PAUSED_404", "METHOD_405", "CEILING_429", "ERROR_5XX", "BLOCKED_GUARDRAIL")
 FORMULA = "coverage = |E and O| / |E|; G-a gaps per stream; violating share; coverage and gap judged separately"
 
@@ -105,6 +111,8 @@ def expected_events(run_id, gateway_actions, refusals, workflow_events, stops, p
         aid, kind = _g(a, "action_id"), _g(a, "kind") or "model.call"
         if not aid:
             continue
+        if kind == "tool.call" and _g(a, "method") not in (None, TOOL_METHOD):
+            continue                                   # MCP handshake span: not a governed action
         add("call:%s" % aid, kind, _g(a, "agent"), None, None, _g(a, "end"), "gateway")
         if kind == "model.call" and pin.get("ep1_deployed"):
             add("decision:%s" % aid, "decision", _g(a, "agent"), None, None, None, "ep1")

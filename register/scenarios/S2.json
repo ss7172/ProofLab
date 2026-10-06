@@ -1,0 +1,19 @@
+{
+ "kit_id": "S2-transport-congestion",
+ "prompt": "Trouble ticket (kit scenario S2-transport-congestion): Intermittent latency across two sites, cause not isolated. Element RTR-DEN-12-CORE, RTR-PHX-04-CORE, packet loss 0.4 percent, p95 latency 88 ms, alarm ALM-10442 minor LATENCY_SLO_BREACH (both sites). Affected customers: CUST-1001 Meridian Logistics (gold); CUST-2087 Northwind Retail (silver). Operational constraints: none.",
+ "scenario": "S2",
+ "source": "workshop-assets/data/network-inventory.json fault_scenarios (verbatim symptoms; prompt built by the ops lane B3)",
+ "symptoms": {
+  "affected_customers": [
+   "CUST-1001 Meridian Logistics (gold)",
+   "CUST-2087 Northwind Retail (silver)"
+  ],
+  "alarms": [
+   "ALM-10442 minor LATENCY_SLO_BREACH (both sites)"
+  ],
+  "element": "RTR-DEN-12-CORE, RTR-PHX-04-CORE",
+  "latency_ms_p95": 88,
+  "packet_loss_pct": 0.4
+ },
+ "tier": "default"
+}

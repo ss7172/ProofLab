@@ -28,6 +28,7 @@ from prooflab.evaluators import c16, c16_core, c7, claim
 from prooflab.registry import parse as P
 from prooflab.query import workflow_map as _wf
 from prooflab.registry import pinned as _pinned
+from prooflab.stitch import toolcalls as _toolcalls
 
 CONDITIONAL_EVENTS = _wf.CONDITIONAL_EVENTS
 OURS_PREFIX = "ifabric-"
@@ -98,6 +99,13 @@ def _model_call_span(r):
         and r.get("record_kind") in ("metric", "platform_decision")
 
 
+def _tool_call_span(r):
+    """False only for a gateway request the store NAMES as another method (initialize, tools/list, notifications/*,
+    a plain http call): not a governed action. An observation that names no method is kept (older shapes)."""
+    m = re.match(r"^gateway request (\S+) ", str(r.get("detail") or ""))
+    return m is None or m.group(1) == c7.TOOL_METHOD
+
+
 def run_facts(recs):
     """The evaluators' inputs for ONE run, read from its store records."""
     spans = [r for r in recs if _model_call_span(r)]
@@ -117,10 +125,13 @@ def run_facts(recs):
             if _model_call_span(r):
                 kind = "model.call"
             elif r.get("record_kind") == "observation":
+                if not _tool_call_span(r):
+                    continue                    # MCP handshake span (initialize, tools/list, notifications): not an action
                 kind = "tool.call"
             else:
                 continue
-            actions.append({"action_id": r["call.id"], "kind": kind, "agent": None, "end": r.get("observed.at")})
+            actions.append({"action_id": r["call.id"], "kind": kind, "agent": None, "end": r.get("observed.at"),
+                            "method": c7.TOOL_METHOD if kind == "tool.call" else None})
     refusals = [{"call_id": r.get("call.id"), "trace_id": r.get("trace.id")} for r in recs
                 if _is_gateway(r) and r.get("record_kind") == "platform_decision"
                 and r.get("outcome.real") in c7.REFUSAL_OUTCOMES and r.get("outcome.real") != "BLOCKED_GUARDRAIL"]
@@ -131,7 +142,7 @@ def run_facts(recs):
             if s not in stops:
                 stops.append(s)
     return {"calls": calls, "blocked": blocked, "decisions": decisions, "actions": actions, "refusals": refusals,
-            "stops": stops, "ours": ours, "agents": _agents_of(ours)}
+            "stops": stops, "ours": ours, "all": recs, "agents": _agents_of(ours)}
 
 
 def _mode_of(decisions, default):
@@ -238,7 +249,9 @@ def assess_snapshot(root, register=None, controls=("C16", "C7", "C9"), runs=None
                 pin7 = c7_pin(entries["C7"], reg_sha, reg_version, ov.get("C7", {}), expect_ep1)
                 exp = c7.expected_events(cid, f["actions"], f["refusals"],
                                          workflow_events(entries["C7"], f["agents"], f["ours"]), f["stops"], pin7)
-                docs.append(c7.assess_run(cid, exp, f["ours"], [], pin7, as_of, snapshot_id=snap_id,
+                slack = claim.frac(pin7.get("tool_join_slack_ms"))
+                ours7, joined = _toolcalls.join_records(f["all"], f["ours"], float(slack) if slack is not None else 0)
+                docs.append(c7.assess_run(cid, exp, ours7, [], pin7, as_of, snapshot_id=snap_id,
                                           provenance=prov, condition=cond))
         if "C9" in controls:
             skipped.append(("C9", cid, "no AgentCore metric windows read from the snapshot (a stated gap)"))
