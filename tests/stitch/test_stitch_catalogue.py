@@ -51,3 +51,29 @@ def test_cli_lists_the_catalogue(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "fault-1-a" in out and "EXPLORATORY" in out and "yes" in out
     assert catalogue.main(["--derived", str(tmp_path)]) == 1
+
+
+def test_gateway_sightings_dedup_by_action_latest_wins():
+    rid = "ifabric-run-1791300000-a1b2c3"
+    sights = [dict(_s(rid, i=100, o=10), action_id="a1"), dict(_s(rid, i=200, o=20), action_id="a2"),
+              dict(_s(rid, i=100, o=10), action_id="a1"), dict(_s(rid, i=250, o=20), action_id="a2"),
+              _s(rid, i=5, o=5)]
+    row = catalogue.build(sights, set())[0]
+    assert (row["tokens_in"], row["tokens_out"]) == (100 + 250 + 5, 10 + 20 + 5)
+
+
+def test_every_provenance_and_store_cid_is_catalogued_with_declared_label():
+    warm, live, stored = ("ifabric-run-1791294721-fd797f", "ifabric-run-1791294968-36d929",
+                          "ifabric-run-1791290000-0a0b0c")
+    prov = {warm: "EXPLORATORY", live: "LIVE_SUBJECT"}
+    recs = [{"run.id": stored, "ts": "2026-10-06T12:00:00Z", "record_id": "r1"},
+            {"correlation_id": live, "ts": "2026-10-06T13:56:00Z", "record_id": "r2"},
+            {"run.id": "unresolved:" + "b" * 32, "record_id": "r3"}]
+    rows = dict((r["run_id"], r) for r in catalogue.build([_s(live, i=1, o=1)], {live}, provenance=prov,
+                                                          window=("2026-10-06T13:00:00Z", "2026-10-06T14:00:00Z"),
+                                                          records=recs))
+    assert set(rows) == {warm, live, stored}
+    assert rows[warm]["label"] == "EXPLORATORY" and rows[warm]["assessed"] is False
+    assert rows[live]["label"] == "LIVE_SUBJECT" and rows[live]["assessed"] is True
+    assert rows[stored]["label"] == "OURS-ROLE-UNDECLARED" and rows[stored]["sources"] == {"store": 1}
+    assert rows[live]["record_ids"] == ["r2"]
