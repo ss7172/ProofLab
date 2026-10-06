@@ -18,34 +18,36 @@
 | id | phase | status | branch | merged sha |
 |---|---|---|---|---|
 | PR-00 | 1 | merged | PR-00-setup | 28a3629 |
-| PR-01 | 1 | fix | PR-01-contracts |  |
-| PR-02 | 1 | green, merges after PR-01 | PR-02-c16core |  |
-| PR-03 | 1 | green, merges after PR-01 | PR-03-modelcall-hook |  |
-| PR-04 | 1 | fix (after PR-01) | PR-04-emit |  |
-| PR-05 | 1 | fix | PR-05-rails |  |
-| PR-06 | 1 | fix (two-stage) | PR-06-bundler-trio |  |
-| PR-07 | 1 | green, merges after PR-01 | PR-07-j2 |  |
-| PR-00b | 1 | fix | PR-00b-gate | |
+| PR-01 | 1 | merged | PR-01-contracts | 3baa674 |
+| PR-02 | 1 | merged | PR-02-c16core | ae48d81 |
+| PR-03 | 1 | merged | PR-03-modelcall-hook | 1f7e8b5 |
+| PR-04 | 1 | merged | PR-04-emit | d8694c5 |
+| PR-05 | 1 | merged | PR-05-rails | c7436f1 |
+| PR-06 | 1 | merged | PR-06-bundler-trio | 4be4797 |
+| PR-07 | 1 | merged | PR-07-j2 | 8648f72 |
+| PR-00b | 1 | merged | PR-00b-gate | f209c7c |
+| PR-25 | 1 | merged (integration) | PR-25-integration | a278f43 |
+| PR-26 | 1 | merged (build carrier) | PR-26-build-carrier | 769b07a |
 | PR-24 | 1 | merged | PR-24-cedar-texts | cb03cd7 |
-| PR-11 | 1 | green | PR-11-registry |  |
-| PR-08a | 1 | needs PR-01 route | PR-08a-orchestrator |  |
-| PR-09a | 1 | green | PR-09a-evaluators |  |
-| PR-12a | 1 | fix | PR-12a-collectors |  |
-| PR-13a | 1 | green | PR-13a-store-stitch |  |
-| PR-23 | 1 | green | PR-23-ep2-replay |  |
-| PR-20a | 1 | needs PR-00 sync (now merged) | PR-20a-notify |  |
-| PR-15a | 1 | green | PR-15a-query-cli |  |
-| PR-21 | 1 | green | PR-21-pack-build |  |
-| PR-22a | 1 | green | PR-22a-docs-min |  |
-| PR-19 | 2 | green (needs PR-00b gate rule) | PR-19-assurance-runtime |  |
-| PR-17 | 2 | green | PR-17-console-p0 |  |
-| PR-16 | 2 | green | PR-16-projector |  |
+| PR-11 | 1 | merged | PR-11-registry | 8358e39 |
+| PR-08a | 1 | merged | PR-08a-orchestrator | a985c2c |
+| PR-09a | 1 | merged | PR-09a-evaluators | 401b435 |
+| PR-12a | 1 | merged | PR-12a-collectors | ee4aac4 |
+| PR-13a | 1 | merged | PR-13a-store-stitch | 94b9e6c |
+| PR-23 | 1 | merged | PR-23-ep2-replay | 495cef3 |
+| PR-20a | 1 | merged | PR-20a-notify | e88084e |
+| PR-15a | 1 | merged | PR-15a-query-cli | 5d13d6d |
+| PR-21 | 1 | merged | PR-21-pack-build | 7b8bd1d |
+| PR-22a | 1 | merged | PR-22a-docs-min | 13216c9 |
+| PR-19 | 2 | merged | PR-19-assurance-runtime | 561111f |
+| PR-17 | 2 | merged | PR-17-console-p0 | ea64bd6 |
+| PR-16 | 2 | merged | PR-16-projector | bfb13ce |
 | PR-15b | 2 | queued | PR-15b-answer-grammar | |
 | PR-20b | 2 | queued | PR-20b-humanloop-loop | |
 | PR-12b | 2 | queued | PR-12b-collectors-ph2 | |
 | PR-13b | 2 | queued | PR-13b-corroboration | |
-| PR-10 | 2 | green | PR-10-recheck |  |
-| PR-14 | 2 | green | PR-14-watch |  |
+| PR-10 | 2 | merged | PR-10-recheck | 7dc1f68 |
+| PR-14 | 2 | merged | PR-14-watch | 75881e3 |
 | PR-09r | 2 | queued | PR-09r-risk | |
 | PR-05b | 2 | queued | PR-05b-rails-v2 | |
 | PR-22b | 2→3 | queued | PR-22b-docs-full | |
@@ -63,6 +65,8 @@
 - **D-D.** PR-01's contract is the single schema. Optional fields justified by ARCH (EP-3 before/after, EP-4 judgment, lifecycle, the rail's intended action in observe mode) are added there; adapters fold everything else into reason/detail.
 
 ---
+
+- **D-B' (03:30Z, supersedes D-B's FROM-digest step):** the ImageBuildRole has no `ecr:GetDownloadUrlForLayer`, so the base/role files both ride in ONE build per role as StartBuild env-var overrides (probe PASSED 03:29Z: 46,548 chars in one value). Gate: ≤ 44,000 chars of env values per build. PR-26 = `tools/ifabric_build_request.py` + `tools/build_ifabric_image.sh`.
 
 ## Merge gate (BUILD-SESSION-PROMPT.md STEP 3, every PR, before it merges)
 
