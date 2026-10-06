@@ -12,8 +12,13 @@ prooflab/query/workflow_map.py (run.* and handoff.* on the orchestrator, the res
 on IT's Gateway C invocation), minus the two conditional ones (escalation: only on an escalate disposition; decision:
 per model call, covered by --expect-ep1-decisions).
 
-C9 is not assessed here: its inputs are the AgentCore metric windows, and no collector output is read yet, so the
-run is reported as skipped (a stated gap), never written as an assessment.
+C9 (PR-41; ARCH 5.3, D3): the AgentCore metric captures under raw/agentcore-metrics/ (prooflab/query/c9_inputs.py:
+Latency Maximum + Errors Sum per runtime per 60 s, the figure of record) are cut to each run's W2 window per runtime
+and judged two-sided by prooflab.evaluators.c9 against the register's baseline for the run's scenario
+(`baseline_value_<runtime>_<scenario>`) and the limits in its `observation_limit` (`max_relative_change_pct=..;
+violating_windows_max_pct=..;errors_max=..`, or `--limit C9:key=value`). Missing or not-yet-published datapoints are
+INDETERMINATE with a gap, never SATISFIED. Each closed UTC hour holding an assessed run is rolled up into
+`assessments/C9/window-<hour>.json` (scope_kind window) for window questions.
 """
 from __future__ import annotations
 
@@ -24,8 +29,9 @@ import re
 from prooflab.contract import clocks as _clocks
 from prooflab.contract import register as _reg
 from prooflab.contract import verdicts as V
-from prooflab.evaluators import c16, c16_core, c7, claim
+from prooflab.evaluators import c16, c16_core, c7, c9, claim
 from prooflab.registry import parse as P
+from prooflab.query import c9_inputs as _c9in
 from prooflab.query import workflow_map as _wf
 from prooflab.registry import pinned as _pinned
 from prooflab.stitch import toolcalls as _toolcalls
@@ -174,6 +180,52 @@ def c7_pin(entry, register_sha, register_version, overrides, ep1_deployed):
     return pin
 
 
+def c9_pin(entry, register_sha, register_version, overrides, scenario, runtimes):
+    """The C9 pin for one run: every value from the register entry (or an explicit --limit override)."""
+    pin = {"control_id": entry.get("library_id"), "threshold_version": entry.get("threshold_version"),
+           "register_sha256": register_sha, "register_version": register_version,
+           "observation_limit": entry.get("observation_limit"), "limit_direction": entry.get("limit_direction"),
+           "exception_tolerance": entry.get("exception_tolerance")}
+    pin.update(_c9in.baseline_pin(entry, scenario, runtimes))
+    pin.update(overrides)
+    return pin
+
+
+def _write_assessment(root, d, name):
+    path = os.path.join(root, "assessments", d["control_ref"], name + ".json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(d, indent=1, sort_keys=True))
+    return path
+
+
+def c9_hourly(root, c9_runs, as_of, snap_id):
+    """Roll the assessed runs' C9 windows up per CLOSED UTC hour (the hour the run started in) -> written list."""
+    by_hour = {}
+    asof = _c9in.utc(as_of)
+    for a, windows, pin, start in c9_runs:
+        h0 = _c9in.hour_of(start)
+        h1 = h0 + _c9in._dt.timedelta(hours=1)
+        if asof is None or h1 > asof:
+            continue                                     # only closed hours
+        rows = [dict(w, hour=_c9in.iso(h0), runtime=rt, threshold_version=pin.get("threshold_version"), pin=pin)
+                for rt, w in sorted(windows.items())]
+        slot = by_hour.setdefault((h0, h1), ([], [], {}))
+        slot[0].append(a)
+        slot[1].extend(rows)
+        slot[2].setdefault(pin.get("threshold_version"), pin)
+    written = []
+    for (h0, h1) in sorted(by_hour):
+        runs, rows, pins = by_hour[(h0, h1)]
+        a = c9.assess_window(_c9in.iso(h0), _c9in.iso(h1), runs, rows, pins, as_of, snapshot_id=snap_id)
+        d = claim.as_dict(a)
+        for r in d["measured"].get("hours") or ():
+            r.pop("pin", None)
+        path = _write_assessment(root, d, "window-" + h0.strftime("%Y%m%dT%H"))
+        written.append(("C9", d["scope_id"], d["requirement_verdict"], path))
+    return written
+
+
 def workflow_events(entry, agents, ours):
     """The register's workflow event names, placed by prooflab.query.workflow_map (the one mapping, ARCH 5.2/7.2):
     run.* and handoff.* on the orchestrator, the rest per agent invocation, negotiation on IT's Gateway C only.
@@ -217,6 +269,7 @@ def assess_snapshot(root, register=None, controls=("C16", "C7", "C9"), runs=None
     ov = parse_overrides(overrides) if not isinstance(overrides, dict) else overrides
     written, skipped = [], []
     pins = {}
+    metrics, warmups, c9_runs = None, (), []
     for cid in cids:
         recs = by_run.get(cid, [])
         if not recs:
@@ -254,14 +307,25 @@ def assess_snapshot(root, register=None, controls=("C16", "C7", "C9"), runs=None
                 docs.append(c7.assess_run(cid, exp, ours7, [], pin7, as_of, snapshot_id=snap_id,
                                           provenance=prov, condition=cond))
         if "C9" in controls:
-            skipped.append(("C9", cid, "no AgentCore metric windows read from the snapshot (a stated gap)"))
+            if "C9" not in entries:
+                skipped.append(("C9", cid, "no C9 entry in the register"))
+            else:
+                if metrics is None:
+                    metrics, warmups = _c9in.read_metrics(root), _c9in.warm_up_index(by_run)
+                windows, facts = _c9in.run_windows(recs, metrics, as_of, warmups)
+                pin9 = c9_pin(entries["C9"], reg_sha, reg_version, ov.get("C9", {}), facts["scenario"], windows)
+                a9 = c9.assess_run(cid, windows, pin9, as_of, snapshot_id=snap_id, provenance=prov, condition=cond,
+                                   first_span_at=facts["started"], inputs=facts)
+                docs.append(a9)
+                start = _c9in.utc(facts["started"])
+                if start is not None and windows:
+                    c9_runs.append((a9, windows, pin9, start))
         for a in docs:
             d = claim.as_dict(a)
-            path = os.path.join(root, "assessments", d["control_ref"], cid + ".json")
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, "w", encoding="utf-8", newline="\n") as fh:
-                fh.write(json.dumps(d, indent=1, sort_keys=True))
+            path = _write_assessment(root, d, cid)
             written.append((d["control_ref"], cid, d["requirement_verdict"], path))
+    if c9_runs:
+        written += c9_hourly(root, c9_runs, as_of, snap_id)
     return {"written": written, "skipped": skipped, "register": reg_path}
 
 

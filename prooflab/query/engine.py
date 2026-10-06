@@ -435,7 +435,7 @@ def control_window(pack, control, window):
     if not bounds:
         return {"kind": "error", "verdict": "NOT_ASSESSED", "message": "--window needs <T1>..<T2> in full UTC (…Z), T1 < T2"}
     lo, hi = _utc_key(bounds[0]), _utc_key(bounds[1])
-    kinds = ("run", "hour") if control == "C9" else ("run",)
+    kinds = ("run", "window", "hour") if control == "C9" else ("run",)     # C9's hourly roll-up: scope_kind window
     counted, listed, gaps = [], [], []
     seen_runs = set()
     for a in pack.assessments_for(control, kinds):
