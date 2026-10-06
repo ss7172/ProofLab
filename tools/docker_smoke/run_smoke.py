@@ -100,11 +100,12 @@ def main(argv=None):
         "AGENT_NAME": "ifabric-" + role, "AGENT_ROLE": role, "STEP_BASE": "0",
         "AUDIT_URL": gw, "AUDIT_WRITE_TOKEN": "stub-ledger-not-real",
         "AGENTCORE_GATEWAY_MCP_TOKEN": "stub-mcp-not-real",
-        "IFABRIC_RAILS_MODE": "enforce", "IFABRIC_PIN_JSON": "{}", "IFABRIC_PIN_SHA256": "stub",
-        "IFABRIC_REGISTER_VERSION": "stub", "IFABRIC_REGISTER_SHA256": "stub",
+        "IFABRIC_RAILS_MODE": "enforce",
         "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_unredacted_attributes=",
         "OTEL_TRACES_EXPORTER": "none", "OTEL_METRICS_EXPORTER": "none", "OTEL_LOGS_EXPORTER": "none",
     }
+    import inprocess_smoke  # the same SYNTHETIC pin env block the wrapper derives (passes the real start-up)
+    env.update(inprocess_smoke.pin_env())
     cmd = ["docker", "run", "-d", "--name", name, "--platform", "linux/arm64", "-p", "%d:8080" % a.host_port]
     for k, v in sorted(env.items()):
         cmd += ["-e", "%s=%s" % (k, v)]
@@ -122,11 +123,13 @@ def main(argv=None):
             time.sleep(1)
         print(json.dumps({"smoke": "GET /ping", "status": ping[0], "body": ping[1][:300]}), flush=True)
         payload = {"ifabric": {"envelope": "ifabric.run/1", "run_id": "ifabric-test-smoke-0001",
-                               "handoff_id": "ifabric-test-smoke-0001:h1", "provenance": "LIVE_SUBJECT"},
+                               "handoff_id": "ifabric-test-smoke-0001:h1", "tier": "standard",
+                               "tally_tokens": 0, "tally_calls": 0, "provenance": "LIVE_SUBJECT"},
                    "context": {"question": "Synthetic smoke: fault at stub site S-0. Who is impacted?"}}
         inv = _http("POST", base_url + "/invocations", payload, timeout=180)
         print(json.dumps({"smoke": "POST /invocations", "status": inv[0], "body": inv[1][:1500]}), flush=True)
-        rc = 0 if (ping[0] == 200 and inv[0] == 200) else 1
+        ok_body = inv[0] == 200 and '"refused"' not in inv[1] and '"error"' not in inv[1]
+        rc = 0 if (ping[0] == 200 and ok_body) else 1
     finally:
         logs = subprocess.run(["docker", "logs", "--tail", "40", name], stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, universal_newlines=True).stdout
