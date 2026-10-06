@@ -194,6 +194,36 @@ def test_aws_spans_via_stubbed_insights(tmp_path):
     assert aws_spans.pull(ctx, "ifabric-test-1791137236-aaaaaa", "2026-10-05T17:00:00Z", "2026-10-05T17:30:00Z") is None
 
 
+ARN = "arn:aws:bedrock-agentcore:us-east-1:111122223333:runtime/rt-abc-Xy12"
+
+
+def test_metrics_use_the_full_dimension_set(tmp_path):
+    ctx = _ctx(tmp_path, lambda argv: (0, b'{"Label":"Latency","Datapoints":[]}', b""))
+    agentcore_metrics.pull(ctx, "rt-abc", "Latency", "Maximum", "2026-10-05T16:00:00Z", "2026-10-05T17:00:00Z",
+                           resource_arn=ARN)
+    argv = [a for a in ctx.calls[-1]]
+    i = argv.index("--dimensions")
+    assert argv[i + 1:i + 4] == ["Name=Resource,Value=" + ARN, "Name=Operation,Value=InvokeAgentRuntime",
+                                 "Name=Name,Value=rt-abc::DEFAULT"]
+    with pytest.raises(capture.CaptureError):                      # Name alone is empty live: refused
+        agentcore_metrics.pull(ctx, "rt-abc", "Latency", "Maximum", "2026-10-05T16:00:00Z", "2026-10-05T17:00:00Z")
+
+
+def test_test_cids_skipped_by_default_collected_with_opt_in(tmp_path):
+    tcid = "ifabric-test-1791137236-aaaaaa"
+    assert capture.skip_cid(tcid) and capture.skip_cid(CID) is None
+    assert capture.skip_cid(tcid, include_test=True) is None
+    ctx = _ctx(tmp_path, lambda argv: (0, json.dumps({"events": []}).encode(), b""))
+    assert runtime_logs.pull(ctx, "rt-abc", tcid, "2026-10-05T17:00:00Z", "2026-10-05T17:30:00Z") is None
+    assert ctx.calls == []                                                   # default: nothing is run
+    ctx.include_test = True
+    assert capture.skip_cid(tcid, ctx) is None
+    assert runtime_logs.pull(ctx, "rt-abc", tcid, "2026-10-05T17:00:00Z", "2026-10-05T17:30:00Z") is not None
+    assert ctx.calls                                                         # opt-in: the query ran
+    with pytest.raises(capture.CaptureError):                                # a non-run id is refused either way
+        capture.skip_cid("not-a-cid", ctx, include_test=True)
+
+
 def test_paginated_log_collectors_and_metrics(tmp_path):
     pages = [{"events": [{"timestamp": 1, "ingestionTime": 2, "logStreamName": "s", "message": "a " + CID}],
               "nextToken": "n1"},
@@ -212,11 +242,12 @@ def test_paginated_log_collectors_and_metrics(tmp_path):
     assert "/aws/bedrock-agentcore/runtimes/rt-abc-DEFAULT" in sc["command"]
     sc = modaas_evidence.pull(ctx, CID, "2026-10-05T17:00:00Z", "2026-10-05T17:30:00Z")
     assert sc["line_count"] == 2 and "/modaas/evidence" in sc["command"]
-    m = agentcore_metrics.pull_all(ctx, ["rt-abc"], "2026-10-05T16:00:00Z", "2026-10-05T17:00:00Z")
+    m = agentcore_metrics.pull_all(ctx, {"rt-abc": ARN}, "2026-10-05T16:00:00Z", "2026-10-05T17:00:00Z")
     assert len(m) == 2 and open(os.path.join(str(tmp_path), m[0]["path"]), "rb").read() == b'{"Label":"Latency","Datapoints":[]}'
     assert m[0]["scope"]["statistic"] == "Maximum" and m[0]["scope"]["dimensions"]
     with pytest.raises(capture.CaptureError):                                          # open hour
-        agentcore_metrics.pull(ctx, "rt-abc", "Latency", "Maximum", "2026-10-05T17:00:00Z", "2026-10-05T19:00:00Z")
+        agentcore_metrics.pull(ctx, "rt-abc", "Latency", "Maximum", "2026-10-05T17:00:00Z", "2026-10-05T19:00:00Z",
+                               resource_arn=ARN)
 
 
 def test_seam_rules_and_no_forbidden_verbs(tmp_path):

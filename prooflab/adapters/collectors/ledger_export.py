@@ -27,7 +27,7 @@ def urllib_fetch(url: str, headers: dict) -> tuple:
 
 
 def pull(ctx: capture.Ctx, cid: str, token: str, fetch=urllib_fetch, base: str = PROXY_BASE) -> "dict | None":
-    if capture.skip_cid(cid):
+    if capture.skip_cid(cid, ctx):
         return None
     url = records_url(cid, base)
     if "?cid=" not in url:

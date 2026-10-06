@@ -50,6 +50,7 @@ class Ctx:
     profile: "str | None" = None
     region: "str | None" = None
     calls: list = field(default_factory=list)   # argv log, for tests and the live-lane log
+    include_test: bool = False                  # explicit opt-in (ops lane, smokes): also collect ifabric-test-* CIDs
 
 
 def aws_argv(ctx: Ctx, *args) -> list:
@@ -84,11 +85,12 @@ def command_text(argv) -> str:
     return shlex.join([str(a) for a in argv])
 
 
-def skip_cid(cid: str) -> "str | None":
-    """Why a CID is not collected, or None. Skips test traffic; refuses anything that is not a run id."""
+def skip_cid(cid: str, ctx: "Ctx | None" = None, include_test: bool = False) -> "str | None":
+    """Why a CID is not collected, or None. Skips test traffic unless explicitly opted in (include_test=True, or
+    ctx.include_test: the ops lane's smokes); assessed collection keeps the default. Refuses non-run ids always."""
     if not ids.is_valid_run_id(cid):
         raise CaptureError("not a run id: %r" % (cid,))
-    if cid.startswith("ifabric-test-"):
+    if cid.startswith("ifabric-test-") and not (include_test or (ctx is not None and ctx.include_test)):
         return "test traffic (ifabric-test-*)"
     return None
 

@@ -13,7 +13,7 @@ def group_for(runtime_id: str) -> str:
 
 
 def pull(ctx: capture.Ctx, runtime_id: str, cid: str, start: str, end: str) -> "dict | None":
-    if capture.skip_cid(cid):
+    if capture.skip_cid(cid, ctx):
         return None
     group = group_for(runtime_id)
     events, pages, complete, cmd = capture.filter_log_events(ctx, group, '"%s"' % cid, start, end)

@@ -24,20 +24,30 @@ def allowlist(extra=()):
     return frozenset(hosts | {str(x).lower() for x in extra})
 
 
+def _port(p):
+    if isinstance(p, bytes):
+        p = p.decode("ascii", "replace")
+    return str(p) if isinstance(p, (int, str)) and str(p).isalnum() and len(str(p)) <= 8 else None
+
+
 def _host(event, args):
+    """-> (host, port|None). Host and port only: never a URL, query string or credentials."""
     if event == "socket.getaddrinfo":
         h = args[0]
-        return h.decode("ascii", "replace") if isinstance(h, bytes) else h
+        return (h.decode("ascii", "replace") if isinstance(h, bytes) else h), _port(args[1] if len(args) > 1 else None)
     a = args[1] if len(args) > 1 else None   # socket.connect: (socket, address)
-    return a[0] if isinstance(a, tuple) and a and isinstance(a[0], str) else None
+    if isinstance(a, tuple) and a and isinstance(a[0], str):
+        return a[0], _port(a[1] if len(a) > 1 else None)
+    return None, None
 
 
-def _record(host, event):
+def _record(host, event, port=None):
+    dest = "%s:%s" % (host, port) if port else host
     h = hashlib.sha256(",".join(sorted(_S["allow"])).encode()).hexdigest()   # RT-03's policy: the allowlist
     return {"record_kind": "rail_decision", "phase": "ifabric.rail_decision", "control.ref": "RAIL",
             "control.id": "RAIL-RT-03", "threshold.version": "RT-03@" + V,
             "threshold.value": "sha256:" + h, "threshold.sha256": h, "rail.policy_sha256": h,
-            "register.version": None, "verdict": "FLAG", "reason": "RT-03 FLAG: egress.unlisted x1 (%s)" % event,
+            "register.version": None, "verdict": "FLAG", "reason": "RT-03 FLAG: egress.unlisted x1 (%s) %s" % (event, dest),
             "inline.mode": "observe", "inline.action": "proceed", "rail.id": "RT-03", "rail.version": V,
             "rail.stage": "runtime", "rail.hook": "audit_hook", "rail.mechanism": "code",
             "rail.matches": {"egress.unlisted": 1}, "rail.values": [host], "ep.id": "EP-15", "actor.id": _S["agent"],
@@ -49,7 +59,7 @@ def _hook(event, args):
         return
     _T.busy = True   # the sink's own POST must not re-enter the hook
     try:
-        host = _host(event, args)
+        host, port = _host(event, args)
         if host is None:
             return
         host = host.lower().strip("[]")
@@ -61,7 +71,7 @@ def _hook(event, args):
         if ok or host in _S["seen"]:
             return
         _S["seen"].add(host)
-        r = _record(host, event)
+        r = _record(host, event, port)
         _S["flags"].append(r)
         if _S["sink"] is not None:
             _S["sink"](r)

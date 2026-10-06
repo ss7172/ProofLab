@@ -59,7 +59,10 @@ REFERENCE_FILE = "agent" + ".py"                      # the kit's reference file
 KIT_BASE_IMAGE = "public.ecr.aws/docker/library/python:3.12-slim"
 KIT_SDK_PIP = ("strands-agents[openai]==1.57.2 bedrock-agentcore==1.24.0 mcp==1.30.0 boto3==1.43.103 "
                "aws-opentelemetry-distro==0.21.0")
-KIT_SDK_ENV = "ENV OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=urllib,urllib3,botocore,boto3\n"
+# Kit line + aws_mcp: ADOT 0.21.0's McpInstrumentor (entry point aws_mcp, amazon/opentelemetry/distro/instrumentation/
+# mcp/_wrappers.py) sets gen_ai.tool.call.arguments / gen_ai.tool.call.result on the "mcp tools/call" span in clear
+# (live S-2: customer records in the runtime log group). Disabling it removes the producer (R-GR-02, T-SPAN-01).
+KIT_SDK_ENV = "ENV OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=urllib,urllib3,botocore,boto3,aws_mcp\n"
 KIT_ENTRY_PATH = "/app/" + REFERENCE_FILE             # the in-image path the kit's ENTRYPOINT runs
 # The kit's EXTRA_PIP check, verbatim (build-agent-image.sh :141).
 EXTRA_PIP_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*(\[[A-Za-z0-9,._-]+\])?((==|>=|<=|~=|!=|<|>)[A-Za-z0-9.*+!_-]+"
