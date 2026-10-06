@@ -87,7 +87,7 @@ def test_tool_undeclared_and_real_status(ledger):
     r.after("zzz", {}, status=403)
     c.flush()
     rec = ledger.records[0]
-    assert rec["tool.declared"] is False and rec["outcome.real"] == "DENIED_403"
+    assert rec["tool.declared"] is False and rec["outcome.real"] == "REFUSED_403"
     assert rec["null_reasons"]["call.id"]
 
 
@@ -286,3 +286,19 @@ def test_critical_records_survive_a_full_queue():
         assert c.stats["shed"] >= 1
     finally:
         l.stop()
+
+
+def test_real_outcome_vocabulary_and_nulls(ledger):
+    for st, want in ((200, "SERVED"), (403, "REFUSED_403"), (404, "PAUSED_404"), (405, "METHOD_405"),
+                     (429, "CEILING_429"), (500, "ERROR_5XX"), (503, "ERROR_5XX"), (400, None), (None, "SERVED")):
+        got = tool_call.real_outcome(st)
+        assert got == want
+        assert got is None or got in tool_call.OUTCOME_VOCAB
+    assert tool_call.real_outcome(None, True) is None
+    c = mk(ledger.url)
+    r = tool_call.ToolCallRecorder(c, ctx(), declared_tools=["a"])
+    r.after("a", {}, status=None, error=RuntimeError("boom"))
+    r.after("a", {}, status=422)
+    c.flush()
+    for rec in ledger.records:
+        assert rec["outcome.real"] is None and rec["null_reasons"]["outcome.real"]

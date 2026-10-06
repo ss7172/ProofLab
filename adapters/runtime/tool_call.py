@@ -19,18 +19,23 @@ def args_sha256(args):
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+# ARCH 3.1 EP-7 / 4 vocabulary (a subset of PR-01 OUTCOME_REAL); never invent values here.
+OUTCOME_VOCAB = ("SERVED", "BLOCKED_GUARDRAIL", "REFUSED_403", "PAUSED_404", "METHOD_405",
+                 "CEILING_429", "ERROR_5XX", "CANCELLED_C16")
+_STATUS_MAP = {403: "REFUSED_403", 404: "PAUSED_404", 405: "METHOD_405", 429: "CEILING_429"}
+
+
 def real_outcome(status, error=False):
+    """In-vocabulary value, or None (caller records a null_reason) when none fits."""
     if status is None:
-        return "ERROR" if error else "SERVED"
+        return None if error else "SERVED"
     if 200 <= status < 300:
         return "SERVED"
-    if status == 403:
-        return "DENIED_403"
-    if 400 <= status < 500:
-        return "ERROR_4XX"
+    if status in _STATUS_MAP:
+        return _STATUS_MAP[status]
     if status >= 500:
         return "ERROR_5XX"
-    return "ERROR"
+    return None
 
 
 class ToolCallRecorder(object):
@@ -66,10 +71,15 @@ class ToolCallRecorder(object):
         extra = {"tool.use_id": tool_use_id, "outcome.http_status": status,
                  "outcome.real": out, "tool.result_sha256": args_sha256(result),
                  "suspicious_tool_output": bool(suspicious)}
-        detail = "tool call %s finished: %s" % (name, out)
+        detail = "tool call %s finished: %s" % (name, out if out else "outcome unclassified")
         if error is not None:
             detail += " (%s)" % ec.scrub_exception(error, self.client.scrubber)
         rec = self._rec("after", name, args, "RECORDED", detail, extra, call_id=call_id)
-        rec["reason"] = out
-        rec["null_reasons"].pop("reason", None)
+        if out is None:
+            rec["null_reasons"]["outcome.real"] = (
+                "no in-vocabulary outcome for status %r%s (transport error or unmapped 1xx/3xx/4xx)"
+                % (status, " with error" if error is not None else ""))
+        else:
+            rec["reason"] = out
+            rec["null_reasons"].pop("reason", None)
         return self.client.emit(rec)
