@@ -172,7 +172,9 @@ function runsView() {
 }
 
 /* ---------------- boot: the data comes from the console API, never embedded ---------------- */
-async function api(path) { const r = await fetch(path, { credentials: "same-origin" }); const j = await r.json(); if (!r.ok || !j.ok) throw new Error((j.error && j.error.message) || r.status); return j; }
+async function api(path, tries = 4) { const r = await fetch(path, { credentials: "same-origin" });
+  if (r.status === 429 && tries > 0) { await new Promise(ok => setTimeout(ok, 1100)); return api(path, tries - 1); }   // the console's per-second limit: wait, then retry
+  const j = await r.json(); if (!r.ok || !j.ok) throw new Error((j.error && j.error.message) || r.status); return j; }
 const ROUTES = [["B", "answer", "Ask · Answer"], ["D", "ledger", "Evidence Ledger"], ["E", "auditor", "Six Questions"], ["F", "register", "Register"], ["G", "loop", "Human Loop"], ["I", "architecture", "Enforcement points"], ["J", "gaps", "Gaps"], ["R", "runs", "Runs"]];
 const VIEWS = Object.assign({ answer: answerView, ledger, auditor, register, loop, architecture, enforcement: architecture, gaps, runs: runsView }, window.PROOFLAB_P1_VIEWS || {});
 function rail(active) {
@@ -211,10 +213,10 @@ $("integrityBtn").onclick = async () => { const j = await api("/api/v1/integrity
 document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; } if (e.target.tagName === "INPUT") return;
   if (e.key === "Escape") { $("drawer").classList.remove("open"); closePalette(); } else if (e.key === "/") { e.preventDefault(); openPalette(); } else if (e.key === "t") $("themeBtn").click(); });
 async function startSession() {
-  const m = /^#k=([A-Za-z0-9_-]+)$/.exec(location.hash);
+  const m = /^#k=([A-Za-z0-9_-]+)(?:&r=\/([A-Za-z0-9_\/%.|:-]*))?$/.exec(location.hash);   // optional deep link: #k=<key>&r=/<view>/<arg>
   if (!m) return;
   const r = await fetch("/api/v1/session", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: m[1] }) });
-  history.replaceState(null, "", location.pathname + (r.ok ? "#/answer" : "#/session-failed"));
+  history.replaceState(null, "", location.pathname + (r.ok ? "#/" + (m[2] || "answer") : "#/session-failed"));
 }
 async function loadAll() {
   await startSession();
