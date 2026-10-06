@@ -838,6 +838,7 @@ def _console_row(R, ev, runs):
     """AT-P0 on the fresh unzip: the console starts from the pack alone and serves a stored, composed answer."""
     import socket
     import urllib.error
+    import urllib.parse
     import urllib.request
     sk = socket.socket()
     sk.bind(("127.0.0.1", 0))
@@ -864,12 +865,41 @@ def _console_row(R, ev, runs):
                 raise
             except urllib.error.URLError:
                 time.sleep(0.1)
-        q = urllib.request.Request(base + "/api/v1/ask?q=control%2016%20for%20run%20" + runs["N2"]["cid"], headers={"Cookie": cookie})
-        with urllib.request.urlopen(q, timeout=10) as r:
-            ans = json.loads(r.read().decode())["data"]
+        def get(path):
+            time.sleep(0.06)            # under the console's per-second rate limit
+            try:
+                with urllib.request.urlopen(urllib.request.Request(base + path, headers={"Cookie": cookie}), timeout=10) as r:
+                    body = r.read()
+                    return r.status, body
+            except urllib.error.HTTPError as e:
+                return e.code, e.read()
+        q = "/api/v1/ask?q=control%2016%20for%20run%20" + runs["N2"]["cid"]
+        ans = json.loads(get(q)[1].decode())["data"]
         m = ans["measurement"]
         ok = ans["verdict"]["value"] == V.BREACHED and m["value"] is not None and ans["comparison"]["limit"] is not None
         detail = "%s; %s measured %s vs %s" % (banner[:40], ans["verdict"]["value"], m["value"], ans["comparison"]["limit"])
+        # PR-40b: C7 N4, the six questions for N2, a record's raw ref, the index page and its assets
+        more = []
+        st, b7 = get("/api/v1/ask?q=control%207%20for%20run%20" + runs["N4"]["cid"])
+        a7 = json.loads(b7.decode()).get("data") or {}
+        more.append(("C7 N4", st == 200 and a7.get("verdict", {}).get("value") == V.BREACHED
+                     and a7.get("comparison", {}).get("limit") is not None and a7.get("source", {}).get("manifest_status") == "VERIFIED"))
+        st, ba = get("/api/v1/auditor/" + runs["N2"]["cid"])
+        more.append(("auditor N2", st == 200 and "who" in ((json.loads(ba.decode()).get("data") or {}).get("questions") or {})))
+        st, br = get("/api/v1/records?run=" + runs["N2"]["cid"])
+        recs = json.loads(br.decode()).get("data") or []
+        raw_ok = bool(recs)
+        for rec in recs[:12]:
+            st, bw = get("/api/v1/raw?ref=" + urllib.parse.quote(rec["source"]["raw_ref"]))
+            line = (json.loads(bw.decode()).get("data") or {}).get("line") if st == 200 else None
+            raw_ok = raw_ok and line is not None and hashlib.sha256(line.encode("utf-8")).hexdigest() == rec["source"]["sha256"]
+        more.append(("raw refs", raw_ok))
+        assets = [get(path)[0] for path in ("/", "/static/app.js", "/static/app.css", "/static/panel/ifabric-case-panel.css",
+                                            "/static/panel/ifabric-case-panel.js")]
+        more.append(("assets", all(x == 200 for x in assets)))
+        bad = [n for n, good in more if not good]
+        ok = ok and not bad
+        detail += "; " + ("C7 N4, auditor N2, raw refs, assets ok" if not bad else "FAILED: " + ", ".join(bad))
     except Exception as exc:        # a console that cannot start on the pack is the finding
         detail = "%s: %s" % (type(exc).__name__, str(exc)[:80])
     finally:
@@ -878,7 +908,7 @@ def _console_row(R, ev, runs):
             proc.wait(timeout=5)
         except Exception:
             proc.kill()
-    R.check("console starts on the fresh unzip and answers C16 N2 from the pack", ok, detail)
+    R.check("console starts on the fresh unzip: C16 N2, C7 N4, auditor N2, raw refs, page assets", ok, detail)
 
 
 def step_query(R):
