@@ -44,18 +44,28 @@ ENTRY = (
 )
 
 
+_BUNDLED_ROOTS = ("prooflab", "adapters", "ifabric_app", BA.BASE_MODULE)
+
+
 class _Isolated(object):
+    """A clean module namespace (as in a fresh agent process): the real prooflab/adapters another test imported
+    would otherwise satisfy `import` from sys.modules, bypassing the bundle's finder. Restored exactly on exit."""
+
     def __init__(self, env=None):
         self.env = env or {}
 
     def __enter__(self):
-        self.mods, self.meta, self.old = set(sys.modules), list(sys.meta_path), dict(os.environ)
+        self.saved, self.meta, self.old = dict(sys.modules), list(sys.meta_path), dict(os.environ)
+        for k in list(sys.modules):
+            if k in _BUNDLED_ROOTS or k.split(".", 1)[0] in ("prooflab", "adapters"):
+                del sys.modules[k]
         os.environ.update(self.env)
         return self
 
     def __exit__(self, *exc):
-        for k in set(sys.modules) - self.mods:
+        for k in set(sys.modules) - set(self.saved):
             del sys.modules[k]
+        sys.modules.update(self.saved)
         sys.meta_path[:] = self.meta
         os.environ.clear()
         os.environ.update(self.old)

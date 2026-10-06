@@ -34,17 +34,30 @@ def _agents_root(tmp_path, entry_src, app_src="VALUE = 'app'\n"):
     return str(tmp_path)
 
 
+_BUNDLED_ROOTS = ("prooflab", "adapters", "ifabric_app")
+
+
+def _shadowing(names):
+    """The names a bundle serves itself: a copy imported earlier in the session (the real prooflab/adapters, by
+    another test) would satisfy `import` from sys.modules and the bundle's finder would never be asked."""
+    return [k for k in names if k in _BUNDLED_ROOTS or k.split(".", 1)[0] in _BUNDLED_ROOTS[:2]]
+
+
 class _Isolated(object):
-    """Import a bundle file as a plain module (not __main__), then undo its sys.modules/meta_path effects."""
+    """Import a bundle file as a plain module (not __main__) in a clean module namespace (as in a fresh agent
+    process), then restore sys.modules and meta_path exactly."""
 
     def __enter__(self):
-        self.mods = set(sys.modules)
+        self.saved = dict(sys.modules)
         self.meta = list(sys.meta_path)
+        for k in _shadowing(list(sys.modules)):
+            del sys.modules[k]
         return self
 
     def __exit__(self, *exc):
-        for k in set(sys.modules) - self.mods:
+        for k in set(sys.modules) - set(self.saved):
             del sys.modules[k]
+        sys.modules.update(self.saved)
         sys.meta_path[:] = self.meta
         return False
 
