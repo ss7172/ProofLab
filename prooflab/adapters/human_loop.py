@@ -130,3 +130,65 @@ def sticky_response(entries: Iterable[dict]) -> Optional[dict]:
         if entry.get("state") == "RESPONDED":
             return entry
     return None
+
+
+# --- PR-20b: the trace, the re-test link and the closed-without-re-test gap (ARCH §3.8) -------------------
+TRACE_MAX = 200
+ZONES = ("customer", "it", "network", "gateway", "other")
+CLOSED_WITHOUT_RETEST = "closed in ServiceNow without re-test"
+RETEST_NOTE_PREFIX = "[iFabric re-test]"
+
+
+def build_trace(steps: Iterable[dict], agent_zones: Optional[dict] = None) -> List[dict]:
+    """A finding `trace` (<= 200 steps) from our records: dicts with at / actor / action and optional
+    decision / ref / run_id / zone. A step whose actor has no known zone is `other` (our handoffs).
+    The newest TRACE_MAX steps are kept, in time order; text is one line and bounded."""
+    zones = agent_zones or {}
+    out = []
+    for step in steps or ():
+        at, actor, action = step.get("at"), step.get("actor"), step.get("action")
+        if not (at and actor and action):
+            continue
+        zone = step.get("zone") or zones.get(actor) or "other"
+        out.append({"at": _clean(at, 40), "actor": _clean(actor, 100), "zone": zone if zone in ZONES else "other",
+                    "action": _clean(action, 100), "decision": _clean(step.get("decision", ""), 100),
+                    "ref": _clean(step.get("ref", ""), 200), "run_id": _clean(step.get("run_id", ""), 100)})
+    out.sort(key=lambda s: s["at"])
+    return out[-TRACE_MAX:]
+
+
+def build_retest(assessment: dict, at: Optional[str] = None) -> Optional[dict]:
+    """The `retest` block from a later assessment on the same control and scope type; None unless it is
+    the assessment's own SATISFIED-or-other verdict mapped onto the finding verdict (NOT_ASSESSED: None)."""
+    verdict = _cverdicts.finding_verdict(assessment["requirement_verdict"])
+    if verdict is None:
+        return None
+    ref = assessment.get("assessment_id") or assessment.get("id") or assessment["scope_id"]
+    return {"assessment": _clean("assessment:%s" % ref, 200), "verdict": verdict,
+            "threshold_version": _clean(assessment["threshold_version"], 100), "at": at or _clocks.now_utc()}
+
+
+def closes(finding: dict, retest: Optional[dict]) -> bool:
+    """Only a SATISFIED re-test on the finding's own threshold version closes it (R-J-24)."""
+    return bool(retest) and retest.get("verdict") == _cverdicts.SATISFIED \
+        and retest.get("threshold_version") == finding.get("threshold_version")
+
+
+def retest_note(finding: dict, retest: dict) -> str:
+    """The work note linking an incident to its re-test; one line, templated, never model text."""
+    return _clean("%s finding %s: re-test %s is %s on %s (%s)" % (
+        RETEST_NOTE_PREFIX, finding.get("id") or "%s/%s" % (finding.get("control_ref"), finding.get("scope_id")),
+        retest["assessment"], retest["verdict"], retest["threshold_version"], retest.get("at", "")), 500)
+
+
+def closed_without_retest(export_doc: dict, retest: Optional[dict], finding: dict,
+                          closed_states: Iterable[str] = ("6", "7", "Resolved", "Closed")) -> Optional[dict]:
+    """A gap entry when an exported incident is closed in ServiceNow with no linked passing re-test; the
+    finding stays open in the pack. `closed_states` are ServiceNow's own labels (display or value)."""
+    incident = export_doc.get("incident") or {}
+    state = incident.get("state")
+    state = state.get("display_value") or state.get("value") if isinstance(state, dict) else state
+    if str(state) not in tuple(closed_states) or closes(finding, retest):
+        return None
+    return {"gap": CLOSED_WITHOUT_RETEST, "finding_id": export_doc.get("finding_id"),
+            "incident": incident.get("number"), "servicenow_state": str(state), "finding_status": "open"}

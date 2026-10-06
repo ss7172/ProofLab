@@ -1,0 +1,261 @@
+"""`prooflab assess --snapshot DIR` (D1): turn one refreshed snapshot into Assessment documents. Stdlib, Python 3.9.
+
+Reads store/records.jsonl + derived/run-index.jsonl + derived/run-catalogue.jsonl (what `prooflab refresh` wrote) and
+a FROZEN register file; runs the stateless evaluators over each assessed run of ours; writes
+`<snapshot>/assessments/<C>/<cid>.json` (the contract Assessment as a dict, the shape `prooflab query` reads).
+
+No threshold is held here: the C16 pin is the register's own derivation for the run's mode (the mode the run's EP-1
+decisions carried, else `--mode`); the C7 numbers come from the register entry (`observation_limit` as
+`coverage_min_pct=..;gap_max_ms=..;violating_gap_share_max_pct=..`, or `--limit C7:key=value` for a value the
+register text does not carry yet); the expected workflow events are the register's `workflow_events` per agent that
+took part in the run, minus the two conditional ones (escalation: only on an escalate disposition; decision: per
+model call, covered by --expect-ep1-decisions).
+
+C9 is not assessed here: its inputs are the AgentCore metric windows, and no collector output is read yet, so the
+run is reported as skipped (a stated gap), never written as an assessment.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+
+from prooflab.contract import clocks as _clocks
+from prooflab.contract import register as _reg
+from prooflab.contract import verdicts as V
+from prooflab.evaluators import c16, c16_core, c7, claim
+from prooflab.registry import parse as P
+from prooflab.registry import pinned as _pinned
+
+CONDITIONAL_EVENTS = ("escalation", "decision")
+OURS_PREFIX = "ifabric-"
+STORE_PATH = ("store", "records.jsonl")
+
+
+class AssessError(ValueError):
+    pass
+
+
+def _read_jsonl(path):
+    rows = []
+    if os.path.isfile(path):
+        with open(path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if line:
+                    try:
+                        doc = json.loads(line)
+                    except ValueError:
+                        continue
+                    if isinstance(doc, dict):
+                        rows.append(doc)
+    return rows
+
+
+def _rid(r):
+    return r.get("run.id") or r.get("correlation_id")
+
+
+def find_register(root, explicit=None):
+    """The register to assess against: --register, else the newest frozen register/versions/v*.yaml in the snapshot."""
+    if explicit:
+        return explicit
+    vdir = os.path.join(root, "register", "versions")
+    names = sorted(n for n in (os.listdir(vdir) if os.path.isdir(vdir) else [])
+                   if n.endswith(".yaml") and not n.endswith(".risks.yaml") and not n.startswith("inv-"))
+    if not names:
+        raise AssessError("no register: pass --register <frozen register file> (none in %s)" % vdir)
+    return os.path.join(vdir, sorted(names, key=lambda n: [int(t) if t.isdigit() else 0 for t in re.split(r"(\d+)", n)])[-1])
+
+
+def _agents_of(recs):
+    seen = []
+    for r in recs:
+        if r.get("authorship", "TESTIMONY") != "TESTIMONY":
+            continue
+        for k in ("actor.id", "handoff.to"):
+            a = r.get(k)
+            if isinstance(a, str) and a.startswith(OURS_PREFIX) and a not in seen:
+                seen.append(a)
+    return seen
+
+
+def _stream_of(recs, agent):
+    for r in recs:
+        if r.get("actor.id") == agent and r.get("handoff.id"):
+            return "%s:%s" % (agent, r["handoff.id"])
+    return "%s:h0" % agent
+
+
+def _is_gateway(r):
+    return r.get("authorship") == "PLATFORM" and r.get("observed.clock") == "gateway"
+
+
+def _model_call_span(r):
+    return _is_gateway(r) and r.get("tokens.in") is not None and r.get("tokens.out") is not None \
+        and r.get("record_kind") in ("metric", "platform_decision")
+
+
+def run_facts(recs):
+    """The evaluators' inputs for ONE run, read from its store records."""
+    spans = [r for r in recs if _model_call_span(r)]
+    calls, blocked = [], []
+    for r in spans:
+        calls.append({"action_id": r.get("call.id"), "listener": "llm", "model": r.get("model.id"),
+                      "tokens_in": r.get("tokens.in"), "tokens_out": r.get("tokens.out"),
+                      "http_status": r.get("outcome.http_status"), "start": r.get("observed.at"),
+                      "end": r.get("observed.at"), "handoff_id": r.get("handoff.id")})
+        if r.get("outcome.real") == "BLOCKED_GUARDRAIL" and r.get("call.id"):
+            blocked.append(r["call.id"])
+    ours = [r for r in recs if r.get("authorship", "TESTIMONY") == "TESTIMONY"]
+    decisions = [r for r in ours if r.get("record_kind") == "decision"]
+    actions = []
+    for r in recs:
+        if _is_gateway(r) and r.get("call.id"):
+            if _model_call_span(r):
+                kind = "model.call"
+            elif r.get("record_kind") == "observation":
+                kind = "tool.call"
+            else:
+                continue
+            actions.append({"action_id": r["call.id"], "kind": kind, "agent": None, "end": r.get("observed.at")})
+    refusals = [{"call_id": r.get("call.id"), "trace_id": r.get("trace.id")} for r in recs
+                if _is_gateway(r) and r.get("record_kind") == "platform_decision"
+                and r.get("outcome.real") in c7.REFUSAL_OUTCOMES and r.get("outcome.real") != "BLOCKED_GUARDRAIL"]
+    stops = []
+    for d in decisions:
+        if d.get("ep.id") == "EP-1" and d.get("inline.action") == "halt" and d.get("actor.id"):
+            s = {"agent": d["actor.id"], "stream": _stream_of(ours, d["actor.id"])}
+            if s not in stops:
+                stops.append(s)
+    return {"calls": calls, "blocked": blocked, "decisions": decisions, "actions": actions, "refusals": refusals,
+            "stops": stops, "ours": ours, "agents": _agents_of(ours)}
+
+
+def _mode_of(decisions, default):
+    modes = [d.get("inline.mode") for d in decisions if d.get("ep.id") == "EP-1" and d.get("inline.mode")]
+    return modes[0] if modes and modes[0] in c16_core.MODES else default
+
+
+def parse_overrides(items):
+    out = {}
+    for item in items or ():
+        ctl, _, kv = item.partition(":")
+        key, eq, val = kv.partition("=")
+        if not (ctl and eq and key):
+            raise AssessError("--limit wants <C>:<key>=<value>, got %r" % item)
+        out.setdefault(ctl.upper(), {})[key.strip()] = val.strip()
+    return out
+
+
+def c7_pin(entry, register_sha, register_version, overrides, ep1_deployed):
+    after = [x.strip() for x in (entry.get("workflow_events_after_stop") or "").split(",") if x.strip()]
+    pin = {"control_id": entry.get("library_id"), "threshold_version": entry.get("threshold_version"),
+           "register_sha256": register_sha, "register_version": register_version,
+           "observation_limit": entry.get("observation_limit"), "ep1_deployed": bool(ep1_deployed),
+           "workflow_events_after_stop": after}
+    tol = entry.get("exception_tolerance")
+    if tol not in (None, ""):
+        pin["exception_tolerance"] = tol
+    pin.update(overrides)
+    return pin
+
+
+def workflow_events(entry, agents, ours):
+    events = [x.strip() for x in (entry.get("workflow_events") or "").split(",") if x.strip()
+              and x.strip() not in CONDITIONAL_EVENTS]
+    out = []
+    for ag in agents:
+        stream = _stream_of(ours, ag)
+        out += [{"agent": ag, "event": ev, "stream": stream, "order": i} for i, ev in enumerate(events)]
+    return out
+
+
+def assess_snapshot(root, register=None, controls=("C16", "C7", "C9"), runs=None, default_mode="observe",
+                    overrides=None, expect_ep1=False, as_of=None):
+    """-> {"written": [(control, cid, verdict, path)], "skipped": [(control, cid, why)], "register": path}."""
+    store = _read_jsonl(os.path.join(root, *STORE_PATH))
+    if not store:
+        raise AssessError("no store/records.jsonl in %s: run `prooflab refresh --snapshot` first" % root)
+    reg_path = find_register(root, register)
+    with open(reg_path, "rb") as fh:
+        reg_bytes = fh.read()
+    try:
+        doc = P.parse_register(reg_bytes.decode("utf-8"))
+    except ValueError as exc:
+        raise AssessError("register does not parse: %s" % exc)
+    entries = dict((e.get("control_ref"), e) for e in doc["entries"])
+    reg_sha = _reg.register_sha256(reg_bytes)
+    reg_version = doc["top"].get("version") or doc["top"].get("register_version") or ""
+    cat = _read_jsonl(os.path.join(root, "derived", "run-catalogue.jsonl"))
+    idx = dict((r.get("run_id") or r.get("cid"), r) for r in _read_jsonl(os.path.join(root, "derived", "run-index.jsonl")))
+    if runs:
+        cids = list(runs)
+    else:
+        cids = sorted(r["run_id"] for r in cat if r.get("assessed") and (r.get("run_id") or "").startswith(OURS_PREFIX))
+    manifest = {}
+    try:
+        with open(os.path.join(root, "SNAPSHOT.json"), "r", encoding="utf-8") as fh:
+            manifest = json.load(fh)
+    except (IOError, OSError, ValueError):
+        pass
+    as_of = as_of or manifest.get("as_of") or _clocks.now_utc()
+    snap_id = "snapshot:%s" % (manifest.get("as_of") or "unknown")
+    by_run = {}
+    for r in store:
+        by_run.setdefault(_rid(r), []).append(r)
+    ov = parse_overrides(overrides) if not isinstance(overrides, dict) else overrides
+    written, skipped = [], []
+    pins = {}
+    for cid in cids:
+        recs = by_run.get(cid, [])
+        if not recs:
+            skipped += [(c, cid, "no records for this run in the store") for c in controls]
+            continue
+        f = run_facts(recs)
+        prov = (idx.get(cid) or {}).get("provenance") or next(
+            (r.get("provenance") for r in f["ours"] if r.get("provenance")), None)
+        cond = next((r.get("run.condition") for r in f["ours"] if r.get("run.condition")), None) or "none"
+        docs = []
+        if "C16" in controls:
+            if "C16" not in entries:
+                skipped.append(("C16", cid, "no C16 entry in the register"))
+            else:
+                mode = _mode_of(f["decisions"], default_mode)
+                if mode not in pins:
+                    pins[mode] = c16_core.PinnedC16.from_env(_pinned.env_for(reg_bytes, mode))
+                ep1 = [d for d in f["decisions"] if d.get("ep.id") == "EP-1"]
+                tiers = [d.get("threshold.tier") for d in ep1 if d.get("threshold.tier")]
+                sa = {"attrs": {}, "tier_rule": "", "envelope_tier": tiers[0] if tiers else None,
+                      "provenance": prov, "condition": cond}
+                comp = {"expected_action_ids": [d["call.id"] for d in ep1 if d.get("call.id")],
+                        "spans_ingested": bool(f["calls"]), "blocked_action_ids": f["blocked"]}
+                docs.append(c16.assess_run(cid, f["calls"], sa, f["decisions"], pins[mode], comp, as_of,
+                                           snapshot_id=snap_id))
+        if "C7" in controls:
+            if "C7" not in entries:
+                skipped.append(("C7", cid, "no C7 entry in the register"))
+            else:
+                pin7 = c7_pin(entries["C7"], reg_sha, reg_version, ov.get("C7", {}), expect_ep1)
+                exp = c7.expected_events(cid, f["actions"], f["refusals"],
+                                         workflow_events(entries["C7"], f["agents"], f["ours"]), f["stops"], pin7)
+                docs.append(c7.assess_run(cid, exp, f["ours"], [], pin7, as_of, snapshot_id=snap_id,
+                                          provenance=prov, condition=cond))
+        if "C9" in controls:
+            skipped.append(("C9", cid, "no AgentCore metric windows read from the snapshot (a stated gap)"))
+        for a in docs:
+            d = claim.as_dict(a)
+            path = os.path.join(root, "assessments", d["control_ref"], cid + ".json")
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(json.dumps(d, indent=1, sort_keys=True))
+            written.append((d["control_ref"], cid, d["requirement_verdict"], path))
+    return {"written": written, "skipped": skipped, "register": reg_path}
+
+
+def worst_exit(written):
+    worst = 0
+    for _, _, verdict, _ in written:
+        code = V.exit_code(verdict)
+        worst = code if code == 1 or (worst != 1 and code > worst) else worst
+    return worst

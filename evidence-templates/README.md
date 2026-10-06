@@ -23,6 +23,21 @@ network.
 - **Who owns what:** the accountable owner approves the thresholds; the builder does not approve
   their own work (section 10).
 
+**The pillars, and where each is in this pack.** One row per pillar; no row is empty. A cell that
+names a file is a claim only if that file is in the pack; `<...>` is filled at submit from what
+the pack holds, and a pillar with nothing yet says so in the status column.
+
+| Pillar | What we claim | Files that show it | Status at this submit |
+|---|---|---|---|
+| Close the gap (judgment) | The agents' dispositions carry deciding evidence and a reason, validated by code | `store/` judgment records, `answers/`, `gap-list.md` gap 1 | `<FULL / PARTIAL; if J2 did not ship, gap 1 is open and this row says so>` |
+| Build a control | C16, C7 and C9 each run against a dated, versioned register with two named runs | `register/`, `named-runs.md`, `assessments/`, `security-matrix.md` | `<per control: assessed / not assessed yet>` |
+| Handover proof | A stranger answers the six auditor questions from the pack alone | `prooflab query --incident`, `store/`, `gap-list.md` | `<per question: FULL / PARTIAL, and what arrives later>` |
+
+**Second enforcement point.** The same C16 core function runs at EP-1 (inline, in the agent) and at
+EP-2 (after the run, over the gateway's log). `<adapter-diff PR sha, its git diff --stat, and the
+core's sha256 at EP-1 and EP-2; filled at submit, and the two hashes must be equal>`. The
+full list of enforcement points is `security-matrix.md`.
+
 ## 2. Retention
 
 Kept for `<RETENTION_RULE>` from the submission date (`<YYYY-MM-DD>`). *(Hackathon note: the event
@@ -34,7 +49,18 @@ account is deleted after the event; this states the rule we would operate under 
    `python3 tools/manifest.py verify .` should print `OK` and exit 0; any changed byte makes it exit 1.
 2. Raw captures under `raw/` are never edited; a correction is a new file.
 3. The upload's key, version id and time are recorded in section 7 (set by AWS, not by us).
-4. **What this is not.** It is a checksum list. It is not a signature or hash chain, and the audit
+4. **Root published (unsigned).** At each submit (`<submit-1 / submit-2 / final>`) we posted the
+   SHA-256 of `MANIFEST.json` as a work note on ServiceNow incident `<INCnnnnnnn>`, a system we do
+   not control that stamps its own time. Check it in three steps: (a) recompute the hash from this
+   pack: `python3 -m prooflab pack root --recompute .` (same value as `shasum -a 256 MANIFEST.json`);
+   (b) compare it with the note's `MANIFEST sha256` line, and confirm the note's journal time
+   (`<NOTE_JOURNAL_TIME_UTC>`, also in `pack-root.json`) is before the deadline; (c) compare the note's
+   `S3 VersionId` with the version id of the uploaded object in section 7. `pack-root.json` (label,
+   both hashes, version id, incident, journal time, note hash) is a sidecar uploaded after the pack,
+   so it is not listed in the MANIFEST (the MANIFEST cannot contain the note that hashes it).
+   **Honest label:** root published (unsigned): this is a dated copy of one hash, not a signature or
+   a chain; per-producer signing is out of scope (masterclass slide section 4).
+5. **What this is not.** It is a checksum list. It is not a signature or hash chain, and the audit
    store has no verification route of its own, so there is no "ledger verification output" in this
    pack. We corroborate records against surfaces written outside the agents (the gateway's spans,
    the platform's decision records, the AWS invocation records) and report any mismatch in

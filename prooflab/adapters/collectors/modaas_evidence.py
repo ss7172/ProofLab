@@ -10,7 +10,7 @@ LOG_GROUP = "/modaas/evidence"
 
 
 def pull(ctx: capture.Ctx, cid: str, start: str, end: str) -> "dict | None":
-    if capture.skip_cid(cid):
+    if capture.skip_cid(cid, ctx):
         return None
     events, pages, complete, cmd = capture.filter_log_events(ctx, LOG_GROUP, '"%s"' % cid, start, end)
     rows = [{k: e.get(k) for k in ("timestamp", "ingestionTime", "logStreamName", "message")} for e in events]

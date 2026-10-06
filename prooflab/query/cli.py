@@ -6,6 +6,7 @@
     query --runs | --risk [ID] | --inventory | --claim
     common: --pack <dir> (default: current directory), --json
     assess [--control C ...] [--run CID] [--out DIR]   (assess_main) every control x run of the pack
+    assess --snapshot DIR [--register F] [--limit C7:k=v]   evaluate a refreshed snapshot, write assessments/
 Exit codes (prooflab.contract.verdicts.exit_code): 0 SATISFIED, 1 BREACHED, 2 INDETERMINATE / NOT_ASSESSED /
 unknown run / unsupported control / usage. Listings and incident answers exit 0.
 """
@@ -171,6 +172,10 @@ def build_parser():
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
+    from prooflab.query import grammar as G
+    if argv and argv[0].lower() in G.VERBS:       # PR-15b: ask "<question>" | controltest | auditor | trail
+        from prooflab.query import answer as A
+        return A.verb_main(argv)
     p = build_parser()
     try:
         args = p.parse_args(argv)
@@ -205,6 +210,29 @@ def main(argv=None):
     return E.exit_for(ans)
 
 
+def _assess_snapshot(args):
+    from prooflab.query import assess_snapshot as S
+    try:
+        res = S.assess_snapshot(args.snapshot, register=args.register, controls=[E.norm_control(c) for c in (
+            args.control or E.CONTROLS)], runs=args.run, default_mode=args.mode, overrides=args.limit,
+            expect_ep1=args.expect_ep1_decisions)
+    except (S.AssessError, ValueError) as exc:
+        print("prooflab assess --snapshot: %s" % exc, file=sys.stderr)
+        return 2
+    for control, cid, verdict, _path in res["written"]:
+        if args.json:
+            print(json.dumps({"control": control, "run": cid, "verdict": verdict}, sort_keys=True))
+        else:
+            print("%-4s %s %s" % (control, cid, verdict))
+    for control, cid, why in res["skipped"]:
+        print("skipped %s %s: %s" % (control, cid, why), file=sys.stderr)
+    if not res["written"]:
+        print("prooflab assess --snapshot: nothing assessed (no assessed ifabric- run in the catalogue; "
+              "pass --run <CID>)", file=sys.stderr)
+        return V.exit_code(V.NOT_ASSESSED)
+    return S.worst_exit(res["written"])
+
+
 def assess_main(argv=None):
     """`python3 -m prooflab assess`: the control test for every control x run in the pack (or the ones named).
 
@@ -218,10 +246,20 @@ def assess_main(argv=None):
     p.add_argument("--run", action="append", help="run id (CID) (repeatable; default: every run in the pack)")
     p.add_argument("--out", help="write each answer as JSON under this directory")
     p.add_argument("--json", action="store_true", help="one JSON line per answer")
+    p.add_argument("--snapshot", help="D1: assess a refreshed snapshot: run the evaluators over its store/ and "
+                   "derived/ and write <snapshot>/assessments/<C>/<cid>.json")
+    p.add_argument("--register", help="--snapshot: the frozen register file (default: newest register/versions/v*.yaml)")
+    p.add_argument("--mode", default="observe", help="--snapshot: C16 pin mode when a run has no EP-1 decision")
+    p.add_argument("--limit", action="append", default=[], metavar="C7:key=value",
+                   help="--snapshot: a limit the register text does not carry yet (repeatable)")
+    p.add_argument("--expect-ep1-decisions", action="store_true",
+                   help="--snapshot: C7 also expects one EP-1 decision per model call")
     try:
         args = p.parse_args(argv)
     except SystemExit as exc:
         return 0 if exc.code in (0, None) else 2
+    if args.snapshot:
+        return _assess_snapshot(args)
     pack = E.Pack(args.pack)
     controls = [E.norm_control(c) for c in (args.control or E.CONTROLS)]
     cids = args.run or [r["cid"] for r in E.runs_list(pack)["rows"] if r.get("cid")]

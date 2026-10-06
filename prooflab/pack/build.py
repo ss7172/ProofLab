@@ -3,6 +3,7 @@
   python3 -m prooflab pack build --out <dir> [--src <tree>] [--workdir <dir>] ...
   python3 -m prooflab pack scan <dir>          # exact-value scan only (exit 1 on any hit)
   python3 -m prooflab pack verify <dir>        # manifest.py verify
+  python3 -m prooflab pack root ...            # root published (unsigned): MANIFEST sha256 to ServiceNow (PR-32)
 
 Exact-value scan values are injected by the caller: PROOFLAB_SCAN_VALUES (one value per
 line) or --scan-values-stdin. This module never reads a secret file. A scan hit reports the
@@ -15,7 +16,7 @@ import os
 import shutil
 import sys
 
-PACK_TOP = ("store", "raw", "derived", "assessments", "register", "kit-crosscheck",
+PACK_TOP = ("store", "raw", "derived", "assessments", "findings", "register", "kit-crosscheck",
             "reviews", "servicenow", "adversarial", "answers", "architecture",
             "window.json", "live-lane-log.jsonl", "security-matrix.md", "pack-index.json")
 WORKDIR_FILES = ("register.yaml", "gap-list.md", "run-ids.txt", "sketch.png")
@@ -25,6 +26,10 @@ DROP_ANNOTATIONS = ("kubectl.kubernetes.io/last-applied-configuration",
                     "kopf.zalando.org/last-handled-configuration")
 MIN_VALUE_LEN = 6
 _IGNORE = ("__pycache__", "tests", ".pytest_cache")
+
+
+class SketchMissing(Exception):
+    """sketch.png is a deliverable (R-J-44): the build fails loudly rather than ship a pack without it."""
 
 
 def _repo_root():
@@ -215,6 +220,14 @@ def _stage(out, a):
                     _copy(reg, os.path.join(vdir, "register.yaml"))
         else:
             warnings.append("workdir has no register.yaml")
+    sketch = os.path.join(out, "sketch.png")
+    if not os.path.isfile(sketch):      # D2: the checked-in render of architecture/one-page.svg; never silently absent
+        tmpl = os.path.join(_repo_root(), "evidence-templates", "sketch.png")
+        if os.path.isfile(tmpl):
+            _copy(tmpl, sketch)
+        else:
+            raise SketchMissing("sketch.png: not in --workdir and no checked-in render at " + tmpl
+                                + " (render architecture/one-page.svg to it once)")
     readme = a.readme or os.path.join(_repo_root(), "evidence-templates", "README.md")
     if os.path.isfile(readme):
         _copy(readme, os.path.join(out, "README.md"))
@@ -247,7 +260,11 @@ def cmd_build(argv):
         print("pack: refusing a non-empty --out " + out, file=sys.stderr)
         return 2
     os.makedirs(out, exist_ok=True)
-    warnings = _stage(out, a)
+    try:
+        warnings = _stage(out, a)
+    except SketchMissing as exc:
+        print("pack: " + str(exc), file=sys.stderr)
+        return 2
     redactor = _load_redactor()
     if redactor:
         redactor(out)
@@ -301,6 +318,9 @@ def cmd_verify(argv):
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "root":
+        from prooflab.pack import root_publish
+        return root_publish.main(argv[1:])
     if argv and argv[0] in ("build", "scan", "verify"):
         verb, rest = argv[0], argv[1:]
     else:

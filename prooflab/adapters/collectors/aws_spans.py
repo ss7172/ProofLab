@@ -20,7 +20,7 @@ def build_query(cid: str, limit: int = INSIGHTS_MAX_ROWS) -> str:
 
 
 def pull(ctx: capture.Ctx, cid: str, start: str, end: str, log_group: str = LOG_GROUP) -> "dict | None":
-    why = capture.skip_cid(cid)
+    why = capture.skip_cid(cid, ctx)
     if why:
         return None
     query = build_query(cid)

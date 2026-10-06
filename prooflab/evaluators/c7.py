@@ -23,6 +23,12 @@ Matching (set semantics, so extras and duplicates cannot inflate coverage):
                      (event name = `phase` minus the "ifabric." prefix when it has a dot or is a contract WORKFLOW_PHASES
                      name such as intent / judgment / escalation / stop, else record_kind)
 Pulled records (platform_decision, observation, metric, EP-2 replays: authorship PLATFORM, or ep.id EP-2) never count.
+A tool call our rail cancels (EP-3 `rail_decision`, verdict BLOCK, inline.action block, outcome.real CANCELLED_RAIL;
+DG-1) is never made, so it has no gateway span and is not in E; its rail_decision is not in OBSERVED_KINDS, so it is
+not in O either (the register's C7 scope: rail records sit outside the expected population). It is neither a missing
+event nor coverage. assess_run lists the count as `measured.rail_cancelled_tool_calls` (diagnostic; None when
+`observed` arrives as a key map). In observe the rail only records (inline.action proceed): the call goes out, has
+its span, and is expected like any other tool call.
 Gap G-a (judged): consecutive expected events of one stream that were both observed, on `emitted.at`; a missing
 middle event makes both neighbours unmeasurable. G-b (diagnostic only): emitted.at minus the span end.
 """
@@ -138,6 +144,9 @@ def assess_run(run_id, expected, observed, link_gaps, pin, as_of, evaluator_sha2
     exp = sorted(expected or (), key=lambda e: e["key"])
     matched = [e for e in exp if e["key"] in obs]
     missing = [e["key"] for e in exp if e["key"] not in obs]
+    rail_cancelled = None if isinstance(observed, dict) else sum(
+        1 for r in observed or () if _g(r, "record_kind") == "rail_decision" and _g(r, "ep.id") == "EP-3"
+        and _g(r, "verdict") == "BLOCK" and _g(r, "inline.action") == "block")
     gaps = ["%s" % g for g in (link_gaps or ())]
     if source_complete is False:
         gaps.append("expected source incomplete (spans not ingested or run window not closed)")
@@ -197,7 +206,7 @@ def assess_run(run_id, expected, observed, link_gaps, pin, as_of, evaluator_sha2
                 "coverage_verdict": cov_verdict, "gap_verdict": gap_verdict, "gaps_measured": len(measured_gaps),
                 "gaps_unmeasurable": unmeasurable, "violating_gaps": len(violating),
                 "missing_events": len(missing), "G_a": measured_gaps, "G_b_diagnostic": latency,
-                "provenance": provenance, "condition": condition,
+                "provenance": provenance, "condition": condition, "rail_cancelled_tool_calls": rail_cancelled,
                 "first_span_at": first_span_at or (times[0] if times else "")}
     suff = "MISSING" if not n_exp else ("PARTIAL" if gaps else "COMPLETE")
     tol = lim["exception_tolerance"]

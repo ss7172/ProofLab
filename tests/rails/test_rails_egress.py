@@ -48,6 +48,17 @@ def test_raw_ip_connect_without_allowed_resolution_is_flagged():
     assert "198.51.100.4" in hosts and "203.0.113.9" in hosts
 
 
+def test_flag_names_host_and_port_only():
+    n = len(SINK)
+    sys.audit("socket.getaddrinfo", "dest-a.invalid", 8443, 0, 0, 0)
+    sys.audit("socket.connect", None, ("198.51.100.77", 9000))
+    new = SINK[n:]
+    reasons = [r["reason"] for r in new]
+    assert "RT-03 FLAG: egress.unlisted x1 (socket.getaddrinfo) dest-a.invalid:8443" in reasons
+    assert "RT-03 FLAG: egress.unlisted x1 (socket.connect) 198.51.100.77:9000" in reasons
+    assert [r["rail.values"] for r in new] == [["dest-a.invalid"], ["198.51.100.77"]]   # values stay bare hosts
+
+
 def test_hook_never_raises_on_odd_args():
     sys.audit("socket.connect", None, "/tmp/unix.sock")
     sys.audit("socket.getaddrinfo", None, 80, 0, 0, 0)

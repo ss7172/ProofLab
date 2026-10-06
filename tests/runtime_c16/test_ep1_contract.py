@@ -18,6 +18,7 @@ def test_tier_none_uses_pin_default_tier():
         ev = FakeEvent()
         ad.on_before_model_call(ev)
         assert ev.cancel is False and not ad.tally.halted
+        ad.on_after_model_call(FakeEvent(usage={"inputTokens": 1, "outputTokens": 1}))   # the decision is emitted
         d = rec.of("decision")[0]
         assert d["verdict"] == "ALLOW" and d["threshold.tier"] == "default"
         assert "invalid-question" not in d["reason"]
@@ -28,6 +29,7 @@ def test_tier_explicit_wins_over_default():
     with use_real():
         ad, rec = _adapter(tier="A")
         ad.on_before_model_call(FakeEvent())
+        ad.on_after_model_call(FakeEvent(usage={"inputTokens": 1, "outputTokens": 1}))
         assert rec.of("decision")[0]["threshold.tier"] == "A"
 
 
