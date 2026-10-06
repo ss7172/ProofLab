@@ -77,7 +77,7 @@ function ribbon(compact) {
   return h("div", {}, h("div", { class: "svgwrap" }, g), h("p", { class: "dim", style: "margin:4px 0 0;font-size:12px" }, (Date.parse(r.frozen_at) < Date.parse(r.approval.at) && Date.parse(r.approval.at) < Date.parse(r.first_assessed_run_at) ? "✓ frozen, then approved, then the first assessed run" : "✗ the order frozen, approved, first assessed run does NOT hold") + " · same threshold version for the named runs is shown on each answer"));
 }
 function answerView(key) {
-  const a = D.answers[key || "C16|run|FM-B"]; if (!a) return h("div", { class: "page" }, card("No such answer", "Try ⌘K."));
+  const a = D.answers[key || firstKey()]; if (!a) return h("div", { class: "page" }, card("No such answer", "Try ⌘K."));
   const isC16 = a.control.ref === "C16", ser = a.measurement.series, r = a.rule, aq = a.audit_question;
   const group = (title, keys) => h("section", {}, h("div", { class: "label", style: "margin-bottom:6px" }, title), keys.map(([k, label]) => h("div", { class: "q" + (aq[k].flag === "FLAG" ? " flag" : "") }, h("span", { class: "label" }, label), aq[k].text, " ", (aq[k].refs || []).slice(0, 2).map(r => [refEl(r), " "]))));
   const loops = a.human_loops || [];
@@ -102,15 +102,16 @@ function answerView(key) {
         card("Gaps for this scope", a.gaps.length ? a.gaps.map(gp => h("div", { class: "dim" }, h("b", { class: "mono" }, gp.id + " "), gp.text)) : h("span", { class: "muted" }, "none")))));
 }
 function ledger(alias) {
-  const run = alias || "FM-B", recs = D.records[run] || [], c16 = recs.filter(r => r["control.ref"] === "C16"), sample = c16[c16.length - 1];
-  return h("div", { class: "page" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "label" }, "Evidence Ledger · bound records (ifabric.evidence/v1)"), h("h1", { class: "h1" }, "A log is for an engineer. Evidence is for a stranger.")), h("div", { class: "row" }, ["FM-A", "FM-B", "FM-C", "FM-D"].map(a => h("a", { class: "chip btn" + (a === run ? " trace" : ""), href: "#/ledger/" + a }, a)))),
+  const run = alias || ((P.runs || [])[0] || {}).alias, recs = D.records[run] || [], c16 = recs.filter(r => r["control.ref"] === "C16"), sample = c16[c16.length - 1];
+  if (!sample) return h("div", { class: "page" }, card("No records", "No C16 records for run " + run + " in this pack."));
+  return h("div", { class: "page" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "label" }, "Evidence Ledger · bound records (ifabric.evidence/v1)"), h("h1", { class: "h1" }, "A log is for an engineer. Evidence is for a stranger.")), h("div", { class: "row" }, (P.runs || []).map(r => r.alias).map(a => h("a", { class: "chip btn" + (a === run ? " trace" : ""), href: "#/ledger/" + a }, a)))),
     h("div", { class: "grid2" }, card("LOG — as captured (gateway stdout, " + sample["call.id"] + ")", rawHolder(sample.source.raw_ref), h("p", { class: "muted", style: "font-size:11.5px" }, "Written for an engineer next week. It shows something happened, not that it was allowed.")),
       card("EVIDENCE — the same call, bound", kv(["run.id", "call.id", "control.id", "threshold.version", "threshold.value", "measured.value", "verdict", "actor.id", "emitted.at"].map(k => [k, h("span", { class: "mono" }, k === "verdict" ? VL[sample[k]] : typeof sample[k] === "number" ? fmt(sample[k]) : sample[k])]).concat([["seal", h("span", { class: "muted" }, "out of scope")], ["verify", h("button", { class: "chip btn", onclick: () => inspect("record:" + sample.evidence_id) }, "Open in inspector · recompute sha256")]])))),
     card(recs.length + " records for " + run, h("table", { class: "t" }, h("thead", {}, h("tr", {}, ["", "run.id", "call/event", "control", "version", "measured.value", "verdict", "decision", "actor.id", "emitted.at"].map(x => h("th", {}, x)))),
       h("tbody", {}, recs.map(r => h("tr", { class: "click", onclick: () => inspect("record:" + r.evidence_id) }, h("td", {}, ticks(r.record_kind === "model-call" ? ["R", "A", "T"] : ["R", "A"])), h("td", { class: "mono" }, r["run.id"]), h("td", { class: "mono" }, r["call.id"] || r.facts.expected_event), h("td", { class: "mono" }, r["control.ref"]), h("td", { class: "mono" }, r["threshold.version"]), h("td", { class: "mono" }, fmt(r["measured.value"])), h("td", {}, vpill(r.verdict)), h("td", {}, r.decision ? tp(r.decision) : ""), h("td", { class: "mono", style: "font-size:11.5px" }, r["actor.id"]), h("td", { class: "mono", style: "font-size:11.5px" }, hms(r["emitted.at"]))))))));
 }
 function auditor(id) {
-  const a = D.auditor[id || "INC0090216"], picker = h("div", { class: "row" }, Object.keys(D.auditor).map(k => h("a", { class: "chip btn" + (k === a.scope.id ? " trace" : ""), href: "#/auditor/" + k }, k)));
+  const a = D.auditor[id || ((P.auditor || [])[0] || {}).id], picker = h("div", { class: "row" }, Object.keys(D.auditor).map(k => h("a", { class: "chip btn" + (k === a.scope.id ? " trace" : ""), href: "#/auditor/" + k }, k)));
   const qn = [["who", "1 WHO acted"], ["what", "2 WHAT it touched"], ["authorized", "3 AUTHORIZED"], ["approved", "4 APPROVED"], ["integrity", "5 INTEGRITY"], ["reconstruct", "6 RECONSTRUCT"]];
   return h("div", { class: "page" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "label" }, "Six auditor questions · answered from the Evidence Pack alone"), h("h1", { class: "h1" }, a.title), h("p", { class: "sub mono" }, "window " + a.window.start + " → " + a.window.end)), picker),
     h("div", { class: "grid3" }, qn.map(([k, t]) => { const q = a.questions[k]; return h("section", { class: "card" }, h("div", { class: "row", style: "justify-content:space-between" }, h("b", {}, t), tp(q.status)), h("p", { style: "margin:6px 0 8px" }, q.answer), q.facts.map(f => h("dl", { class: "fact" + (f.flag === "FLAG" ? " flag" : "") }, h("dt", {}, f.label), h("dd", {}, f.value, " ", (f.refs || []).slice(0, 1).map(refEl)))), q.gaps.length ? h("div", { class: "muted", style: "font-size:11.5px;margin-top:6px" }, "gap " + q.gaps.join(", ") + " — stated, not hidden") : null); })));
@@ -175,7 +176,11 @@ function rail(active) {
     h("div", { class: "railnote" }, h("div", { class: "label" }, "Judging levels"), h("div", { class: "lv" }, lvl), "This console sees everything and can refuse nothing."));
 }
 function go(ref) { if (!ref) return; if (ref.startsWith("#")) { location.hash = ref; return; } if (ref.startsWith("answer:")) location.hash = "#/answer/" + encodeURIComponent(ref.slice(7)); else inspect(ref); }
-function route() { const [, v = "answer", arg] = location.hash.split("/"); const view = VIEWS[v] ? v : "answer"; rail(view); $("main").replaceChildren(VIEWS[view](arg ? decodeURIComponent(arg) : undefined)); $("main").scrollTop = 0; }
+function route() { const [, v = "answer", arg] = location.hash.split("/"); const view = VIEWS[v] ? v : "answer"; rail(view);
+  const page = VIEWS[view](arg ? decodeURIComponent(arg || "") : undefined);
+  const a0 = view === "answer" ? D.answers[arg ? decodeURIComponent(arg) : firstKey()] : null;
+  if (a0 && a0.source && ["UNVERIFIED", "MODIFIED"].includes(a0.source.manifest_status)) page.prepend(h("div", { class: "ribbon bad" }, a0.source.manifest_status + ": this pack no longer matches its MANIFEST"));
+  $("main").replaceChildren(page); $("main").scrollTop = 0; }
 const firstKey = () => ((P.answers || [])[0] || {}).key;
 const SUGG = () => (P.answers || []).filter(a => /\|run\|/.test(a.key)).map(a => ["Show me control " + a.control_ref.slice(1) + " for run " + a.scope, "#/answer/" + encodeURIComponent(a.key)])
   .concat((P.auditor || []).map(a => ["Six questions for " + a.id, "#/auditor/" + a.id]));
@@ -197,7 +202,14 @@ $("integrityBtn").onclick = async () => { const j = await api("/api/v1/integrity
     h("p", { class: "muted" }, "Checksums, not signatures or hash chains (out of scope). A stranger runs: python3 tools/manifest.py verify .")); openDrawer(); };
 document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; } if (e.target.tagName === "INPUT") return;
   if (e.key === "Escape") { $("drawer").classList.remove("open"); closePalette(); } else if (e.key === "/") { e.preventDefault(); openPalette(); } else if (e.key === "t") $("themeBtn").click(); });
+async function startSession() {
+  const m = /^#k=([A-Za-z0-9_-]+)$/.exec(location.hash);
+  if (!m) return;
+  const r = await fetch("/api/v1/session", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: m[1] }) });
+  history.replaceState(null, "", location.pathname + (r.ok ? "#/answer" : "#/session-failed"));
+}
 async function loadAll() {
+  await startSession();
   const pj = await api("/api/v1/pack"); P = pj.data; META = pj.meta || {}; VOCAB = META.vocab || {};
   VL = Object.fromEntries(Object.entries(VOCAB).map(([k, v]) => [k, v.label])); GLYPH = Object.fromEntries(Object.entries(VOCAB).map(([k, v]) => [k, v.glyph]));
   const jobs = [];
