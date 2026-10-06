@@ -766,3 +766,21 @@ AgentCore `Errors`, `SystemErrors`, `UserErrors` and `Throttles` stayed 0 on eve
 **Status:** open, accepted; stated, not hidden.
 
 ---
+
+## B38. N2c's C7 breach is a join limit for a guardrail-blocked call
+
+**What's missing:** a join between our record of a call the gateway guardrail blocked and the gateway's span for that call.
+
+**Why:** in N2c (`ifabric-run-1791301875-f821a3`, S2 observe, conflicting context), ifabric-network's model call `call:44bb79f0-db09-406a-aad0-8c2012fc4f04` was blocked by the gateway guardrail. Our EP-1 recorded it (`model call: BLOCKED_GUARDRAIL`, 15:51:53.852Z, after an EP-1 ALLOW at 15:51:53.021Z), and the gateway wrote an `llm` span with 0 input tokens at 15:51:53.4Z. The C7 evaluator did not match the two, so it counts the call as unrecorded.
+
+**Evidence:** ops-lane `b5-report.md` §4.1; the N2c C7 assessment (36/37 covered, one missing key); the run's `raw/aws-spans/` capture.
+
+**Affects:** C7 for N2c only.
+
+**Impact:** N2c's C7 shows BREACHED 36/37. We keep the verdict exactly as computed. We did not change the evaluator after the run and did not notify the finding; the planned C7 breach is N4 (INC0010351, closed by the N5 re-test). The blocked call also shortened the S2 loop (9 calls, 14,063 tokens), so N2c's spend is not comparable with N2b or P5.
+
+**Next:** with one more day, C7 would key guardrail-blocked calls the same way on both sides (or count a BLOCKED_GUARDRAIL record as coverage) as a declared new rule version, then re-test.
+
+**Status:** open, declared.
+
+---
