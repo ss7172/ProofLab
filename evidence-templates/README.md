@@ -98,6 +98,23 @@ answers.
 - **C7:** `<expected-event source, reconciliation and gap rule, from the register>`
 - **C9:** `<baseline, closed UTC windows, relative change, crossings; a missing window is a monitoring gap>`
 
+### Open the console (optional, read-only)
+
+The same stored answers, the six auditor questions, the run catalogue and the records in a browser, on
+your own machine, nothing leaves it. From the folder that holds `prooflab/`:
+
+```
+export PYTHONDONTWRITEBYTECODE=1
+python3 -m prooflab console --data pack --pack .
+```
+
+It prints a one-time URL on `127.0.0.1`; open it, then type a question (for example `control 16 for run <CID>`).
+It refuses to start on synthetic data, and its banner says whether `MANIFEST.json` still matches. The console
+only shows what the pack stores: `answers/` holds the answers composed at build by the same engine as the
+section 4 commands (C16 and C7 per run), `pack-index.json` is its table of contents, and `records/` its
+evidence records. Anything not stored there (for example a window or an auditor view not yet composed) is
+answered "nothing stored"; use the section 4 commands for it. The section 4 commands are the authority.
+
 ## 5. Layout
 
 ```
@@ -110,6 +127,8 @@ register/            the frozen registers, the date proofs, the approval
 raw/                 captures as pulled (redacted by our collector)
 store/               the stitched evidence records
 assessments/         one JSON per control and scope
+answers/             stored answers the console shows (composed at build by the query engine)
+pack-index.json      the console's table of contents; records/ and projected-assessments/ are its projections
 adversarial/         pre-registered defence, observed outcome, what broke, what changed
 servicenow/          delivery log, incidents, Assurance Agent records
 prooflab/            the tool (standard library only)

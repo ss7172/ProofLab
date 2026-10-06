@@ -328,6 +328,12 @@ class PackSource(_Base):
             for rec in read_jsonl(path):
                 self._check(rec, os.path.relpath(path, self.root), allow_synthetic)
                 self._records.append(rec)
+        for path in self._glob("records/*/*.json"):      # the projector writes one document per record
+            if os.path.islink(path):
+                continue
+            rec = read_json(path)
+            self._check(rec, os.path.relpath(path, self.root), allow_synthetic)
+            self._records.append(rec)
         self._case_docs = []
         self._case_refused = []
         for entry in self.index.get("cases", []):
@@ -369,16 +375,36 @@ class PackSource(_Base):
                 return run
         return None
 
-    def run_catalogue(self):
-        rows = []
-        path = os.path.join(self.root, "derived", "run-catalogue.jsonl")
+    def declared_window(self):
+        """window.json as declared in the pack ({start, end, note} or None); the console shows it, never edits it."""
+        path = os.path.join(self.root, "window.json")
         if os.path.isfile(path) and not os.path.islink(path):
-            for r in read_jsonl(path):
-                rows.append({"alias": r.get("alias") or r.get("run_alias"), "cid": r.get("cid") or r.get("run_id"),
-                             "provenance": r.get("provenance"), "source": r.get("source"),
-                             "assessed": r.get("assessed"), "in_window": r.get("in_window"),
-                             "label": r.get("label")})
+            try:
+                w = read_json(path)
+            except ValueError:
+                return None
+            w = w.get("event_window") if isinstance(w.get("event_window"), dict) else w
+            return {"start": w.get("start"), "end": w.get("end"), "note": w.get("note")}
+        return None
+
+    def run_catalogue(self):
+        """The run catalogue with its honesty fields, from the same engine as `query --runs` (one label source)."""
+        from prooflab.query import engine as E
+        res = E.runs_list(E.Pack(self.root))
+        win = self.declared_window() or {}
+        aliases = dict((e.get("cid"), e.get("alias")) for e in self.index.get("runs", []))
+        rows = []
+        for r in res["rows"]:
+            start = r.get("start")
+            inside = None
+            if start and win.get("start") and win.get("end"):
+                inside = E._utc_key(win["start"]) <= E._utc_key(start) <= E._utc_key(win["end"])
+            rows.append({"alias": aliases.get(r["cid"]), "cid": r["cid"], "provenance": r.get("provenance"),
+                         "source": res["source"], "assessed": r.get("assessed"), "in_window": inside,
+                         "label": r.get("label"), "first_seen": start})
+        if rows:
             return rows
+        rows = []
         for entry in self.index.get("runs", []):
             rows.append({"alias": entry.get("alias"), "cid": entry.get("cid"), "provenance": entry.get("provenance"),
                          "source": "pack-index", "assessed": None, "in_window": None, "label": entry.get("purpose")})
