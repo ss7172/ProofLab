@@ -185,7 +185,7 @@ def _insights_ts(row: dict, span: dict):
     import datetime
     nano = span.get("endTimeUnixNano") or span.get("startTimeUnixNano")
     try:
-        t = datetime.datetime.utcfromtimestamp(int(nano) / 1e9)
+        t = datetime.datetime.fromtimestamp(int(nano) / 1e9, datetime.timezone.utc)
         return t.strftime("%Y-%m-%dT%H:%M:%S.") + "%06dZ" % t.microsecond
     except (TypeError, ValueError, OverflowError, OSError):
         pass
