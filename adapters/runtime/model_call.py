@@ -380,8 +380,7 @@ class ModelCallAdapter(object):
         key = self._key
         if t.consume_own_cancel():
             t.release(key)          # our own cancel looks like a served 0-token call: not one
-            held = self._release_held(key, None, "no call was dispatched (cancelled)")
-            return StageResult(records=held, source="c16") if held else None
+            return None             # (nothing is held: rails and halt cancel before a decision is held)
         exc = ctx.get("exception")
         call_id = self.capture.take()
         finish = self.finish.take()
