@@ -16,7 +16,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from http.client import HTTPException
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Sequence
 
 TIMEOUT_SECONDS = 15
 TOKEN_REFRESH_MARGIN_SECONDS = 60
@@ -157,11 +157,22 @@ class ServiceNowClient:
     def get_incident(self, sys_id: str) -> dict:
         return self._api("GET", f"/api/now/table/incident/{urllib.parse.quote(sys_id)}")["result"]
 
+    def get_incident_display(self, sys_id: str, fields: Sequence[str]) -> dict:
+        """Chosen fields as display values (owner name, state label, journal text).
+        Reference links are excluded so references come back as plain display strings."""
+        return self._api("GET", f"/api/now/table/incident/{urllib.parse.quote(sys_id)}", {
+            "sysparm_fields": ",".join(fields), "sysparm_display_value": "true",
+            "sysparm_exclude_reference_link": "true"})["result"]
+
+    def add_work_note(self, sys_id: str, text: str) -> dict:
+        """Append one work note; no other field is sent."""
+        return self._api("PATCH", f"/api/now/table/incident/{urllib.parse.quote(sys_id)}",
+                         body={"work_notes": text})["result"]
+
     def get_incident_notes_text(self, sys_id: str) -> dict:
         """Work notes / comments as display text. Readable by itil even when
         sys_journal_field rows are hidden by ACLs."""
-        return self._api("GET", f"/api/now/table/incident/{urllib.parse.quote(sys_id)}", {
-            "sysparm_fields": "work_notes,comments", "sysparm_display_value": "true"})["result"]
+        return self.get_incident_display(sys_id, ("work_notes", "comments"))
 
     def list_work_notes(self, sys_id: str) -> List[dict]:
         """Journal entries (comments/work notes) on an incident, oldest first."""

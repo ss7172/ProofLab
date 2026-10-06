@@ -37,6 +37,14 @@ escalation only has to produce a finding in the format below.
 | `detected_at` | ISO-8601 UTC |
 | `evidence` | optional list of record references (strings) |
 | `kind` | optional, default `finding` |
+| `measured` | optional `{"value": 10800, "unit": "tokens"}` |
+| `limit` | optional `{"value": 10000, "operator": "<=", "unit": "tokens"}` (`<=` `<` `>=` `>` `==`; same unit as `measured`) |
+| `register` | optional `{"version_date": "2026-10-01", "owner": "<SNOW_OWNER_USER>", "approval": "<ref>"}` |
+| `trace` | optional, ≤ 200 steps `{"at", "actor", "zone", "action", "decision", "ref", "run_id"}`; `zone` ∈ `customer`, `it`, `network`, `gateway` |
+
+The four optional keys never change the finding id. They feed the Assurance Agent's
+movement and policy checks (`assurance_checks.py`); without them those checks report
+"unknown", never pass. Text values: ≤ 200 characters, no newlines.
 
 Same control + threshold version + scope + kind ⇒ same finding id ⇒ the same
 incident is reused, never duplicated. Each C9 drift crossing should be its own
@@ -65,13 +73,38 @@ On macOS python.org builds, set `export SSL_CERT_FILE=$(python3 -m certifi)` fir
 
 Exit codes: `0` ok, `1` ServiceNow problem, `2` bad input or configuration.
 
+## Assurance Agent (Nemotron) and dashboard
+
+```bash
+export MODAAS_GATEWAY_URL=<modaas-agw URL>  MODAAS_MODEL_ALIAS=<approved Nemotron alias>
+python3 -m prooflab.servicenow analyze --finding f.json            # Nemotron analysis -> one work note
+python3 -m prooflab.servicenow case --finding f.json --cutoff ... --out evidence/servicenow/cases
+python3 -m prooflab.servicenow serve --finding f.json --cutoff ...  # read-only panel on 127.0.0.1:8765
+```
+
+- `analyze` calls Nemotron **only** through the governed gateway (or the AgentCore runtime via
+  `CallableAnalyzer`). It checks every fact field against ground truth and writes one note only if
+  the checks pass. Each run is recorded in `evidence/servicenow/assurance-agent/` and as `ANALYSIS_*`
+  in the log.
+- The analysis has five sections computed by `assurance_checks.py` (not the model): agent movement
+  (route rule: no direct network → customer hop), decision trace, evidence, policy alignment
+  (P1–P8) and outcome validation (V1–V6). Each check is pass / fail / unknown. Three summary lines
+  go into the note; the full detail is in the case JSON.
+- `case` and `serve` produce the dashboard JSON (`ifabric.servicenow.case/v1`, additive: `movement`,
+  `decision_trace`, `evidence`, `policy_alignment`, `outcome_validation`); the panel lives in `panel/`
+  (theme via `data-ifab-theme="dark|light"` on the container). `examples/cases.sample-fake-data.json` holds
+  four fake-data cases covering every state, for building and testing a dashboard.
+- Full spec: `evidence-console-plan/08-SERVICENOW-AND-ASSURANCE-AGENT.md` (single source of truth; it replaces the former handoff 2 and keeps its section numbers).
+
 ## Delivery states (in the log)
 
 `INTENT` → `SENT` → `DELIVERED` (read-back matched correlation id and assignee) ·
 `FAILED` · `OUTCOME_UNKNOWN` (request may have landed; reconciled by correlation id) ·
 `DRY_RUN` · `RESPONDED` (owner note or field change, with actor and time) ·
 `AWAITING_RESPONSE` · `NO_RESPONSE_OBSERVED` (only after the cutoff) ·
-`RESPONSE_UNKNOWN` (history unreadable — not treated as silence) · `NOT_DELIVERED`.
+`RESPONSE_UNKNOWN` (history unreadable — not treated as silence) · `NOT_DELIVERED` ·
+`ANALYSIS_WRITTEN` / `SKIPPED` / `REFUSED` / `BLOCKED` / `FAILED` / `UNVERIFIED` / `NOT_DELIVERED`
+(Assurance Agent runs).
 
 A human reply is not required by the hackathon; the alert, the named recipient
 and the observed response or silence are what get recorded.

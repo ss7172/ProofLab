@@ -62,6 +62,52 @@ def test_export_command_writes_evidence_file(env, capsys):
     assert len(files) == 1 and json.loads(files[0].read_text())["incident"]["number"].startswith("INC")
 
 
+def test_case_command_prints_case_json_and_writes_snapshot(env, capsys):
+    fake, finding_file, tmp_path = env
+    assert main(["notify", "--finding", str(finding_file)]) == 0
+    capsys.readouterr()
+    out_dir = tmp_path / "cases"
+    assert main(["case", "--finding", str(finding_file), "--cutoff", "2099-01-01T00:00:00Z",
+                 "--out", str(out_dir), "--aict-url", "https://example/aict"]) == 0
+    captured = capsys.readouterr()
+    case = json.loads(captured.out)
+    assert case["schema"] == "ifabric.servicenow.case/v1"
+    assert case["servicenow"]["status"] == "ok" and case["response"]["state"] == "AWAITING_RESPONSE"
+    assert case["links"]["aict"] == "https://example/aict"
+    assert len(list(out_dir.glob("*.json"))) == 1 and "sha256" in captured.err
+
+
+def test_case_command_reports_unreachable_servicenow_with_exit_1(env, capsys):
+    fake, finding_file, _ = env
+    fake.stop()
+    assert main(["case", "--finding", str(finding_file), "--cutoff", "2099-01-01T00:00:00Z"]) == 1
+    assert json.loads(capsys.readouterr().out)["servicenow"]["status"] == "unreachable"
+
+
+def test_analyze_command_runs_the_nemotron_agent(env, capsys, monkeypatch):
+    from prooflab.tests.fake_gateway import FakeGateway, completion
+    fake, finding_file, tmp_path = env
+    gateway = FakeGateway().start()
+    try:
+        monkeypatch.setenv("MODAAS_GATEWAY_URL", gateway.base_url)
+        monkeypatch.setenv("MODAAS_MODEL_ALIAS", "nemotron-super-120b")
+        assert main(["notify", "--finding", str(finding_file)]) == 0
+        capsys.readouterr()
+        gateway.replies.append(completion("not a note"))
+        gateway.replies.append(completion("still not a note"))
+        assert main(["analyze", "--finding", str(finding_file), "--out", str(tmp_path / "a")]) == 1
+        assert json.loads(capsys.readouterr().out)["state"] == "REFUSED"
+    finally:
+        gateway.stop()
+
+
+def test_analyze_command_requires_gateway_settings(env, capsys, monkeypatch):
+    _, finding_file, _ = env
+    monkeypatch.delenv("MODAAS_GATEWAY_URL", raising=False)
+    assert main(["analyze", "--finding", str(finding_file)]) == 2
+    assert "MODAAS_GATEWAY_URL" in capsys.readouterr().err
+
+
 def test_notify_rejects_invalid_finding(env, capsys):
     _, finding_file, _ = env
     finding_file.write_text(json.dumps({**FINDING, "verdict": "MAYBE"}))
