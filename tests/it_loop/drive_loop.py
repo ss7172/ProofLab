@@ -10,7 +10,10 @@ Strands event loop (AfterToolsEvent.end_turn, cancel_tool). What is fake: the mo
 new query on every turn while results remain in --results, then gives a J2 answer citing E1), the tool (a local @tool
 under the wire name; each result is `e` = no evidence, total_hits 0, or `h` = the INC-4401 hit) and the store.
 --no-limit derives the pin from the register with the tool_no_evidence_limit line removed. --freeze adds the
-maintenance_freeze constraint to the ticket context. Nothing calls AWS, a cluster or a model.
+maintenance_freeze constraint to the ticket context. PR-38: --negotiate RESOLUTION sends the Gateway C payload
+(orchestrator negotiate_payload shape; '' = an empty proposal); --nonjson makes the final answer bullets with no JSON
+and --block-reask answers the J2 re-ask as the platform guardrail does (content_filter, 0/0 tokens, no text).
+Nothing calls AWS, a cluster or a model.
 Writes {"records", "dispatched", "model_calls", "result"}.
 """
 import importlib.util
@@ -33,6 +36,7 @@ HIT = {"query": "SITE-DEN-12", "category": "incidents", "total_hits": 1, "result
 ANSWER = "- INC-4401 per RB-EDGE-SLICE-DEGRADATION\n" + json.dumps({
     "disposition": "auto-resolve", "deciding_evidence": ["E1"], "reason": "INC-4401 runbook RB-EDGE-SLICE-DEGRADATION",
     "reversible_step": "apply RB-EDGE-SLICE-DEGRADATION step 1; undo by reverting it"})
+NONJSON = "- INC-4401 is open for SITE-DEN-12\n- runbook RB-EDGE-SLICE-DEGRADATION applies [EVIDENCE E1]\n- next: confirm"
 
 
 class Store(BaseHTTPRequestHandler):
@@ -50,8 +54,8 @@ class Store(BaseHTTPRequestHandler):
 
 
 def main(argv):
-    opt = dict(zip(argv[::2], argv[1::2]))
-    flags = set(a for a in argv if a in ("--no-limit", "--freeze"))
+    flags = set(a for a in argv if a in ("--no-limit", "--freeze", "--nonjson", "--block-reask"))
+    opt = dict(zip([a for a in argv if a not in flags][::2], [a for a in argv if a not in flags][1::2]))
     results = list(opt.get("--results", ""))
     plan = list(results)
 
@@ -62,7 +66,7 @@ def main(argv):
         """Calls the tool (a new query each turn) while results remain in the plan, then answers."""
 
         def __init__(self):
-            self.n = 0
+            self.n, self.answered, self.finish, self.prompts = 0, False, None, []
 
         def update_config(self, **kw):
             pass
@@ -79,14 +83,23 @@ def main(argv):
 
         async def stream(self, messages, tool_specs=None, system_prompt=None, **kw):
             self.n += 1
+            last = messages[-1]["content"] if messages else []
+            self.prompts.append(" ".join(c.get("text", "") for c in last if isinstance(c, dict)))
             yield {"messageStart": {"role": "assistant"}}
+            if self.answered and "--block-reask" in flags:   # the guardrail: content_filter, 0/0, no text
+                self.finish.record("content_filter")
+                yield {"messageStop": {"stopReason": "end_turn"}}
+                yield {"metadata": {"usage": {"inputTokens": 0, "outputTokens": 0, "totalTokens": 0},
+                                    "metrics": {"latencyMs": 0}}}
+                return
             if len(DISPATCHED) < len(plan):
                 yield {"contentBlockStart": {"start": {"toolUse": {"toolUseId": "tu-%d" % self.n, "name": WIRE}}}}
                 yield {"contentBlockDelta": {"delta": {"toolUse": {"input": json.dumps({"query": "q%d" % self.n})}}}}
                 yield {"contentBlockStop": {}}
                 yield {"messageStop": {"stopReason": "tool_use"}}
             else:
-                yield {"contentBlockDelta": {"delta": {"text": ANSWER}}}
+                self.answered = True
+                yield {"contentBlockDelta": {"delta": {"text": NONJSON if "--nonjson" in flags else ANSWER}}}
                 yield {"contentBlockStop": {}}
                 yield {"messageStop": {"stopReason": "end_turn"}}
             yield {"metadata": {"usage": {"inputTokens": 50, "outputTokens": 10, "totalTokens": 60},
@@ -118,7 +131,10 @@ def main(argv):
         os.environ.pop(k, None)
 
     from adapters.runtime import model_call
-    model_call.make_gateway_model = lambda *a, **k: model
+    def _gm(capture, finish, *a, **k):
+        model.finish = finish   # the real FinishCapture: the stub records content_filter on it, as format_chunk does
+        return model
+    model_call.make_gateway_model = _gm
     import ifabric_app
     ifabric_app.load_tools = lambda: [lookup]   # stands in for MCPClient.list_tools_sync()
     spec = importlib.util.spec_from_file_location("it_role", os.path.join(SRC, "agents", "ifabric-it", "role.py"))
@@ -128,13 +144,19 @@ def main(argv):
     ctx = {"question": "Customer ticket: latency on the 5G edge slice. Resolve it."}
     if "--freeze" in flags:
         ctx["constraints"] = {"maintenance_freeze": True}
-    payload = {"context": ctx,
+    payload = {"context": ctx}
+    if "--negotiate" in opt:   # Gateway C: run.negotiate_payload's shape (the IT agent reads payload["negotiate"])
+        payload = {"negotiate": {"correlation_id": run_id, "handoff_id": run_id + ":h3", "traceparent": None,
+                                 "proposal": {"resolution": opt["--negotiate"], "change_risk": "low",
+                                              "disposition": "auto-resolve"}}}
+    payload.update({
                "ifabric": {"run_id": run_id, "handoff_id": run_id + ":h1", "tier": "default", "tally_tokens": 0,
-                           "tally_calls": 0, "from": "orchestrator"}}
+                           "tally_calls": 0, "from": "orchestrator"}})
     result = role.app.handlers["main"](payload, types.SimpleNamespace(session_id=run_id + "-" + "0" * 32))
     srv.shutdown()
     with open(opt["--out"], "w") as fh:
         json.dump({"records": STORE, "dispatched": DISPATCHED, "model_calls": model.n, "result": result,
+                   "prompts": model.prompts,
                    "pin": json.loads(os.environ["IFABRIC_PIN_JSON"])}, fh, default=str)
     return 0
 
