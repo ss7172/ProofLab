@@ -341,14 +341,13 @@ def build(spec):
                 b = r.get("outcome.real")
                 if b == "BLOCKED_GUARDRAIL":
                     blocked.append(b)
-                    client.emit(W.emit_client.lifecycle_record(ctx, "guardrail-blocked", b, b, {"outcome.real": b},
+                    client.emit(W.emit_client.lifecycle_record(ctx, "guardrail-blocked", b, None, {"outcome.real": b},
                                                                "EP-7", "platform guardrail"))
                 return x
 
-            def ask(p):   # J2's one re-ask; None when the platform guardrail blocked it (J2 then derives in code)
-                n = len(blocked)
-                t = "" if tally.halted else str(agent(p)).strip()
-                return None if len(blocked) > n else t
+            def ask(p):   # J2's one re-ask; None after any guardrail block, this one or the task's (J2 derives in code)
+                t = "" if tally.halted or blocked else str(agent(p)).strip()
+                return None if blocked else t
             mc = W.model_call.ModelCallAdapter(
                 e.run_id, st["pin"], tier=e.tier, tally=tally, emit=emit,
                 identity={"actor_id": name, "provenance": ctx.provenance, "trace_id": ctx.trace_id})
@@ -366,6 +365,8 @@ def build(spec):
             nop = bool(neg) and W.j2.proposal_empty(neg.get("proposal"))   # Gateway C with nothing to evaluate
             text = "" if nop else str(agent(W.j2.negotiation_question(neg.get("proposal")) if neg else
                                             _question(clean))).strip()
+            if blocked:   # a guardrail block ends the turn: the text is its canned refusal, not the agent's answer
+                text = ""
             if nop:   # answered in code: no model call, no tool call; the negotiation record is still written
                 j = W.j2.no_proposal_judgment(_constraints(neg))
             elif tally.halted:   # C16 halt: escalate in code, no re-ask

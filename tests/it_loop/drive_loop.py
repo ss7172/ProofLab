@@ -12,7 +12,8 @@ under the wire name; each result is `e` = no evidence, total_hits 0, or `h` = th
 --no-limit derives the pin from the register with the tool_no_evidence_limit line removed. --freeze adds the
 maintenance_freeze constraint to the ticket context. PR-38: --negotiate RESOLUTION sends the Gateway C payload
 (orchestrator negotiate_payload shape; '' = an empty proposal); --nonjson makes the final answer bullets with no JSON
-and --block-reask answers the J2 re-ask as the platform guardrail does (content_filter, 0/0 tokens, no text).
+and --block-reask answers the J2 re-ask as the platform guardrail does (the live shape: HTTP 200, content_filter,
+0/0 tokens, content 'Input blocked by policy.'); --block-task blocks the first (task) call the same way.
 Nothing calls AWS, a cluster or a model.
 Writes {"records", "dispatched", "model_calls", "result"}.
 """
@@ -36,6 +37,7 @@ HIT = {"query": "SITE-DEN-12", "category": "incidents", "total_hits": 1, "result
 ANSWER = "- INC-4401 per RB-EDGE-SLICE-DEGRADATION\n" + json.dumps({
     "disposition": "auto-resolve", "deciding_evidence": ["E1"], "reason": "INC-4401 runbook RB-EDGE-SLICE-DEGRADATION",
     "reversible_step": "apply RB-EDGE-SLICE-DEGRADATION step 1; undo by reverting it"})
+BLOCKED = "Input blocked by policy."   # the content of a guardrail-blocked call (notes/platform-observations.md 7)
 NONJSON = "- INC-4401 is open for SITE-DEN-12\n- runbook RB-EDGE-SLICE-DEGRADATION applies [EVIDENCE E1]\n- next: confirm"
 
 
@@ -54,7 +56,7 @@ class Store(BaseHTTPRequestHandler):
 
 
 def main(argv):
-    flags = set(a for a in argv if a in ("--no-limit", "--freeze", "--nonjson", "--block-reask"))
+    flags = set(a for a in argv if a in ("--no-limit", "--freeze", "--nonjson", "--block-reask", "--block-task"))
     opt = dict(zip([a for a in argv if a not in flags][::2], [a for a in argv if a not in flags][1::2]))
     results = list(opt.get("--results", ""))
     plan = list(results)
@@ -86,8 +88,10 @@ def main(argv):
             last = messages[-1]["content"] if messages else []
             self.prompts.append(" ".join(c.get("text", "") for c in last if isinstance(c, dict)))
             yield {"messageStart": {"role": "assistant"}}
-            if self.answered and "--block-reask" in flags:   # the guardrail: content_filter, 0/0, no text
+            if (self.answered and "--block-reask" in flags) or "--block-task" in flags:   # the guardrail's shape
                 self.finish.record("content_filter")
+                yield {"contentBlockDelta": {"delta": {"text": BLOCKED}}}
+                yield {"contentBlockStop": {}}
                 yield {"messageStop": {"stopReason": "end_turn"}}
                 yield {"metadata": {"usage": {"inputTokens": 0, "outputTokens": 0, "totalTokens": 0},
                                     "metrics": {"latencyMs": 0}}}

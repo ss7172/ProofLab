@@ -1,7 +1,7 @@
 """PR-28 dynamic driver (run on the Strands 3.12 venv, as a subprocess of test_negotiation.py; SYNTHETIC, offline).
 
     <venv-strands312>/bin/python tests/negotiation/drive_trio.py <S1|S2|S3> --out OUT.json [--fault SPEC]
-        [--variant s3-agree|s2-data|p1|p1-empty]
+        [--variant s3-agree|s2-data|p1|p1-empty|p1-blocked]
 
 The REAL orchestrator (`prooflab run`, its preflight with stubbed AWS answers) invokes the REAL shared app
 (ifabric_app.build(role SPEC) -> invoke()) in-process through the runner seam; each app writes through its real
@@ -91,8 +91,10 @@ VARIANTS = {
                        "negotiate": AGREE}},
 }
 # PR-38 replay of pilot P1's shapes (ops-lane b3): customer and network answer bullets with no JSON and the platform
-# guardrail blocks their J2 re-ask (content_filter, 0/0 tokens, no text); every IT runbook lookup finds nothing
-# (h1 and Gateway C). p1-empty: the network's answer is empty too, so Gateway C gets an empty proposal.
+# guardrail blocks their J2 re-ask (the live shape: HTTP 200, content_filter, 0/0 tokens, text BLOCKED); every IT
+# runbook lookup finds nothing (h1 and Gateway C). p1-empty: the network's answer is empty too, so Gateway C gets an
+# empty proposal. p1-blocked: the guardrail blocks the network's own TASK call (as ADV-H-01 does), text BLOCKED.
+BLOCKED = "Input blocked by policy."   # what the platform returns in the content of a blocked call (Strands: end_turn)
 P1 = {"customer": "- 3 enterprise accounts at SITE-DEN-12 have degraded service [EVIDENCE E1]\n- tell them a fix is under way",
       "network": "- Probable root cause: optic loss on eth-1/7 [EVIDENCE E1]\n- Proposed resolution: move the slice "
                  "from eth-1/7 to eth-1/8.\n- Change risk: low; revert by moving it back to eth-1/7."}
@@ -138,9 +140,10 @@ class FakeAgent(object):
 
     def _p1(self):
         self.calls += 1
-        if self.calls > 1:   # the J2 re-ask: blocked by the platform guardrail
+        blocked_task = self.role == "network" and self.variant == "p1-blocked"
+        if self.calls > 1 or blocked_task:   # the J2 re-ask (or p1-blocked's task call): blocked by the guardrail
             self._model_call("content_filter", (0, 0))
-            return ""
+            return BLOCKED
         if self.role == "it":   # P1's loop: lookups that find nothing, until rail T-07 (or a hard test bound)
             for _ in range(40):
                 if not self._model_call() or not self._tool(EMPTY_LOOKUP) or self.th.inv.stop:
@@ -152,7 +155,7 @@ class FakeAgent(object):
         return "" if self.role == "network" and self.variant == "p1-empty" else P1[self.role]
 
     def __call__(self, question):
-        if self.variant in ("p1", "p1-empty"):
+        if self.variant in ("p1", "p1-empty", "p1-blocked"):
             return self._p1()
         negotiate = question.startswith("NEGOTIATION (Gateway C)")
         if not self._model_call():

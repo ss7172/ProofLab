@@ -80,7 +80,7 @@ def test_blocked_reask_is_derived_not_a_blind_escalate():
 def test_blocked_reask_keeps_the_precedence_rules_and_the_label():
     j = j2.judge(NONJSON, lambda p: None, constraints={"maintenance_freeze": True})
     assert j.disposition == "escalate" and j.precedence_rule == "guardrail-blocked-reask"
-    assert "maintenance freeze" in j.reason and "guardrail blocked the re-ask" in j.reason
+    assert "maintenance freeze" in j.reason and "a guardrail block" in j.reason
     j = j2.judge(NONJSON, lambda p: None, tool_evidence=["{}"], evidence_needed=["the runbook id"])
     assert j.disposition == "gather-evidence" and j.named_evidence_needed == ["the runbook id"]
     assert j.precedence_rule == "guardrail-blocked-reask"
@@ -88,7 +88,7 @@ def test_blocked_reask_keeps_the_precedence_rules_and_the_label():
     assert j.disposition == "escalate"   # the safest disposition word in the answer
     j = j2.judge("- auto-resolve: the runbook covers it", lambda p: None, tool_evidence=["INC-1 found"])
     assert j.disposition == "gather-evidence"   # never auto-resolve without a structured answer
-    j = j2.judge("", lambda p: None)   # no answer at all (the first call blocked too, e.g. ADV-H-01): escalate
+    j = j2.judge("", lambda p: None)   # no answer (the task call blocked, e.g. ADV-H-01: the app passes ""): escalate
     assert j.disposition == "escalate" and j.precedence_rule == "guardrail-blocked-reask"
 
 
@@ -162,6 +162,9 @@ def loop(*args):
     return _run("it_loop/drive_loop.py", ["--mode", "enforce"] + list(args))
 
 
+BLOCKED = "Input blocked by policy."   # the live content of a guardrail-blocked call (HTTP 200, content_filter, 0/0)
+
+
 def trio(variant):
     return _run("negotiation/drive_trio.py", ["S1", "--variant", variant])
 
@@ -170,7 +173,7 @@ def trio(variant):
 def test_real_app_reask_blocked_is_recorded_and_derived():
     d = loop("--results", "h", "--nonjson", "--block-reask")
     assert d["model_calls"] == 3 and len(d["dispatched"]) == 1   # tool turn, answer, the one (blocked) re-ask
-    assert d["prompts"][-1] == j2.REASK
+    assert d["prompts"][-1] == j2.REASK and d["result"]["answer"].startswith("- INC-4401")   # not the refusal
     acts = [r for r in d["records"] if r.get("ep.id") == "EP-1" and r.get("record_kind") == "action"]
     assert [r["outcome.real"] for r in acts] == ["SERVED", "SERVED", "BLOCKED_GUARDRAIL"]
     (g,) = [r for r in d["records"] if r.get("ep.id") == "EP-7"]
@@ -178,6 +181,24 @@ def test_real_app_reask_blocked_is_recorded_and_derived():
     jf = d["result"]["judgment"]
     assert d["result"]["disposition"] == "gather-evidence" and jf["precedence_rule"] == "guardrail-blocked-reask"
     assert jf["model_disposition"] is None and jf["valid"] is False and jf["reasked"] is True
+
+
+@needs312
+@pytest.mark.parametrize("args", [(), ("--negotiate", "move the slice from eth-1/7 to eth-1/8")])
+def test_real_app_task_call_blocked_escalates_with_no_reask(args):
+    """ADV-H-01's shape: the guardrail blocks the agent's own task call and Strands returns the canned refusal as the
+    turn's text. It is not the agent's answer: escalate (derived in code), no re-ask, the refusal never in the answer."""
+    d = loop("--results", "h", "--block-task", *args)
+    assert d["model_calls"] == 1 and d["dispatched"] == []   # the blocked task call only: no re-ask, no tool call
+    acts = [r for r in d["records"] if r.get("ep.id") == "EP-1" and r.get("record_kind") == "action"]
+    assert [r["outcome.real"] for r in acts] == ["BLOCKED_GUARDRAIL"]
+    assert len([r for r in d["records"] if r.get("ep.id") == "EP-7"]) == 1
+    res = d["result"]
+    assert res["disposition"] == "escalate" and res["judgment"]["precedence_rule"] == "guardrail-blocked-reask"
+    assert res["answer"] == "" and BLOCKED not in json.dumps(res)
+    assert res["judgment"]["model_disposition"] is None
+    if args:
+        assert res["position"] == "escalate"
 
 
 @needs312
@@ -244,7 +265,27 @@ def test_p1_replay_with_an_empty_proposal():
 
 
 @needs312
-@pytest.mark.parametrize("variant", ["p1", "p1-empty"])
+def test_p1_replay_network_task_call_blocked():
+    """The network's own task call is blocked (live text 'Input blocked by policy.'): it escalates, its proposal is
+    EMPTY (never the refusal sentence), and IT takes the no-proposal path (no model, no tool call), floored at escalate."""
+    d = trio("p1-blocked")
+    assert d["rc"] == 0
+    (_, _, c), _, (nw, _, n), (it2, neg, i3) = _by_call(d)
+    assert c["disposition"] == "gather-evidence"   # the customer is unchanged (its re-ask blocked, text derived)
+    assert n["disposition"] == "escalate" and n["judgment"]["precedence_rule"] == "guardrail-blocked-reask"
+    assert n["answer"] == "" and j2.proposal_empty(n["proposal"]) and BLOCKED not in json.dumps(n)
+    assert n["tally_calls"] - c["tally_calls"] >= 1
+    assert neg and i3["position"] == "escalate" and "no proposal received" in i3["judgment"]["reason"]
+    assert i3["tally_calls"] == n["tally_calls"]   # Gateway C made no model call
+    h3 = [r for r in d["records"] if r.get("ep.id") == "EP-3" and str(r.get("handoff.id") or "").endswith(":h3")]
+    assert h3 == []
+    nb = [r for r in d["records"] if r.get("ep.id") == "EP-1" and r.get("outcome.real") == "BLOCKED_GUARDRAIL"]
+    assert len(nb) == 2   # the customer's re-ask and the network's task call; the network made no re-ask
+    assert [r for r in d["records"] if r.get("phase") == "negotiation"]
+
+
+@needs312
+@pytest.mark.parametrize("variant", ["p1", "p1-empty", "p1-blocked"])
 def test_p1_replay_kit_negotiation_check_holds(variant):
     sys.path.insert(0, os.path.join(REPO, "tools"))
     import kit_grade

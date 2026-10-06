@@ -288,12 +288,13 @@ def loop_judgment(k, need, constraints=None):
 
 
 def derived_judgment(answer, constraints=None, tool_evidence=None, evidence_needed=None):
-    """The re-ask was blocked by the platform guardrail: the disposition is derived in code from what the agent
-    already returned. Base: escalate when there is no answer text or it names escalation, else gather-evidence
+    """A guardrail block (the re-ask, or the task call: the app then passes no text, never the platform's canned
+    refusal): the disposition is derived in code from what the agent already returned. Base: escalate when there is
+    no answer text or it names escalation, else gather-evidence
     (never auto-resolve: no structured evidence); then the J2 precedence rules (freeze escalates, empty evidence
     gathers)."""
-    t = strip_reasoning(answer).lower()   # no answer at all (its first call blocked too): escalate, as before
-    j = Judgment(ESCALATE if not t.strip() or "escalat" in t else GATHER, "guardrail blocked the re-ask",
+    t = strip_reasoning(answer).lower()   # no answer at all (its task call was blocked): escalate, as before
+    j = Judgment(ESCALATE if not t.strip() or "escalat" in t else GATHER, "a guardrail block",
                  sorted(set(re.findall(r"\bE\d+\b", answer))), named_evidence_needed=evidence_needed, valid=False,
                  reasked=True)
     apply_precedence(j, constraints, tool_evidence, evidence_needed).precedence_rule = R_GUARD   # after: _tighten sets it
@@ -302,7 +303,8 @@ def derived_judgment(answer, constraints=None, tool_evidence=None, evidence_need
 
 def judge(answer, ask_again, constraints=None, tool_evidence=None, evidence_needed=None):
     """Parse; on failure one re-ask via ask_again(prompt)->text; then escalate invalid-structured-output.
-    ask_again returns None when the platform guardrail blocked the re-ask: derived_judgment, not a blind escalate."""
+    ask_again returns None after a platform guardrail block (the re-ask or the task call): derived_judgment, not a
+    blind escalate."""
     j = parse(answer)
     if not j.valid:
         errs = j.errors
