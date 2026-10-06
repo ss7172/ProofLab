@@ -7,3 +7,6 @@ class RunTally(object):
 
     def seed(self, tokens, calls):
         self.seeded = (tokens, calls)
+
+    committed = 0
+    calls = 0

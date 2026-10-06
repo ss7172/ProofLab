@@ -1,6 +1,6 @@
 """ifabric-it: the role source of one ifabric- agent (ARCH 7.1). tools/bundle_agent.py appends it,
 as the __main__ part, to agents/ifabric-it/ifabric-it.py after the embedded modules (the c16 core,
-the contract, the runtime adapters and the shared ifabric_app). Tool: runbook-lookup (dependsOn.tools).
+the runtime adapters and the shared ifabric_app; never prooflab/contract). Tool: runbook-lookup (dependsOn.tools).
 Judgment targets (handoff 3b Q8): S1 auto-resolve; S2 gather-evidence with a reversible step; S3 escalate.
 """
 import ifabric_app

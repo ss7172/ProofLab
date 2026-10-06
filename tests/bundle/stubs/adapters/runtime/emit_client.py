@@ -26,3 +26,13 @@ class EmitClient(object):
 
     def flush(self, timeout=None):
         return {"stub": True}
+
+
+def lifecycle_record(ctx, event, detail, reason=None, extra=None, ep_id="EP-4",
+                     ep_kind="agent runtime (lifecycle)", control_ref="C7"):
+    return new_record(ctx, "lifecycle", ep_id, ep_kind, "emit", detail, "RECORDED", extra=dict(
+        extra or {}, **{"lifecycle.event": event}))
+
+
+def current_trace_id():
+    return None
