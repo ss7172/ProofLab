@@ -1,0 +1,61 @@
+# SYNTHETIC register for the contract tests (PR-01). Values are illustrative only, never the judged ones.
+version: v0-smoke
+version_date: "2026-10-06T03:52:10Z"
+supersedes: none
+claim_id: C-FM-01
+register_owner: Sree
+pre_run_gate: block-assessed
+join_tolerance_s: 5
+controls:
+  - control_id: "16"
+    name: "Per-run token spend cap"
+    metric: "sum of gateway input+output tokens per run id"
+    observation_limit: 50000
+    exception_tolerance: 0
+    measurement_basis: "gateway figure of record over aws/spans, deduplicated by action id"
+    owner: "Sree"
+    version_date: "2026-10-06T03:52:10Z"
+    enforcement_point: "EP-1 in-process interceptor before each model call (evaluate)"
+    control_ref: C16
+    library_id: ACN-COST-001
+    threshold_version: C16-v1
+    mode: in-transaction
+    in_claim: true
+    risk_ref: R-C16
+    applies_to: ifabric-customer, ifabric-it, ifabric-network
+    cap_tier_standard: 50000
+    cap_tier_high: 80000
+    default_tier: standard
+    inline_modes: enforce,observe
+    safety_ceiling: 300000
+    inline_bound_margin_pct: 10
+    inline_bound_fallback_tokens: 6000
+    max_tokens: 2048
+  - control_id: "7"
+    name: "Event recording coverage"
+    metric: "expected events recorded and joined to one run id"
+    observation_limit: 1.0   # full coverage
+    exception_tolerance: 0
+    measurement_basis: "expected vs adapter-emitted records per run"
+    owner: "Sree"
+    version_date: "2026-10-06T03:52:10Z"
+    enforcement_point: "emit at EP-1, EP-3, EP-4, EP-5; tested after the run"
+    control_ref: C7
+    library_id: AIA-LOG-001
+    threshold_version: C7-v1
+    mode: event-driven
+    declared_faults: suppress-record:ifabric-it:tool.call:1
+  - control_id: "9"
+    name: "Drift against a frozen baseline"
+    metric: "AgentCore Latency Maximum and Errors per runtime"
+    observation_limit: "two-sided band around the frozen baseline"
+    exception_tolerance: 0
+    measurement_basis: "CloudWatch AWS/Bedrock-AgentCore metrics per run window"
+    owner: "Sree"
+    version_date: "2026-10-06T03:52:10Z"
+    enforcement_point: "scheduled pull after each run (continuous)"
+    control_ref: C9
+    library_id: AIA-ARC-006
+    threshold_version: C9-v1
+    mode: continuous
+    limit_direction: two-sided

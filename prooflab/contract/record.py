@@ -244,6 +244,13 @@ def validate_record(rec, require_table_a: bool = True) -> list:
     require_table_a=False skips only the null-rule completeness check (for reading partial shapes);
     stored and emitted records are always checked with the default True.
     """
+    try:
+        return _validate(rec, require_table_a)
+    except Exception as exc:  # noqa: BLE001 - a malformed record is an error, never a crash
+        return ["record is malformed: %s: %s" % (type(exc).__name__, exc)]
+
+
+def _validate(rec, require_table_a):
     errors = []
     if not isinstance(rec, dict):
         return ["record must be a JSON object"]
@@ -287,6 +294,8 @@ def validate_record(rec, require_table_a: bool = True) -> list:
 
     # vocabularies
     kind = rec.get("record_kind")
+    if not isinstance(kind, str):
+        kind = None
     _enum(errors, rec, "record_kind", RECORD_KINDS)
     _enum(errors, rec, "control.ref", CONTROL_REFS)
     _enum(errors, rec, "ep.id", EP_IDS)
@@ -417,3 +426,49 @@ def _compact_rails_errors(rec) -> list:
 
 def is_valid(rec) -> bool:
     return not validate_record(rec)
+
+
+def json_schema() -> dict:
+    """The JSON Schema document committed as schema/evidence-record-1.json (a test keeps them equal).
+    The Python validator is the authority; the JSON file is for other tools and readers."""
+    nullable = lambda t: {"type": [t, "null"]}
+    props = {}
+    for name in REQUIRED + TABLE_A + OPTIONAL:
+        props[name] = {}
+    props["schema"] = {"const": SCHEMA_ID}
+    props["record_kind"] = {"enum": list(RECORD_KINDS)}
+    props["verdict"] = {"enum": list(_v.ALL_RECORD_VERDICTS)}
+    props["provenance"] = {"enum": list(PROVENANCE)}
+    props["authorship"] = {"enum": list(AUTHORSHIP)}
+    props["control.ref"] = {"enum": list(CONTROL_REFS) + [None]}
+    props["ep.id"] = {"enum": list(EP_IDS) + [None]}
+    props["ep.transport"] = {"enum": list(EP_TRANSPORTS) + [None]}
+    props["outcome.real"] = {"enum": list(OUTCOME_REAL) + [None]}
+    props["emitted.clock"] = {"enum": list(_clocks.CLOCKS)}
+    props["observed.clock"] = {"enum": list(_clocks.CLOCKS)}
+    props["rail.stage"] = {"enum": list(RAIL_STAGES)}
+    props["rail.hook"] = {"enum": list(RAIL_HOOKS)}
+    props["rail.mechanism"] = {"enum": list(RAIL_MECHANISMS)}
+    props["source.refs"] = {"type": "array", "items": {"type": "string"}}
+    props["null_reasons"] = {"type": "object", "additionalProperties": {"type": "string"}}
+    props["rails.allow"] = {"type": "array", "items": {"type": "string", "pattern": RAIL_TAG_RE.pattern}}
+    props["rails.counts"] = {"type": "object"}
+    for name in ("emitted.at", "observed.at", "ts"):
+        props[name] = {"type": "string", "pattern": _clocks.UTC_RE.pattern}
+    for name in ("seq.in_stream", "seq", "tokens.in", "tokens.out", "outcome.http_status", "rail.latency_ms"):
+        props[name] = nullable("integer")
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "ifabric.evidence/1",
+        "title": "ProofLab evidence record (team iFabric)",
+        "description": "One flat record, dotted keys (ARCH §4). Table-A fields are present as a value or null "
+                       "with a null_reasons entry. prooflab/contract/record.py validate_record is the authority.",
+        "type": "object",
+        "required": list(REQUIRED) + list(TABLE_A),
+        "properties": props,
+        "patternProperties": {"^assessment\\.": {}},
+        "additionalProperties": False,
+        "x-table-a": list(TABLE_A),
+        "x-derived-never-stored": list(DERIVED),
+        "x-time-pairs": [list(p) for p in TIME_PAIRS],
+    }
