@@ -749,7 +749,7 @@ RULES = (r1, r2, r3, r4, r5, r6, r7, r8, r9)
 
 
 # ---------------------------------------------------------------- R10 (PR-52b)
-_WIN_RE = re.compile(r"Declared event window \(UTC\):\*{0,2}\s*`([^`]+)`\s*to\s*`([^`]+)`")
+_WIN_RE = re.compile(r"Declared event window \(UTC\):\*{0,2}\s*`(\d{4}-\d\d-\d\dT[0-9:.]+Z)`\s*to\s*`(\d{4}-\d\d-\d\dT[0-9:.]+Z)`")
 
 
 def r10(pack):
@@ -766,7 +766,7 @@ def r10(pack):
     for i, c in enumerate((pidx.get("claim") or {}).get("controls") or []):
         if not isinstance(c, dict) or "findings_open" not in c:
             continue
-        want = sum(1 for f in fnd if f.get("control_ref") == c.get("ref") and f.get("verdict") == "BREACHED"
+        want = sum(1 for f in fnd if f.get("control_ref") == c.get("ref") and f.get("verdict") == BREACHED
                    and f.get("incident") and f.get("finding_id") not in closed)
         if c.get("findings_open") != want:
             out.append(Finding("R10", "pack-index.json @claim.controls[%d].findings_open" % i,
