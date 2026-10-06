@@ -1,10 +1,145 @@
-# Gap list
+# Gap list: team iFabric
 
-*Draft started 2026-10-05, while working through the workshop and before our build. Entries change as we close gaps.*
+*One file, two sections, each in its own format. Section A is Arth's, merged as handed over (handoffs/ifabric-handoff-3, unchanged). Section B is ours. Status: drafted 2026-10-06 at build time; no named run has happened yet, so every "what we show instead" below is a plan, not a result. Statuses are updated before each submit.*
 
-Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. Gaps 2–9 and 11 are platform limits we found and verified. They bound what any Evidence Pack on this platform can prove, so each one says what an auditor can't do and how we would work around it.
+## A. ServiceNow, AI Control Tower and the Assurance Agent
+
+**A1. AICT discovery scope**
+- **What:** AICT discovers AgentCore runtimes, Bedrock agents and SageMaker models only. It does not discover EKS pods, MCP servers, MoDaaS guardrails, or which ModelConfig served a call (all calls use one gateway IAM principal).
+- **Why:** connector design (read-only role over those AWS APIs).
+- **Affects:** L2 observability.
+- **Impact:** the inventory is partial; per-call attribution comes from gateway and ledger records, not AICT.
+- **Next:** extend the connector, or push call metadata to AICT via a custom integration.
+
+**A2. AICT freshness**
+- **What:** the inventory refreshes every 15 minutes, plus about 4 minutes of run time.
+- **Why:** scheduled import.
+- **Affects:** L2 live demo.
+- **Impact:** new runtimes appear with a delay; we click **Execute Now** before the demo.
+- **Next:** event-driven import.
+
+**A3. AICT Monitor traces**
+- **What:** as of 2026-10-05, AICT Monitor showed only ServiceNow-native sessions, none from our AWS runtimes.
+- **Why:** traces from AgentCore did not reach AICT Monitor during our check.
+- **Affects:** L2 (traces) and L3 (agent trace).
+- **Impact:** we evidence agent activity with the inventory plus gateway and ledger records rather than AICT traces.
+- **Next:** re-check after the named runs; if still absent, trace export to the connector's log group.
+- **Status:** `<update before submission>`
+
+**A4. Shared ServiceNow instance**
+- **What:** reference agents have identical names across teams.
+- **Why:** shared hackathon instance.
+- **Affects:** L2 attribution.
+- **Impact:** ours are identified by our connection's import timestamps and the `ifabric` prefix; we touch only `[iFabric]` incidents created by `ifabric.integration`.
+- **Next:** a dedicated instance.
+
+**A5. Script authentication**
+- **What:** Basic auth was rejected (401) for both the participant and the integration user. We switched to OAuth client credentials and enabled the instance property `glide.oauth.inbound.client.credential.grant_type.enabled` (logged for transparency; facilitators informed).
+- **Why:** instance MFA and auth policy.
+- **Affects:** integration setup.
+- **Impact:** none on verdicts.
+- **Next:** per-team OAuth apps provisioned by the organizers.
+
+**A6. Human response**
+- **What:** a human reply is not required. Silence is recorded as `NO_RESPONSE_OBSERVED` only after the stated cutoff; unreadable history is `RESPONSE_UNKNOWN`, never treated as silence.
+- **Why:** brief, out of scope.
+- **Affects:** human loop.
+- **Impact:** both outcomes are evidence.
+- **Next:** none needed.
+
+**A7. Delivery semantics**
+- **What:** `DELIVERED` means read back with the right correlation id and assignee. It does not prove the human read it; only a note or status change proves engagement.
+- **Why:** platform limit.
+- **Affects:** "who was told".
+- **Impact:** we claim delivery, not reading.
+- **Next:** read receipts / acknowledgement task.
+
+**A8. Note-level response detail**
+- **What:** the `itil` integration user cannot read `sys_journal_field` rows (the ACL returns 0 rows, no error). Owner responses are detected from the incident's last update (`at_basis: last_update`, verified live). Notes are exported as display text.
+- **Why:** least-privilege ACL.
+- **Affects:** response timing detail.
+- **Impact:** a reply followed by a later update by someone else can be hidden from a live check. Mitigation: `check` on a short loop; a logged `RESPONDED` is sticky.
+- **Next:** a scoped read role for journal entries.
+
+**A9. Assurance Agent location**
+- **What:** the facilitators require Nemotron for the Assurance Agent. Nemotron is reachable only through `modaas-agw` (no public endpoints), and ServiceNow AI agents cannot use it on this instance. So the agent runs on AWS and writes its analysis into ServiceNow. A ServiceNow-native prototype (ServiceNow LLM) was built, tested once and **deactivated**; it is kept as superseded history only.
+- **Why:** platform and model rules.
+- **Affects:** L3.
+- **Impact:** none on verdicts; the agent is outside ServiceNow but its output and evidence live there.
+- **Next:** a ServiceNow-hosted agent once Nemotron is available as an instance provider.
+
+**A10. AICT visibility of the Assurance Agent**
+- **What:** only its AgentCore runtime (`ifabric_assurance_agent`) is an AICT asset. Direct governed gateway calls (backend `gateway`) are ledger-recorded but are not AICT assets.
+- **Affects:** L3 trace.
+- **Impact:** the AICT line exists only after the AgentCore deploy.
+- **Next:** deploy before the named runs.
+- **Status:** `<update>`
+
+**A11. Note authorship**
+- **What:** the analysis note is written by the integration user ("iFabric Integration"). The model and the call are identified by the note's `Model:` provenance line (alias, model id, gateway action id) and the run record.
+- **Why:** secrets stay out of the agent runtime.
+- **Affects:** attribution.
+- **Impact:** none.
+- **Next:** a dedicated identity for the writer.
+
+**A12. Model variance**
+- **What:** Nemotron may echo a fact wrongly. Such runs are **REFUSED** (nothing written) and shown as failures, never hidden.
+- **Why:** LLM behaviour.
+- **Affects:** L3 completeness.
+- **Impact:** a case can show "no analysis" with the reason.
+- **Next:** a larger approved alias, or prompt tuning, under the same checks.
+
+**A13. Forged notes**
+- **What:** anyone with ServiceNow write access can add a look-alike note, even with a fake header and timestamp. It is never trusted: a note counts only if its SHA-256 is in our delivery log. The log is therefore a trust anchor and is in the MANIFEST.
+- **Affects:** L3 integrity.
+- **Impact:** none.
+- **Next:** server-side signing of notes (out of scope).
+
+**A14. Display time zone**
+- **What:** ServiceNow display times are in the reading user's time zone; our own timestamps are UTC (`…Z`).
+- **Affects:** reconstruction.
+- **Impact:** none if read with this note.
+- **Next:** request UTC display values.
+
+**A15. Shown vs proven**
+- **What:**
+  - the agent's refusal and guardrail paths are proven by tests (152 against fakes);
+  - the ServiceNow write path was verified live on 2026-10-05 (INC0010232), with a TEST stand-in instead of the model:
+    - note written, read back unchanged (SHA-256 matched), real journal parsed, re-run SKIPPED, five sections computed;
+    - evidence in `servicenow/wiring-tests/assurance-agent-roundtrip/`;
+  - `<list which were demonstrated live: e.g. a live REFUSED on an injected ticket, a live BLOCKED>`;
+  - `<the first live Nemotron WRITTEN run: date/INC>`.
+- **Status:** `<update before submission>`
+
+**A16. Test incidents**
+- **What:** INC0010231 and INC0010232 are **wiring tests** (`kind: wiring-test`, threshold version `TEST`), excluded from all verdicts and closed with resolution "adapter wiring test". Their records are in `servicenow/wiring-tests/` and never mixed into the production delivery log.
+- **Status:** `<closed on …>`
+
+
+**A17. Agent movement and policy depend on evaluator context**
+- **What:** movement, the route rule (M1/P8), P1 (measured vs limit) and P2/P3 (register) are computed only from the `measured`, `limit`, `register` and `trace` the evaluator attaches to a finding.
+- **Why:** the Assurance Agent doesn't observe network traffic; it checks the record it is given.
+- **Affects:** L3 assurance analysis.
+- **Impact:** where context is missing the checks show **unknown** (never pass); the route rule is only as complete as the trace. `<list named runs without a trace, or "none">`
+- **Next:** emit the trace from the gateway itself (every `x-modaas-action-id` with source and target zone), so it can't be omitted.
+
+**A18. Owner-response check before the cutoff**
+- **What:** until the owner replies or the cutoff passes, P5 is "unknown: pending until the cutoff", so policy alignment reads 7/8 or lower.
+- **Impact:** none on the verdict; it is the honest state of the human loop.
+- **Status:** `<final P5 per named run after the final check>`
 
 ---
+
+## B. AWS agents, controls and the guardrails design (the build team)
+
+*Started 2026-10-05, while working through the workshop and before the build. Entries 1 to 11 are verified platform limits, except 1 and 10, which are about agent judgment, the gap the challenge asks us to close. Platform limits bound what any Evidence Pack on this platform can prove, so each one says what an auditor can't do and how we would work around it. Entries B12 onward are the design's own gaps, the rails' gaps, and the process gaps found while vetting.*
+
+**Corrections to section A.** Section A above is byte-identical to Arth's handed-over text. Three wordings in it are corrected by our checks (`architecture/work/14` R-18); read them with these corrections:
+- A1 says all calls use "one gateway IAM principal". The principal is one API-key identity, `ServiceIdentity::"bootstrap-key"` (entry 2 below).
+- A3's cause: AICT's usage query filters `InvokeAgent` while our traffic is `InvokeAgentRuntime`, and Monitor covers Managed agents only. Its next step, "trace export to the connector's log group", names a group that belongs to the facilitators; the runtime role can write only to `/aws/bedrock-agentcore/*`.
+- A10 says direct gateway calls are "ledger-recorded". The audit ledger holds only records our code writes; a direct gateway call is recorded by the platform in `aws/spans` and `/modaas/evidence`, keyed by action id.
+
+**Dropped, on purpose.** The playbook's prompt B1 ("no durable exporter") is false: the gateway's spans are durable (30 days, with run id and tokens; entry 7). It is not listed here.
 
 ### 1. A governed answer can still be wrong, and the recorded disposition is a keyword guess
 
@@ -195,3 +330,483 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 **Impact:** an auditor can't show that the tool which answered during a run was the one that was approved. A replaced tool, such as a poisoned twin, would keep its approval, and no record would show the change.
 
 **If you had one more day:** record each tool function's `CodeSha256` (readable with `GetFunctionConfiguration`) alongside its approval, and check it at run time, flagging any run where the code differs.
+
+---
+
+## B12. Design gaps the architecture records rather than closes
+
+*Source: `architecture/ARCHITECTURE.md` section 15.2. Columns: the gap; why it stays; what we plan to show instead (a design, not yet a result).*
+
+| Gap | Why it stays | What we plan to show instead |
+|---|---|---|
+| WHO: one shared principal (gap 2); per-agent Cedar isn't wired [07 GS-27] | Platform | Our actor records + the AWS-written `InvokeAgentRuntime` records, which carry the caller's role, the runtime and the run (an exact join by baggage CID + session id [10-f11]) |
+| WHAT: undeclared tools (gap 3) | Platform | Detection (EP-3, `route_alias`); a Cedar refusal only where a rule exists on the called tool (D15) |
+| AUTHORIZED: refusals recorded as ALLOW (gap 4) | Platform | Real-outcome records; for a guardrail block, also the AWS model-call record's "Guardrail blocked." (joined by time, role and model) [10-f11 §4.4] |
+| APPROVED: self-asserted approvals that don't follow changes (gap 5). **Live today: the reference IT and network agents run generation 2 on a generation-1 approval** [07 GS-22]; edits, model swaps and env patches add no approval record [05 AR-15] | Platform | EP-0's check (model + generation + runtime version against `ApprovalRecorded.observedGeneration`); stale-approval flags; the owner's ServiceNow approval of the register |
+| INTEGRITY: the ledger can't show non-alteration (gap 6) | Platform; crypto is out of scope | Corroboration + AWS-set times + the MANIFEST |
+| RECONSTRUCT: refusals lack run ids; the gateway copy has no ids (gap 7); the AWS model-call records (`Converse*`) carry no run, session or trace id either. (The AWS **invocation** records do carry the run [10-f11].) | Platform | The trace-id join; the time + role + model join for model-call records, whose token counts match the spans exactly |
+| No platform per-run halt (gap 8). **The reference S2's 1,999,001 tokens span two concurrent IT invocations of one session:** the kit's CLI re-sent the invocation after its 180 s read timeout, and nothing in the platform stops a duplicate [05 AR-18; 10-f11 §4.3] | Platform | Our inline check covers our agents only; observe mode relies on the safety ceiling. Exactly one invocation per handoff (`AWS_MAX_ATTEMPTS=1`) and the agent-side duplicate guard (§7) |
+| Plain HTTP; customer data in spans (gap 9). **The :8443 TLS listener's certificate is a self-signed placeholder** (its SAN is literally `<PERIMETER-HOST>`), it serves model routes only, and MCP has no TLS listener, so the gateway key crosses in clear text on every tool call [07 GS-25] | Platform | Digests in our records; span-content redaction in our agents (§7.1); pack hygiene |
+| The twin can't make breaches (gap 10). Re-checked after the organisers' twin fix: unchanged (same code, same packaged data) [09] | Platform | Declared levers (§5.5) |
+| Tool code can change under approval (gap 11) | Platform | A CodeSha256 baseline at the freeze + CloudTrail code-update events (readable: OC-13 closed). The organisers audit the same Lambdas (`GetFunction` on all seven, 21:29–21:34 UTC [09 §7]) |
+| **The gateway guardrail is fixed, narrow and not ours:** one per model alias; PROMPT_ATTACK on input only (PII only on the `-helper` alias); no create or update (an explicit IAM deny), no per-call choice, no guardrail on tool routes, no NVIDIA safety model [07 GS-15, GS-16; guardrails/02 §0, GR-06, GR-09] | Platform | The guardrail id and version recorded per run; BLOCKED shown next to the platform's ALLOW; Hostile cases beyond prompt attack rest on the agents' judgment and in-agent rails (§6) |
+| **An AgentConfig pause is a record, not a stop:** the runtime stays READY and direct invocations still work [07 GS-14] | Platform | EP-0 declines a run on a paused agent; containment by a model pause (ADV-R-08) or C16 `enforce` |
+| **The ledger server is fragile:** one single-threaded replica with 256Mi, whole-file parsing on every GET, no fsync; its volume is deleted with the stack [06 C5, C6] | Platform | Per-CID exports, no full GET during a run, the AWS-timestamped stdout witness, the export before teardown |
+| **Shared spaces:** the IDE is not team-exclusive (seven organiser shell commands on 2026-10-05), and the organisers write into our evidence bucket and read our ledger [09 §7] | Organisers | The pack is built on the laptop; we write only under `ifabric/` and `submissions/`; the `facilitator/` objects are left alone and never treated as our evidence |
+| The inline tally trusts the run envelope | A design limit: the frame allows no store read in the path | The floor is the control of record (ADV-R-06) |
+| AICT's usage count is 0; Monitor covers Managed agents only. Its usage query filters `InvokeAgent` (our traffic is `InvokeAgentRuntime`) and groups by `requestParameters.sessionId`, which is always empty [08 AI-03; 10-f11 §1] | AICT | Recorded; the AWS-written invocation log used instead, joined exactly by `responseElements` |
+| Others' admission decisions are invisible (EKS audit off) | Platform | Our own applies, recorded by the deploy wrapper |
+| C9: per-run attribution needs spaced runs; the baseline n is small; the swap lever is unproven | Time; platform | Declared in the register; pilot P8 |
+| Separation of duties: the owner also builds, and also rates the risks she owns; AI reviewers are not the GRC assurance role | Team size | The roles table (§12.2): Sree is accountable management and operations; Arth is assurance (a "reviewed" note on each T2 before Sree approves; the assurance check on each control result); GRC is vacant (R-D-02). If Arth is unavailable overnight, each check he would have made is recorded "not independently reviewed" |
+| AICT approvals carry no approver, time or version link: "Approved" is an editable Status [AICT notes §2.6] | AICT | The repo inventory is the source (D14); AICT gets a mirror of owners and the tier |
+| Owners and approvals of platform components (models, shared tools) are not confirmed by their owners | Organisers | The inventory marks them as our declaration, with the CR approval it read (§3.10) |
+| The EU AI Act tier has no primary source in hand (OC-21) | Sources | Recorded as UNVERIFIED and cited to the playbook line (§3.9) |
+| Organiser-injected Hostile/Rogue events: who injects them, and when, is unknown | Organisers | The adversarial log also records events we observe |
+| The inline bonus must be shown live during judging | Account lifetime; budget | `prooflab tail` on a live run while the account is up; otherwise the recorded N3 decision records, labelled "recorded, not live" |
+| Readiness records not yet produced: the recorded L1 → L3 demo and the timed 15-minute run-of-show (R-J-45), the 5-link hand-check (R-P-03 (e)), the mentor review (R-J-56) [04b] | Time | Planned in §12.1 and kept in `reviews/` (§9.1). Any not produced by the final submit is listed here and in `gap-list.md` |
+| Adapter bug (a): `notify --dry-run` on an existing incident logs DELIVERED and is not offline | Arth's code, used as-is; accepted by the captain | A dry run only ever writes to a TEST log (G-05) |
+| Adapter bug (b): an itil journal read of 0 rows can read as NO_RESPONSE_OBSERVED | Arth's code, used as-is; accepted by the captain | `check` every ≤ 60 s; nobody else updates our incidents after the owner; the sticky-RESPONDED rule; the response basis shown |
+| The Assurance agent's model calls carry no subject CID (their run id is their trace id) | Arth's analyser sends no baggage | They join the platform's records by action id; their tokens are team overhead, never a subject run's C16 spend |
+| The Assurance runtime sends the gateway key over plain HTTP (the gateway-URL shim) | Every AgentCore runtime gets a plain-HTTP gateway URL; the :8443 certificate is a placeholder (gap 9) | Recorded as a security decision; the key never leaves the runtime's env |
+| A finding's trace holds at most 200 steps | Arth's `finding_context` rejects longer traces | G-04 summarises per invocation; the full trail stays in the pack |
+| The console's live file is a convenience index; a replay is labelled REPLAY | A design choice (G-10) | The pack's records stay the authority |
+| The cockpit side door (EP-16): the cockpit has no auth, and anyone with its link can invoke any agent | Platform | Observed and labelled in the run catalogue; our agents run an unenveloped call under the strictest cap |
+
+---
+
+## B13. The rails' gaps (G-1 to G-14)
+
+*Source: `architecture/guardrails/AGENT-GUARDRAILS.md` section 11. The rails are agent code that we write; they are self-enforced (G-6) and measured on a curated set, not a full red-team scan (G-10).*
+
+| # | Gap | Why it stays | What we plan to show instead |
+|---|---|---|---|
+| G-1 | **No NVIDIA safety models** (content safety, topic control, jailbreak detection, GLiNER PII; talk M1–M7) | Not served on Bedrock; Marketplace and SageMaker denied; no NIM operator; no GPUs [02 GR-01–03]. The only serverless safety classifier, `gpt-oss-safeguard`, is not NVIDIA and is an organiser question [02 GR-04] | Deterministic rails + a fail-closed self-check on a general Nemotron, with the platform guardrail as its first stage. Weaker than a trained classifier: RTM-1 publishes the misses |
+| G-2 | **The platform guardrail is fixed, narrow and not editable** | PROMPT_ATTACK on input only (PII only on the helper alias); no content, topic, word, grounding or output policy; IAM denies guardrail writes; one guardrail per alias [07 GS-15, GS-16] | Observed and recorded per run (id and version); RTM-2 measures its coverage; our rails cover output and tool output |
+| G-3 | **No platform screening of tool outputs** | Guardrails bind only to model routes; ApplyGuardrail is unavailable; the external enforcers are inert [02 GR-09, GR-10] | T-01–T-06 in-agent |
+| G-4 | **Raw prompts in spans** (gap 9, refined) | Without the token, Strands writes the raw prompt into `invoke_agent` before any hook (§1.1). With it, Strands redacts; other emitters (ADOT instrumentations, exception text, gateway-side logs) are unverified | The env switch + I-02 + O-04; the T-SPAN-01 canary result, stated either way |
+| G-5 | **No per-agent platform Cedar** (gaps 2, 3) | One principal (`bootstrap-key`); the AgentConfig overlay isn't wired [07 GS-27]; a ToolConfig rule applies to every caller | RT-04 + X-01/X-02 in-agent (self-enforced); one narrow Cedar `forbid` for every caller (D15 (a)) |
+| G-6 | **In-agent rails are self-enforced** | They run in the agent's process. A buggy or compromised agent skips them, and no platform PEP checks that they ran | MON-02 corroborates from the platform's spans; RT-01's hashes plus EP-0's digest check catch a changed image |
+| G-7 | **Egress can't be verified at the platform level** | The security group is unreadable; IAM blocks only Bedrock and the AgentCore Gateway [02 GR-22] | RT-03's audit hook (observe → enforce) for our process only |
+| G-8 | **Guardrails not editable or selectable** (see G-2) | GS-15, GS-16 | — |
+| G-9 | **TLS** | :8443 has a self-signed placeholder certificate and serves model routes only; MCP has no TLS listener, so the key crosses in clear on every tool call [07 GS-25] | Digests in records; O-04; stated |
+| G-10 | **No full red-team scan** (NeMo Auditor / garak) | No Auditor service; shared ceilings; the 1 req/s rule; no AgentCore generator | RTM-1–3: curated, measured, with misses published |
+| G-11 | **No millisecond out-of-band containment** (Sentry) | Our out-of-band loop runs in minutes; a model pause takes ≤ 2 s on super-120b and 33–41 s on nano-9b | In-band X-05 and the C16 halt |
+| G-12 | **No hardware boundary** (OpenShell in-silicon, BlueField) | AgentCore microVMs and t3 nodes | Stated |
+| G-13 | **No in-path human approval** | Headless agents; no inbound endpoint (R-P-07); EP-13 records only; no action tools | O-07 FLAG → the ESC incident; dispositions only ratchet to escalate |
+| G-14 | **The Cedar test rule is bypassable by case** | Cedar `like` is case-sensitive; the handler upper-cases `site` | Labelled a mechanism demonstration, not a protection |
+
+---
+
+## B14. Adapter bug (a): a dry-run notify on an existing incident is not offline
+
+**What's missing:** an offline dry run of `notify` on an incident that already exists.
+
+**Why:** in Arth's adapter an existing incident returns its confirmation before `dry_run` is checked (`notifier.py:134-136`), so the dry run logs DELIVERED. We use Arth's code as-is; the captain accepted this as a known risk.
+
+**Impact:** a dry run against the production log would write a false DELIVERED line.
+
+**What we do instead:** a dry run only ever writes to a TEST log, never the production log (`evidence/register/approval/delivery-log.jsonl` and the delivery log are absolute paths).
+
+---
+
+## B15. Adapter bug (b): zero journal rows can read as silence
+
+**What's missing:** a way to tell "the owner did not reply" from "the integration user could not read the journal".
+
+**Why:** the `itil` integration user reads 0 journal rows with no error (the ACL), and Arth's `_actions` treats 0 rows as readable (accepted risk, as above).
+
+**Impact:** a reply could be missed, and silence recorded wrongly.
+
+**What we do instead:** `check` every 60 s or less; nobody else updates our incidents after the owner; the sticky-RESPONDED rule (a logged RESPONDED is never overridden by a later NO_RESPONSE_OBSERVED); the response basis (`last_update`) is shown.
+
+---
+
+## B16. The Assurance agent's model calls carry no subject CID
+
+**What's missing:** the run id on the Assurance agent's gateway calls.
+
+**Why:** Arth's analyser sends no baggage, so a call's run id is its trace id. We never put a subject run's CID on those calls (it would land their tokens inside that run's C16 figure; `work/14` R-8).
+
+**Impact:** these calls join the platform's records by action id only, and their tokens are team overhead, not a subject run's spend.
+
+---
+
+## B17. A finding's trace holds at most 200 steps
+
+**What's missing:** a full call-by-call trace inside a finding for a long run.
+
+**Why:** Arth's `finding_context` raises on a trace longer than 200 steps instead of truncating; the reference S2 had 353 gateway spans.
+
+**Impact:** without a summary, a long BREACH run would fail validation before `notify` and no incident would be raised.
+
+**What we do instead:** the finding builder summarises per invocation (at most 200 steps); the full trail stays in the pack.
+
+---
+
+## B18. Readiness records not yet produced
+
+**What's missing:** the recorded Level 1 to Level 3 demo, the timed 15-minute run of show, the five-link hand-check, and the mentor review.
+
+**Why:** time. They are planned and kept under `reviews/`.
+
+**Status:** `<update before each submit: list which exist, and which do not>`. Anything not produced by the final submit stays listed here.
+
+---
+
+## B12. Design gaps the architecture records rather than closes
+
+*Source: `architecture/ARCHITECTURE.md` section 15.2. Columns: the gap; why it stays; what we plan to show instead (a design, not yet a result).*
+
+| Gap | Why it stays | What we plan to show instead |
+|---|---|---|
+| WHO: one shared principal (gap 2); per-agent Cedar isn't wired [07 GS-27] | Platform | Our actor records + the AWS-written `InvokeAgentRuntime` records, which carry the caller's role, the runtime and the run (an exact join by baggage CID + session id [10-f11]) |
+| WHAT: undeclared tools (gap 3) | Platform | Detection (EP-3, `route_alias`); a Cedar refusal only where a rule exists on the called tool (D15) |
+| AUTHORIZED: refusals recorded as ALLOW (gap 4) | Platform | Real-outcome records; for a guardrail block, also the AWS model-call record's "Guardrail blocked." (joined by time, role and model) [10-f11 §4.4] |
+| APPROVED: self-asserted approvals that don't follow changes (gap 5). **Live today: the reference IT and network agents run generation 2 on a generation-1 approval** [07 GS-22]; edits, model swaps and env patches add no approval record [05 AR-15] | Platform | EP-0's check (model + generation + runtime version against `ApprovalRecorded.observedGeneration`); stale-approval flags; the owner's ServiceNow approval of the register |
+| INTEGRITY: the ledger can't show non-alteration (gap 6) | Platform; crypto is out of scope | Corroboration + AWS-set times + the MANIFEST |
+| RECONSTRUCT: refusals lack run ids; the gateway copy has no ids (gap 7); the AWS model-call records (`Converse*`) carry no run, session or trace id either. (The AWS **invocation** records do carry the run [10-f11].) | Platform | The trace-id join; the time + role + model join for model-call records, whose token counts match the spans exactly |
+| No platform per-run halt (gap 8). **The reference S2's 1,999,001 tokens span two concurrent IT invocations of one session:** the kit's CLI re-sent the invocation after its 180 s read timeout, and nothing in the platform stops a duplicate [05 AR-18; 10-f11 §4.3] | Platform | Our inline check covers our agents only; observe mode relies on the safety ceiling. Exactly one invocation per handoff (`AWS_MAX_ATTEMPTS=1`) and the agent-side duplicate guard (§7) |
+| Plain HTTP; customer data in spans (gap 9). **The :8443 TLS listener's certificate is a self-signed placeholder** (its SAN is literally `<PERIMETER-HOST>`), it serves model routes only, and MCP has no TLS listener, so the gateway key crosses in clear text on every tool call [07 GS-25] | Platform | Digests in our records; span-content redaction in our agents (§7.1); pack hygiene |
+| The twin can't make breaches (gap 10). Re-checked after the organisers' twin fix: unchanged (same code, same packaged data) [09] | Platform | Declared levers (§5.5) |
+| Tool code can change under approval (gap 11) | Platform | A CodeSha256 baseline at the freeze + CloudTrail code-update events (readable: OC-13 closed). The organisers audit the same Lambdas (`GetFunction` on all seven, 21:29–21:34 UTC [09 §7]) |
+| **The gateway guardrail is fixed, narrow and not ours:** one per model alias; PROMPT_ATTACK on input only (PII only on the `-helper` alias); no create or update (an explicit IAM deny), no per-call choice, no guardrail on tool routes, no NVIDIA safety model [07 GS-15, GS-16; guardrails/02 §0, GR-06, GR-09] | Platform | The guardrail id and version recorded per run; BLOCKED shown next to the platform's ALLOW; Hostile cases beyond prompt attack rest on the agents' judgment and in-agent rails (§6) |
+| **An AgentConfig pause is a record, not a stop:** the runtime stays READY and direct invocations still work [07 GS-14] | Platform | EP-0 declines a run on a paused agent; containment by a model pause (ADV-R-08) or C16 `enforce` |
+| **The ledger server is fragile:** one single-threaded replica with 256Mi, whole-file parsing on every GET, no fsync; its volume is deleted with the stack [06 C5, C6] | Platform | Per-CID exports, no full GET during a run, the AWS-timestamped stdout witness, the export before teardown |
+| **Shared spaces:** the IDE is not team-exclusive (seven organiser shell commands on 2026-10-05), and the organisers write into our evidence bucket and read our ledger [09 §7] | Organisers | The pack is built on the laptop; we write only under `ifabric/` and `submissions/`; the `facilitator/` objects are left alone and never treated as our evidence |
+| The inline tally trusts the run envelope | A design limit: the frame allows no store read in the path | The floor is the control of record (ADV-R-06) |
+| AICT's usage count is 0; Monitor covers Managed agents only. Its usage query filters `InvokeAgent` (our traffic is `InvokeAgentRuntime`) and groups by `requestParameters.sessionId`, which is always empty [08 AI-03; 10-f11 §1] | AICT | Recorded; the AWS-written invocation log used instead, joined exactly by `responseElements` |
+| Others' admission decisions are invisible (EKS audit off) | Platform | Our own applies, recorded by the deploy wrapper |
+| C9: per-run attribution needs spaced runs; the baseline n is small; the swap lever is unproven | Time; platform | Declared in the register; pilot P8 |
+| Separation of duties: the owner also builds, and also rates the risks she owns; AI reviewers are not the GRC assurance role | Team size | The roles table (§12.2): Sree is accountable management and operations; Arth is assurance (a "reviewed" note on each T2 before Sree approves; the assurance check on each control result); GRC is vacant (R-D-02). If Arth is unavailable overnight, each check he would have made is recorded "not independently reviewed" |
+| AICT approvals carry no approver, time or version link: "Approved" is an editable Status [AICT notes §2.6] | AICT | The repo inventory is the source (D14); AICT gets a mirror of owners and the tier |
+| Owners and approvals of platform components (models, shared tools) are not confirmed by their owners | Organisers | The inventory marks them as our declaration, with the CR approval it read (§3.10) |
+| The EU AI Act tier has no primary source in hand (OC-21) | Sources | Recorded as UNVERIFIED and cited to the playbook line (§3.9) |
+| Organiser-injected Hostile/Rogue events: who injects them, and when, is unknown | Organisers | The adversarial log also records events we observe |
+| The inline bonus must be shown live during judging | Account lifetime; budget | `prooflab tail` on a live run while the account is up; otherwise the recorded N3 decision records, labelled "recorded, not live" |
+| Readiness records not yet produced: the recorded L1 → L3 demo and the timed 15-minute run-of-show (R-J-45), the 5-link hand-check (R-P-03 (e)), the mentor review (R-J-56) [04b] | Time | Planned in §12.1 and kept in `reviews/` (§9.1). Any not produced by the final submit is listed here and in `gap-list.md` |
+| Adapter bug (a): `notify --dry-run` on an existing incident logs DELIVERED and is not offline | Arth's code, used as-is; accepted by the captain | A dry run only ever writes to a TEST log (G-05) |
+| Adapter bug (b): an itil journal read of 0 rows can read as NO_RESPONSE_OBSERVED | Arth's code, used as-is; accepted by the captain | `check` every ≤ 60 s; nobody else updates our incidents after the owner; the sticky-RESPONDED rule; the response basis shown |
+| The Assurance agent's model calls carry no subject CID (their run id is their trace id) | Arth's analyser sends no baggage | They join the platform's records by action id; their tokens are team overhead, never a subject run's C16 spend |
+| The Assurance runtime sends the gateway key over plain HTTP (the gateway-URL shim) | Every AgentCore runtime gets a plain-HTTP gateway URL; the :8443 certificate is a placeholder (gap 9) | Recorded as a security decision; the key never leaves the runtime's env |
+| A finding's trace holds at most 200 steps | Arth's `finding_context` rejects longer traces | G-04 summarises per invocation; the full trail stays in the pack |
+| The console's live file is a convenience index; a replay is labelled REPLAY | A design choice (G-10) | The pack's records stay the authority |
+| The cockpit side door (EP-16): the cockpit has no auth, and anyone with its link can invoke any agent | Platform | Observed and labelled in the run catalogue; our agents run an unenveloped call under the strictest cap |
+
+---
+
+## B13. The rails' gaps (G-1 to G-14)
+
+*Source: `architecture/guardrails/AGENT-GUARDRAILS.md` section 11. The rails are agent code that we write; they are self-enforced (G-6) and measured on a curated set, not a full red-team scan (G-10).*
+
+| # | Gap | Why it stays | What we plan to show instead |
+|---|---|---|---|
+| G-1 | **No NVIDIA safety models** (content safety, topic control, jailbreak detection, GLiNER PII; talk M1–M7) | Not served on Bedrock; Marketplace and SageMaker denied; no NIM operator; no GPUs [02 GR-01–03]. The only serverless safety classifier, `gpt-oss-safeguard`, is not NVIDIA and is an organiser question [02 GR-04] | Deterministic rails + a fail-closed self-check on a general Nemotron, with the platform guardrail as its first stage. Weaker than a trained classifier: RTM-1 publishes the misses |
+| G-2 | **The platform guardrail is fixed, narrow and not editable** | PROMPT_ATTACK on input only (PII only on the helper alias); no content, topic, word, grounding or output policy; IAM denies guardrail writes; one guardrail per alias [07 GS-15, GS-16] | Observed and recorded per run (id and version); RTM-2 measures its coverage; our rails cover output and tool output |
+| G-3 | **No platform screening of tool outputs** | Guardrails bind only to model routes; ApplyGuardrail is unavailable; the external enforcers are inert [02 GR-09, GR-10] | T-01–T-06 in-agent |
+| G-4 | **Raw prompts in spans** (gap 9, refined) | Without the token, Strands writes the raw prompt into `invoke_agent` before any hook (§1.1). With it, Strands redacts; other emitters (ADOT instrumentations, exception text, gateway-side logs) are unverified | The env switch + I-02 + O-04; the T-SPAN-01 canary result, stated either way |
+| G-5 | **No per-agent platform Cedar** (gaps 2, 3) | One principal (`bootstrap-key`); the AgentConfig overlay isn't wired [07 GS-27]; a ToolConfig rule applies to every caller | RT-04 + X-01/X-02 in-agent (self-enforced); one narrow Cedar `forbid` for every caller (D15 (a)) |
+| G-6 | **In-agent rails are self-enforced** | They run in the agent's process. A buggy or compromised agent skips them, and no platform PEP checks that they ran | MON-02 corroborates from the platform's spans; RT-01's hashes plus EP-0's digest check catch a changed image |
+| G-7 | **Egress can't be verified at the platform level** | The security group is unreadable; IAM blocks only Bedrock and the AgentCore Gateway [02 GR-22] | RT-03's audit hook (observe → enforce) for our process only |
+| G-8 | **Guardrails not editable or selectable** (see G-2) | GS-15, GS-16 | — |
+| G-9 | **TLS** | :8443 has a self-signed placeholder certificate and serves model routes only; MCP has no TLS listener, so the key crosses in clear on every tool call [07 GS-25] | Digests in records; O-04; stated |
+| G-10 | **No full red-team scan** (NeMo Auditor / garak) | No Auditor service; shared ceilings; the 1 req/s rule; no AgentCore generator | RTM-1–3: curated, measured, with misses published |
+| G-11 | **No millisecond out-of-band containment** (Sentry) | Our out-of-band loop runs in minutes; a model pause takes ≤ 2 s on super-120b and 33–41 s on nano-9b | In-band X-05 and the C16 halt |
+| G-12 | **No hardware boundary** (OpenShell in-silicon, BlueField) | AgentCore microVMs and t3 nodes | Stated |
+| G-13 | **No in-path human approval** | Headless agents; no inbound endpoint (R-P-07); EP-13 records only; no action tools | O-07 FLAG → the ESC incident; dispositions only ratchet to escalate |
+| G-14 | **The Cedar test rule is bypassable by case** | Cedar `like` is case-sensitive; the handler upper-cases `site` | Labelled a mechanism demonstration, not a protection |
+
+---
+
+## B14. Adapter bug (a): a dry-run notify on an existing incident is not offline
+
+**What's missing:** an offline dry run of `notify` on an incident that already exists.
+
+**Why:** in Arth's adapter an existing incident returns its confirmation before `dry_run` is checked (`notifier.py:134-136`), so the dry run logs DELIVERED. We use Arth's code as-is; the captain accepted this as a known risk.
+
+**Impact:** a dry run against the production log would write a false DELIVERED line.
+
+**What we plan instead:** a dry run only ever writes to a TEST log, never the production log, and log paths are absolute (a relative path silently starts a second log).
+
+---
+
+## B15. Adapter bug (b): zero journal rows can read as silence
+
+**What's missing:** a way to tell "the owner did not reply" from "the integration user could not read the journal".
+
+**Why:** the `itil` integration user reads 0 journal rows with no error (the ACL), and Arth's `_actions` treats 0 rows as readable (accepted risk, as above).
+
+**Impact:** a reply could be missed, and silence recorded wrongly.
+
+**What we plan instead:** `check` every 60 s or less; nobody else updates our incidents after the owner; the sticky-RESPONDED rule (a logged RESPONDED is never overridden by a later NO_RESPONSE_OBSERVED); the response basis (`last_update`) is shown.
+
+---
+
+## B16. The Assurance agent's model calls carry no subject CID
+
+**What's missing:** the run id on the Assurance agent's gateway calls.
+
+**Why:** Arth's analyser sends no baggage, so a call's run id is its trace id. We never put a subject run's CID on those calls (it would land their tokens inside that run's C16 figure; `work/14` R-8).
+
+**Impact:** these calls join the platform's records by action id only, and their tokens are team overhead, not a subject run's spend.
+
+---
+
+## B17. A finding's trace holds at most 200 steps
+
+**What's missing:** a full call-by-call trace inside a finding for a long run.
+
+**Why:** Arth's `finding_context` raises on a trace longer than 200 steps instead of truncating; the reference S2 had 353 gateway spans.
+
+**Impact:** without a summary, a long BREACH run would fail validation before `notify` and no incident would be raised.
+
+**What we plan instead:** the finding builder summarises per invocation (at most 200 steps); the full trail stays in the pack.
+
+---
+
+## B18. Readiness records not yet produced
+
+**What's missing:** the recorded Level 1 to Level 3 demo, the timed 15-minute run of show, the five-link hand-check, and the mentor review.
+
+**Why:** time. They are planned and kept under `reviews/`.
+
+**Status:** `<update before each submit: list which exist, and which do not>`. Anything not produced by the final submit stays listed here.
+
+---
+
+## B12. Design gaps the architecture records rather than closes
+
+*Source: `architecture/ARCHITECTURE.md` section 15.2. Columns: the gap; why it stays; what we plan to show instead (a design, not yet a result).*
+
+| Gap | Why it stays | What we plan to show instead |
+|---|---|---|
+| WHO: one shared principal (gap 2); per-agent Cedar isn't wired [07 GS-27] | Platform | Our actor records + the AWS-written `InvokeAgentRuntime` records, which carry the caller's role, the runtime and the run (an exact join by baggage CID + session id [10-f11]) |
+| WHAT: undeclared tools (gap 3) | Platform | Detection (EP-3, `route_alias`); a Cedar refusal only where a rule exists on the called tool (D15) |
+| AUTHORIZED: refusals recorded as ALLOW (gap 4) | Platform | Real-outcome records; for a guardrail block, also the AWS model-call record's "Guardrail blocked." (joined by time, role and model) [10-f11 §4.4] |
+| APPROVED: self-asserted approvals that don't follow changes (gap 5). **Live today: the reference IT and network agents run generation 2 on a generation-1 approval** [07 GS-22]; edits, model swaps and env patches add no approval record [05 AR-15] | Platform | EP-0's check (model + generation + runtime version against `ApprovalRecorded.observedGeneration`); stale-approval flags; the owner's ServiceNow approval of the register |
+| INTEGRITY: the ledger can't show non-alteration (gap 6) | Platform; crypto is out of scope | Corroboration + AWS-set times + the MANIFEST |
+| RECONSTRUCT: refusals lack run ids; the gateway copy has no ids (gap 7); the AWS model-call records (`Converse*`) carry no run, session or trace id either. (The AWS **invocation** records do carry the run [10-f11].) | Platform | The trace-id join; the time + role + model join for model-call records, whose token counts match the spans exactly |
+| No platform per-run halt (gap 8). **The reference S2's 1,999,001 tokens span two concurrent IT invocations of one session:** the kit's CLI re-sent the invocation after its 180 s read timeout, and nothing in the platform stops a duplicate [05 AR-18; 10-f11 §4.3] | Platform | Our inline check covers our agents only; observe mode relies on the safety ceiling. Exactly one invocation per handoff (`AWS_MAX_ATTEMPTS=1`) and the agent-side duplicate guard (§7) |
+| Plain HTTP; customer data in spans (gap 9). **The :8443 TLS listener's certificate is a self-signed placeholder** (its SAN is literally `<PERIMETER-HOST>`), it serves model routes only, and MCP has no TLS listener, so the gateway key crosses in clear text on every tool call [07 GS-25] | Platform | Digests in our records; span-content redaction in our agents (§7.1); pack hygiene |
+| The twin can't make breaches (gap 10). Re-checked after the organisers' twin fix: unchanged (same code, same packaged data) [09] | Platform | Declared levers (§5.5) |
+| Tool code can change under approval (gap 11) | Platform | A CodeSha256 baseline at the freeze + CloudTrail code-update events (readable: OC-13 closed). The organisers audit the same Lambdas (`GetFunction` on all seven, 21:29–21:34 UTC [09 §7]) |
+| **The gateway guardrail is fixed, narrow and not ours:** one per model alias; PROMPT_ATTACK on input only (PII only on the `-helper` alias); no create or update (an explicit IAM deny), no per-call choice, no guardrail on tool routes, no NVIDIA safety model [07 GS-15, GS-16; guardrails/02 §0, GR-06, GR-09] | Platform | The guardrail id and version recorded per run; BLOCKED shown next to the platform's ALLOW; Hostile cases beyond prompt attack rest on the agents' judgment and in-agent rails (§6) |
+| **An AgentConfig pause is a record, not a stop:** the runtime stays READY and direct invocations still work [07 GS-14] | Platform | EP-0 declines a run on a paused agent; containment by a model pause (ADV-R-08) or C16 `enforce` |
+| **The ledger server is fragile:** one single-threaded replica with 256Mi, whole-file parsing on every GET, no fsync; its volume is deleted with the stack [06 C5, C6] | Platform | Per-CID exports, no full GET during a run, the AWS-timestamped stdout witness, the export before teardown |
+| **Shared spaces:** the IDE is not team-exclusive (seven organiser shell commands on 2026-10-05), and the organisers write into our evidence bucket and read our ledger [09 §7] | Organisers | The pack is built on the laptop; we write only under `ifabric/` and `submissions/`; the `facilitator/` objects are left alone and never treated as our evidence |
+| The inline tally trusts the run envelope | A design limit: the frame allows no store read in the path | The floor is the control of record (ADV-R-06) |
+| AICT's usage count is 0; Monitor covers Managed agents only. Its usage query filters `InvokeAgent` (our traffic is `InvokeAgentRuntime`) and groups by `requestParameters.sessionId`, which is always empty [08 AI-03; 10-f11 §1] | AICT | Recorded; the AWS-written invocation log used instead, joined exactly by `responseElements` |
+| Others' admission decisions are invisible (EKS audit off) | Platform | Our own applies, recorded by the deploy wrapper |
+| C9: per-run attribution needs spaced runs; the baseline n is small; the swap lever is unproven | Time; platform | Declared in the register; pilot P8 |
+| Separation of duties: the owner also builds, and also rates the risks she owns; AI reviewers are not the GRC assurance role | Team size | The roles table (§12.2): Sree is accountable management and operations; Arth is assurance (a "reviewed" note on each T2 before Sree approves; the assurance check on each control result); GRC is vacant (R-D-02). If Arth is unavailable overnight, each check he would have made is recorded "not independently reviewed" |
+| AICT approvals carry no approver, time or version link: "Approved" is an editable Status [AICT notes §2.6] | AICT | The repo inventory is the source (D14); AICT gets a mirror of owners and the tier |
+| Owners and approvals of platform components (models, shared tools) are not confirmed by their owners | Organisers | The inventory marks them as our declaration, with the CR approval it read (§3.10) |
+| The EU AI Act tier has no primary source in hand (OC-21) | Sources | Recorded as UNVERIFIED and cited to the playbook line (§3.9) |
+| Organiser-injected Hostile/Rogue events: who injects them, and when, is unknown | Organisers | The adversarial log also records events we observe |
+| The inline bonus must be shown live during judging | Account lifetime; budget | `prooflab tail` on a live run while the account is up; otherwise the recorded N3 decision records, labelled "recorded, not live" |
+| Readiness records not yet produced: the recorded L1 → L3 demo and the timed 15-minute run-of-show (R-J-45), the 5-link hand-check (R-P-03 (e)), the mentor review (R-J-56) [04b] | Time | Planned in §12.1 and kept in `reviews/` (§9.1). Any not produced by the final submit is listed here and in `gap-list.md` |
+| Adapter bug (a): `notify --dry-run` on an existing incident logs DELIVERED and is not offline | Arth's code, used as-is; accepted by the captain | A dry run only ever writes to a TEST log (G-05) |
+| Adapter bug (b): an itil journal read of 0 rows can read as NO_RESPONSE_OBSERVED | Arth's code, used as-is; accepted by the captain | `check` every ≤ 60 s; nobody else updates our incidents after the owner; the sticky-RESPONDED rule; the response basis shown |
+| The Assurance agent's model calls carry no subject CID (their run id is their trace id) | Arth's analyser sends no baggage | They join the platform's records by action id; their tokens are team overhead, never a subject run's C16 spend |
+| The Assurance runtime sends the gateway key over plain HTTP (the gateway-URL shim) | Every AgentCore runtime gets a plain-HTTP gateway URL; the :8443 certificate is a placeholder (gap 9) | Recorded as a security decision; the key never leaves the runtime's env |
+| A finding's trace holds at most 200 steps | Arth's `finding_context` rejects longer traces | G-04 summarises per invocation; the full trail stays in the pack |
+| The console's live file is a convenience index; a replay is labelled REPLAY | A design choice (G-10) | The pack's records stay the authority |
+| The cockpit side door (EP-16): the cockpit has no auth, and anyone with its link can invoke any agent | Platform | Observed and labelled in the run catalogue; our agents run an unenveloped call under the strictest cap |
+
+---
+
+## B13. The rails' gaps (G-1 to G-14)
+
+*Source: `architecture/guardrails/AGENT-GUARDRAILS.md` section 11. The rails are agent code that we write; they are self-enforced (G-6) and measured on a curated set, not a full red-team scan (G-10).*
+
+| # | Gap | Why it stays | What we plan to show instead |
+|---|---|---|---|
+| G-1 | **No NVIDIA safety models** (content safety, topic control, jailbreak detection, GLiNER PII; talk M1–M7) | Not served on Bedrock; Marketplace and SageMaker denied; no NIM operator; no GPUs [02 GR-01–03]. The only serverless safety classifier, `gpt-oss-safeguard`, is not NVIDIA and is an organiser question [02 GR-04] | Deterministic rails + a fail-closed self-check on a general Nemotron, with the platform guardrail as its first stage. Weaker than a trained classifier: RTM-1 publishes the misses |
+| G-2 | **The platform guardrail is fixed, narrow and not editable** | PROMPT_ATTACK on input only (PII only on the helper alias); no content, topic, word, grounding or output policy; IAM denies guardrail writes; one guardrail per alias [07 GS-15, GS-16] | Observed and recorded per run (id and version); RTM-2 measures its coverage; our rails cover output and tool output |
+| G-3 | **No platform screening of tool outputs** | Guardrails bind only to model routes; ApplyGuardrail is unavailable; the external enforcers are inert [02 GR-09, GR-10] | T-01–T-06 in-agent |
+| G-4 | **Raw prompts in spans** (gap 9, refined) | Without the token, Strands writes the raw prompt into `invoke_agent` before any hook (§1.1). With it, Strands redacts; other emitters (ADOT instrumentations, exception text, gateway-side logs) are unverified | The env switch + I-02 + O-04; the T-SPAN-01 canary result, stated either way |
+| G-5 | **No per-agent platform Cedar** (gaps 2, 3) | One principal (`bootstrap-key`); the AgentConfig overlay isn't wired [07 GS-27]; a ToolConfig rule applies to every caller | RT-04 + X-01/X-02 in-agent (self-enforced); one narrow Cedar `forbid` for every caller (D15 (a)) |
+| G-6 | **In-agent rails are self-enforced** | They run in the agent's process. A buggy or compromised agent skips them, and no platform PEP checks that they ran | MON-02 corroborates from the platform's spans; RT-01's hashes plus EP-0's digest check catch a changed image |
+| G-7 | **Egress can't be verified at the platform level** | The security group is unreadable; IAM blocks only Bedrock and the AgentCore Gateway [02 GR-22] | RT-03's audit hook (observe → enforce) for our process only |
+| G-8 | **Guardrails not editable or selectable** (see G-2) | GS-15, GS-16 | — |
+| G-9 | **TLS** | :8443 has a self-signed placeholder certificate and serves model routes only; MCP has no TLS listener, so the key crosses in clear on every tool call [07 GS-25] | Digests in records; O-04; stated |
+| G-10 | **No full red-team scan** (NeMo Auditor / garak) | No Auditor service; shared ceilings; the 1 req/s rule; no AgentCore generator | RTM-1–3: curated, measured, with misses published |
+| G-11 | **No millisecond out-of-band containment** (Sentry) | Our out-of-band loop runs in minutes; a model pause takes ≤ 2 s on super-120b and 33–41 s on nano-9b | In-band X-05 and the C16 halt |
+| G-12 | **No hardware boundary** (OpenShell in-silicon, BlueField) | AgentCore microVMs and t3 nodes | Stated |
+| G-13 | **No in-path human approval** | Headless agents; no inbound endpoint (R-P-07); EP-13 records only; no action tools | O-07 FLAG → the ESC incident; dispositions only ratchet to escalate |
+| G-14 | **The Cedar test rule is bypassable by case** | Cedar `like` is case-sensitive; the handler upper-cases `site` | Labelled a mechanism demonstration, not a protection |
+
+---
+
+## B14. Adapter bug (a): a dry-run notify on an existing incident is not offline
+
+**What's missing:** an offline dry run of `notify` on an incident that already exists.
+
+**Why:** in Arth's adapter an existing incident returns its confirmation before `dry_run` is checked (`notifier.py:134-136`), so the dry run logs DELIVERED. We use Arth's code as-is; the captain accepted this as a known risk.
+
+**Impact:** a dry run against the production log would write a false DELIVERED line.
+
+**What we plan instead:** a dry run only ever writes to a TEST log, never the production log, and log paths are absolute (a relative path silently starts a second log).
+
+---
+
+## B15. Adapter bug (b): zero journal rows can read as silence
+
+**What's missing:** a way to tell "the owner did not reply" from "the integration user could not read the journal".
+
+**Why:** the `itil` integration user reads 0 journal rows with no error (the ACL), and Arth's `_actions` treats 0 rows as readable (accepted risk, as above).
+
+**Impact:** a reply could be missed, and silence recorded wrongly.
+
+**What we plan instead:** `check` every 60 s or less; nobody else updates our incidents after the owner; the sticky-RESPONDED rule (a logged RESPONDED is never overridden by a later NO_RESPONSE_OBSERVED); the response basis (`last_update`) is shown.
+
+---
+
+## B16. The Assurance agent's model calls carry no subject CID
+
+**What's missing:** the run id on the Assurance agent's gateway calls.
+
+**Why:** Arth's analyser sends no baggage, so a call's run id is its trace id. We never put a subject run's CID on those calls (it would land their tokens inside that run's C16 figure; `work/14` R-8).
+
+**Impact:** these calls join the platform's records by action id only, and their tokens are team overhead, not a subject run's spend.
+
+---
+
+## B17. A finding's trace holds at most 200 steps
+
+**What's missing:** a full call-by-call trace inside a finding for a long run.
+
+**Why:** Arth's `finding_context` raises on a trace longer than 200 steps instead of truncating; the reference S2 had 353 gateway spans.
+
+**Impact:** without a summary, a long BREACH run would fail validation before `notify` and no incident would be raised.
+
+**What we plan instead:** the finding builder summarises per invocation (at most 200 steps); the full trail stays in the pack.
+
+---
+
+## B18. Readiness records not yet produced
+
+**What's missing:** the recorded Level 1 to Level 3 demo, the timed 15-minute run of show, the five-link hand-check, and the mentor review.
+
+**Why:** time. They are planned and kept under `reviews/`.
+
+**Status:** `<update before each submit: list which exist, and which do not>`. Anything not produced by the final submit stays listed here.
+
+---
+
+## B12. Design gaps the architecture records rather than closes
+
+*Source: `architecture/ARCHITECTURE.md` section 15.2. Columns: the gap; why it stays; what we plan to show instead (a design, not yet a result).*
+
+| Gap | Why it stays | What we plan to show instead |
+|---|---|---|
+| WHO: one shared principal (gap 2); per-agent Cedar isn't wired [07 GS-27] | Platform | Our actor records + the AWS-written `InvokeAgentRuntime` records, which carry the caller's role, the runtime and the run (an exact join by baggage CID + session id [10-f11]) |
+| WHAT: undeclared tools (gap 3) | Platform | Detection (EP-3, `route_alias`); a Cedar refusal only where a rule exists on the called tool (D15) |
+| AUTHORIZED: refusals recorded as ALLOW (gap 4) | Platform | Real-outcome records; for a guardrail block, also the AWS model-call record's "Guardrail blocked." (joined by time, role and model) [10-f11 §4.4] |
+| APPROVED: self-asserted approvals that don't follow changes (gap 5). **Live today: the reference IT and network agents run generation 2 on a generation-1 approval** [07 GS-22]; edits, model swaps and env patches add no approval record [05 AR-15] | Platform | EP-0's check (model + generation + runtime version against `ApprovalRecorded.observedGeneration`); stale-approval flags; the owner's ServiceNow approval of the register |
+| INTEGRITY: the ledger can't show non-alteration (gap 6) | Platform; crypto is out of scope | Corroboration + AWS-set times + the MANIFEST |
+| RECONSTRUCT: refusals lack run ids; the gateway copy has no ids (gap 7); the AWS model-call records (`Converse*`) carry no run, session or trace id either. (The AWS **invocation** records do carry the run [10-f11].) | Platform | The trace-id join; the time + role + model join for model-call records, whose token counts match the spans exactly |
+| No platform per-run halt (gap 8). **The reference S2's 1,999,001 tokens span two concurrent IT invocations of one session:** the kit's CLI re-sent the invocation after its 180 s read timeout, and nothing in the platform stops a duplicate [05 AR-18; 10-f11 §4.3] | Platform | Our inline check covers our agents only; observe mode relies on the safety ceiling. Exactly one invocation per handoff (`AWS_MAX_ATTEMPTS=1`) and the agent-side duplicate guard (§7) |
+| Plain HTTP; customer data in spans (gap 9). **The :8443 TLS listener's certificate is a self-signed placeholder** (its SAN is literally `<PERIMETER-HOST>`), it serves model routes only, and MCP has no TLS listener, so the gateway key crosses in clear text on every tool call [07 GS-25] | Platform | Digests in our records; span-content redaction in our agents (§7.1); pack hygiene |
+| The twin can't make breaches (gap 10). Re-checked after the organisers' twin fix: unchanged (same code, same packaged data) [09] | Platform | Declared levers (§5.5) |
+| Tool code can change under approval (gap 11) | Platform | A CodeSha256 baseline at the freeze + CloudTrail code-update events (readable: OC-13 closed). The organisers audit the same Lambdas (`GetFunction` on all seven, 21:29–21:34 UTC [09 §7]) |
+| **The gateway guardrail is fixed, narrow and not ours:** one per model alias; PROMPT_ATTACK on input only (PII only on the `-helper` alias); no create or update (an explicit IAM deny), no per-call choice, no guardrail on tool routes, no NVIDIA safety model [07 GS-15, GS-16; guardrails/02 §0, GR-06, GR-09] | Platform | The guardrail id and version recorded per run; BLOCKED shown next to the platform's ALLOW; Hostile cases beyond prompt attack rest on the agents' judgment and in-agent rails (§6) |
+| **An AgentConfig pause is a record, not a stop:** the runtime stays READY and direct invocations still work [07 GS-14] | Platform | EP-0 declines a run on a paused agent; containment by a model pause (ADV-R-08) or C16 `enforce` |
+| **The ledger server is fragile:** one single-threaded replica with 256Mi, whole-file parsing on every GET, no fsync; its volume is deleted with the stack [06 C5, C6] | Platform | Per-CID exports, no full GET during a run, the AWS-timestamped stdout witness, the export before teardown |
+| **Shared spaces:** the IDE is not team-exclusive (seven organiser shell commands on 2026-10-05), and the organisers write into our evidence bucket and read our ledger [09 §7] | Organisers | The pack is built on the laptop; we write only under `ifabric/` and `submissions/`; the `facilitator/` objects are left alone and never treated as our evidence |
+| The inline tally trusts the run envelope | A design limit: the frame allows no store read in the path | The floor is the control of record (ADV-R-06) |
+| AICT's usage count is 0; Monitor covers Managed agents only. Its usage query filters `InvokeAgent` (our traffic is `InvokeAgentRuntime`) and groups by `requestParameters.sessionId`, which is always empty [08 AI-03; 10-f11 §1] | AICT | Recorded; the AWS-written invocation log used instead, joined exactly by `responseElements` |
+| Others' admission decisions are invisible (EKS audit off) | Platform | Our own applies, recorded by the deploy wrapper |
+| C9: per-run attribution needs spaced runs; the baseline n is small; the swap lever is unproven | Time; platform | Declared in the register; pilot P8 |
+| Separation of duties: the owner also builds, and also rates the risks she owns; AI reviewers are not the GRC assurance role | Team size | The roles table (§12.2): Sree is accountable management and operations; Arth is assurance (a "reviewed" note on each T2 before Sree approves; the assurance check on each control result); GRC is vacant (R-D-02). If Arth is unavailable overnight, each check he would have made is recorded "not independently reviewed" |
+| AICT approvals carry no approver, time or version link: "Approved" is an editable Status [AICT notes §2.6] | AICT | The repo inventory is the source (D14); AICT gets a mirror of owners and the tier |
+| Owners and approvals of platform components (models, shared tools) are not confirmed by their owners | Organisers | The inventory marks them as our declaration, with the CR approval it read (§3.10) |
+| The EU AI Act tier has no primary source in hand (OC-21) | Sources | Recorded as UNVERIFIED and cited to the playbook line (§3.9) |
+| Organiser-injected Hostile/Rogue events: who injects them, and when, is unknown | Organisers | The adversarial log also records events we observe |
+| The inline bonus must be shown live during judging | Account lifetime; budget | `prooflab tail` on a live run while the account is up; otherwise the recorded N3 decision records, labelled "recorded, not live" |
+| Readiness records not yet produced: the recorded L1 → L3 demo and the timed 15-minute run-of-show (R-J-45), the 5-link hand-check (R-P-03 (e)), the mentor review (R-J-56) [04b] | Time | Planned in §12.1 and kept in `reviews/` (§9.1). Any not produced by the final submit is listed here and in `gap-list.md` |
+| Adapter bug (a): `notify --dry-run` on an existing incident logs DELIVERED and is not offline | Arth's code, used as-is; accepted by the captain | A dry run only ever writes to a TEST log (G-05) |
+| Adapter bug (b): an itil journal read of 0 rows can read as NO_RESPONSE_OBSERVED | Arth's code, used as-is; accepted by the captain | `check` every ≤ 60 s; nobody else updates our incidents after the owner; the sticky-RESPONDED rule; the response basis shown |
+| The Assurance agent's model calls carry no subject CID (their run id is their trace id) | Arth's analyser sends no baggage | They join the platform's records by action id; their tokens are team overhead, never a subject run's C16 spend |
+| The Assurance runtime sends the gateway key over plain HTTP (the gateway-URL shim) | Every AgentCore runtime gets a plain-HTTP gateway URL; the :8443 certificate is a placeholder (gap 9) | Recorded as a security decision; the key never leaves the runtime's env |
+| A finding's trace holds at most 200 steps | Arth's `finding_context` rejects longer traces | G-04 summarises per invocation; the full trail stays in the pack |
+| The console's live file is a convenience index; a replay is labelled REPLAY | A design choice (G-10) | The pack's records stay the authority |
+| The cockpit side door (EP-16): the cockpit has no auth, and anyone with its link can invoke any agent | Platform | Observed and labelled in the run catalogue; our agents run an unenveloped call under the strictest cap |
+
+---
+
+## B13. The rails' gaps (G-1 to G-14)
+
+*Source: `architecture/guardrails/AGENT-GUARDRAILS.md` section 11. The rails are agent code that we write; they are self-enforced (G-6) and measured on a curated set, not a full red-team scan (G-10).*
+
+| # | Gap | Why it stays | What we plan to show instead |
+|---|---|---|---|
+| G-1 | **No NVIDIA safety models** (content safety, topic control, jailbreak detection, GLiNER PII; talk M1–M7) | Not served on Bedrock; Marketplace and SageMaker denied; no NIM operator; no GPUs [02 GR-01–03]. The only serverless safety classifier, `gpt-oss-safeguard`, is not NVIDIA and is an organiser question [02 GR-04] | Deterministic rails + a fail-closed self-check on a general Nemotron, with the platform guardrail as its first stage. Weaker than a trained classifier: RTM-1 publishes the misses |
+| G-2 | **The platform guardrail is fixed, narrow and not editable** | PROMPT_ATTACK on input only (PII only on the helper alias); no content, topic, word, grounding or output policy; IAM denies guardrail writes; one guardrail per alias [07 GS-15, GS-16] | Observed and recorded per run (id and version); RTM-2 measures its coverage; our rails cover output and tool output |
+| G-3 | **No platform screening of tool outputs** | Guardrails bind only to model routes; ApplyGuardrail is unavailable; the external enforcers are inert [02 GR-09, GR-10] | T-01–T-06 in-agent |
+| G-4 | **Raw prompts in spans** (gap 9, refined) | Without the token, Strands writes the raw prompt into `invoke_agent` before any hook (§1.1). With it, Strands redacts; other emitters (ADOT instrumentations, exception text, gateway-side logs) are unverified | The env switch + I-02 + O-04; the T-SPAN-01 canary result, stated either way |
+| G-5 | **No per-agent platform Cedar** (gaps 2, 3) | One principal (`bootstrap-key`); the AgentConfig overlay isn't wired [07 GS-27]; a ToolConfig rule applies to every caller | RT-04 + X-01/X-02 in-agent (self-enforced); one narrow Cedar `forbid` for every caller (D15 (a)) |
+| G-6 | **In-agent rails are self-enforced** | They run in the agent's process. A buggy or compromised agent skips them, and no platform PEP checks that they ran | MON-02 corroborates from the platform's spans; RT-01's hashes plus EP-0's digest check catch a changed image |
+| G-7 | **Egress can't be verified at the platform level** | The security group is unreadable; IAM blocks only Bedrock and the AgentCore Gateway [02 GR-22] | RT-03's audit hook (observe → enforce) for our process only |
+| G-8 | **Guardrails not editable or selectable** (see G-2) | GS-15, GS-16 | — |
+| G-9 | **TLS** | :8443 has a self-signed placeholder certificate and serves model routes only; MCP has no TLS listener, so the key crosses in clear on every tool call [07 GS-25] | Digests in records; O-04; stated |
+| G-10 | **No full red-team scan** (NeMo Auditor / garak) | No Auditor service; shared ceilings; the 1 req/s rule; no AgentCore generator | RTM-1–3: curated, measured, with misses published |
+| G-11 | **No millisecond out-of-band containment** (Sentry) | Our out-of-band loop runs in minutes; a model pause takes ≤ 2 s on super-120b and 33–41 s on nano-9b | In-band X-05 and the C16 halt |
+| G-12 | **No hardware boundary** (OpenShell in-silicon, BlueField) | AgentCore microVMs and t3 nodes | Stated |
+| G-13 | **No in-path human approval** | Headless agents; no inbound endpoint (R-P-07); EP-13 records only; no action tools | O-07 FLAG → the ESC incident; dispositions only ratchet to escalate |
+| G-14 | **The Cedar test rule is bypassable by case** | Cedar `like` is case-sensitive; the handler upper-cases `site` | Labelled a mechanism demonstration, not a protection |
+
+---
+
+## B14. Adapter bug (a): a dry-run notify on an existing incident is not offline
+
+**What's missing:** an offline dry run of `notify` on an incident that already exists.
+
+**Why:** in Arth's adapter an existing incident returns its confirmation before `dry_run` is checked (`notifier.py:134-136`), so the dry run logs DELIVERED. We use Arth's code as-is; the captain accepted this as a known risk.
+
+**Impact:** a dry run against the production log would write a false DELIVERED line.
+
+**What we plan instead:** a dry run only ever writes to a TEST log, never the production log, and log paths are absolute (a relative path silently starts a second log).
+
+---
+
+## B15. Adapter bug (b): zero journal rows can read as silence
+
+**What's missing:** a way to tell "the owner did not reply" from "the integration user could not read the journal".
+
+**Why:** the `itil` integration user reads 0 journal rows with no error (the ACL), and Arth's `_actions` treats 0 rows as readable (accepted risk, as above).
+
+**Impact:** a reply could be missed, and silence recorded wrongly.
+
+**What we plan instead:** `check` every 60 s or less; nobody else updates our incidents after the owner; the sticky-RESPONDED rule (a logged RESPONDED is never overridden by a later NO_RESPONSE_OBSERVED); the response basis (`last_update`) is shown.
+
+---
+
+## B16. The Assurance agent's model calls carry no subject CID
+
+**What's missing:** the run id on the Assurance agent's gateway calls.
+
+**Why:** Arth's analyser sends no baggage, so a call's run id is its trace id. We never put a subject run's CID on those calls (it would land their tokens inside that run's C16 figure; `work/14` R-8).
+
+**Impact:** these calls join the platform's records by action id only, and their tokens are team overhead, not a subject run's spend.
+
+---
+
+## B17. A finding's trace holds at most 200 steps
+
+**What's missing:** a full call-by-call trace inside a finding for a long run.
+
+**Why:** Arth's `finding_context` raises on a trace longer than 200 steps instead of truncating; the reference S2 had 353 gateway spans.
+
+**Impact:** without a summary, a long BREACH run would fail validation before `notify` and no incident would be raised.
+
+**What we plan instead:** the finding builder summarises per invocation (at most 200 steps); the full trail stays in the pack.
+
+---
+
+## B18. Readiness records not yet produced
+
+**What's missing:** the recorded Level 1 to Level 3 demo, the timed 15-minute run of show, the five-link hand-check, and the mentor review.
+
+**Why:** time. They are planned and kept under `reviews/`.
+
+**Status:** `<update before each submit: list which exist, and which do not>`. Anything not produced by the final submit stays listed here.
