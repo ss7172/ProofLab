@@ -67,7 +67,7 @@ def test_routes_match_the_owners_modules():
     expected = {
         "run": "prooflab.adapters.orchestrator.run:main", "registry": "prooflab.registry:main",
         "query": "prooflab.query.cli:main", "assess": "prooflab.query.cli:assess_main",
-        "refresh": "prooflab.store.snapshot:main", "pack": "prooflab.pack.build:main",
+        "refresh": "prooflab.store.snapshot:main", "pack": "prooflab.pack.verb:main",
         "humanloop": "prooflab.humanloop.runner:main", "console": "prooflab.console.server:main",
         "watch": "prooflab.watch.cli:main", "tail": "prooflab.watch.tail:main",
         "recheck": "prooflab.recheck.rechecker:main", "collect": "prooflab.adapters.collectors:main",

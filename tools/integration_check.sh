@@ -6,6 +6,7 @@
 #   1. /usr/bin/python3 tests/e2e/rehearse.py must print "TOTAL: n PASS, 0 FAIL" (the Phase-1 tool chain on synthetic data);
 #   2. bash <ops-lane>/runbook/dryrun.sh (outside the repo; N/A when absent) must print "TOTAL: n PASS, 0 FAIL" and exit 0,
 #      run against THIS root (PROOFLAB_REPO). Skipped as N/A when the root has no tests/e2e/rehearse.py (not a product tree).
+#      Inside the dry run the red-flag lint is report-only (PROOFLAB_PACK_LINT; the synthetic pack has flags by design).
 # Overrides for tests: REHEARSE_PY (interpreter), DRYRUN_SH (script). Exit 0 = no FAIL, 1 = at least one FAIL.
 # No cloud call, no credential read, env.sh and ~/.prooflab-snow.env are never sourced.
 set -u
@@ -40,7 +41,15 @@ if [ -f "$ROOT/tests/e2e/rehearse.py" ]; then
   if [ "$rc" = 0 ] && [ "$tok" = 0 ]; then pass "integration: tests/e2e/rehearse.py TOTAL, none failing"
   else printf '%s\n' "$out" | grep -E '^[0-9]+ +(FAIL|XFAIL)' | head -8 | sed 's/^/      /'; fail "integration: tests/e2e/rehearse.py (exit $rc)"; fi
   if [ -f "$DRYRUN" ]; then
-    out="$(PROOFLAB_REPO="$ROOT" bash "$DRYRUN" 2>&1)"; rc=$?
+    # The dry run stages a SYNTHETIC pack that the red-flag lint (PR-49) rightly refuses, so inside the dry run the
+    # wrapper's lint step runs the real lint in report-only mode (PROOFLAB_PACK_LINT replaces it; the real submit
+    # path never sets it). The flag count is printed so the rehearsal still shows the lint ran.
+    LINTDIR="$(mktemp -d)"; LINTLOG="$LINTDIR/lint.log"
+    printf '%s\n' "PYTHONPATH=\"$ROOT\" \"$PYBIN\" -m prooflab.pack.redflag \"\$1\" > \"$LINTLOG\" 2>&1" \
+      'echo "pack lint (report-only in the dry run): exit $?"; exit 0' > "$LINTDIR/lint-report-only.sh"
+    out="$(PROOFLAB_REPO="$ROOT" PROOFLAB_PACK_LINT="$LINTDIR/lint-report-only.sh" bash "$DRYRUN" 2>&1)"; rc=$?
+    [ -s "$LINTLOG" ] && echo "      dry-run pack lint (report-only): $(grep -o "[0-9]* red flag(s)" "$LINTLOG" | head -1) on the synthetic pack"
+    rm -rf "$LINTDIR"
     tl="$(total_ok "$out")"; tok=$?
     echo "      $tl"
     if [ "$rc" = 0 ] && [ "$tok" = 0 ]; then pass "integration: ops-lane runbook dryrun.sh, none failing"

@@ -2,14 +2,15 @@
 # Guarded submit and readback. The ops lane runs it under ~/firstmate-homes/TrustworthyAI/workshop-local/bin/hk
 # (the scan script loads the exact secret values itself, through that environment; nothing is injected here).
 #   submit_wrapper.sh [--dry-run] [--evidence DIR] [--workdir DIR] [--zip PREFLIGHT_ZIP] [<team>]
-#       scan (staged evidence dir, workdir, unzipped preflight zip) + manifest verify, then submit.sh <team>
+#       scan (staged evidence dir, workdir, unzipped preflight zip) + manifest verify + red-flag lint, then submit.sh
 #   submit_wrapper.sh --readback <local-zip> [--bucket B] [--key K] [--workdir DIR] [--print-root-cmd <label>] [<team>]
 #       head-object, get-object --if-match <ETag>, head-object again (same VersionId + ETag both times),
 #       sha256 equal to the local zip, then manifest verify + scan on the UNZIPPED copy. Without --bucket:
 #       the local zip only. (get-object --version-id is denied to the participant role.)
 # Team defaults to ifabric; key defaults to submissions/<team>/<zip name>. Never posts anything itself.
 # Scan = bash workshop-local/scripts/pre-push-secret-scan.sh (PROOFLAB_PREPUSH_SCAN overrides); needs RESULT: clean.
-# Env: PROOFLAB_PYTHON (default python3), PROOFLAB_REPO, PROOFLAB_MANIFEST_PY, SUBMIT_SH, PROOFLAB_PREPUSH_SCAN.
+# Env: PROOFLAB_PYTHON (default python3), PROOFLAB_REPO, PROOFLAB_MANIFEST_PY, SUBMIT_SH, PROOFLAB_PREPUSH_SCAN,
+#      PROOFLAB_PACK_LINT (replaces, never skips, the red-flag lint `python3 -m prooflab pack lint`; must exit 0).
 set -u
 export PYTHONDONTWRITEBYTECODE=1
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -30,7 +31,7 @@ while [ $# -gt 0 ]; do
     --key) KEY="$2"; shift ;;
     --readback) READBACK="$2"; shift ;;
     --print-root-cmd) ROOTLABEL="$2"; shift ;;
-    -h|--help) sed -n 2,13p "$0"; exit 0 ;;
+    -h|--help) sed -n 2,14p "$0"; exit 0 ;;
     *) TEAM="$1" ;;
   esac
   shift
@@ -53,6 +54,13 @@ scan_zip() {  # $1 = zip; the scan cannot read inside zips, so scan an unzipped 
 }
 verify_dir() {  # $1 = dir holding MANIFEST.json
   "$PY" "$MANIFEST" verify "$1" || { echo "REFUSED: manifest verify failed" >&2; return 1; }
+}
+lint_dir() {  # $1 = staged pack; REQUIRED: any red flag (exit 2) or an unreadable pack (exit 1) = no submit
+  local rc
+  if [ -n "${PROOFLAB_PACK_LINT:-}" ]; then bash "$PROOFLAB_PACK_LINT" "$1"; rc=$?   # a replacement lint (tests)
+  else PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}" "$PY" -m prooflab.pack.redflag "$1"; rc=$?; fi
+  [ $rc -eq 0 ] || { echo "REFUSED: pack lint found red flags (python3 -m prooflab pack lint $1)" >&2; return 1; }
+  echo "pack lint clean: $1"
 }
 sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
 strip_q() { printf '%s' "$1" | tr -d '"'; }
@@ -94,6 +102,7 @@ scan_dir "$EVID" || exit 1
 [ -z "$WORKDIR" ] || scan_dir "$WORKDIR" || exit 1
 if [ -n "$PZIP" ]; then scan_zip "$PZIP" || exit 1; rm -rf "$UNZIPPED"; fi
 verify_dir "$EVID" || exit 1
+lint_dir "$EVID" || exit 1
 SUBMIT="${SUBMIT_SH:-$(command -v submit.sh || true)}"
 [ -n "$SUBMIT" ] || { echo "REFUSED: submit.sh not found (SUBMIT_SH or PATH)" >&2; exit 1; }
 if [ "$DRY" = 1 ]; then echo "DRY-RUN: $SUBMIT $TEAM"; exit 0; fi
