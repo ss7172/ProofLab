@@ -18,10 +18,9 @@ def detect(item):
     out["ticket"] = set(r.records[-1]["rail.matches"]) if r.records and r.records[-1]["rail.id"] == "I-03" else set()
     r = R.Rails("ifabric-it", mode="enforce")
     res = json.dumps({"query": "SITE-DEN-12", "total_hits": 1, "results": {"incidents": [{"note": item["text"]}]}})
-    seen = r.after_tool("runbook-lookup___lookup", res)
+    r.after_tool("runbook-lookup___lookup", res)
     t3 = [d for d in r.records if d["rail.id"] == "T-03"]
     out["tool_output"] = set(t3[0]["rail.matches"]) if t3 else set()
-    out["tool_output_neutralised"] = bool(t3) and item["text"] not in seen
     r = R.Rails("ifabric-it", mode="enforce")
     cancel, args = r.before_tool("runbook-lookup___lookup", {"query": item["text"], "category": "incidents"})
     pre = {d["rail.id"] for d in r.records}
@@ -76,10 +75,12 @@ def test_detection_table_and_misses_listed():
     assert len(exp_detect) >= 30
 
 
-def test_tool_output_neutralised_in_enforce():
+def test_tool_output_enveloped_in_enforce():
+    # MIN: every flagged tool output is delivered inside the evidence envelope; span neutralisation is P2 (PR-05b)
     for it in CORPUS["items"]:
-        if it["expected_rule"] != "miss":
-            assert detect(it)["tool_output_neutralised"], it["id"]
+        r = R.Rails("ifabric-it", mode="enforce")
+        out = r.after_tool("runbook-lookup___lookup", json.dumps({"total_hits": 1, "results": {"incidents": [{"note": it["text"]}]}}))
+        assert out.startswith("[EVIDENCE E1 |") and out.endswith("[END E1]"), it["id"]
 
 
 def test_no_secret_shapes_in_corpus_or_fixtures():

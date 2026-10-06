@@ -33,10 +33,10 @@ def _host(event, args):
 
 
 def _record(host, event):
-    al = sorted(_S["allow"])
+    h = hashlib.sha256(",".join(sorted(_S["allow"])).encode()).hexdigest()   # RT-03's policy: the allowlist
     return {"record_kind": "rail_decision", "phase": "ifabric.rail_decision", "control.ref": "RAIL",
             "control.id": "RAIL-RT-03", "threshold.version": "RT-03@" + V,
-            "threshold.value": "sha256:" + hashlib.sha256(",".join(al).encode()).hexdigest(),
+            "threshold.value": "sha256:" + h, "threshold.sha256": h, "rail.policy_sha256": h,
             "register.version": None, "verdict": "FLAG", "reason": "RT-03 FLAG: egress.unlisted x1 (%s)" % event,
             "inline.mode": "observe", "inline.action": "proceed", "rail.id": "RT-03", "rail.version": V,
             "rail.stage": "runtime", "rail.hook": "audit_hook", "rail.mechanism": "code",

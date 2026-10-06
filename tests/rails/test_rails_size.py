@@ -5,11 +5,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SRC = os.path.join(ROOT, "adapters", "runtime", "rails.py")
 RAW = open(SRC, "rb").read()
 PACKED = len(base64.b64encode(gzip.compress(RAW, 9, mtime=0)))
+MIN_BUDGET = 6144      # B-G1 / FEATURE-MAP PR-05 DONE: MIN source <= 6 KB (amend here if the orchestrator does)
+P2_CEILING = 10240     # B-G1: <= 10 KB with P2
 
 
 def test_rails_within_p2_ceiling_10kb():
     print("rails.py raw=%d bytes, gzip+b64=%d chars" % (len(RAW), PACKED))
-    assert len(RAW) <= 10240
+    assert len(RAW) <= P2_CEILING
 
 
 def test_rails_packed_size_reported():
@@ -19,7 +21,8 @@ def test_rails_packed_size_reported():
 
 try:
     import pytest
-    _xfail = pytest.mark.xfail(strict=True, reason="B-G1 MIN budget 6 KB raw: measured 9,099 B (declared miss)")
+    _xfail = pytest.mark.xfail(strict=True, reason="B-G1 MIN budget 6,144 B raw: measured 9,512 B with fail-closed "
+                                                   "wrappers (declared miss; amendment requested)")
 except ImportError:  # plain-interpreter smoke runs
     def _xfail(f):
         return f
@@ -27,4 +30,4 @@ except ImportError:  # plain-interpreter smoke runs
 
 @_xfail
 def test_rails_min_budget_6kb_raw():
-    assert len(RAW) <= 6144
+    assert len(RAW) <= MIN_BUDGET
