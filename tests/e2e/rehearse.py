@@ -140,15 +140,18 @@ def _iso(t):
 
 
 # ------------------------------------------------------------------ 1. registry: v0-pilot, derive, v1, pins
-def make_v1_text(text, version, date, cap):
-    """The working register turned into the v1 the live lane freezes (the edits ARCH 3.3 step 4 names)."""
+def make_v1_text(text, version, date, cap, c7_gap=None):
+    """The working register turned into the v1 the live lane freezes (the edits ARCH 3.3 step 4 names).
+
+    C16 gets the derived cap; with `c7_gap` C7 gets its three numbers in the form the evaluator reads
+    (coverage_min_pct=..;gap_max_ms=..;violating_gap_share_max_pct=..), so C7 bumps too and carries a T1."""
     out, entry = [], None
     for line in text.splitlines():
         key = line.split(":", 1)[0].lstrip("- ").strip()
         ind = line[:len(line) - len(line.lstrip())]
         if key == "control_id":
             entry = line.split(":", 1)[1].strip().strip('"')
-        c16 = entry == "16"       # only C16's values change in v1, so only C16 bumps (the version-bump rule)
+        c16 = entry == "16" or (entry == "7" and c7_gap is not None)   # a control whose values change bumps (the version-bump rule)
         if re.match(r"^(version|register_version):", line):
             line = "%s: %s" % (key, version)
         elif re.match(r"^(version_date|frozen_at):", line):
@@ -161,8 +164,10 @@ def make_v1_text(text, version, date, cap):
             line = re.sub(r"-v0\b", "-v1", line)
         elif key in ("cap_tier_default",):
             line = "%s%s: %d" % (ind, key, cap)
-        elif key == "observation_limit" and c16 and re.search(r":\s*\d+\s*$", line):
+        elif key == "observation_limit" and entry == "16" and re.search(r":\s*\d+\s*$", line):
             line = "%sobservation_limit: %d" % (ind, cap)
+        elif key == "observation_limit" and entry == "7" and c7_gap is not None:
+            line = '%sobservation_limit: "coverage_min_pct=100;gap_max_ms=%s;violating_gap_share_max_pct=0"' % (ind, c7_gap)
         elif key == "inline_modes":
             line = "%sinline_modes: enforce,observe" % ind
         out.append(line)
@@ -229,7 +234,8 @@ def step_registry(R):
     # v1: derive -> owner approves -> freeze; T1 is the live lane's (a synthetic head.json stands in)
     t1 = time.time() - 3600
     date = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t1))
-    v1_reg = _write(_p(w, "draft", "register.yaml"), make_v1_text(_read(_p(reg_dir, "register.yaml")), "v1", date, cap or 0))
+    v1_reg = _write(_p(w, "draft", "register.yaml"), make_v1_text(_read(_p(reg_dir, "register.yaml")), "v1", date, cap or 0,
+                                                                         next((i for i in items if i.get("control_ref") == "C7"), {}).get("value")))
     v1_risks = _write(_p(w, "draft", "risks.yaml"), make_v1_risks(_read(_p(reg_dir, "risks.yaml")), "v1", date))
     rc, out, err, _ = R.cli(["registry", "freeze", "--version", "v1", "--register", v1_reg, "--risks", v1_risks,
                              "--out", reg_dir, "--supersedes", v0])

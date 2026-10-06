@@ -55,7 +55,7 @@ def render_control_run(a):
         "owner: %s" % v(a["owner"]),
         "population: %s" % (json.dumps(s["denominators"], sort_keys=True) if s["denominators"] else "unknown (gap)"),
         "measured: %s %s  vs limit: %s  (source %s)%s" % (
-            v(ms.get("value")), unit, v(a["limit"]), v(ms.get("source")),
+            v(ms.get("value")), unit, v(a["limit"]), v(a.get("limit_source") or ms.get("source")),
             ("  overshoot %s" % a["overshoot"]) if a.get("overshoot") is not None else ""),
         "exceptions: %s" % (json.dumps(s["exceptions"], sort_keys=True) if s["exceptions"] else "none recorded"),
         "completeness: %s" % (json.dumps(s["completeness"], sort_keys=True) if s["completeness"] else "unknown (gap)"),
@@ -63,7 +63,7 @@ def render_control_run(a):
         "VERDICT: %s" % _verdict_words(a["verdict"]),
         "gaps: %s" % ("; ".join(a["gaps"]) if a["gaps"] else "none"),
         "records: %s" % _fmt_ids(a["records"]),
-        "who acted: %s" % ("; ".join("%s on %s v%s, principal %s, on behalf of %s" % tuple(v(x[k]) for k in (
+        "who acted: %s" % ("; ".join("%s on runtime %s, version %s, principal %s, on behalf of %s" % tuple(v(x[k]) for k in (
             "actor", "runtime", "version", "principal", "on_behalf_of")) for x in a["actors"]) or "unknown (gap)"),
     ]
     for e in a["eps"][:12]:
