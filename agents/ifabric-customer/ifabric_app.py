@@ -26,8 +26,7 @@ SURFACE = {
     "adapters.runtime.tally": ("RunTally",),
     "adapters.runtime.model_call": ("ModelCallAdapter", "make_gateway_model"),
     "adapters.runtime.tool_call": ("ToolCallRecorder", "args_sha256"),
-    "adapters.runtime.judgment": ("record_judgment", "record_from_j2", "record_intent", "record_negotiation",
-                                  "record_result_inspection"),
+    "adapters.runtime.judgment": ("record_judgment", "record_from_j2", "record_intent", "record_negotiation"),
     "adapters.runtime.rails": ("Rails", "startup"),
     "adapters.runtime.egress": ("install",),
     "adapters.runtime.j2": ("judge", "halted_judgment", "negotiation_question", "negotiate", "position_of",
@@ -85,8 +84,6 @@ def _envelope(payload):
 
 
 def _question(p):
-    if isinstance(p, dict) and isinstance(p.get("prompt"), str):   # the orchestrator's body (ARCH 7.2)
-        return p["prompt"][:6000]
     ctx = p.get("context", p) if isinstance(p, dict) else p
     if isinstance(ctx, dict):
         return ctx.get("question") or json.dumps(ctx)[:6000]
@@ -117,11 +114,12 @@ def _echo(st, tally=None):
     """The pin echo on EVERY response, refusals included (ARCH 7.2 preflight reads it): the verified pin sha256
     and register version; after a start-up failure only the unverified env value, labelled so."""
     cfg = st.get("cfg")
-    e = {"pin_sha256": cfg.pin_sha256 if cfg else os.environ.get("IFABRIC_PIN_SHA256"), "pin_verified": bool(cfg),
-         "register_version": cfg.register_version if cfg else os.environ.get("IFABRIC_REGISTER_VERSION")}
-    if tally is not None:
+    g = os.environ.get
+    e = {"pin_sha256": cfg.pin_sha256 if cfg else g("IFABRIC_PIN_SHA256"), "pin_verified": bool(cfg),
+         "register_version": cfg.register_version if cfg else g("IFABRIC_REGISTER_VERSION")}
+    if tally:
         e.update(tally_tokens=tally.committed, tally_calls=tally.calls)
-    return {"pin_sha256": e["pin_sha256"], "register_version": e["register_version"], "ifabric": e}
+    return dict(e, ifabric=dict(e))
 
 
 def _fault(W, client, ctx, cfg, raw, name):
@@ -130,18 +128,13 @@ def _fault(W, client, ctx, cfg, raw, name):
     f = raw.get("fault")
     if not isinstance(f, dict) or f.get("agent") != name:
         return None
-    declared = ((cfg.pin or {}).get("c7") or {}).get("declared_faults") or []
-    why = None if f.get("spec") in declared else "not declared in the pin"
-    if not why and f.get("kind") == "inject-tool-output":
-        t = f.get("fixture_text")
-        if not isinstance(t, str) or hashlib.sha256(t.encode("utf-8")).hexdigest() != f.get("fixture_sha256"):
-            why = "fixture text missing or sha256 differs"
-    if not why and f.get("kind") == "suppress-record" and (f.get("event") != "tool.call"
-                                                           or not str(f.get("count")).isdigit()):
-        why = "only suppress-record:<agent>:tool.call:<n> is supported"
+    declared = ((cfg.pin or {}).get("c7") or {}).get("declared_faults") or []   # register-written specs only
+    t = f.get("fixture_text") or ""
+    why = ("not declared in the pin" if f.get("spec") not in declared else "fixture sha256" if f.get(
+        "kind") == "inject-tool-output" and hashlib.sha256(t.encode()).hexdigest() != f.get("fixture_sha256") else None)
     ev = "fault-refused" if why else "fault-applied"
-    client.emit(W.emit_client.lifecycle_record(ctx, ev, "%s %s%s" % (ev, f.get("spec"), (": " + why) if why else ""),
-                                               reason=why or "declared fault"))
+    client.emit(W.emit_client.lifecycle_record(ctx, ev, "%s %s %s" % (ev, f.get("spec"), why or ""),
+                                               reason=why or ev))
     return None if why else f
 
 
@@ -150,15 +143,12 @@ class _Suppress(object):
     of a tool call, so C7 finds that expected event missing (BREACHED). Every other record passes through."""
 
     def __init__(self, client, count):
-        self._c, self._left = client, int(count)
-
-    def __getattr__(self, k):
-        return getattr(self._c, k)
+        self.scrubber, self._c, self._n = client.scrubber, client, int(count)
 
     def emit(self, rec):
         if rec.get("ep.id") == "EP-3" and rec.get("tool.phase") == "after":
-            self._left -= 1
-            if self._left == 0:
+            self._n -= 1
+            if not self._n:
                 return "SUPPRESSED"
         return self._c.emit(rec)
 
@@ -240,7 +230,7 @@ class _ToolHooks(object):
         parts = [c.get("text") for c in res.get("content") or [] if isinstance(c, dict) and "text" in c]
         text = "\n".join(parts) if parts else json.dumps(res.get("content"), default=str)
         name, ij = tu.get("name") or "", inv.inject
-        if ij and (name == ij["tool"] or name.endswith("_" + ij["tool"])):   # ADV-H-02: appended BEFORE the rails
+        if ij and name.endswith(ij["tool"]):   # ADV-H-02: appended BEFORE the rails
             text += "\n" + ij["fixture_text"]
         n0 = len(inv.rails.records)
         wrapped = inv.rails.after_tool(tu.get("name"), text)
@@ -293,8 +283,7 @@ def build(spec):
         if not e.enveloped:
             W.startup.record_no_envelope(client, ctx)
         client.emit(W.emit_client.lifecycle_record(   # C7 workflow event (ARCH 3.6 key 4: echoes the handoff id)
-            ctx, "invocation.received", "invocation of %s received: handoff %s from %s" % (
-                name, e.handoff_id or "(none)", e.from_agent), extra={"phase": "invocation.received"}))
+            ctx, "invocation.received", "received %s" % e.handoff_id, extra={"phase": "invocation.received"}))
         if not st["guard"].begin(e.handoff_id):
             W.startup.refuse_duplicate(client, ctx, st["guard"])
             client.flush()
@@ -326,8 +315,8 @@ def build(spec):
             inv.drain()
             agent = Agent(model=model, tools=tools, system_prompt=prompt, hooks=[mc, _ToolHooks(inv)],
                           callback_handler=None)
-            neg = clean.get("negotiate") if spec.get("negotiates") and isinstance(clean, dict) else None
-            neg = neg if isinstance(neg, dict) else None   # Gateway C: evaluate the proposal, never a canned agree
+            neg = clean.get("negotiate") if spec["role"] == "it" else None   # Gateway C (network -> IT)
+            neg = neg if isinstance(neg, dict) else None   # evaluated like any task: never a canned agree
             text = str(agent(W.j2.negotiation_question(neg.get("proposal")) if neg else _question(clean))).strip()
             if tally.halted:   # C16 halt: escalate in code, no re-ask
                 j = W.j2.halted_judgment()
@@ -341,11 +330,14 @@ def build(spec):
             if neg:   # the output rails only move toward safety: the position follows them
                 pos = W.j2.position_of(fields["disposition"], pos)
                 W.judgment.record_negotiation(client, ctx, pos, fields)
-                result.update(position=pos, negotiation={"position": pos, "handoff_id": e.handoff_id})
+                result["position"] = pos
             W.judgment.record_from_j2(client, ctx, fields,
                                       result_digests=[W.tool_call.args_sha256(t) for t in inv.evidence])
-            W.judgment.record_result_inspection(client, ctx, fields, pos)
-            if spec.get("proposes"):   # Gateway C's input: the network's structured proposal
+            client.emit(W.emit_client.lifecycle_record(   # the reference shape's result-inspection step (ARCH 3.5)
+                ctx, "result-inspection", "result inspected: valid=%s precedence=%s position=%s" % (
+                    fields.get("valid"), fields.get("precedence_rule"), pos),
+                extra={"phase": "ifabric.result-inspection"}))
+            if spec["role"] == "network":   # Gateway C's input: the network's structured proposal
                 result["proposal"] = W.j2.proposal_of(fields, text)
             result.update(_echo(st, tally), answer=answer, judgment=fields, disposition=fields["disposition"],
                           halted=tally.halted, tally_tokens=tally.committed, tally_calls=tally.calls)

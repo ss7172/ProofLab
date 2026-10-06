@@ -94,29 +94,13 @@ def record_negotiation(client, ctx, position, fields=None):
         return ec.REJECTED_SCHEMA
     f = fields or {}
     reason = " ".join(str(f.get("reason") or "no reason given").split())[:PROPOSED_MAX]
-    nr = {"judgment.reversible_step": "none declared"}
-    if not f.get("precedence_rule"):
-        nr["judgment.precedence_rule"] = "no precedence rule fired"
+    rule = f.get("precedence_rule") or None
     extra = {"phase": "negotiation", "judgment.disposition": disp,
              "judgment.evidence_ids": list(f.get("deciding_evidence") or ()),
-             "judgment.result_digests": [], "judgment.reversible_step": None,
-             "judgment.precedence_rule": f.get("precedence_rule") or None,
-             "reason": "negotiation position %s: %s" % (position, reason), "run.condition": "none"}
-    if f.get("named_evidence_needed"):
-        extra["judgment.evidence_needed"] = list(f["named_evidence_needed"])
+             "judgment.reversible_step": None, "judgment.precedence_rule": rule,
+             "judgment.evidence_needed": list(f.get("named_evidence_needed") or ()),
+             "reason": "position %s: %s" % (position, reason), "run.condition": "none"}
+    nr = {"judgment.reversible_step": "none declared", "judgment.precedence_rule": "no precedence rule fired"}
     detail = "negotiation position=%s disposition=%s; %s" % (position, disp, reason)
     return client.emit(ec.new_record(ctx, "judgment", EP_ID, EP_KIND, "emit", detail, "RECORDED",
-                                     control_ref="C7", control_id="AIA-LOG-001", extra=extra,
-                                     null_reasons=nr))
-
-
-def record_result_inspection(client, ctx, fields, position=None):
-    """The reference shape's `result-inspection` step (ARCH 3.5): the answer was inspected (J2 parse + precedence
-    + output rails) before it left the agent. Phase `ifabric.result-inspection`; content-free."""
-    f = fields or {}
-    detail = "result inspected: J2 valid=%s reasked=%s precedence=%s model_said=%s" % (
-        f.get("valid"), f.get("reasked"), f.get("precedence_rule") or "none", f.get("model_disposition"))
-    if position:
-        detail += " negotiation_position=%s" % position
-    return client.emit(ec.lifecycle_record(ctx, "result-inspection", detail,
-                                           extra={"phase": "ifabric.result-inspection"}))
+                                     control_ref="C7", control_id="AIA-LOG-001", extra=extra, null_reasons=nr))

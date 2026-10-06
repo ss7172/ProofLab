@@ -283,20 +283,13 @@ def kit_shape(rec):
     copy: top-level `actor` (= actor.id); the EP-1 model-call action record gets phase `invocation` and the
     gateway guardrail outcome in detail (from outcome.real / finish_reason); EP-1's C16 stop record gets the
     C7 workflow phase `stop` (ARCH 5.2). model_call.py is untouched: this is the emit path's one mapping."""
-    if not isinstance(rec, dict):
-        return rec
-    out = dict(rec)
-    if out.get("actor.id") is not None:
-        out.setdefault("actor", out["actor.id"])
+    out = dict(rec, actor=rec.get("actor", rec.get("actor.id")))
     if out.get("ep.id") == "EP-1":
-        kind = out.get("record_kind")
-        if kind == "action" and out.get("phase") in (None, "ifabric.action"):
-            real = out.get("outcome.real")
+        if out.get("record_kind") == "action":
             out["phase"] = "invocation"
-            out["detail"] = "%s; guardrail=%s (outcome %s, finish_reason %s)" % (
-                out.get("detail"), _GUARDRAIL.get(real, "unknown"), real, out.get("outcome.finish_reason"))
-        elif kind == "lifecycle" and str(out.get("detail", "")).startswith("c16-stop:"):
-            out["phase"], out["lifecycle.event"] = "stop", "stop"
+            out["detail"] = "%s; guardrail=%s" % (out.get("detail"), _GUARDRAIL.get(out.get("outcome.real"), "unknown"))
+        elif str(out.get("detail")).startswith("c16-stop:"):
+            out["phase"] = out["lifecycle.event"] = "stop"
     return out
 
 
