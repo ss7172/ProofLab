@@ -31,11 +31,14 @@ def __getattr__(name):  # PEP 562: C16Question, Decision, PinnedC16 re-exported 
     raise AttributeError(name)
 
 
-def evaluate(q, pin):
-    """Pure. Delegates to c16_core.decide_inline(q, pin). An exception inside becomes a fail-closed
-    Decision (verdict DENY, action halt, reason evaluator-error), decided here, never in the adapter."""
+def evaluate(q, pin, evaluator_sha256=None):
+    """Pure. Delegates to c16_core.decide_inline(q, pin[, evaluator_sha256]); the sha256 is the embedded
+    core's own (the bundle records it; the core cannot hash itself). An exception inside becomes a
+    fail-closed Decision (verdict DENY, action halt, reason evaluator-error), decided here, never in the adapter."""
     core = _core()
     try:
+        if evaluator_sha256 is not None:
+            return core.decide_inline(q, pin, evaluator_sha256)
         return core.decide_inline(q, pin)
     except Exception as exc:  # noqa: BLE001 - fail closed on anything
         return _fail_closed(core, q, pin, exc)

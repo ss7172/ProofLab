@@ -95,6 +95,11 @@ def test_evaluate_delegates(fake_core):
     assert T.Decision is Decision and T.C16Question is fake_core.C16Question
 
 
+def test_evaluate_passes_the_core_sha(fake_core):
+    fake_core.decide_inline = lambda q, pin, sha=None: sha
+    assert T.evaluate(None, None, "f" * 64) == "f" * 64 and T.evaluate(None, None) is None
+
+
 def test_evaluate_fails_closed(fake_core):
     def boom(q, pin):
         raise ZeroDivisionError("x")

@@ -72,6 +72,18 @@ def test_kit_starter_template_parses_identically():
     assert P.kit_view(kit_text) == KIT.kit_fallback_load_register(kit_text)
 
 
+def test_kit_parity_on_the_pyyaml_branch():
+    yaml = pytest.importorskip("yaml")
+    doc = yaml.safe_load(text())
+    by_yaml = dict((str(c["control_id"]), c) for c in doc["controls"])
+    ours = P.kit_view(text())
+    assert sorted(by_yaml) == sorted(ours)
+    for cid in ours:
+        for field in REG.KIT_FIELDS:
+            assert str(by_yaml[cid][field]) == ours[cid][field], (cid, field)
+    assert doc["version"] == P.parse_register(text())["top"]["version"]
+
+
 BASE = 'version: v1\nversion_date: "2026-10-06T03:52:10Z"\ncontrols:\n  - control_id: "16"\n    name: x\n'
 
 
