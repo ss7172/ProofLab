@@ -24,6 +24,7 @@ import re
 import sys
 
 from prooflab.pack import index as _index
+from prooflab.contract import verdicts as _V  # the one verdict vocabulary (ARCH §4.3)
 
 PROJ_SCHEMA_RECORD = "ifabric.evidence/v1"
 PROJ_SCHEMA_ASSESSMENT = "ifabric.assessment/v1"
@@ -43,7 +44,7 @@ SURFACE_BY_REF = (("gateway:", "gateway-stdout"), ("ledger:", "ledger"), ("span"
                   ("xray:", "xray"), ("pdp:", "pdp"), ("aict", "aict-invocations"), ("servicenow:", "servicenow"),
                   ("cr:", "cr-status"), ("register:", "register"), ("expected:", "expected"), ("raw:", "adapter"))
 CONTROL_LIBRARY = {"C16": "ACN-COST-001", "C7": "AIA-LOG-001", "C9": "AIA-ARC-006", "ESC": "AGENT-ESCALATION"}
-ASSESSMENT_VERDICTS = ("SATISFIED", "BREACHED", "INDETERMINATE", "NOT_ASSESSED")
+ASSESSMENT_VERDICTS = _V.ASSESSMENT_VERDICTS
 SCOPE_KINDS = ("run", "window", "interval", "incident", "escalation")
 UTC_RE = _index.UTC_RE
 
@@ -331,7 +332,7 @@ def project_assessment(doc, cx, report):
         if isinstance(m.get(k), t):
             measured[k] = m[k]
     verdict = a.get("requirement_verdict") or a.get("verdict")
-    verdict = verdict if verdict in ASSESSMENT_VERDICTS else "NOT_ASSESSED"
+    verdict = verdict if verdict in ASSESSMENT_VERDICTS else _V.NOT_ASSESSED
     gaps = []
     for i, g in enumerate(a.get("gaps") or []):
         gaps.append(g if isinstance(g, dict) and "id" in g and "text" in g else {"id": "g%d" % (i + 1), "text": str(g)})
@@ -439,7 +440,7 @@ def project_records(cx, projected_assessments, report):
             "threshold.version": tver,
             "threshold.value": limit.get("value") if limit.get("value") is not None else "n/a",
             "measured.value": value, "measured.unit": unit,
-            "verdict": "NOT_ASSESSED",   # a record is not a verdict; the control test's verdict lives in the assessment
+            "verdict": _V.NOT_ASSESSED,   # a record is not a verdict; the control test's verdict lives in the assessment
             "decision": decision_of(r), "actor.id": r.get("actor.id") or "unknown",
             "emitted.at": at, "emitted.by": str(r.get("emitter") or "unknown"),
             "scope": {"kind": "run", "id": alias or rid, "cid": rid},
@@ -544,7 +545,7 @@ def project(src, out, as_of=None, generated_at=None):
         row["verdicts"] = dict((p["control_ref"], p["verdict"]) for p in docs if p["scope"].get("cid") == cid)
         runs.append(row)
     named = {"written_at": cx["as_of"], "entries": [
-        {"control": p["control_ref"], "expected": "BREACH" if p["verdict"] == "BREACHED" else "PASS",
+        {"control": p["control_ref"], "expected": "BREACH" if p["verdict"] == _V.BREACHED else "PASS",
          "scope": p["scope"], "observed": p["verdict"], "answer_ref": "assessment:%s" % p["assessment_id"]}
         for p in docs if p["scope"].get("cid") in cx["run_ids"]]}
     artefacts = []

@@ -18,6 +18,7 @@ import time
 from prooflab.contract import clocks, finding as _finding
 from prooflab.watch import feed as _feed
 from prooflab.watch import rules
+from prooflab.contract import verdicts as _V  # the one verdict vocabulary (ARCH §4.3)
 
 MIN_POLL_S = 3.0
 DEFAULT_INTERVAL_S = 30.0   # the OC-20 measurement sets the real value (--interval); this is only the fallback
@@ -70,7 +71,7 @@ class Watcher:
         self.feed.append(_feed.synthetic_event("stream-error", ts, run_id=run_id, detail=reason))
         if is_expired(exc):
             gap = _finding.make_finding(
-                "NONE", "WATCH-SUPERVISOR", "watch@1", "interval", "watch:" + ts, "INDETERMINATE",
+                "NONE", "WATCH-SUPERVISOR", "watch@1", "interval", "watch:" + ts, _V.INDETERMINATE,
                 "monitoring gap: credentials expired, the watcher stopped (%s)" % reason, ts,
                 evidence=[], kind="monitoring-gap")
             self._report(gap)

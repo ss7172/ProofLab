@@ -11,6 +11,7 @@ so its rail BLOCKs are the intended result and raise no finding.
 from __future__ import annotations
 
 from prooflab.contract import finding as _finding
+from prooflab.contract import verdicts as _V  # the one verdict vocabulary (ARCH §4.3)
 
 ASSESSED_PROVENANCE = ("LIVE_SUBJECT",)
 EGRESS_RAIL = "RT-03"
@@ -105,7 +106,7 @@ def counts_gaps(records, detected_at):
     if not diffs:
         return []
     return [_finding.make_finding(
-        RAIL_CONTROL_REF, "RAIL-COUNTS", "rails.counts", "run", scope, "INDETERMINATE",
+        RAIL_CONTROL_REF, "RAIL-COUNTS", "rails.counts", "run", scope, _V.INDETERMINATE,
         "monitoring gap: rail records do not match rails.counts (%s)" % "; ".join(diffs),
         detected_at, evidence=evidence, kind="monitoring-gap")]
 

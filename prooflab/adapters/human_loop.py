@@ -3,7 +3,7 @@
 * build_finding(assessment, ...) -> a Finding dict that passes `prooflab.servicenow.finding.finding_from_dict`
   (scope_id = the CID, D22; templated summary; <= 8 evidence refs; context measured / limit / register).
 * build_approval_finding(doc, ...) -> the `kind: approval` finding (T2) from PR-11's approval-finding.json.
-* notify_due(finding) -> BREACHED, ESCALATED and monitoring-gap only; SATISFIED never.
+* notify_due(finding) -> BREACHED, ESCALATED and monitoring-gap only; SATISFIED never (ARCH §3.8).
 * sticky_response(entries) -> guard (b): a logged RESPONDED is never overwritten by later states.
 
 The coupling to the shared contract is the one import line below. Arth's code is never edited.
@@ -18,7 +18,6 @@ from prooflab.contract import clocks as _clocks, finding as _cfinding, verdicts 
 SUMMARY_MAX = 200
 EVIDENCE_MAX = 8
 TEXT_MAX = 200
-NOTIFY_VERDICTS = ("BREACHED", "ESCALATED")
 _WS = re.compile(r"\s+")
 
 
@@ -109,14 +108,16 @@ def build_approval_finding(doc: dict, detected_at: Optional[str] = None) -> dict
 def notify_due(finding: dict) -> bool:
     """BREACHED, ESCALATED and monitoring-gap findings are notified; SATISFIED (and plain INDETERMINATE) never.
 
-    Finding-level rule, deliberately wider than prooflab.contract.verdicts.notify_due (a verdict-string rule:
-    BREACHED/INDETERMINATE). They agree for assessment-built findings (INDETERMINATE becomes kind
-    monitoring-gap); they differ only for the approval finding (ESCALATED), pinned in
-    tests/humanloop/test_humanloop_notify_rule.py. PR-01 and the spec should settle one rule.
+    ARCH §3.8 at finding level, delegating to the contract's verdict rule (prooflab.contract.verdicts.notify_due,
+    PR-01 round 2: BREACHED, INDETERMINATE, ESCALATED). The one refinement: an INDETERMINATE verdict is notified
+    as its `kind: monitoring-gap` finding, never as a plain finding.
     """
-    if finding.get("verdict") == "SATISFIED":
+    verdict = finding.get("verdict")
+    if verdict == _cverdicts.SATISFIED:
         return False
-    return finding.get("verdict") in NOTIFY_VERDICTS or finding.get("kind") == "monitoring-gap"
+    if finding.get("kind") == "monitoring-gap":
+        return True
+    return verdict != _cverdicts.INDETERMINATE and _cverdicts.notify_due(verdict)
 
 
 def is_approval(finding: dict) -> bool:

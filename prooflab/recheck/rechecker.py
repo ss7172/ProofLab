@@ -8,6 +8,7 @@ Output of each function is a small plain dict (the comparison surface), not the 
 Stdlib only, Python 3.9.
 """
 import datetime as _dt
+from prooflab.contract import verdicts as _V  # the one verdict vocabulary (ARCH §4.3)
 
 
 def _ts(s):
@@ -74,13 +75,13 @@ def recheck_c16(run_id, calls, scenario_attrs, decisions, pin16, completeness):
     span_missing = sorted(expected - set(by_id))
 
     if not by_id:
-        verdict = "INDETERMINATE"
+        verdict = _V.INDETERMINATE
     elif _over(total, cap):
-        verdict = "BREACHED"  # a known subtotal over the cap is a breach even with gaps
+        verdict = _V.BREACHED  # a known subtotal over the cap is a breach even with gaps
     elif missing_usage or span_missing:
-        verdict = "INDETERMINATE"
+        verdict = _V.INDETERMINATE
     else:
-        verdict = "SATISFIED"
+        verdict = _V.SATISFIED
 
     # reconcile EP-1 against the floor (EP-2)
     ep1 = [d for d in decisions if d.get("ep.id") == "EP-1"]
@@ -120,7 +121,7 @@ def recheck_c16(run_id, calls, scenario_attrs, decisions, pin16, completeness):
     return {"verdict": verdict, "operation": operation, "total_tokens": total, "calls": len(by_id),
             "cap": cap, "tier": tier, "missing_usage_calls": missing_usage, "missing_spans": span_missing,
             "non_model_spans_ignored": ignored,
-            "overshoot": (total - cap) if verdict == "BREACHED" else None,
+            "overshoot": (total - cap) if verdict == _V.BREACHED else None,
             "headroom_committed_minus_cap": (total - cap) if pin16.get("mode") == "enforce" else None,
             "ep1_denied_earlier": sorted(earlier), "exceptions": exceptions}
 
@@ -149,7 +150,7 @@ def recheck_c7(run_id, gateway_actions, refusals, workflow_events, stops, observ
             E[k] = s["agent"]
             streams.setdefault(s["stream"], []).append((1000 + i, k))
     if not E:
-        return {"verdict": "NOT_ASSESSED", "exceptions": []}
+        return {"verdict": _V.NOT_ASSESSED, "exceptions": []}
 
     # --- the observed set O: emitted (TESTIMONY) records only; pulled records never count
     seen = {}  # key -> earliest emitted.at
@@ -199,18 +200,18 @@ def recheck_c7(run_id, gateway_actions, refusals, workflow_events, stops, observ
             if not ((b[0] - a[0]) * 1000.0 < gap_ms):  # the rule is gap < G
                 violating += 1
     if measured == 0:
-        gap_verdict = "INDETERMINATE" if unmeasurable else "SATISFIED"
+        gap_verdict = _V.INDETERMINATE if unmeasurable else _V.SATISFIED
     elif violating * 100 > pin7["violating_gap_share_max_pct"] * measured:
-        gap_verdict = "BREACHED"
+        gap_verdict = _V.BREACHED
     else:
-        gap_verdict = "SATISFIED"
-    cov_verdict = "SATISFIED" if cov_ok else "BREACHED"
-    if "BREACHED" in (cov_verdict, gap_verdict):
-        verdict = "BREACHED"
-    elif "INDETERMINATE" in (cov_verdict, gap_verdict):
-        verdict = "INDETERMINATE"
+        gap_verdict = _V.SATISFIED
+    cov_verdict = _V.SATISFIED if cov_ok else _V.BREACHED
+    if _V.BREACHED in (cov_verdict, gap_verdict):
+        verdict = _V.BREACHED
+    elif _V.INDETERMINATE in (cov_verdict, gap_verdict):
+        verdict = _V.INDETERMINATE
     else:
-        verdict = "SATISFIED"
+        verdict = _V.SATISFIED
     return {"verdict": verdict, "coverage": "%d/%d" % (len(hit), len(E)), "coverage_verdict": cov_verdict,
             "gap_verdict": gap_verdict, "violating_gaps": violating, "gaps_measured": measured,
             "gaps_unmeasurable": unmeasurable, "missing": missing, "exceptions": []}
@@ -243,13 +244,13 @@ def recheck_c9(run_id, windows, pin9):
         ok += 0 if bad else 1
     assessed = viol + indet + ok
     if assessed == 0:
-        verdict = "NOT_ASSESSED"
+        verdict = _V.NOT_ASSESSED
     elif viol * 100 > pin9["violating_windows_max_pct"] * (viol + ok):
-        verdict = "BREACHED"
+        verdict = _V.BREACHED
     elif indet:
-        verdict = "INDETERMINATE"
+        verdict = _V.INDETERMINATE
     else:
-        verdict = "SATISFIED"
+        verdict = _V.SATISFIED
     return {"verdict": verdict, "violating": viol, "excluded": excluded, "exceptions": []}
 
 
