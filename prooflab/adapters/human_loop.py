@@ -107,7 +107,13 @@ def build_approval_finding(doc: dict, detected_at: Optional[str] = None) -> dict
 
 
 def notify_due(finding: dict) -> bool:
-    """BREACHED, ESCALATED and monitoring-gap findings are notified; SATISFIED (and plain INDETERMINATE) never."""
+    """BREACHED, ESCALATED and monitoring-gap findings are notified; SATISFIED (and plain INDETERMINATE) never.
+
+    Finding-level rule, deliberately wider than prooflab.contract.verdicts.notify_due (a verdict-string rule:
+    BREACHED/INDETERMINATE). They agree for assessment-built findings (INDETERMINATE becomes kind
+    monitoring-gap); they differ only for the approval finding (ESCALATED), pinned in
+    tests/humanloop/test_humanloop_notify_rule.py. PR-01 and the spec should settle one rule.
+    """
     if finding.get("verdict") == "SATISFIED":
         return False
     return finding.get("verdict") in NOTIFY_VERDICTS or finding.get("kind") == "monitoring-gap"
