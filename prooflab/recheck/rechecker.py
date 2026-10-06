@@ -266,3 +266,11 @@ def recheck_case(case):
     if kind == "c9.assess_run":
         return recheck_c9(i["run_id"], i["windows"], case["pin"])
     raise ValueError(kind)
+
+
+
+def main(argv=None):
+    """`python3 -m prooflab recheck` (the dispatcher's target). The file I/O lives in prooflab.recheck.cli so this
+    module stays pure (no I/O, stdlib datetime only)."""
+    from prooflab.recheck import cli as _cli
+    return _cli.main(argv)
