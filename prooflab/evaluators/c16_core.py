@@ -1,27 +1,31 @@
 # c16_core: the ONE C16 decision function (ARCH 3.4, 5.1, 11.1), at EP-1 (inline) and EP-2 (replay).
 # Frozen once merged: any change is a new agent build. Stdlib, Python 3.9+, pure: no I/O, clock or state.
-# Every limit comes from the pin. Bad input fails closed: DENY + halt.
+# Every limit comes from the pin (ifabric.pin/1, ARCH 3.3). Bad input fails closed: DENY + halt.
 import hashlib
 import json
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
 NAME = "prooflab.evaluators.c16_core"
+SCHEMA = "ifabric.pin/1"
+CONTROL_ID = "ACN-COST-001"  # used only when the pin itself is unreadable
 MODES = ("enforce", "observe")
 BASES = ("projected", "last-call-plus", "declared-fallback", "actual")
-CAP = "cap_tier_"
+ENV = ("IFABRIC_PIN_JSON", "IFABRIC_PIN_SHA256", "IFABRIC_REGISTER_VERSION", "IFABRIC_REGISTER_SHA256")
 
 
 def _n(v):
     return type(v) is int and v >= 0
 
 
-def _i(v):
-    if isinstance(v, str) and v.strip().isdigit():
-        return int(v)
-    if type(v) is float and v.is_integer():
-        return int(v)
-    return v
+def _pct(v):
+    """A non-negative finite margin (int or float) as an exact (num, den); None if invalid."""
+    try:
+        if type(v) not in (int, float) or not v >= 0:
+            return None
+        return v.as_integer_ratio()
+    except Exception:
+        return None
 
 
 def _s(o, a):
@@ -73,10 +77,12 @@ def _check_pin(p):
         raise ValueError("mode")
     if p.default_tier not in t:
         raise ValueError("default_tier")
-    for a in ("inline_bound_margin_pct", "inline_bound_fallback_tokens", "max_tokens"):
+    if _pct(p.inline_bound_margin_pct) is None:
+        raise ValueError("inline_bound_margin_pct")
+    for a in ("inline_bound_fallback_tokens", "max_tokens"):
         if not _n(getattr(p, a)):
             raise ValueError(a)
-    for a in ("threshold_version", "register_version", "register_sha256"):
+    for a in ("threshold_version", "register_version", "register_sha256", "control_id"):
         if not _s(p, a):
             raise ValueError(a)
     if not isinstance(p.pin_sha256, str):
@@ -90,38 +96,56 @@ class PinnedC16:
     safety_ceiling: int
     mode: str
     inline_modes: Tuple[str, ...]
-    inline_bound_margin_pct: int
+    inline_bound_margin_pct: float  # int or float; rounded up exactly (as_integer_ratio)
     inline_bound_fallback_tokens: int
     max_tokens: int
     threshold_version: str
     register_version: str
     register_sha256: str
     pin_sha256: str = ""
+    control_id: str = CONTROL_ID
 
     def __post_init__(self):
         _check_pin(self)
 
     @classmethod
     def from_dict(cls, d, pin_sha256=""):
-        m = d.get("inline_modes")
-        if isinstance(m, str):
-            m = [x.strip() for x in m.split(",") if x.strip()]
-        g = lambda k: _i(d.get(k))
-        return cls(tuple(sorted((k[len(CAP):], _i(v)) for k, v in d.items() if k.startswith(CAP))),
-                   d.get("default_tier"), g("safety_ceiling"), d.get("mode"), tuple(m or ()),
-                   g("inline_bound_margin_pct"), g("inline_bound_fallback_tokens"), g("max_tokens"),
-                   d.get("threshold_version"), d.get("register_version", d.get("version")),
-                   d.get("register_sha256", d.get("sha256")), pin_sha256)
+        """The parsed ifabric.pin/1 object: {schema, register:{version, sha256}, c16:{..., caps, modes, bound}}."""
+        if not isinstance(d, dict) or d.get("schema") != SCHEMA:
+            raise ValueError("schema")
+        r, c = d.get("register"), d.get("c16")
+        if not (isinstance(r, dict) and isinstance(c, dict)):
+            raise ValueError("register/c16")
+        caps, modes, b = c.get("caps"), c.get("modes"), c.get("bound")
+        if not (isinstance(caps, dict) and isinstance(modes, list) and isinstance(b, dict)):
+            raise ValueError("caps/modes/bound")
+        tiers = c.get("tiers", sorted(caps))
+        if not isinstance(tiers, list) or sorted(tiers) != sorted(caps):
+            raise ValueError("tiers")
+        return cls(tuple(sorted(caps.items())), c.get("default_tier"), c.get("safety_ceiling"), c.get("mode"),
+                   tuple(modes), b.get("inline_bound_margin_pct"), b.get("inline_bound_fallback_tokens"),
+                   b.get("max_tokens"), c.get("threshold_version"), r.get("version"), r.get("sha256"),
+                   pin_sha256, c.get("control_id"))
 
     @classmethod
     def from_json(cls, text, expected_sha256):
         h = hashlib.sha256(text if isinstance(text, bytes) else text.encode("utf-8")).hexdigest()
-        if h != str(expected_sha256).strip().lower():
+        if not isinstance(expected_sha256, str) or h != expected_sha256.strip().lower():
             raise ValueError("pin sha256 mismatch")
-        d = json.loads(text)
-        if not isinstance(d, dict):
-            raise ValueError("pin")
-        return cls.from_dict(d, h)
+        return cls.from_dict(json.loads(text), h)
+
+    @classmethod
+    def from_env(cls, env):
+        """Start-up builder (ARCH 3.3 H1). env is a mapping passed in (the core reads nothing itself)."""
+        v = [env.get(k) for k in ENV]
+        miss = [k for k, x in zip(ENV, v) if not (isinstance(x, str) and x)]
+        if miss:
+            raise ValueError("missing env: " + ",".join(miss))
+        text, sha, rv, rs = v
+        p = cls.from_json(text, sha)
+        if (p.register_version, p.register_sha256) != (rv, rs):
+            raise ValueError("register version/sha256 in env disagree with the pin")
+        return p
 
 
 def compare(total, limit):
@@ -131,26 +155,29 @@ def compare(total, limit):
 
 
 def bound_for(projected, last_input, last_output, tool_result_tokens, pin):
-    """(bound, basis): max(projected, last in + out + tool results) or the fallback, + max_tokens, + margin %."""
+    """(bound, basis): max(projected, last in + out + tool results) or fallback + tool results, + max_tokens,
+    + margin % (rounded up). None/0 = unknown; any other invalid term -> (None, None), which decide_inline denies."""
     try:
         _check_pin(pin)
-        e = []
-        if _n(projected) and projected > 0:
-            e.append((projected, "projected"))
-        t = 0 if tool_result_tokens is None else tool_result_tokens
-        if _n(last_input) and _n(last_output) and _n(t) and last_input + last_output > 0:
-            e.append((last_input + last_output + t, "last-call-plus"))
-        b, basis = max(e, key=lambda x: x[0]) if e else (pin.inline_bound_fallback_tokens, "declared-fallback")
+        v = [0 if x is None else x for x in (projected, last_input, last_output, tool_result_tokens)]
+        if not all(_n(x) for x in v):
+            return None, None
+        p, li, lo, t = v
+        e = [(p, "projected")] if p else []
+        if li or lo:
+            e.append((li + lo + t, "last-call-plus"))
+        b, basis = max(e, key=lambda x: x[0]) if e else (pin.inline_bound_fallback_tokens + t, "declared-fallback")
         b += pin.max_tokens
-        return b - (-b * pin.inline_bound_margin_pct // 100), basis
+        num, den = _pct(pin.inline_bound_margin_pct)
+        return b - (-b * num // (den * 100)), basis
     except Exception:
         return None, None
 
 
 def _fail(q, pin, sha, why):
-    return Decision("C16", "ACN-COST-001", "DENY", why, None, None, _s(q, "tier"), _s(pin, "mode"), None, None,
-                    "halt", _s(q, "bound_basis"), _s(pin, "threshold_version"), _s(pin, "register_version"),
-                    _s(pin, "register_sha256"), _s(pin, "pin_sha256"), NAME, sha)
+    return Decision("C16", _s(pin, "control_id") or CONTROL_ID, "DENY", why, None, None, _s(q, "tier"),
+                    _s(pin, "mode"), None, None, "halt", _s(q, "bound_basis"), _s(pin, "threshold_version"),
+                    _s(pin, "register_version"), _s(pin, "register_sha256"), _s(pin, "pin_sha256"), NAME, sha)
 
 
 def decide_inline(q, pin, evaluator_sha256=None):
@@ -175,8 +202,8 @@ def decide_inline(q, pin, evaluator_sha256=None):
         act = "halt" if compare(total, lv) == "over" else "proceed"
         why = "committed %d + reserved %d + bound %d (%s) = %d %s cap %d, tier %s%s; %s %d: %s" % (
             c, r, b, q.bound_basis, total, ">" if over else "<=", cap, tier, note, la, lv, act)
-        return Decision("C16", "ACN-COST-001", "DENY" if over else "ALLOW", why, total, cap, tier, pin.mode, la, lv,
-                        act, q.bound_basis, pin.threshold_version, pin.register_version, pin.register_sha256,
+        return Decision("C16", pin.control_id, "DENY" if over else "ALLOW", why, total, cap, tier, pin.mode, la,
+                        lv, act, q.bound_basis, pin.threshold_version, pin.register_version, pin.register_sha256,
                         pin.pin_sha256, NAME, evaluator_sha256)
     except Exception:
         return _fail(q, pin, evaluator_sha256, "evaluator-error")
