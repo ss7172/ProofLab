@@ -89,6 +89,8 @@ def build_src(root):
     _w(root, "register/versions/v1.yaml", v1)
     _w(root, "register/versions/v1.1.yaml", v11)
     _w(root, "register/versions/v0-pilot4.yaml", v0)
+    for _v, _at in (("v1", "2026-10-06T12:40:22Z"), ("v1.1", "2026-10-06T13:38:05Z"), ("v0-pilot4", "2026-10-06T10:16:20Z")):
+        _w(root, "register/versions/%s.head.json" % _v, {"VersionId": "VID-" + _v, "LastModified": _at})  # PR-48: build refuses a version with no T1 proof
     import hashlib
     sha11 = hashlib.sha256(v11.encode()).hexdigest()
     _w(root, "register/experiments/rules-v1.1.json", {"post_hoc": {"declared": True, "control": "C16", "rule_replaced": "C16-cap/1",
