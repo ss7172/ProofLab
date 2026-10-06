@@ -212,7 +212,8 @@ def _human_loops(recs):
 
 
 def _enforcement(control, recs, a):
-    dec = [r for r in recs if r.get("record_kind") == "decision" and r.get("inline.mode")]
+    # only decisions OF THIS control: a C7 answer never lists C16 inline decisions (PR-40c defect 5)
+    dec = [r for r in recs if r.get("record_kind") == "decision" and r.get("inline.mode") and r.get("control.ref") == control]
     modes = set(r["inline.mode"] for r in dec)
     mode = "INLINE_ENFORCE" if "enforce" in modes else "INLINE_OBSERVE" if "observe" in modes else "POST_RUN"
     items = []
@@ -288,7 +289,8 @@ def stored_findings(pack, cid):
 def _audit_question(control, a, rule, ctx):
     recs, cid = ctx["recs"], ctx["cid"]
     actors = E._actors(recs)
-    stopped = any(r.get("verdict") == "DENY" for r in recs if r.get("record_kind") in ("decision", "platform_decision"))
+    stopped = any(r.get("verdict") == "DENY" for r in recs
+                  if r.get("record_kind") in ("decision", "platform_decision") and r.get("control.ref") in (None, control))
     told = [r for r in recs if r.get("record_kind") in ("finding", "notification")]
     staged = [f for f in ctx.get("findings") or [] if f.get("control_ref") == control]
     rid = lambda rows: ["record:%s" % r["record_id"] for r in rows[:3] if r.get("record_id")]
@@ -321,7 +323,8 @@ def _audit_question(control, a, rule, ctx):
             "OK" if rule["date_before_scope"] else "FLAG"),
         "decision": {"text": "control test %s (%s)%s" % (a["verdict"], V.display(a["verdict"]), "; a call was DENIED inline" if stopped else ""),
                      "refs": ["assessment:%s" % a["assessment_id"]] if a.get("assessment_id") else [],
-                     "outcome": "STOPPED" if stopped else "ALLOWED"},
+                     # the outcome follows THIS control's assessment: a stop, else a breach escalated to a human, else allowed
+                     "outcome": "STOPPED" if stopped else "ESCALATED" if (a["verdict"] == V.BREACHED and (told or staged)) else "ALLOWED"},
         "who_was_told": _txt("; ".join(["%s %s" % (r["record_kind"], r.get("verdict")) for r in told] + [
             "finding %s %s -> %s %s%s" % (f.get("control_ref"), f.get("verdict"), (f["delivery"].get("incident") or "no incident recorded"),
                                          f["delivery"].get("state") or "not delivered", (" to " + f["delivery"]["owner"]) if f["delivery"].get("owner") else "")
@@ -367,7 +370,9 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
     cap_n = _num(comp.get("captured"))
     population = {"expected": {"count": int(exp) if exp is not None else 0, "source": "assessment completeness.expected" if exp is not None else "unknown (gap)"},
                   "observed": int(cap_n) if cap_n is not None else 0, "matched": int(cap_n) if cap_n is not None else 0,
-                  "missing": int(_num(comp.get("missing")) or 0)}
+                  "missing": (len(comp["missing"]) if isinstance(comp.get("missing"), (list, tuple)) else int(_num(comp.get("missing")) or 0))}
+    if isinstance(comp.get("missing"), (list, tuple)) and comp["missing"]:
+        population["missing_events"] = [str(k) for k in comp["missing"]]       # C7: which expected events were not captured
     if exp is None:
         gaps.append({"id": "G-POP", "text": "the assessment carries no completeness counts: the population is unknown, zeros shown", "affects": "population"})
     rc = ans.get("recompute") or ""

@@ -333,6 +333,8 @@ class Handler(BaseHTTPRequestHandler):
         src = self.server.source
         live = src.integrity()
         status = live.get("status")
+        if doc.get("schema") == "ifabric.auditor/v1":
+            return self._stamp_auditor(doc, live) if src.name == "pack" else doc
         if src.name != "pack" or status is None:
             if status in ("VERIFIED", None):
                 return doc
@@ -369,6 +371,46 @@ class Handler(BaseHTTPRequestHandler):
                 row["tickmarks"] = ["A"] + list(row.get("tickmarks") or [])
         return out
 
+    @staticmethod
+    def _stamp_auditor(doc, live):
+        """The auditor's INTEGRITY question is composed BEFORE MANIFEST.json exists; at serve time it states the same
+        facts as /api/v1/integrity (one source). Only the manifest line changes; the corroboration facts stay."""
+        q = (doc.get("questions") or {}).get("integrity")
+        if not isinstance(q, dict):
+            return doc
+        status = live.get("status")
+        ok = status == "VERIFIED"
+        line = "MANIFEST.json %s (%d files, checked when served)" % (status or "unknown", live.get("files", 0))
+        facts = [f for f in (q.get("facts") or []) if not (isinstance(f, dict) and str(f.get("value", "")).startswith("MANIFEST.json"))]
+        facts.insert(0, {"label": "INTEGRITY", "value": line, "refs": ["manifest:MANIFEST.json"] if status != "NO_MANIFEST" else [], "flag": "OK" if ok else "FLAG"})
+        shown = [f["value"] for f in facts if f.get("label") == "INTEGRITY"][:2]
+        q.update(facts=facts, answer="; ".join(shown), status="ANSWERED" if ok or q.get("status") == "ANSWERED" else q.get("status"))
+        return doc
+
+    def _boot(self, t0):
+        """ONE request for the first load: the stamped answers, the auditor views, the records of every run, the cases and
+        the run catalogue (the page used to fire 20+ GETs in a second and hit the per-second limit)."""
+        src = self.server.source
+        idx = src.pack_index()
+        answers, auditor, records = {}, {}, {}
+        for a in idx.get("answers", []):
+            doc = src.answer(a.get("key"))
+            if doc is not None:
+                answers[a["key"]] = self._stamp(doc)
+        for a in idx.get("auditor", []):
+            doc = src.auditor(a.get("id"))
+            if doc is not None:
+                auditor[a["id"]] = self._stamp(doc)
+        allrecs = src.records()
+        for r in idx.get("runs", []):
+            aliases = set([r.get("alias"), r.get("cid")])
+            records[r["alias"]] = [x for x in allrecs
+                                   if {x.get("run.id"), (x.get("scope") or {}).get("alias"), (x.get("joins") or {}).get("cid")} & aliases]
+        win = src.declared_window() if hasattr(src, "declared_window") else None
+        data = {"answers": answers, "auditor": auditor, "records": records,
+                "cases": flag_closures(json.loads(json.dumps(src.cases()))), "runs": src.run_catalogue(), "window": win}
+        return self._json(200, data, None, self._meta({"elapsed_ms": int((time.time() - t0) * 1000)}))
+
     def _api(self, path, params, method):
         src = self.server.source
         t0 = time.time()
@@ -387,6 +429,8 @@ class Handler(BaseHTTPRequestHandler):
                         art["present"], art["sha256"] = True, live.get("manifest_sha256")
             meta = self._meta({"vocab": VOCAB})
             return self._json(200, data, None, meta)
+        if path == "/api/v1/boot":
+            return self._boot(t0)
         if path == "/api/v1/answer":
             key = params.get("key")
             if not key:

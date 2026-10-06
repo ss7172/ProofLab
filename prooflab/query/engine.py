@@ -554,8 +554,9 @@ def incident(pack, ident):
     cat = pack.catalogue_by_cid.get(cid) or {}
     label = cat.get("label") or cat.get("source")
     ours = cid.startswith("ifabric-") or str(label or "").lower().startswith("ours")
-    out = {"kind": "incident", "verdict": "RECORDED", "run": cid, "note": note, "label": label or UNKNOWN,
-           "provenance": run_provenance(pack, cid), "start": run_start(pack, cid), "end": run_end(pack, cid)}
+    prov = run_provenance(pack, cid)
+    out = {"kind": "incident", "verdict": "RECORDED", "run": cid, "note": note, "label": run_label(pack, cid, label, prov) or UNKNOWN,
+           "provenance": prov, "start": run_start(pack, cid), "end": run_end(pack, cid)}
     if not ours:
         inv_name, _ = _inventory(pack)
         out["out_of_scope"] = ("out of scope (scope_rule, inventory version %s); seen: %d records, label %s"
@@ -605,6 +606,39 @@ def incident(pack, ident):
 
 
 # ---------------------------------------------------------------- listings
+def declared_fault_kinds(pack):
+    """The fault kinds the frozen pins declare (c7.declared_faults, `<kind>:<agent>:<event>:<n>`): ARCH 5.5."""
+    kinds = []
+    for path in pack.list_file(("register", "pins", "*.json")):
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                doc = json.load(fh)
+        except (IOError, OSError, ValueError):
+            continue
+        for f in ((doc.get("c7") or {}).get("declared_faults") or []) if isinstance(doc, dict) else []:
+            k = str(f).split(":", 1)[0]
+            if k and k not in kinds:
+                kinds.append(k)
+    return kinds
+
+
+def run_label(pack, cid, label, provenance):
+    """ONE label per run for the CLI and the console. A run whose records carry FAULT_INJECTION is a LIVE_SUBJECT with a
+    DECLARED fault (ARCH 5.5), never 'role undeclared': the label names the declared fault kind."""
+    if provenance == "FAULT_INJECTION" and str(label or "") in ("", "OURS-ROLE-UNDECLARED", "unlabelled (gap)"):
+        kinds = declared_fault_kinds(pack)
+        # a suppressed record shows up as a missing C7 event; an injected tool output removes none: narrow to the kind the run shows
+        try:
+            missing = any(x.get("kind") == "missing-event" for a in pack.assessments_for("C7", ("run",))
+                          if a.get("scope_id") == cid for x in (a.get("exceptions") or []))
+        except Exception:
+            missing = False
+        if missing and "suppress-record" in kinds:
+            kinds = ["suppress-record"]
+        return "declared fault: " + (", ".join(kinds) if kinds else "kind not recorded (no pin declares one)")
+    return label
+
+
 def runs_list(pack):
     """Catalogue rows (honestly labelled); falls back to the run index, then to CIDs seen in the store."""
     rows, src = [], None
@@ -617,8 +651,9 @@ def runs_list(pack):
     for r in base:
         cid = _cid(r)
         idx = pack.index_by_cid.get(cid) or {}
-        rows.append({"cid": cid, "label": r.get("label") or r.get("source") or "unlabelled (gap)",
-                     "provenance": r.get("provenance") or idx.get("provenance") or run_provenance(pack, cid),
+        prov = r.get("provenance") or idx.get("provenance") or run_provenance(pack, cid)
+        rows.append({"cid": cid, "label": run_label(pack, cid, r.get("label") or r.get("source") or "unlabelled (gap)", prov),
+                     "provenance": prov,
                      "phase": r.get("phase") or idx.get("phase") or UNKNOWN,
                      "condition": r.get("condition") or idx.get("condition") or r.get("run.condition"),
                      "version": r.get("register_version") or idx.get("register_version"),
