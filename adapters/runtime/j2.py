@@ -289,9 +289,11 @@ def loop_judgment(k, need, constraints=None):
 
 def derived_judgment(answer, constraints=None, tool_evidence=None, evidence_needed=None):
     """The re-ask was blocked by the platform guardrail: the disposition is derived in code from what the agent
-    already returned. Base: the safest disposition word in the answer, else gather-evidence (never auto-resolve:
-    no structured evidence); then the J2 precedence rules (freeze escalates, empty tool evidence gathers)."""
-    j = Judgment(ESCALATE if "escalat" in strip_reasoning(answer).lower() else GATHER, "guardrail blocked the re-ask",
+    already returned. Base: escalate when there is no answer text or it names escalation, else gather-evidence
+    (never auto-resolve: no structured evidence); then the J2 precedence rules (freeze escalates, empty evidence
+    gathers)."""
+    t = strip_reasoning(answer).lower()   # no answer at all (its first call blocked too): escalate, as before
+    j = Judgment(ESCALATE if not t.strip() or "escalat" in t else GATHER, "guardrail blocked the re-ask",
                  sorted(set(re.findall(r"\bE\d+\b", answer))), named_evidence_needed=evidence_needed, valid=False,
                  reasked=True)
     apply_precedence(j, constraints, tool_evidence, evidence_needed).precedence_rule = R_GUARD   # after: _tighten sets it

@@ -88,6 +88,8 @@ def test_blocked_reask_keeps_the_precedence_rules_and_the_label():
     assert j.disposition == "escalate"   # the safest disposition word in the answer
     j = j2.judge("- auto-resolve: the runbook covers it", lambda p: None, tool_evidence=["INC-1 found"])
     assert j.disposition == "gather-evidence"   # never auto-resolve without a structured answer
+    j = j2.judge("", lambda p: None)   # no answer at all (the first call blocked too, e.g. ADV-H-01): escalate
+    assert j.disposition == "escalate" and j.precedence_rule == "guardrail-blocked-reask"
 
 
 def test_a_served_but_invalid_reask_still_escalates_invalid():
@@ -231,7 +233,10 @@ def test_p1_replay_with_an_empty_proposal():
     d = trio("p1-empty")
     (_, _, n), (_, neg, i3) = _by_call(d)[2:]
     assert neg and j2.proposal_empty(n["proposal"])
-    assert i3["position"] == "gather-evidence" and i3["judgment"]["precedence_rule"] == "no-proposal"
+    assert n["disposition"] == "escalate"   # the network returned no text at all: its derived judgment escalates
+    # IT answers in code (no-proposal reason), floored at the proposer's escalate (Gateway C: never less safe)
+    assert i3["position"] == "escalate" and i3["judgment"]["precedence_rule"] == "proposal-disposition"
+    assert "no proposal received" in i3["judgment"]["reason"]
     assert i3["tally_calls"] == n["tally_calls"]   # Gateway C made no model call
     h3 = [r for r in d["records"] if r.get("ep.id") == "EP-3" and str(r.get("handoff.id") or "").endswith(":h3")]
     assert h3 == []   # and no tool call
