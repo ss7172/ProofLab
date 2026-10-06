@@ -1,0 +1,12 @@
+{
+  "_note": "SYNTHETIC fixture; shape = ARCH 3.2 Assessment; run id style derived from the 20261005T173727Z snapshot (fault-<epoch>); numbers invented",
+  "assessment_id": "asm-synthetic-0001",
+  "control_ref": "C16",
+  "control_id": "ACN-COST-001",
+  "threshold_version": "R-synthetic-v1",
+  "scope_kind": "run",
+  "scope_id": "ifabric-test-1791177843-a1b2c3",
+  "requirement_verdict": "BREACHED",
+  "measured": {"value": 12345, "unit": "tokens"},
+  "evidence_refs": ["gateway:action_id=synthetic-1", "ledger:cid=ifabric-test-1791177843-a1b2c3;extra", "gateway:action_id=synthetic-1"]
+}

@@ -1,0 +1,12 @@
+{
+  "control_ref": "REG",
+  "control_id": "THRESHOLD-REGISTER",
+  "threshold_version": "R-synthetic-v1",
+  "scope_kind": "escalation",
+  "scope_id": "register-R-synthetic-v1",
+  "verdict": "ESCALATED",
+  "summary": "Approve register (sha256 aaaaaaaaaaaa)",
+  "detected_at": "2026-10-06T05:10:00Z",
+  "evidence": ["register:sha256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "register:path=evidence/register/register.yaml"],
+  "kind": "approval"
+}
