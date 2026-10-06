@@ -230,9 +230,9 @@ def render(a):
         return lines
     lines += [
         "window overlap with the run: %s (%s)" % (a["overlap"], a["window_rule"]),
-        "by %s the run had committed %s of %s %s; by %s it had committed %s of %s (headroom %s)" % (
-            a["window"][0], _fmt(s["committed_at_t1"]), _fmt(cap), a["unit"], a["window"][1], _fmt(s["committed_at_t2"]),
-            _fmt(cap), _fmt(s["headroom_at_t2"])),
+        "by %s the run had committed %s of %s %s" % (a["window"][0], _fmt(s["committed_at_t1"]), _fmt(cap), a["unit"]),
+        "by %s the run had committed %s of %s %s (headroom %s)" % (
+            a["window"][1], _fmt(s["committed_at_t2"]), _fmt(cap), a["unit"], _fmt(s["headroom_at_t2"])),
         "inside the window: %d model call(s), %s %s spent" % (s["call_count"], _fmt(s["tokens"]), a["unit"]),
     ]
     for c in s["calls"]:
