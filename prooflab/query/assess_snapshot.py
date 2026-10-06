@@ -7,9 +7,10 @@ a FROZEN register file; runs the stateless evaluators over each assessed run of 
 No threshold is held here: the C16 pin is the register's own derivation for the run's mode (the mode the run's EP-1
 decisions carried, else `--mode`); the C7 numbers come from the register entry (`observation_limit` as
 `coverage_min_pct=..;gap_max_ms=..;violating_gap_share_max_pct=..`, or `--limit C7:key=value` for a value the
-register text does not carry yet); the expected workflow events are the register's `workflow_events` per agent that
-took part in the run, minus the two conditional ones (escalation: only on an escalate disposition; decision: per
-model call, covered by --expect-ep1-decisions).
+register text does not carry yet); the expected workflow events are the register's `workflow_events`, placed by
+prooflab/query/workflow_map.py (run.* and handoff.* on the orchestrator, the rest per agent invocation, negotiation
+on IT's Gateway C invocation), minus the two conditional ones (escalation: only on an escalate disposition; decision:
+per model call, covered by --expect-ep1-decisions).
 
 C9 is not assessed here: its inputs are the AgentCore metric windows, and no collector output is read yet, so the
 run is reported as skipped (a stated gap), never written as an assessment.
@@ -25,9 +26,10 @@ from prooflab.contract import register as _reg
 from prooflab.contract import verdicts as V
 from prooflab.evaluators import c16, c16_core, c7, claim
 from prooflab.registry import parse as P
+from prooflab.query import workflow_map as _wf
 from prooflab.registry import pinned as _pinned
 
-CONDITIONAL_EVENTS = ("escalation", "decision")
+CONDITIONAL_EVENTS = _wf.CONDITIONAL_EVENTS
 OURS_PREFIX = "ifabric-"
 STORE_PATH = ("store", "records.jsonl")
 
@@ -162,13 +164,10 @@ def c7_pin(entry, register_sha, register_version, overrides, ep1_deployed):
 
 
 def workflow_events(entry, agents, ours):
-    events = [x.strip() for x in (entry.get("workflow_events") or "").split(",") if x.strip()
-              and x.strip() not in CONDITIONAL_EVENTS]
-    out = []
-    for ag in agents:
-        stream = _stream_of(ours, ag)
-        out += [{"agent": ag, "event": ev, "stream": stream, "order": i} for i, ev in enumerate(events)]
-    return out
+    """The register's workflow event names, placed by prooflab.query.workflow_map (the one mapping, ARCH 5.2/7.2):
+    run.* and handoff.* on the orchestrator, the rest per agent invocation, negotiation on IT's Gateway C only.
+    `agents` is kept for the call signature; the invocations come from the script's own EP-5 records."""
+    return _wf.expected(_wf.names_of(entry), ours)
 
 
 def assess_snapshot(root, register=None, controls=("C16", "C7", "C9"), runs=None, default_mode="observe",

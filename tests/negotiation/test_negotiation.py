@@ -218,39 +218,108 @@ def test_scenario_constraints_reach_both_payload_shapes():
     assert "constraints" not in run.negotiate_payload("c", "c:h3", "tp", {}, {})["negotiate"]
 
 
-def _expected_from_register(recs):
-    """C7's expected workflow events from the register's own lists (orchestrator events keyed on the script,
-    in-agent events per agent; escalation where the agent escalated; negotiation on the IT agent)."""
-    import re
-    text = open(os.path.join(REPO, "register", "register.yaml")).read()
-    events = re.search(r'workflow_events: "([^"]+)"', text).group(1).split(",")
-    script = ("run.started", "handoff.sent", "handoff.received", "run.finished")
-    agents = sorted(set(r["actor.id"] for r in recs if r["actor.id"].startswith("ifabric-")))
-    escalated = set(r["actor.id"] for r in recs if r["phase"] == "ifabric.escalation")
-    wf = []
-    for ev in events:
-        if ev in script:
-            wf.append({"agent": "orchestrator", "event": ev, "stream": None, "order": None})
-        elif ev == "negotiation":
-            wf.append({"agent": "ifabric-it", "event": ev, "stream": None, "order": None})
-        elif ev == "escalation":
-            wf += [{"agent": a, "event": ev, "stream": None, "order": None} for a in sorted(escalated)]
-        else:
-            wf += [{"agent": a, "event": ev, "stream": None, "order": None} for a in agents]
-    return events, wf
+def _with_gateway(d):
+    """The run's records plus what the live gateway adds and drive_trio has no gateway for: one PLATFORM MCP
+    observation per EP-3 tool call (the gateway's action id), and that id on the call's EP-3 AFTER record (the
+    x-modaas-action-id header). A suppressed AFTER record then leaves the gateway's call:<id> unmatched."""
+    recs, cid = [dict(r) for r in d["records"]], d["cid"]
+    gw = []
+    for r in recs:
+        if r.get("ep.id") == "EP-3" and r.get("tool.use_id"):
+            aid = "act-" + str(r["tool.use_id"])
+            if r.get("tool.phase") == "after":
+                r["call.id"] = aid
+            elif r.get("tool.phase") == "before":
+                gw.append({"run.id": cid, "authorship": "PLATFORM", "observed.clock": "gateway",
+                           "record_kind": "observation", "call.id": aid, "observed.at": r["emitted.at"]})
+    return recs + gw
 
 
-@pytest.mark.parametrize("scenario", ["S1", "S3"])
-def test_c7_over_a_clean_run_with_the_registers_events_is_satisfied(scenario, tmpdir_mod):
+def _assess_c7(d, tmp):
+    """C7 through the production path: `prooflab assess --snapshot` (assess_snapshot) over a one-run snapshot."""
+    from prooflab.query import assess_snapshot as A
+    import pathlib
+    import tempfile
+    root = pathlib.Path(tempfile.mkdtemp(prefix="snap-", dir=str(tmp)))
+    (root / "store").mkdir()
+    (root / "derived").mkdir()
+    (root / "store" / "records.jsonl").write_text("".join(json.dumps(r) + "\n" for r in _with_gateway(d)))
+    (root / "derived" / "run-catalogue.jsonl").write_text(json.dumps({"run_id": d["cid"], "assessed": True}) + "\n")
+    out = A.assess_snapshot(str(root), register=os.path.join(REPO, "register", "register.yaml"), controls=("C7",),
+                            overrides=["C7:coverage_min_pct=100", "C7:gap_max_ms=%d" % 10 ** 9,
+                                       "C7:violating_gap_share_max_pct=100", "C7:exception_tolerance=0"],
+                            as_of="2026-10-06T06:00:00.000Z")
+    (_, cid, verdict, path), = out["written"]
+    return verdict, json.load(open(path))
+
+
+def _missing(doc):
+    return [x["key"] for x in doc["exceptions"] if x.get("kind") == "missing-event"]
+
+
+@pytest.mark.parametrize("scenario", ["S1", "S2", "S3"])
+def test_c7_production_assess_snapshot_over_a_clean_run_is_satisfied(scenario, tmpdir_mod):
+    # A clean run made by the real orchestrator + the real app: every register workflow event is expected where the
+    # script / the app emits it (prooflab/query/workflow_map.py), so C7 is SATISFIED with nothing missing.
     d = drive(scenario, tmp=tmpdir_mod)
-    events, wf = _expected_from_register(d["records"])
-    assert {"run.started", "handoff.sent", "invocation.received", "handoff.received", "run.finished",
-            "negotiation"} <= set(events)
-    pin = {"coverage_min_pct": 100, "gap_max_ms": 10 ** 9, "violating_gap_share_max_pct": 100,
-           "exception_tolerance": 0}
-    exp = c7.expected_events(d["cid"], [], [], wf, [], pin)
-    a = c7.assess_run(d["cid"], exp, d["records"], [], pin, "2026-10-06T06:00:00.000Z")
-    assert a.requirement_verdict == V.SATISFIED, [x for x in a.exceptions]
+    verdict, doc = _assess_c7(d, tmpdir_mod)
+    assert verdict == V.SATISFIED, doc["exceptions"]
+    assert not _missing(doc)
+    exp = doc["measured"]["coverage"].split("/")[1]
+    assert int(exp) >= 9 + 4 * 3 + 1           # run.* 2, sent 3, received 4; 4 invocations x 3; negotiation 1
+
+
+def test_c7_production_assess_snapshot_suppressed_record_is_breached(tmpdir_mod):
+    # N4: the declared suppress-record fault drops IT's first EP-3 AFTER record; the gateway saw the call -> BREACHED.
+    d = drive("S1", "suppress-record:ifabric-it:tool.call:1", tmpdir_mod)
+    verdict, doc = _assess_c7(d, tmpdir_mod)
+    assert verdict == V.BREACHED
+    missing = _missing(doc)
+    assert len(missing) == 1 and missing[0].startswith("call:act-"), missing
+
+
+def test_c7_production_misses_one_invocation_event_on_its_own_invocation(tmpdir_mod):
+    # IT is invoked twice (h1 trio, h3 Gateway C): dropping the h3 invocation.received is missed as @h3 alone.
+    d = drive("S1", tmp=tmpdir_mod)
+    drop = [r for r in d["records"] if r["actor.id"] == "ifabric-it" and r.get("phase") == "invocation.received"
+            and str(r.get("handoff.id")).endswith(":h3")]
+    assert len(drop) == 1
+    verdict, doc = _assess_c7(dict(d, records=[r for r in d["records"] if r is not drop[0]]), tmpdir_mod)
+    assert verdict == V.BREACHED and _missing(doc) == ["ifabric-it|invocation.received@h3"]
+
+
+def test_workflow_map_places_each_register_event():
+    from prooflab.adapters.orchestrator import run as ORUN
+    from prooflab.query import workflow_map as W
+    assert (W.GATEWAY_C_FROM, W.GATEWAY_C_TO) == (ORUN.GATEWAY_C_FROM, ORUN.GATEWAY_C_TO)
+    text = open(os.path.join(REPO, "register", "register.yaml")).read()
+    import re
+    names = W.names_of({"workflow_events": re.search(r'workflow_events: "([^"]+)"', text).group(1)})
+    assert "decision" not in names and "escalation" not in names and "negotiation" in names
+
+    def orch(phase, n=None, frm=None, to=None):
+        r = {"actor.id": "orchestrator", "phase": phase, "authorship": "TESTIMONY"}
+        if n:
+            r.update({"handoff.id": "ifabric-run-1-ab:h%d" % n, "handoff.from": frm, "handoff.to": to})
+        return r
+    full = [orch("run.started"), orch("handoff.received"),
+            orch("handoff.sent", 1, "ifabric-customer", "ifabric-it"),
+            orch("handoff.sent", 2, "ifabric-it", "ifabric-network"),
+            orch("handoff.sent", 3, "ifabric-network", "ifabric-it")]
+    assert W.invocations(full) == [{"at": "h0", "agent": "ifabric-customer", "gateway_c": False},
+                                   {"at": "h1", "agent": "ifabric-it", "gateway_c": False},
+                                   {"at": "h2", "agent": "ifabric-network", "gateway_c": False},
+                                   {"at": "h3", "agent": "ifabric-it", "gateway_c": True}]
+    keys = sorted(c7.workflow_key(e["agent"], e["event"], e["at"]) for e in W.expected(names, full))
+    assert [k for k in keys if k.endswith("negotiation") or "negotiation@" in k] == ["ifabric-it|negotiation@h3"]
+    assert [k for k in keys if k.startswith("orchestrator|handoff.sent")] == [
+        "orchestrator|handoff.sent@h%d" % n for n in (1, 2, 3)]
+    assert len([k for k in keys if k.startswith("orchestrator|handoff.received")]) == 4
+    assert {"orchestrator|run.started", "orchestrator|run.finished"} <= set(keys)
+    assert not [k for k in keys if k.startswith("ifabric-") and ("|run." in k or "|handoff." in k)]
+    # --only gateway-c: one IT invocation (h1 = Gateway C), no h0
+    only_c = [orch("run.started"), orch("handoff.sent", 1, "ifabric-network", "ifabric-it")]
+    assert W.invocations(only_c) == [{"at": "h1", "agent": "ifabric-it", "gateway_c": True}]
 
 
 def test_c7_after_stop_events_use_the_contract_stop_name():
