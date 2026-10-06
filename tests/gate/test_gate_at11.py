@@ -4,7 +4,7 @@ and applies the same pattern directly (it must not call gate.sh: the gate runs t
 import os
 import re
 
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PAT = re.compile(r"(cap|limit|threshold|ceiling)[a-z0-9_]*\s*(:[^=#]*)?=\s*-?[0-9]", re.I)
 NOT_ASSIGN = re.compile(r"[=!<>]=\s*-?[0-9]")
 
