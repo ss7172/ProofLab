@@ -47,6 +47,10 @@ account is deleted after the event; this states the rule we would operate under 
 
 1. Every file is listed in `MANIFEST.json` with its SHA-256 and size. Check it:
    `python3 tools/manifest.py verify .` should print `OK` and exit 0; any changed byte makes it exit 1.
+   Run it **before** you run anything else from this pack, or set `PYTHONDONTWRITEBYTECODE=1` first
+   (`export PYTHONDONTWRITEBYTECODE=1`): Python otherwise writes `prooflab/__pycache__/`, and the
+   check then lists those files as unlisted. If that happens, delete the `__pycache__` folders and
+   run it again. (`python3 -m prooflab pack verify .` does the same check and ignores bytecode.)
 2. Raw captures under `raw/` are never edited; a correction is a new file.
 3. The upload's key, version id and time are recorded in section 7 (set by AWS, not by us).
 4. **Root published (unsigned).** At each submit (`<submit-1 / submit-2 / final>`) we posted the
@@ -68,7 +72,8 @@ account is deleted after the event; this states the rule we would operate under 
 
 ## 4. Answer the questions yourself
 
-Run these from the folder that holds `prooflab/` (the unzipped pack). Each prints the rule, its
+Run these from the folder that holds `prooflab/` (the unzipped pack), with
+`export PYTHONDONTWRITEBYTECODE=1` set first so nothing is written into the pack. Each prints the rule, its
 version and date, owner, population, measured value against the limit, exceptions, verdict, gaps
 and the record references.
 
