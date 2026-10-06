@@ -79,7 +79,7 @@ L1 checks: DRY RUN at $NOW (nothing is called; no file is written)
          PASS = AccessDeniedException (only the error code and the denied action are printed)
   L1-4   kubectl -n $NS get agentconfig $AGENTS -o json
            | python3 projection: name, metadata.generation, status.phase, annotation modaas.tmforum.org/approver,
-             status.governance.approvals[].{subject,time}   (env, tokens and attestations are never printed)
+             status.governance.approvals[].{subject,at}   (env, tokens and attestations are never printed)
          PASS = all four found, each with an approver annotation and >= 1 approval record
   out    would write $OUT  {checked_at, checks:[{id,name,result,evidence,detail}]}
 EOF
@@ -253,7 +253,7 @@ for name in want:
     good = bool(who) and bool(recs)
     ok = ok and good
     print("%s\t%s\tgen %s\t%s\t%s at %s" % (name, "OK" if good else "NO-APPROVAL", m.get("generation"),
-          scrub(st.get("phase") or "?"), scrub(last.get("subject") or who or "none"), scrub(last.get("time") or "?")))
+          scrub(st.get("phase") or "?"), scrub(last.get("subject") or who or "none"), scrub(last.get("at") or last.get("time") or "?")))
 print("ALL_OK" if ok else "NOT_ALL")
 '
 P4="$(python3 -c "$PROJ" "$TMP/ac.json" "$AGENTS")"
