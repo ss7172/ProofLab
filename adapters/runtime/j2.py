@@ -182,7 +182,8 @@ def proposal_of(fields, text):
     """The network agent's structured proposal for Gateway C: resolution + change risk, with its disposition and
     the evidence it needs, so "no twin data: do not guess" travels with it (data for the script to relay)."""
     f = fields or {}
-    return {"resolution": f.get("proposed_action") or f.get("reversible_step") or "",
+    return {"resolution": f.get("proposed_action") or _last_key(text, "proposed_action") or f.get("reversible_step")
+            or "",
             "reversible_step": f.get("reversible_step") or "",
             "change_risk": _last_key(text, "change_risk") or "not stated",
             "disposition": f.get("disposition"), "reason": f.get("reason") or "",

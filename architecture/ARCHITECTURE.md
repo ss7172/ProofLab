@@ -1341,6 +1341,7 @@ Coverage and gap are separate verdicts, and both must hold.
   - `run.started`;
   - per agent: `handoff.sent`, `invocation.received`, `intent`, `judgment`, `handoff.received`;
   - `escalation` when the disposition is escalate;
+  - `negotiation` from the IT agent on Gateway C (PR-28: network → IT, h3, after the network answers);
   - `run.finished`;
   - one C16 `decision` per model call when EP-1 is deployed: one per span, **plus one per cancelled call** (`outcome.real: CANCELLED_C16`), because only a halted call has no span. In `observe` a DENY is still served, so it has a span and is counted once (I-02, B6);
   - one EP-0 `decision` per agent when D13's gate is on (G-08).
@@ -1772,6 +1773,7 @@ It runs on the laptop as WSParticipantRole. It invokes each runtime through `Inv
 3. **Tier decision** (if tiers) → a `decision` record.
 4. **`run.started`.**
 5. **Per agent:** `handoff.sent` → invoke → `handoff.received` (status, disposition, halted, duration, tally out) → forward the tally. The two handoffs are the brief's Gateway A (h1, customer → IT) and Gateway B (h2, IT → network): record-only (EP-5).
+   **Gateway C (PR-28):** after the network answers, `handoff.sent` h3 (network → IT, the raw payload's sha256) → ONE more IT invocation with `{"negotiate": {correlation_id, proposal, traceparent, handoff_id}}` plus the envelope (the proposal = the network's structured resolution and change risk) → `handoff.received`. The IT agent evaluates it through rails → C16 → model → J2 and records its position (agree | disagree | gather-evidence | escalate) as a `negotiation` judgment record; never a canned agree. The run's bound adds one IT call (`budget.json` `gateway_c_extra`).
 6. **`run.finished`.**
 7. **Append the run index line:** CID, agent versions, register version and sha256, mode, condition, provenance, times.
 
