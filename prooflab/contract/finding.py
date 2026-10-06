@@ -54,6 +54,8 @@ def make_finding(control_ref, control_id, threshold_version, scope_kind, scope_i
                  detected_at, evidence=(), kind="finding", measured=None, limit=None, register=None,
                  trace=None, retest=None) -> dict:
     """A Finding dict ready for finding_from_dict. Raises ValueError on the refusals Arth's code would make."""
+    if isinstance(evidence, str):
+        raise ValueError("invalid finding: evidence: must be a list of strings")
     data = {
         "control_ref": control_ref, "control_id": control_id, "threshold_version": threshold_version,
         "scope_kind": scope_kind, "scope_id": scope_id, "verdict": verdict, "summary": summary,
