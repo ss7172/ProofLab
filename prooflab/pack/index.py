@@ -154,7 +154,18 @@ def build_controls(ctx):
             "f_query_under_2min": False,   # never measured by this projector: stays false until a timed query is recorded
             "g_gaps_recorded": any(a.get("gaps") for a in rows) or bool(ctx.get("gaps")),
         }
-        entry["findings_open"] = sum(1 for f in findings if (f.get("closure") or {}).get("state") != "CLOSED_BY_RETEST")
+        # a finding is a BREACHED verdict; every other assessment carries a 'finding' block but is not one
+        breaches = [f for f in findings if f.get("verdict") == _V.BREACHED]
+        closed = [f for f in breaches if (f.get("closure") or {}).get("state") == "CLOSED_BY_RETEST"]
+        entry["findings_open"] = sum(1 for f in breaches if f.get("incident") and f not in closed)
+        entry["findings_open_note"] = ("notified BREACHED findings not yet closed by a re-test; a BREACHED verdict that "
+                                       "was not notified is listed in findings_not_notified, not counted here")
+        entry["findings_closed"] = ["%s %s, closed by re-test %s at %s" % (
+            f["scope_id"], ("notified %s" % f["incident"]) if f.get("incident") else "not notified",
+            (f.get("closure") or {}).get("retest_cid") or "?", (f.get("closure") or {}).get("at") or "?") for f in closed]
+        entry["findings_not_notified"] = ["%s %s, not notified%s" % (
+            f["scope_id"], f["verdict"], " (gap-list B38)" if f["scope_id"] in (ctx.get("b38_scopes") or ()) else "")
+            for f in breaches if not f.get("incident")]
         entry["built_properly"] = all(v for k, v in entry["completeness"].items() if k != "f_query_under_2min")
         entry["actually_worked"] = None if not rows else entry["verdict_overall"] == _V.SATISFIED
         out.append(entry)

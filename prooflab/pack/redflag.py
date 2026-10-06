@@ -748,6 +748,76 @@ def _json_docs(raw):
 RULES = (r1, r2, r3, r4, r5, r6, r7, r8, r9)
 
 
+# ---------------------------------------------------------------- R10 (PR-52b)
+_WIN_RE = re.compile(r"Declared event window \(UTC\):\*{0,2}\s*`(\d{4}-\d\d-\d\dT[0-9:.]+Z)`\s*to\s*`(\d{4}-\d\d-\d\dT[0-9:.]+Z)`")
+
+
+def r10(pack):
+    """Counts and windows the judge compares: claim.controls[*].findings_open counts only notified BREACHED findings
+    not closed by a re-test (never one per assessment), and README section 1, pack-index pack.event_window and
+    named-runs.md state one declared event window."""
+    out = []
+    pidx = pack.pidx or {}
+    fnd = [f for f in pidx.get("findings") or [] if isinstance(f, dict)]
+    closed = set()
+    for d in pack._dir_json("closures").values():
+        if isinstance(d, dict) and d.get("closed_by") == "retest" and d.get("finding_id"):
+            closed.add(d["finding_id"])
+    for i, c in enumerate((pidx.get("claim") or {}).get("controls") or []):
+        if not isinstance(c, dict) or "findings_open" not in c:
+            continue
+        want = sum(1 for f in fnd if f.get("control_ref") == c.get("ref") and f.get("verdict") == BREACHED
+                   and f.get("incident") and f.get("finding_id") not in closed)
+        if c.get("findings_open") != want:
+            out.append(Finding("R10", "pack-index.json @claim.controls[%d].findings_open" % i,
+                               "%s findings_open %s, but %d notified BREACHED finding(s) are not closed" % (
+                                   c.get("ref"), c.get("findings_open"), want),
+                               "count only notified BREACHED findings without a re-test closure"))
+    wins = {}
+    for rel in ("README.md", "named-runs.md"):
+        m = _WIN_RE.search(pack.text(rel) or "")
+        if m:
+            wins[rel] = (m.group(1).strip(), m.group(2).strip())
+    ew = (pidx.get("pack") or {}).get("event_window") or {}
+    if ew.get("start") and ew.get("end"):
+        wins["pack-index.json @pack.event_window"] = (str(ew["start"]), str(ew["end"]))
+    if "named-runs.md" in wins and len(set(wins.values())) > 1:
+        out.append(Finding("R10", "README.md / pack-index.json / named-runs.md", "; ".join(
+            "%s %s..%s" % (k, a, b) for k, (a, b) in sorted(wins.items())), "state one declared event window everywhere"))
+    out.extend(_r10_approval_before(pack, wins))
+    return out
+
+
+_APPR_RE = re.compile(r"register (\S+) approval \S+ on \S+ at (\d\d:\d\d:\d\d)Z[^;]*?, before every named run")
+_NC_ROW = re.compile(r"`(ifabric-run-\d+-[0-9a-f]+)`")
+
+
+def _r10_approval_before(pack, wins):
+    """'before every named run' must not stand beside an approval when a NOT COUNTED attempt under that register version
+    (named-runs.md) started before it: an approval after a run is always said so."""
+    out = []
+    readme = pack.text("README.md") or ""
+    nr = pack.text("named-runs.md") or ""
+    day = (wins.get("named-runs.md") or ("",))[0][:10]
+    for m in _APPR_RE.finditer(readme):
+        ver, hms = m.group(1), m.group(2)
+        for line in nr.split("\n"):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
+            if len(cells) < 12 or "NOT COUNTED" not in cells[11].upper() or cells[6] != ver:
+                continue
+            st = re.match(r"(\d\d:\d\d:\d\d)", cells[4])
+            cm = _NC_ROW.search(cells[3])
+            if st and st.group(1) < hms:
+                out.append(Finding("R10", "README.md section 8", "register %s approval at %sZ is called 'before every named "
+                                   "run', but NOT COUNTED attempt %s started %sZ under it%s" % (
+                                       ver, hms, cm.group(1) if cm else "?", st.group(1), (" (" + day + ")") if day else ""),
+                                   "say the approval came AFTER that attempt"))
+    return out
+
+
+RULES = RULES + (r10,)
+
+
 def lint(pack_dir):
     pack = Pack(pack_dir)
     out = []

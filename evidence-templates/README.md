@@ -11,9 +11,12 @@ network.
 
 - **Claim:** "During fault resolution, the three collaborating agents meet our declared
   event-recording, drift and token-spend requirements." (the slides' wording, verbatim)
-- **Declared event window (UTC):** `<WINDOW_START>` to `<WINDOW_END>`. Written before judging and
-  filled at submit. Only runs inside this window are in scope; `--runs` (section 4) lists every
-  run in it, including pilots, baselines and adversarial runs, each labelled as what it is.
+- **Declared event window (UTC):** `<WINDOW_START>` to `<WINDOW_END>`, the same window as `named-runs.md`
+  and `pack-index.json` (pack.event_window); the window's ends are named-runs.md's second-resolution times, so a run
+  that ends within the last second of the window is inside it. `--runs` (section 4) lists every run in the
+  pack's run catalogue, including the pilots that ran before this window and the baselines and adversarial runs, each
+  labelled as what it is. The NOT COUNTED attempts that have no records in `store/` are listed in `named-runs.md` and
+  in `pack-index.json` runs[] with their reasons, not in `--runs`.
 - **Controls:** C16 (per-run token cap), C7 (event recording), C9 (drift and performance). Each
   control's threshold, owner and version is in `register/`; its date proof is the write-once object
   recorded in section 7.
@@ -34,8 +37,7 @@ what the pack holds, and a pillar with nothing yet says so.
 | Handover proof | A stranger answers the six auditor questions from the pack alone | `prooflab query --incident`, `store/`, `gap-list.md` | `<per question: FULL / PARTIAL, and what arrives later>` |
 
 **Second enforcement point.** The same C16 core function runs at EP-1 (inline, in the agent) and at
-EP-2 (after the run, over the gateway's log). `<adapter-diff PR sha, its git diff --stat, and the
-core's sha256 at EP-1 and EP-2; filled at submit, and the two hashes must be equal>`. The
+EP-2 (after the run, over the gateway's log). <C16_CORE_SHA> The
 full list of enforcement points is `security-matrix.md`.
 
 ## 2. Retention
@@ -60,7 +62,7 @@ account is deleted after the event; this states the rule we would operate under 
    not control that stamps its own time. Check it in three steps: (a) recompute the hash from this
    pack: `python3 -m prooflab pack root --recompute .` (same value as `shasum -a 256 MANIFEST.json`);
    (b) compare it with the note's `MANIFEST sha256` line, and confirm the note's journal time
-   (`<NOTE_JOURNAL_TIME_UTC>`, also in `pack-root.json`) is before the deadline; (c) compare the note's
+   (recorded in `pack-root.json`; the note is posted after this pack is built) is before the deadline; (c) compare the note's
    `S3 VersionId` with the version id of the uploaded object in section 7. `pack-root.json` (label,
    both hashes, version id, incident, journal time, note hash) is a sidecar uploaded after the pack,
    so it is not listed in the MANIFEST (the MANIFEST cannot contain the note that hashes it).
@@ -158,8 +160,8 @@ gap list). If a result in this pack differs from the above, the pack wins and th
 
 ## 7. Submission record
 
-`<bucket, keys, version ids, upload time (UTC), the write-once register object and its time,
-read-back result, MANIFEST verify result>` Filled after upload; the readback is recorded, not edited.
+The upload (bucket, keys, version ids, upload time) happens after this pack is built, so this README cannot
+hold it: it is recorded in `pack-root.json` after upload, and the readback is recorded, not edited.
 
 ## 8. ServiceNow: the human loop and the Assurance Agent
 
@@ -183,7 +185,6 @@ SHA-256 is in the delivery log; a look-alike note is flagged, never trusted. Sec
   gaps G-1 to G-3); our own in-agent rails are self-enforced and their misses are published.
 - **Items listed as open in `gap-list.md`:** anything marked `<update before each submit>` there
   had no result at the time of this submit.
-- `<anything cut during the build, with the reason>`
 
 ## 10. Test-only material and people
 

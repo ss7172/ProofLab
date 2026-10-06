@@ -434,3 +434,38 @@ def run_catalogue(src, run_ids, window=None, store_records=None):
         out.append(x)
     out.sort(key=lambda r: (r.get("started_at") or "9999", r["cid"]))
     return out
+
+
+# ------------------------------------------------------------------ named-runs.md (the declared roles and window)
+_NR_WIN = re.compile(r"Declared event window \(UTC\):\s*`(\d{4}-\d\d-\d\dT[0-9:.]+Z)`\s*to\s*`(\d{4}-\d\d-\d\dT[0-9:.]+Z)`")
+_NR_CID = re.compile(r"`(ifabric-run-\d+-[0-9a-f]+)`")
+
+
+def named_runs_md(root):
+    """{"window": {"start", "end"} or None, "rows": [{control, role, attempt, cid, start, end, note, not_counted}]}
+    parsed from the staged named-runs.md (the team's declared roles); empty when the pack has none."""
+    try:
+        with open(os.path.join(root, "named-runs.md"), "r", encoding="utf-8") as fh:
+            text = fh.read()
+    except (IOError, OSError):
+        return {"window": None, "rows": []}
+    m = _NR_WIN.search(text)
+    win = {"start": m.group(1), "end": m.group(2)} if m else None
+    day = win["start"][:10] if win else None
+    rows = []
+    for line in text.split("\n"):
+        if not line.startswith("|") or line.startswith("|---"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 12 or cells[0] == "control":
+            continue
+        cm = _NR_CID.search(cells[3])
+        note = cells[11]
+
+        def t(s):
+            mm = re.match(r"(\d\d:\d\d:\d\d(?:\.\d+)?Z)", s or "")
+            return "%sT%s" % (day, mm.group(1)) if (mm and day) else None
+        rows.append({"control": cells[0], "role": cells[1].upper(), "attempt": cells[2], "cid": cm.group(1) if cm else None,
+                     "start": t(cells[4]), "end": t(cells[5]), "register": cells[6], "note": note,
+                     "not_counted": "NOT COUNTED" in note.upper()})
+    return {"window": win, "rows": rows}
