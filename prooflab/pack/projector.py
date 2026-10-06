@@ -643,6 +643,10 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
 
     window = cx["window"]
     ew = window.get("event_window") if isinstance(window.get("event_window"), dict) else window
+    from prooflab.pack import history as _h
+    nmd = _h.named_runs_md(src)
+    if not (_utc(ew.get("start")) and _utc(ew.get("end"))) and nmd["window"]:
+        ew = nmd["window"]       # one declared window: named-runs.md's, the same one README section 1 states
     first = min(ts) if ts else cx["as_of"]
     pack = {"title": cx["claim"].get("title") or "iFabric ProofLab Evidence Pack", "team": cx["claim"].get("team") or "iFabric",
             "event_window": {"start": ew.get("start") if _utc(ew.get("start")) else first,
@@ -674,21 +678,21 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
             row = {"finding_id": fid,
                    "control_ref": p["control_ref"], "scope_id": p["scope"]["id"], "verdict": f["verdict"],
                    "kind": f.get("kind") or "finding", "summary": display_summary(f["summary"])}
+            cl = _read_json(os.path.join(src, "closures", "%s-%s-closure.json" % (p["control_ref"], safe(p["scope"]["id"])))) or {}
+            if cl.get("finding_id") == fid and cl.get("closed_by") == "retest":
+                row["closure"] = {"state": "CLOSED_BY_RETEST", "at": cl.get("closed_at"), "retest_cid": cl.get("retest_cid")}
             d = delivered.get(fid)
             if d:      # the delivery log is the source (INTENT, SENT, DELIVERED); a case snapshot, when present, comes via cases[]
                 row["delivery_state"] = str(d.get("state") or "UNKNOWN")
                 row["incident"] = str(d["number"]) if d.get("number") else None
             findings.append(row)
-    from prooflab.pack import history as _h
     runs = []
     for row in _h.run_catalogue(src, cx["run_ids"], cx["window"], cx["records"]):
         cid = row["cid"]
         row["verdicts"] = dict((p["control_ref"], p["verdict"]) for p in docs if p["scope"].get("cid") == cid)
         runs.append(row)
-    named = {"written_at": cx["as_of"], "entries": [
-        {"control": p["control_ref"], "expected": "BREACH" if p["verdict"] == _V.BREACHED else "PASS",
-         "scope": p["scope"], "observed": p["verdict"], "answer_ref": "assessment:%s" % p["assessment_id"]}
-        for p in docs if p["scope"].get("cid") in cx["run_ids"]]}
+    runs = not_counted_rows(runs, nmd)
+    named = {"written_at": cx["as_of"], "entries": [named_entry(p, nmd) for p in docs if p["scope"].get("cid") in cx["run_ids"]]}
     artefacts = []
     for i, (name, path) in enumerate((("Threshold document", cx["register"] and cx["register"]["path"] or "register/register.yaml"),
                                       ("Gap list", "gap-list.md"), ("Run ids", "run-ids.txt"), ("Manifest", "MANIFEST.json"))):
@@ -703,6 +707,7 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
             "approval": approval_of_head(cx),
             "first_assessed_run_at": min((r["started_at"] for r in runs if r.get("started_at") and r.get("provenance") == "ASSESSED"), default=None),
             "exploratory_runs": sum(1 for r in runs if r.get("provenance") == "EXPLORATORY"),
+            "b38_scopes": sorted(set(r["cid"] for r in nmd.get("rows") or [] if r.get("cid") and "B38" in r.get("note", ""))),
             "gaps": _gaps(src), "answers": list(answers or []), "auditor": list(auditor or [])}
     index_doc = _index.build_index(ictx)
     os.makedirs(out, exist_ok=True)
@@ -711,6 +716,61 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
     _write(os.path.join(out, "pack-index.json"), index_doc)
     _write(os.path.join(out, "projection-report.json"), report)
     return {"index": index_doc, "report": report, "files": [rel for rel, _ in files] + ["pack-index.json"]}
+
+
+def _md_rows(nmd, cid, control=None):
+    return [r for r in nmd.get("rows") or [] if r.get("cid") == cid and (control is None or r.get("control") == control)]
+
+
+def named_entry(p, nmd):
+    """A named_runs entry whose expectation is the role DECLARED in named-runs.md, never derived from the verdict.
+    expected stays in the contract's {PASS, BREACH}; role and note say what was declared (or that nothing was)."""
+    cid, ctl, verdict = p["scope"].get("cid"), p["control_ref"], p["verdict"]
+    e = {"control": ctl, "scope": p["scope"], "observed": verdict, "answer_ref": "assessment:%s" % p["assessment_id"]}
+    rows = _md_rows(nmd, cid, ctl)
+    role = rows[-1]["role"] if rows else None
+    if role == "BREACH":
+        e["expected"], e["role"] = "BREACH", "BREACH attempt"
+        e["note"] = ("declared BREACH attempt (named-runs.md); breach produced" if verdict == _V.BREACHED else
+                     "declared BREACH attempt (named-runs.md); no breach produced (observed %s)" % verdict)
+    elif role in ("PASS", "RE-TEST"):
+        e["expected"], e["role"] = "PASS", role
+        e["note"] = "declared %s (named-runs.md)" % role
+    else:
+        e["expected"], e["role"] = "PASS", "UNPLANNED"
+        others = _md_rows(nmd, cid)
+        b38 = any("B38" in r.get("note", "") and ctl in r.get("note", "") for r in others)
+        e["note"] = ("no declared %s role for this run in named-runs.md (not pre-registered); assessed incidentally, "
+                     "PASS expected by default; observed %s" % (ctl, verdict)) + (
+                         ", unplanned, not notified (gap-list B38)" if (verdict == _V.BREACHED and b38) else "")
+    return e
+
+
+def not_counted_rows(runs, nmd):
+    """runs[] gains every attempt named-runs.md lists as NOT COUNTED but the catalogue lacks; a catalogued one is
+    relabelled NOT COUNTED with the declared reason. Neither carries verdicts."""
+    have = dict((r.get("cid"), r) for r in runs)
+    seen = set()
+    for r in nmd.get("rows") or []:
+        if not r.get("not_counted") or not r.get("cid") or r["cid"] in seen:
+            continue
+        seen.add(r["cid"])
+        state = "INFRA-FAILED" if "INFRA-FAILED" in r["note"].upper() else ("HALTED" if "HALTED" in r["note"].upper() else "NOT COUNTED")
+        why = "named attempt (%s %s attempt %s) %s, NOT COUNTED: %s" % (r["control"], r["role"], r["attempt"], state, r["note"])
+        row = have.get(r["cid"])
+        if row is not None:
+            row["label"], row["state"], row["purpose"] = "NOT COUNTED", state, why
+            row.setdefault("failure_class", state.lower())
+            continue
+        new = {"alias": r["cid"], "cid": r["cid"], "provenance": "EXPLORATORY", "label": "NOT COUNTED", "state": state,
+               "failure_class": state.lower(), "purpose": why, "records_in_store": 0, "verdicts": {},
+               "sources": ["named-runs.md"], "store_note": "not in store/: listed from named-runs.md"}
+        if r.get("start") and _utc(r["start"]):
+            new["started_at"] = r["start"]
+        if r.get("end") and _utc(r["end"]):
+            new["ended_at"] = r["end"]
+        runs.append(new)
+    return sorted(runs, key=lambda x: (str(x.get("started_at") or "9"), str(x.get("cid"))))
 
 
 def approval_of_head(cx):
