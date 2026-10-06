@@ -8,3 +8,7 @@ def record_judgment(client, ctx, disposition, reason, evidence_ids=(), result_di
 
 def record_intent(client, ctx, intent):
     return client.emit({"record_kind": "lifecycle", "lifecycle.event": "intent"})
+
+
+def record_from_j2(client, ctx, fields, result_digests=()):
+    return record_judgment(client, ctx, (fields or {}).get("disposition"), (fields or {}).get("reason") or "x")

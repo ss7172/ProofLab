@@ -25,7 +25,7 @@ SURFACE = {
     "adapters.runtime.tally": ("RunTally",),
     "adapters.runtime.model_call": ("ModelCallAdapter", "make_gateway_model"),
     "adapters.runtime.tool_call": ("ToolCallRecorder", "args_sha256"),
-    "adapters.runtime.judgment": ("record_judgment", "record_intent"),
+    "adapters.runtime.judgment": ("record_judgment", "record_from_j2", "record_intent"),
     "adapters.runtime.rails": ("Rails", "startup"),
     "adapters.runtime.egress": ("install",),
     "adapters.runtime.j2": ("judge", "halted_judgment"),
@@ -271,13 +271,8 @@ def build(spec):
             fields = inv.rails.ground(j.to_record_fields())
             answer = inv.rails.output(text, prompts=[prompt])
             inv.drain()
-            W.judgment.record_judgment(
-                client, ctx, fields["disposition"],
-                fields.get("reason") or fields.get("precedence_rule") or "no reason given",
-                evidence_ids=fields.get("deciding_evidence") or (),
-                result_digests=[W.tool_call.args_sha256(t) for t in inv.evidence],
-                reversible_step=fields.get("reversible_step") or None,
-                precedence_rule=fields.get("precedence_rule") or None)
+            W.judgment.record_from_j2(client, ctx, fields,
+                                      result_digests=[W.tool_call.args_sha256(t) for t in inv.evidence])
             result.update(answer=answer, judgment=fields, disposition=fields["disposition"],
                           halted=tally.halted, tally_tokens=tally.committed, tally_calls=tally.calls)
         except Exception as exc:  # the true status, never "500 on the model"

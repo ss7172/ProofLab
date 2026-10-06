@@ -48,7 +48,7 @@ class Judgment(object):
                 "reversible_step": self.reversible_step, "precedence_rule": self.precedence_rule,
                 "reason": self.reason, "named_evidence_needed": self.named_evidence_needed,
                 "proposed_action": self.proposed_action, "valid": self.valid,
-                "reasked": self.reasked}
+                "reasked": self.reasked, "model_disposition": self.model_disposition}
 
 
 def strip_reasoning(text):
