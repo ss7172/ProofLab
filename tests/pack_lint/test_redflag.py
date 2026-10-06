@@ -193,10 +193,12 @@ def test_r7_placeholder_and_missing_file(pack):
     assert "<WINDOW_START>" in texts and "security-matrix.md" in texts and not any("<CID>" in t for t in texts)
 
 
-def test_r8_integrity_banner_vs_manifest(pack):
+def test_stored_integrity_fields_are_not_linted(pack):
+    """Stored integrity is stale by construction (written before MANIFEST.json; the console stamps it at serve time)."""
     _edit(pack, "pack-index.json", lambda d: d.update(integrity={"status": "UNVERIFIED", "files": 0}))
     _w(pack, "auditor/%s.json" % CID, {"questions": {"integrity": {"answer": "MANIFEST.json missing (gap)"}}})
-    assert len([f for f in redflag.lint(str(pack)) if f.rule == "R8"]) == 2
+    _edit(pack, ANS, lambda d: d["source"].update(manifest_status="UNVERIFIED"))
+    assert redflag.lint(str(pack)) == []
 
 
 def test_r8_satisfied_with_exceptions_and_degraded_operation(pack):

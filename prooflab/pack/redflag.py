@@ -21,7 +21,7 @@ Rules (each one is something a judge could read as disqualifying, or a false sta
   R6  numbers: each answer's measured value / limit / verdict equals the stored assessment's; the run catalogue's
       token figure does not contradict the C16 verdict.
   R7  README: no <UPPER_SNAKE> placeholders outside backticks; every file it names exists in the pack.
-  R8  contradictions: integrity banner vs MANIFEST.json; SATISFIED next to exceptions over tolerance, a DEGRADED
+  R8  contradictions: SATISFIED next to exceptions over tolerance, a halted run, a DEGRADED
       operation, 'over cap' / negative-headroom wording; one finding id with two different summaries.
   R9  secret-shaped strings or unredacted token-shaped values in the evidence data.
 """
@@ -545,26 +545,10 @@ def r7(pack):
 # ---------------------------------------------------------------- R8
 def r8(pack):
     out = []
-    has_manifest = pack.exists("MANIFEST.json")
-    integ = pack.pidx.get("integrity") or {}
-    if has_manifest and (str(integ.get("status")) in ("UNVERIFIED", "MISSING") or not integ.get("files")):
-        out.append(Finding("R8", "pack-index.json @integrity", "status %s, files %s" % (
-            integ.get("status"), integ.get("files")), "MANIFEST.json is in the pack: rebuild the index after the "
-            "manifest so the banner states it"))
-    for rel, doc in pack.auditor.items():
-        for jp, v in _strings(doc):
-            if isinstance(v, str) and has_manifest and re.search(r"MANIFEST\.json (missing|absent)", v, re.I):
-                out.append(Finding("R8", "%s @%s" % (rel, jp), v, "MANIFEST.json is in the pack: rebuild the auditor "
-                                   "answers after the manifest"))
-                break
-    seen_manifest = False
+    # Stored integrity fields (pack-index.integrity, answers' source.manifest_status, the auditor's integrity line)
+    # are stale BY CONSTRUCTION: they are written before MANIFEST.json, which lists them, and the console stamps
+    # integrity at serve time (console/server.py). So they are not linted here.
     for rel, ans in pack.answers.items():
-        src = ans.get("source") or {}
-        if has_manifest and not seen_manifest and str(src.get("manifest_status")) in ("UNVERIFIED", "MISSING"):
-            seen_manifest = True
-            out.append(Finding("R8", rel + " @source.manifest_status", src.get("manifest_status"),
-                               "MANIFEST.json is in the pack: answers were built before it; rebuild after it "
-                               "(applies to every answer)"))
         verdict = str((ans.get("verdict") or {}).get("value") or "")
         comp = ans.get("comparison") or {}
         n, allowed = _num(comp.get("exceptions_count")), _num(comp.get("exceptions_allowed"))
