@@ -66,7 +66,7 @@ Their seven steps are our pipeline: identity and baseline (register, approvals) 
 
 | # | Task | Owner | Done when |
 |---|---|---|---|
-| 1 | Send the 200-word summary to Anshul (section 9). Confirm "implemented" wording against the build at send time | you | sent |
+| 1 | **Reply to Anshul with the 200-word summary by 12:00 UTC (7:00 CDT)** (section 9). Confirm "All three" against the build at send time | you | sent |
 | 2 | Open the Outlook threads from Catalyst Ops / TM Forum: confirm judging slot time, room, submission method for the video, any format rules | you (or me once Microsoft 365 is connected) | noted in section 10 |
 | 3 | Register v1: get Sree ready to approve the moment the pilots give the cap; prepare the approval note text in ServiceNow | builder + Sree | approval drafted |
 | 4 | **Record demo segment 1 now** (Level 1: governed call, guardrail block, direct Bedrock denied, approvals). It does not depend on the controls | presenter | `l1.mov` saved |
@@ -189,20 +189,23 @@ Title card: "Team iFabric · Agentic Assurance · claim C-FM-01 · recorded <UTC
 
 ---
 
-## 9. The 200-word summary for Anshul (exactly 200 words)
+## 9. The 200-word summary for Anshul (TM Forum): due 7:00 AM CDT = 12:00 UTC, 6 Oct
 
-> **Theme and problem.** Telecom operators will let AI agents act on live networks only if every action can be proven, not just performed. Three collaborating agents (customer, IT, network) resolve a broadband fault on TM Forum's AI-native ODA Canvas; an auditor must be able to verify what they did, under which rule, and who was told.
+Reply to Anshul's email. His brief: executive audience (problem, outcome, evidence, value, not implementation detail); include the team name and a solution title; it feeds preliminary judging and the Ten100 CSP executive session. Also saved as `~/Downloads/hackathon/iFabric_200_word_summary.txt`.
+
+> Team iFabric | ProofLab: Evidence-Grade Assurance for Telecom AI Agents
 >
-> **Controls selected.** All three: C16 per-run token cap, C7 automatic event recording, C9 drift against a frozen baseline. On the platform we measured one reference run spend 1,999,001 tokens in five minutes with no limit firing (C16), leaving 16 ledger records for 174 model calls (C7), while model behaviour can degrade with no code change (C9).
+> The problem. Operators will only let AI agents act on live networks if every action can be proven, not just performed. We governed three collaborating agents (customer, IT and network) fixing a broadband fault, and asked: can an auditor verify what they did, under which rule, and who was told?
 >
-> **Technical solution.** Thin adapters at existing enforcement points (model gateway, agent runtime, CloudWatch) emit records bound to control, dated threshold version and run. Stateless evaluators read an owner-approved register, never hard-coded numbers. Breaches become ServiceNow incidents for a named owner, reviewed by a Nemotron assurance agent whose facts our code verifies, and visible in AI Control Tower. An independent rechecker lets anyone recompute every verdict from our submitted evidence.
+> Controls selected, and why. All three: per-run token spend cap, automatic event recording, and performance drift against a frozen baseline. Evidence drove the choice: on the platform we measured a single agent run spend nearly two million tokens in five minutes with no limit triggering, leaving only 16 records for 174 model calls.
 >
-> **Why.** It governs agents without rewriting them, works at more than one enforcement point, and keeps every failure visible.
+> Our solution, and why. ProofLab adds lightweight checkpoints where every agent action already passes, without rewriting agents. Each action is checked against owner-approved, dated rules and recorded as evidence tied to that rule and run. Breaches open a ServiceNow incident for a named owner, reviewed by a Nemotron assurance agent whose findings are themselves verified. Any auditor can recompute every verdict independently, in seconds.
+>
+> The value. Faster, independent audits; runaway spend and silent drift caught early; failures shown, not hidden; and one repeatable pattern from pilot to production.
 
-Before sending: confirm all three controls really are end to end; if not, change "All three" to the ones that are, and keep the rest.
+Before sending: if any control is not complete end to end, change "All three" to the ones that are.
 
----
+## 10. From the organisers' emails
 
-## 10. From the organisers' emails (to fill)
-
-Pending: Microsoft 365 is not yet connected in this session. To check: judging slot time and room; submission method and format for the demo video; any change to the artefact list or S3 bucket; Anshul's deadline for the summary.
+- **Anshul Kumar (TM Forum):** 200-word executive summary by **7:00 AM CDT (12:00 UTC), 6 Oct**, as a reply to his email; used for preliminary judging and the Ten100 executive session (section 9).
+- Still to confirm with the team: judging slot time and room, and how the demo video is submitted.
