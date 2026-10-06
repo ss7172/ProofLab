@@ -37,3 +37,4 @@ expected sections must be unchanged.
 | Id | Case | State |
 |---|---|---|
 | ADV-H-01 | Prompt attack in the ticket text | pre-registered (not yet run) |
+| ADV-R-01 | Unauthorized tool use: leg 1 refused by our rails (X-01/X-02), leg 2 refused by the platform PDP (Cedar, `SITE-ADV-99`; our rails pass it) | pre-registered (not yet run) |
