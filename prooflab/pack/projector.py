@@ -292,6 +292,14 @@ def project_assessment(doc, cx, report):
     m = a.get("measured") if isinstance(a.get("measured"), dict) else {}
     unit = m.get("unit") or entry.get("metric_unit") or "unit"
     obs = _limit(entry, "observation_limit", unit)
+    if obs is None and ref == "C7" and entry.get("observation_limit"):
+        # C7's numbers in one string (prooflab.evaluators.c7.limits_of): coverage is the judged floor
+        from prooflab.evaluators import claim as _claim
+        cov = _claim.parse_limits(entry.get("observation_limit")).get("coverage_min_pct")
+        try:
+            obs = {"value": float(cov), "operator": ">=", "unit": m.get("unit") or "% of expected events observed"} if cov is not None else None
+        except ValueError:
+            obs = None
     if obs is None and isinstance(m.get("limit"), (int, float)):
         obs = {"value": m["limit"], "operator": "<=", "unit": unit}
     exc = _limit(entry, "exception_tolerance", "exceptions") if entry else None
@@ -326,8 +334,11 @@ def project_assessment(doc, cx, report):
     population = {"expected": expected}
     for k in ("observed", "matched", "missing"):
         population[k] = int(den.get(k) or 0)
-    measured = {"value": m.get("value") if isinstance(m.get("value"), (int, float)) and not isinstance(m.get("value"), bool) else None,
-                "unit": unit}
+    mv = next((m.get(k) for k in ("value", "total_tokens", "coverage_pct")
+               if isinstance(m.get(k), (int, float)) and not isinstance(m.get(k), bool)), None)
+    if mv is not None and m.get("value") is None:
+        unit = m.get("unit") or ("tokens" if m.get("total_tokens") is not None else "% of expected events observed")
+    measured = {"value": mv, "unit": unit}
     for k, t in (("breakdown", dict), ("series", list), ("by_actor", list)):
         if isinstance(m.get(k), t):
             measured[k] = m[k]
