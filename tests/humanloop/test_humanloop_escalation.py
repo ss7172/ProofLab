@@ -49,7 +49,8 @@ def test_one_esc_finding_per_assessed_run_passes_arth_contract(tmp_path, capsys)
     f = finding_from_dict(data)       # Arth's validator
     assert (f.control_ref, f.control_id, f.scope_kind, f.scope_id, f.verdict, f.kind) == (
         "ESC", "AGENT-ESCALATION", "escalation", CID, "ESCALATED", "escalation")
-    assert f.threshold_version == "v0-pilot"
+    from prooflab.registry import parse as P
+    assert f.threshold_version == P.parse_register(open(REGISTER).read())["top"]["version"]   # whatever the register says
     assert "maintenance-freeze" in f.summary and "restricted-change" in f.summary and "free text" not in f.summary
     assert f.evidence[:2] == ("ledger:record_id=rec-e1", "ledger:record_id=rec-e2") and "ledger:record_id=rec-j1" in f.evidence
     assert hl.notify_due(data)        # ESCALATED notifies
@@ -87,3 +88,13 @@ def test_no_named_constraint_says_so(tmp_path, capsys):
     findings_cli.main(["--kind", "escalation", "--snapshot", snap, "--register", REGISTER], env_for(tmp_path / "l.jsonl"))
     data = json.loads(open(json.loads(capsys.readouterr().out)[0]["file"]).read())
     assert "no precedence rule fired" in data["summary"]
+
+
+def test_reads_the_collect_drivers_nested_ledger_capture_too(tmp_path, capsys):
+    d = tmp_path / "snap" / "raw" / "ledger" / CID
+    d.mkdir(parents=True)
+    (d / "records.jsonl").write_text(json.dumps(_row(CID, "judgment", "ESC", "ESCALATED", "ifabric.escalation", "rec-e1", "r")) + "\n")
+    (d / "records.jsonl.capture.json").write_text("{}")
+    findings_cli.main(["--kind", "escalation", "--snapshot", str(tmp_path / "snap"), "--register", REGISTER],
+                      env_for(tmp_path / "l.jsonl"))
+    assert len(json.loads(capsys.readouterr().out)) == 1

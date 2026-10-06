@@ -135,3 +135,18 @@ def test_dry_run_refused_on_the_production_log_and_writes_nothing_under_wiring_t
                        env=env, client_factory=lambda: make_client(fake)) == 0
     assert json.loads(capsys.readouterr().out)["action"] == "dry-run"
     assert fake.patch_count == patches and not wlog.exists()
+
+
+def test_export_with_closures_has_no_closed_without_retest_gap(fake, tmp_path, capsys):
+    log, fpath = _setup(fake, tmp_path)
+    a = _retest_assessment(tmp_path)
+    cdir = tmp_path / "closures"
+    assert _run(fake, log, ["--finding", fpath, "--retest-run", RETEST_CID, "--assessment", a, "--out", str(cdir)]) == 0
+    sys_id = next(iter(fake.incidents))
+    fake.human_update(sys_id, "owner@example.com", "2026-10-06 07:00:00", state="7")      # the owner closes it
+    capsys.readouterr()
+    base = ["export", "--finding", fpath, "--out", str(tmp_path / "exp")]
+    assert runner.main(base, env=env_for(log), client_factory=lambda: make_client(fake)) == 0
+    assert json.loads(capsys.readouterr().out)["gaps"]
+    assert runner.main(base + ["--closures", str(cdir)], env=env_for(log), client_factory=lambda: make_client(fake)) == 0
+    assert json.loads(capsys.readouterr().out)["gaps"] == []

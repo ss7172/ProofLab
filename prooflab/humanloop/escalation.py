@@ -41,7 +41,10 @@ def _ref(row):
 
 def ledger_rows(snapshot):
     rows = []
-    for path in sorted(glob.glob(os.path.join(snapshot, "raw", "ledger", "*.jsonl"))):
+    # raw/ledger/<cid>.jsonl (refresh --pull-ledger) and raw/ledger/<cid>/records.jsonl (prooflab collect)
+    paths = glob.glob(os.path.join(snapshot, "raw", "ledger", "*.jsonl")) + \
+        glob.glob(os.path.join(snapshot, "raw", "ledger", "*", "*.jsonl"))
+    for path in sorted(paths):
         with open(path, "r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
