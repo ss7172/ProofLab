@@ -89,7 +89,7 @@ def test_retry_reentry_does_not_leak_reservation():
         assert (ad.tally.committed, ad.tally.reserved, ad.tally.calls) == (15, 0, 1)
         assert len(rec.of("decision")) == 2                                  # one decision per attempt
         outs = [r["outcome.real"] for r in rec.of("action")]
-        assert outs == ["ERROR", "SERVED"]
+        assert outs == ["CEILING_429", "SERVED"]
         assert rec.of("action")[0]["outcome.http_status"] == 429
 
 

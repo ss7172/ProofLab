@@ -142,6 +142,18 @@ def _failclosed_decision(pin, exc):
     return d
 
 
+_STATUS_OUTCOME = {403: "REFUSED_403", 404: "PAUSED_404", 405: "METHOD_405", 429: "CEILING_429"}
+
+
+def _error_outcome(exc, status):
+    """Map a failed call onto the contract's outcome.real vocabulary (no free-form value)."""
+    if status in _STATUS_OUTCOME:
+        return _STATUS_OUTCOME[status]
+    if "timeout" in type(exc).__name__.lower():
+        return "TIMEOUT"
+    return "ERROR_5XX"      # any other transport/server failure: the nearest contract value
+
+
 def _evaluate(q, pin):
     """evaluate(): pure delegation to the core. An exception becomes a DENY /
     halt (fail closed, decided here, never by the callers)."""
@@ -272,8 +284,8 @@ class ModelCallAdapter(object):
         t = self.tally
         with t.lock:
             if t.halted:
-                rec = self._lifecycle("stopped-refusal", "model call refused: the agent has stopped",
-                                      {"reason": "stopped", "inline.purpose": purpose})
+                rec = self._lifecycle("stopped-refusal", "model call refused (%s): the agent has stopped" % purpose,
+                                      {"reason": "stopped"})
                 return StageResult(cancel=True, message=STOPPED_MESSAGE, reason="stopped",
                                    records=[rec], source="stop-state"), None
             self.capture.begin()
@@ -329,7 +341,7 @@ class ModelCallAdapter(object):
         if exc is not None:
             t.release(key)
             status = getattr(exc, "status_code", None)
-            outcome = "ERROR_5XX" if status in range(500, 600) else "ERROR"
+            outcome = _error_outcome(exc, status)
             return StageResult(records=[self._action_record(call_id, None, None, True, finish,
                                                             outcome, status)], source="c16")
         usage = ctx.get("usage") or {}
@@ -389,8 +401,8 @@ class ModelCallAdapter(object):
             out = post() or {}
         except Exception as exc:
             self.tally.release(key)
-            self._emit([self._action_record(None, None, None, True, None, "ERROR",
-                                            getattr(exc, "status_code", None))])
+            st = getattr(exc, "status_code", None)
+            self._emit([self._action_record(None, None, None, True, None, _error_outcome(exc, st), st)])
             return GuardedResult("BLOCK", "post-error")
         usage = out.get("usage") or {}
         tin, tout = usage.get("inputTokens"), usage.get("outputTokens")
