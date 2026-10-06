@@ -29,7 +29,7 @@ def test_t_c16_01_halt_stop_record_no_further_model_call():
         assert ("decision", "DENY", "CANCELLED_C16") in kinds
         assert [r["outcome.real"] for r in rec.of("action")] == ["SERVED"]       # the cancelled call has no action
         assert rec.of("action")[0]["call.id"] == "act-0001"                       # from x-modaas-action-id
-        assert any(r.get("lifecycle.event") == "c16-stop" for r in rec.of("lifecycle"))
+        assert any(r["detail"].startswith("c16-stop") for r in rec.of("lifecycle"))
         # a further invocation in the same process: refused by stop-state, still no model call
         agent("again")
         assert gw.requests == 1 and ad.tally.committed == 200 and ad.tally.reserved == 0

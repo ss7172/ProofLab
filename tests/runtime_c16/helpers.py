@@ -9,6 +9,24 @@ for p in (ROOT, HERE):
     if p not in sys.path:
         sys.path.insert(0, p)
 
+# Until PR-01/PR-02 are merged, borrow their packages from the sibling worktrees (read-only).
+try:
+    import prooflab as _pl
+    _WT = os.path.dirname(ROOT)
+    for _sib in ("PR-02-c16core", "PR-01-contracts"):
+        _d = os.path.join(_WT, _sib, "prooflab")
+        if os.path.isdir(_d) and _d not in _pl.__path__:
+            _pl.__path__.append(_d)
+except Exception:  # pragma: no cover
+    pass
+try:
+    from prooflab.contract import record as record_mod
+    from prooflab.evaluators import c16_core as real_core
+    HAVE_REAL = True
+except Exception:
+    record_mod = real_core = None
+    HAVE_REAL = False
+
 import c16_double  # noqa: E402
 from adapters.runtime import model_call  # noqa: E402
 
@@ -66,7 +84,15 @@ class FakeEvent(object):
             self.stop_response = sr
 
 
-def make_adapter(run_id="ifabric-test-1", **pin_kw):
+RUN_ID = "ifabric-test-1790000000-a1b2c3"
+
+
+def need_real():
+    if not HAVE_REAL:
+        raise unittest.SkipTest("PR-01/PR-02 packages not importable")
+
+
+def make_adapter(run_id=RUN_ID, **pin_kw):
     pin = c16_double.PinnedC16(**pin_kw)
     rec = Rec()
     from adapters.runtime.tally import RunTally
@@ -131,3 +157,22 @@ def build_agent(adapter, gateway, tools=None):
         client_args={"base_url": "http://stub.invalid/v1", "api_key": "stub"},
         transport=gateway.transport())
     return Agent(model=model, hooks=[adapter], tools=tools or [], callback_handler=None)
+
+
+class use_real(object):
+    """Context manager: model_call._core -> the real PR-02 core."""
+    def __enter__(self):
+        self.old = model_call._core
+        model_call._core = real_core
+        return self
+
+    def __exit__(self, *a):
+        model_call._core = self.old
+
+
+def real_pin(mode="enforce", cap=400):
+    return real_core.PinnedC16(
+        caps=(("A", cap), ("default", cap)), default_tier="default", safety_ceiling=100000, mode=mode,
+        inline_modes=("enforce", "observe"), inline_bound_margin_pct=0, inline_bound_fallback_tokens=200,
+        max_tokens=50, threshold_version="C16-v1", register_version="v1", register_sha256="r" * 8,
+        pin_sha256="a" * 64)

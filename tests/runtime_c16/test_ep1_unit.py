@@ -19,7 +19,7 @@ def test_usage_from_metadata_commits_and_records():
         assert (t.committed, t.reserved, t.calls) == (100, 0, 1)
         act = rec.of("action")[0]
         assert act["call.id"] == "act-1" and act["tokens.in"] == 60 and act["tokens.out"] == 40
-        assert act["outcome.real"] == "SERVED" and act["inline.max_retries"] == 0
+        assert act["outcome.real"] == "SERVED" and "max_retries=0" in act["detail"]
         assert [r["record_kind"] for r in rec.records] == ["decision", "action"]
 
 
@@ -30,7 +30,7 @@ def test_zero_usage_is_unknown_not_zero():
         ad.on_after_model_call(FakeEvent(usage={"inputTokens": 0, "outputTokens": 0}))
         assert ad.tally.committed == 0 and ad.tally.unknown_calls == 1
         act = rec.of("action")[0]
-        assert act["usage.unknown"] is True and act["tokens.in"] is None
+        assert "usage unknown" in act["detail"] and act["tokens.in"] is None
         assert "tokens.in" in act["null_reasons"]
 
 
@@ -43,7 +43,7 @@ def test_halt_cancels_and_records_stop_then_no_further_check_passes():
         assert ad.tally.result_fields()["disposition"] == {"action": "escalate", "reason": "c16-budget-halt"}
         kinds = rec.kinds()
         assert ("decision", "DENY", "CANCELLED_C16") in kinds
-        assert any(r["record_kind"] == "lifecycle" and r.get("lifecycle.event") == "c16-stop" for r in rec.records)
+        assert any(r["record_kind"] == "lifecycle" and r["detail"].startswith("c16-stop") for r in rec.records)
         dec = rec.of("decision")[0]
         assert dec["inline.action"] == "halt" and dec["call.id"] is None and "call.id" in dec["null_reasons"]
         # own-cancel: the after event of our cancel is NOT a served 0-token call

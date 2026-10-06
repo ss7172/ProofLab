@@ -22,6 +22,11 @@ try:  # the one import site of the shared core
 except ImportError:  # pragma: no cover - PR-02 not merged yet
     _core = None
 
+try:  # the other import site of the shared contract (PR-01): the record builder
+    from prooflab.contract import record as _record
+except ImportError:  # pragma: no cover - PR-01 not merged yet
+    _record = None
+
 from adapters.runtime import tally as _tally_mod
 from adapters.runtime.action_id import ActionIdCapture
 from adapters.runtime.hooks import Dispatcher, StageResult
@@ -30,12 +35,43 @@ EMITTER = "adapters.runtime.model_call@1.0"
 CANCEL_MESSAGE = "model call denied by C16 (token budget)"
 STOPPED_MESSAGE = "model call refused: the agent has stopped (C16 budget halt)"
 _NULL_REASON = "not applicable: model call"
-_TABLE_A_NULLABLE = [
-    "call.id", "trace.id", "handoff.id", "handoff.from", "handoff.to",
-    "handoff.payload_sha256", "handoff.data_classification",
-    "outcome.platform_decision", "outcome.real", "principal.platform",
-    "measured.value", "threshold.value", "threshold.sha256", "threshold.tier",
-]
+
+# Fallback used only when prooflab.contract.record is not importable (PR-01 not merged);
+# mirrors record.new_record for the fields the adapter emits.
+_FALLBACK_TABLE_A = (
+    "call.id", "trace.id", "handoff.id", "handoff.from", "handoff.to", "handoff.payload_sha256",
+    "handoff.data_classification", "control.ref", "control.id", "threshold.version", "threshold.value",
+    "threshold.sha256", "threshold.tier", "register.version", "pin.sha256", "measured.value",
+    "measured.unit", "measured.source", "reason", "outcome.platform_decision", "outcome.real",
+    "evaluator.name", "evaluator.sha256", "inline.mode", "inline.limit_applied", "inline.limit_value",
+    "inline.action", "inline.bound_basis", "actor.id", "actor.runtime_id", "actor.version",
+    "on_behalf_of", "principal.platform", "ep.id", "ep.kind", "ep.transport", "ep.responsible",
+    "control.owner")
+
+
+def _new_record(kind, null_reason, fields):
+    if _record is not None:
+        return _record.new_record(kind, null_reason=null_reason, **fields)
+    rec = dict(fields)
+    rec["schema"] = "ifabric.evidence/1"
+    rec["record_kind"] = kind
+    rec.setdefault("phase", "ifabric." + kind)
+    rec.setdefault("correlation_id", rec.get("run.id"))
+    rec.setdefault("ts", rec.get("emitted.at"))
+    rec.setdefault("source.refs", [])
+    reasons = dict(rec.get("null_reasons") or {})
+    for name in _FALLBACK_TABLE_A:
+        rec.setdefault(name, None)
+        if rec[name] is None and name not in reasons:
+            reasons[name] = null_reason
+    rec["null_reasons"] = reasons
+    return rec
+
+
+def _sha_or_none(v):
+    return v if isinstance(v, str) and len(v) == 64 else None
+
+
 
 
 class FinishCapture(object):
@@ -77,7 +113,7 @@ def parse_safe(text):
 
 
 def _now():
-    d = datetime.datetime.utcnow()
+    d = datetime.datetime.now(datetime.timezone.utc)
     return d.strftime("%Y-%m-%dT%H:%M:%S.") + "%03dZ" % (d.microsecond // 1000)
 
 
@@ -136,104 +172,98 @@ class ModelCallAdapter(object):
         self.dispatcher = Dispatcher(
             emit=emit, rails=rails, c16=self._stage, stopped=lambda: self.tally.halted)
 
-    # -- records -------------------------------------------------------------
-    def _base(self, kind, phase, detail):
+    # -- records (built through PR-01 new_record; every table-A null has a reason) --
+    def _mk(self, kind, detail, fields, reasons=None):
         ident = self.identity
         now = _now()
-        r = {
-            "schema": "ifabric.evidence/1",
-            "record_id": "%s-ep1-%s" % (
-                now.replace("-", "").replace(":", "").replace(".", ""), uuid.uuid4().hex[:8]),
-            "record_kind": kind, "phase": phase, "detail": detail,
-            "correlation_id": self.run_id, "run.id": self.run_id,
+        rid = "%s-ep1-%s" % (
+            now.replace("-", "").replace(":", "").replace(".", ""), uuid.uuid4().hex[:8])
+        f = {
+            "record_id": rid, "detail": detail, "run.id": self.run_id,
             "run.condition": ident.get("run_condition", "none"),
-            "call.id": None, "trace.id": ident.get("trace_id"),
+            "trace.id": ident.get("trace_id"),
             "seq.in_stream": self.tally.next_seq(),
             "actor.id": ident.get("actor_id"), "actor.runtime_id": ident.get("actor_runtime_id"),
             "actor.version": ident.get("actor_version"), "on_behalf_of": ident.get("on_behalf_of"),
-            "principal.platform": None,
             "ep.id": "EP-1", "ep.kind": "model gateway (in-process interceptor)",
             "ep.transport": "evaluate" if kind == "decision" else "emit",
             "ep.responsible": "team iFabric (Sree)", "control.owner": "Sree",
-            "handoff.id": None, "handoff.from": None, "handoff.to": None,
-            "handoff.payload_sha256": None, "handoff.data_classification": None,
-            "outcome.platform_decision": None, "outcome.real": None,
             "emitted.at": now, "emitted.clock": "agent-runtime", "ts": now,
             "provenance": ident.get("provenance", "LIVE_SUBJECT"),
             "authorship": "TESTIMONY", "source.refs": list(ident.get("source_refs", [])),
-            "emitter": ident.get("emitter", EMITTER), "null_reasons": {},
-            "control.ref": "C16", "control.id": "ACN-COST-001",
+            "emitter": ident.get("emitter", EMITTER),
+            "control.ref": "C16", "control.id": "ACN-COST-001", "verdict": "RECORDED",
         }
-        return r
-
-    @staticmethod
-    def _finish_record(r, reasons=None):
-        nr = r["null_reasons"]
-        for f in _TABLE_A_NULLABLE:
-            if r.get(f) is None and f not in nr:
-                nr[f] = (reasons or {}).get(f, _NULL_REASON)
-        for f, why in (reasons or {}).items():
-            if r.get(f) is None:
-                nr[f] = why
-        return r
+        f.update(fields)
+        why = dict(reasons or {})
+        for k in ("actor.runtime_id", "actor.version", "on_behalf_of", "trace.id"):
+            why.setdefault(k, "not supplied to the adapter by the runtime")
+        f["null_reasons"] = dict((k, v) for k, v in why.items() if f.get(k) is None)
+        return _new_record(kind, _NULL_REASON, f)
 
     def _decision_record(self, d, q, outcome_real):
-        r = self._base("decision", "ifabric.decision",
-                       "C16 inline %s (%s): %s" % (d.verdict, d.action, d.reason))
-        r.update({
+        tot = (q.committed_tokens + q.reserved_tokens + q.bound_tokens) if q else None
+        detail = "C16 inline %s (%s): %s [committed=%s reserved=%s bound=%s max_retries=%d]" % (
+            d.verdict, d.action, d.reason, q.committed_tokens if q else None,
+            q.reserved_tokens if q else None, q.bound_tokens if q else None, self.max_retries)
+        fields = {
             "control.ref": getattr(d, "control_ref", "C16"),
             "control.id": getattr(d, "control_id", "ACN-COST-001"),
             "threshold.version": getattr(d, "threshold_version", None),
             "threshold.value": getattr(d, "threshold_value", None),
-            "threshold.sha256": getattr(d, "threshold_sha256", None),
+            "threshold.sha256": _sha_or_none(getattr(d, "threshold_sha256", None)),
             "threshold.tier": getattr(d, "tier", None),
             "register.version": getattr(d, "register_version", None),
-            "pin.sha256": getattr(d, "pin_sha256", None),
-            "measured.value": q.committed_tokens + q.reserved_tokens + q.bound_tokens if q else None,
+            "pin.sha256": _sha_or_none(getattr(d, "pin_sha256", None)),
+            "measured.value": getattr(d, "measured_value", None) if getattr(d, "measured_value", None) is not None else tot,
             "measured.unit": "tokens", "measured.source": "adapter-tally",
             "verdict": d.verdict, "reason": d.reason,
             "evaluator.name": getattr(d, "evaluator_name", None),
-            "evaluator.sha256": getattr(d, "evaluator_sha256", None),
+            "evaluator.sha256": _sha_or_none(getattr(d, "evaluator_sha256", None)),
             "inline.mode": d.mode, "inline.limit_applied": d.limit_applied,
             "inline.limit_value": d.limit_value, "inline.action": d.action,
             "inline.bound_basis": getattr(d, "bound_basis", None),
-            "inline.committed": q.committed_tokens if q else None,
-            "inline.reserved": q.reserved_tokens if q else None,
-            "inline.bound": q.bound_tokens if q else None,
             "outcome.real": outcome_real,
-        })
+        }
         why = {"call.id": "no call dispatched yet" if outcome_real is None else
                "no call was dispatched (refused)" if outcome_real == "CANCELLED_C16" else
                "see the action record of this call",
                "principal.platform": "no gateway request was made",
                "outcome.real": "call dispatched; outcome is on the action record",
-               "outcome.platform_decision": "no gateway request was made"}
-        return self._finish_record(r, why)
+               "outcome.platform_decision": "no gateway request was made",
+               "evaluator.sha256": "the core's build hash was not supplied to the adapter",
+               "threshold.sha256": "the evaluator returned no register hash",
+               "pin.sha256": "the pin carries no hash (unpinned)"}
+        return self._mk("decision", detail, fields, why)
 
     def _lifecycle(self, what, detail, extra=None):
-        r = self._base("lifecycle", "ifabric.lifecycle", detail)
-        r.update({"verdict": "RECORDED", "lifecycle.event": what})
-        if extra:
-            r.update(extra)
-        return self._finish_record(r, {
+        extra = dict(extra or {})
+        reason = extra.pop("reason", what)
+        disp = extra.pop("disposition", None)
+        text = "%s: %s" % (what, detail) + (" [disposition=%s]" % disp if disp else "")
+        fields = {"reason": reason}
+        fields.update(extra)
+        return self._mk("lifecycle", text, fields, {
             "principal.platform": "no gateway request was made",
             "outcome.platform_decision": "no gateway request was made"})
 
     def _action_record(self, call_id, tokens_in, tokens_out, unknown, finish, outcome, status=None):
-        r = self._base("action", "ifabric.action", "model call: %s" % outcome)
-        r.update({
-            "verdict": "RECORDED", "call.id": call_id, "model.id": self.model_id,
+        detail = "model call: %s%s [max_retries=%d]" % (
+            outcome, " (usage unknown: 0/0 on a served call)" if unknown else "", self.max_retries)
+        fields = {
+            "call.id": call_id, "model.id": self.model_id,
             "tokens.in": None if unknown else tokens_in,
             "tokens.out": None if unknown else tokens_out,
-            "usage.unknown": bool(unknown), "outcome.finish_reason": finish,
-            "outcome.http_status": status, "outcome.real": outcome,
-            "inline.max_retries": self.max_retries,
-        })
+            "outcome.finish_reason": finish, "outcome.http_status": status, "outcome.real": outcome,
+        }
         why = {"call.id": "the response carried no x-modaas-action-id header",
                "tokens.in": "usage reported 0/0 on a served call: UNKNOWN",
                "tokens.out": "usage reported 0/0 on a served call: UNKNOWN",
-               "outcome.http_status": "not captured"}
-        return self._finish_record(r, why)
+               "outcome.http_status": "not captured",
+               "outcome.finish_reason": "not captured",
+               "model.id": "not supplied to the adapter",
+               "reason": "an action record carries no decision reason"}
+        return self._mk("action", detail, fields, why)
 
     # -- the C16 stage (B-G3 order: stop-state -> evaluate -> reserve) ----------
     def _check(self, purpose, projected, key):
@@ -250,8 +280,9 @@ class ModelCallAdapter(object):
             self.finish.take()
             bound, basis = _core.bound_for(
                 projected, t.last_input, t.last_output, t.tool_result_tokens, self.pin)
+            tier = self.tier or t.tier or getattr(self.pin, "default_tier", None)
             q = _core.C16Question(
-                run_id=self.run_id, tier=self.tier if self.tier is not None else t.tier,
+                run_id=self.run_id, tier=tier,
                 committed_tokens=t.committed, reserved_tokens=t.reserved,
                 bound_tokens=bound, bound_basis=basis)
             d = _evaluate(q, self.pin)

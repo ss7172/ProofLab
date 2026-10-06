@@ -68,4 +68,4 @@ def decide_inline(q, pin):
                     total, pin.cap, q.tier, pin.mode,
                     "cap" if pin.mode == "enforce" else "safety-ceiling", limit,
                     "halt" if halt else "proceed", q.bound_basis, "C16-v1", "v1",
-                    "sha-register", "sha-pin", "prooflab.evaluators.c16_core", "sha-core")
+                    "b" * 64, "a" * 64, "prooflab.evaluators.c16_core", "c" * 64)
