@@ -310,8 +310,7 @@ def derived_judgment(answer, constraints=None, tool_evidence=None, evidence_need
     t = strip_reasoning(answer or "").lower()
     base = ESCALATE if "escalat" in t else GATHER
     j = Judgment(base, "re-ask blocked by the platform guardrail; derived from the answer and tool evidence",
-                 deciding_evidence=sorted(set(re.findall(r"\bE\d+\b", answer or ""))),
-                 reversible_step="none: no change was made", named_evidence_needed=list(evidence_needed or []) or [
+                 deciding_evidence=sorted(set(re.findall(r"\bE\d+\b", answer or ""))), named_evidence_needed=list(evidence_needed or []) or [
                      "a structured disposition from the agent"], valid=False, reasked=True,
                  errors=["re-ask blocked by the platform guardrail (content_filter)"])
     apply_precedence(j, constraints, tool_evidence, evidence_needed)

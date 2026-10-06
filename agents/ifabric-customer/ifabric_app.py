@@ -388,7 +388,7 @@ def build(spec):
             # Gateway C: never less safe than the proposer, then the stated position (j2 precedence)
             pos = W.j2.negotiate(j, text, neg.get("proposal")) if neg else None
             fields = inv.rails.ground(j.to_record_fields())
-            answer = inv.rails.output(text or fields["reason"], prompts=[prompt])
+            answer = inv.rails.output(text, prompts=[prompt])
             inv.drain()
             if neg:   # the output rails only move toward safety: the position follows them
                 pos = W.j2.position_of(fields["disposition"], pos)
