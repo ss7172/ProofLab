@@ -253,12 +253,16 @@ The pack lists **every run in the window**, the **whole register history** and t
 
 ### Step 13b. Pack build (PR-34/40) — local
 ```bash
+# PR-48: stage the T1 proofs FIRST (every frozen register version needs register/versions/<v>.head.json, or pack build exits 2)
+python3 $REPO/tools/stage_t1.py --from ~/firstmate-homes/TrustworthyAI/ops-lane/b3 --from ~/firstmate-homes/TrustworthyAI/ops-lane/b2e \
+   --from ~/firstmate-homes/TrustworthyAI/ops-lane/b4 --from ~/firstmate-homes/TrustworthyAI/ops-lane/b4b --from $L/t1 --to $L/snap/register/versions
 mkdir -p $L/pack/workdir && cp $L/register/versions/v1.yaml $L/pack/workdir/register.yaml && cp $L/run-ids.txt $REPO/gap-list.md $L/pack/workdir/
 # PR-47: no hand-filled README; pack build fills it from the pack (--label submit-1|submit-2|final). Every `warning:` line,
 # especially `projector: SKIPPED assessment …`, must be read: a skipped assessment is a control the console will not show.
 $HK "cd $REPO && python3 -m prooflab pack build --out $L/pack/evidence --src $L/snap --workdir $L/pack/workdir --label final --strict-readme"
 python3 -m prooflab pack scan $L/pack/evidence ; python3 $REPO/tools/manifest.py verify $L/pack/evidence
 ```
+- **T1 staging (PR-48):** `stage_t1.py` reads the ops lane's `t1*.json` head-object lists (read-only), takes the entry whose Key is `ifabric/register/<v>.yaml`, checks its SHA-256 against `<v>.yaml` under `--to` (exit 2 and nothing written on a mismatch) and writes `<v>.head.json` (VersionId, LastModified, ETag, ChecksumSHA256, Key). Without it the console reads the rule date as NOT_PROVEN (amber "date proof not in this pack"); `pack build` refuses (exit 2) unless `--allow-missing-t1`. "RULE DATED AFTER TEST" appears only when a staged T1 is later than the run start. v1.1's T1 is 13:38:05Z (VersionId `JysDSBX6TiasKYLiBaLvuIDK1rNwb5_Q`).
 - **Expected:** `--strict-readme` refuses while any placeholder is left (the template has 15, row 56); then exit 0 with `answers/` composed and `pack-index.json` projected; `pack scan` "0 hit(s)"; manifest "OK". `register/versions/v1.yaml` and `findings/` are in the pack.
 - The exact-value scan needs the values injected (`PROOFLAB_SCAN_VALUES` or `--scan-values-stdin`) — **through hk**; without them `pack scan` exits with "REFUSED: no scan values injected" (dry-run run 1). Safety-submit could not inject them (classifier); then the pre-push scan in 13c is the gate.
 - **Stop:** any scan hit; manifest mismatch; the C7 "answer not composed" warning for a control the README claims.

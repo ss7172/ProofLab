@@ -71,6 +71,73 @@ def _cid(row):
     return None
 
 
+def t1_text(head):
+    """The T1 instant of a head-object proof as a ...Z string (S3 prints `+00:00`), else None."""
+    if not isinstance(head, dict):
+        return None
+    t = head.get("LastModified") or head.get("last_modified") or head.get("t1")
+    if not isinstance(t, str):
+        return None
+    t = t.strip()
+    return t[:-6] + "Z" if t.endswith("+00:00") else t
+
+
+DATE_PROOF_STATES = ("PROVEN_BEFORE", "PROVEN_AFTER", "NOT_PROVEN")
+
+
+def _sha_matches(claimed, digest):
+    """True/False when the proof carries a SHA-256 (hex, or S3's base64 of the digest), None when it carries none."""
+    import base64
+    if not isinstance(claimed, str) or not claimed.strip():
+        return None
+    c = claimed.strip()
+    if re.match(r"^[0-9a-fA-F]{64}$", c):
+        return c.lower() == digest.hex()
+    try:
+        return base64.b64decode(c, validate=True) == digest
+    except (ValueError, TypeError):
+        return False
+
+
+def date_proof(pack, threshold_version, control, scope_start):
+    """The tri-state date proof for a rule against a scope start (ARCH 3.3, G5):
+    PROVEN_BEFORE  the pack holds the S3 head-object proof (T1) of the first register file carrying the threshold
+                   version, its SHA-256 matches that file, and T1 <= the scope start;
+    PROVEN_AFTER   the same proof, but T1 is LATER than the scope start (only this state may read "dated after");
+    NOT_PROVEN     no proof in the pack, a proof whose SHA-256 does not match the file, or no scope start to compare."""
+    import hashlib
+    first, head = pack.t1_head(threshold_version, control)
+    out = {"state": "NOT_PROVEN", "register_file": first, "t1_at": None, "version_id": None, "key": None,
+           "checksum_verified": None, "scope_start": scope_start if _utc_key(scope_start) else None, "reason": ""}
+    if not first:
+        out["reason"] = "no register version in the pack carries %s" % threshold_version
+        return out
+    t1 = t1_text(head)
+    if not head or not _utc_key(t1):
+        out["reason"] = ("date proof not in this pack: no S3 head-object (T1) for register/versions/%s.yaml "
+                         "(register/versions/%s.head.json)" % (first, first))
+        return out
+    out.update(t1_at=t1, version_id=head.get("VersionId"), key=head.get("Key"))
+    try:
+        digest = hashlib.sha256(open(pack.p("register", "versions", first + ".yaml"), "rb").read()).digest()
+        out["checksum_verified"] = _sha_matches(head.get("ChecksumSHA256"), digest)
+    except (IOError, OSError):
+        out["checksum_verified"] = False
+    if out["checksum_verified"] is False:
+        out["reason"] = ("the T1 proof's SHA-256 does not match register/versions/%s.yaml in this pack: "
+                         "it proves another file" % first)
+        return out
+    start = _utc_key(scope_start)
+    if not start:
+        out["reason"] = "no recorded scope start to compare T1 %s against" % t1
+        return out
+    if _utc_key(t1) <= start:
+        out.update(state="PROVEN_BEFORE", reason="S3 T1 %s <= scope start %s" % (t1, scope_start))
+    else:
+        out.update(state="PROVEN_AFTER", reason="S3 T1 %s is LATER than scope start %s" % (t1, scope_start))
+    return out
+
+
 def _utc_key(text):
     """A sortable key for a UTC string (ms/no-ms alike), or None."""
     if not isinstance(text, str):
@@ -201,8 +268,12 @@ class Pack(object):
                 break
         if not first:
             return None, None
-        head = self.registers[first]["head"] or {}
-        return first, head.get("LastModified") or head.get("last_modified") or head.get("t1")
+        return first, t1_text(self.registers[first]["head"])
+
+    def t1_head(self, threshold_version, control):
+        """(first register file carrying this threshold_version, its head-object dict or None)."""
+        first, _ = self.t1_for(threshold_version, control)
+        return first, (self.registers[first]["head"] if first else None)
 
     def _reg_date(self, name):
         top = self.registers[name]["doc"]["top"]
@@ -359,8 +430,12 @@ def control_run(pack, control, cid, recompute_fn=None):
                run_start=run_start(pack, cid, a))
     if rname is None:
         out["gaps"].append("register version for %s not in the pack" % a["threshold_version"])
+    out["date_proof"] = date_proof(pack, a["threshold_version"], control, out["run_start"])
     if t1 is None:
         out["gaps"].append("T1 date proof for %s missing (register/<v>.head.json)" % a["threshold_version"])
+    elif out["date_proof"]["checksum_verified"] is False:
+        out["gaps"].append("T1 date proof for %s does not match the register file: %s"
+                           % (a["threshold_version"], out["date_proof"]["reason"]))
     out["gaps"] += [str(g) for g in (a["gaps"] or [])]
     t1_key, start_key = _utc_key(t1), _utc_key(out["run_start"])
     if t1_key and start_key and t1_key > start_key:      # G5 date check: the register must predate the run (ARCH 3.3)

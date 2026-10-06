@@ -47,6 +47,8 @@ def inputs(tmp_path):
           "spec": {"awsAgentCore": {"environmentVariables": {"AUDIT_WRITE_TOKEN": TOK}}}}]}
     _w(str(src / "raw" / "cr-status" / "cr.json"), json.dumps(cr))
     _w(str(src / "register" / "versions" / "v1.yaml"), "controls: []\n")
+    _w(str(src / "register" / "versions" / "v1.head.json"),        # PR-48: the build refuses a version with no T1 proof
+       json.dumps({"VersionId": "synthetic", "LastModified": "2026-10-06T00:00:00Z"}) + "\n")
     _w(str(wd / "register.yaml"), "controls: []\n")
     _w(str(wd / "gap-list.md"), "# gaps\n")
     _w(str(wd / "run-ids.txt"), "cid-1\ncid-2\n")

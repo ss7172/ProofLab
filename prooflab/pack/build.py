@@ -240,6 +240,18 @@ def _precheck_register(a):
                             "it under register/draft/)")
 
 
+def _missing_t1(src):
+    """PR-48: the register versions under <src>/register/versions with no T1 proof (<v>.head.json beside it or at
+    register/<v>.head.json): without one the console can only say NOT_PROVEN. Run tools/stage_t1.py first."""
+    if not src:
+        return []
+    vdir = os.path.join(src, "register", "versions")
+    names = sorted(n[:-5] for n in (os.listdir(vdir) if os.path.isdir(vdir) else [])
+                   if n.endswith(".yaml") and not n.endswith(".risks.yaml") and not n.startswith("inv-"))
+    return [n for n in names if not os.path.isfile(os.path.join(vdir, n + ".head.json"))
+            and not os.path.isfile(os.path.join(src, "register", n + ".head.json"))]
+
+
 def _stage(out, a):
     warnings = []
     src = a.src
@@ -392,6 +404,8 @@ def cmd_build(argv):
     p.add_argument("--label", default=None, help="the submit label for the README (submit-1, submit-2, final)")
     p.add_argument("--allow-draft-register", action="store_true",
                    help="stage an unfrozen register.yaml under register/draft/ instead of refusing")
+    p.add_argument("--allow-missing-t1", action="store_true",
+                   help="build although a register version has no <v>.head.json T1 proof (its rule date reads NOT_PROVEN)")
     a = p.parse_args(argv)
     out = os.path.abspath(a.out)
     if os.path.exists(out) and os.listdir(out):
@@ -402,9 +416,17 @@ def cmd_build(argv):
     except DraftRegister as exc:
         print("pack: " + str(exc), file=sys.stderr)
         return 2
+    no_t1 = _missing_t1(a.src)
+    if no_t1 and not a.allow_missing_t1:
+        print("pack: no T1 date proof for register version(s) %s (register/versions/<v>.head.json); run "
+              "tools/stage_t1.py --from <ops-lane dirs> --to <src>/register/versions first, or pass --allow-missing-t1 "
+              "(the rule date then reads NOT_PROVEN, never 'after')" % ", ".join(no_t1), file=sys.stderr)
+        return 2
     os.makedirs(out, exist_ok=True)
     try:
         warnings = _stage(out, a)
+        if no_t1:
+            warnings.append("--allow-missing-t1: no T1 proof for %s; those rule dates read NOT_PROVEN" % ", ".join(no_t1))
     except SketchMissing as exc:
         print("pack: " + str(exc), file=sys.stderr)
         return 2

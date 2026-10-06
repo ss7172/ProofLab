@@ -15,6 +15,18 @@ def _ref_line(refs):
     return ("  refs: " + ", ".join(refs[:4]) + (" (+%d more)" % (len(refs) - 4) if len(refs) > 4 else "")) if refs else ""
 
 
+def _date_words(r):
+    """Three states, never 'after' without a T1 proof that says so (PR-48)."""
+    dp = r.get("date_proof") or {}
+    state = dp.get("state") or ("PROVEN_BEFORE" if r.get("date_before_scope") else "NOT_PROVEN")
+    if state == "PROVEN_BEFORE":
+        return "dated before the scope (S3 T1 %s%s)" % (dp.get("t1_at") or r["frozen_at"],
+                                                        (", version " + dp["version_id"]) if dp.get("version_id") else "")
+    if state == "PROVEN_AFTER":
+        return "RULE DATED AFTER TEST (S3 T1 %s later than the scope start)" % dp.get("t1_at")
+    return "date proof not in this pack (register says frozen %s, unproven)" % (dp.get("register_frozen_at") or r["frozen_at"])
+
+
 def render_answer(d):
     r, v, c, m = d["rule"], d["verdict"], d["comparison"], d["measurement"]
     lines = [
@@ -22,9 +34,8 @@ def render_answer(d):
         "Q: %s   [%s]" % (d["query"]["text"], d["query"]["normalized"]),
         "CONTROL %s (%s) %s  scope %s %s  provenance %s" % (d["control"]["ref"], d["control"]["id"], d["control"]["name"],
                                                          d["scope"]["kind"], d["scope"]["id"], d["provenance"]),
-        "rule: %s v%s dated %s, frozen %s (%s), owner %s, approval %s" % (
-            r["register_version"], r["threshold_version"], r["version_date"], r["frozen_at"],
-            "before the scope" if r["date_before_scope"] else "NOT proven before the scope", r["owner"]["name"], r["approval"]["status"]),
+        "rule: %s v%s dated %s, %s, owner %s, approval %s" % (
+            r["register_version"], r["threshold_version"], r["version_date"], _date_words(r), r["owner"]["name"], r["approval"]["status"]),
         "limit: %s %s %s; tolerance %s %s" % (r["observation_limit"]["operator"], r["observation_limit"]["value"],
                                               r["observation_limit"]["unit"], r["exception_tolerance"]["value"], r["exception_tolerance"]["unit"]),
         "population: expected %s, observed %s, matched %s, missing %s" % (
