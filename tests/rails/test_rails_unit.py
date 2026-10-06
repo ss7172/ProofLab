@@ -195,14 +195,16 @@ def test_unknown_agent_has_no_tools():
 def test_policy_sha_and_startup_echo_and_compact_summary():
     s = R.startup(["prompt a"])
     assert s["rails.policy_sha256"] == R.POLICY_SHA and len(R.POLICY_SHA) == 64
-    assert s["_prompt_sha256"] == R.startup(["prompt a"])["_prompt_sha256"] != R.startup(["prompt b"])["_prompt_sha256"]
+    assert set(s) == {"rails.policy_sha256", "prompt.sha256"}   # PR-01 STARTUP_FIELDS / RAILS_COMPACT_FIELDS names
+    assert s["prompt.sha256"] == R.startup(["prompt a"])["prompt.sha256"] != R.startup(["prompt b"])["prompt.sha256"]
     r = R.Rails("ifabric-it", mode="enforce")
     r.ingress(P("benign"))
     r.before_tool("runbook-lookup___lookup", {"query": "SITE-DEN-12", "category": "all"})
     sm = r.summary()
     assert sm["rails.allow"] == ["I-01@1", "I-02@1", "I-03@1", "X-02@1", "X-03@1"]
     assert r.records == [] and sm["rails.policy_sha256"] == R.POLICY_SHA and r.m == "enforce"
-    assert set(sm) == {"rails.allow", "rails.counts", "rails.policy_sha256"}   # PR-01 RAILS_COMPACT_FIELDS only
+    assert set(sm) == {"rails.allow", "rails.counts", "rails.policy_sha256", "rails.mode"}   # PR-01 RAILS_COMPACT_FIELDS
+    assert sm["rails.mode"] == "enforce"
 
 
 def test_every_record_has_the_rail_decision_shape():
@@ -214,6 +216,45 @@ def test_every_record_has_the_rail_decision_shape():
             "rail.stage", "rail.hook", "rail.mechanism", "rail.policy_sha256", "rail.matches", "ep.id", "null_reasons"}
     assert r.records and all(need <= set(d) for d in r.records)
     assert all(d["verdict"] in ("BLOCK", "MODIFY", "FLAG") for d in r.records)
+
+
+def test_mode_vocabulary_is_enforce_or_observe_unknown_fails_safe_and_is_recorded():
+    """D-C: enforce | observe only. Anything else (e.g. "off") runs as enforce and leaves one I-01 FLAG record."""
+    for mode in ("enforce", "observe"):
+        r = R.Rails("ifabric-it", mode=mode)
+        assert r.m == mode and r.records == [] and r.summary()["rails.mode"] == mode
+    for bad in ("off", "OBSERVE", "disabled"):
+        r = R.Rails("ifabric-it", mode=bad)
+        assert r.m == "enforce" and r.e and r.summary()["rails.mode"] == "enforce"
+        assert [(d["rail.id"], d["verdict"], d["rail.matches"]) for d in r.records] == \
+            [("I-01", "FLAG", {"mode.unknown": 1})]
+        assert r.tools(["cr-author___patch_cr"]) == []          # enforce really applies
+    os.environ["IFABRIC_RAILS_MODE"] = "off"
+    try:
+        r = R.Rails("ifabric-it")
+        assert r.m == "enforce" and recs(r, "I-01")[0]["rail.matches"] == {"mode.unknown": 1}
+    finally:
+        del os.environ["IFABRIC_RAILS_MODE"]
+    assert R.Rails("ifabric-it").records == []                   # unset = the default enforce, not "unknown"
+
+
+def test_observe_records_the_intended_action_and_proceeds():
+    """Observe: inline.action stays 'proceed' (PR-01 contract); rail.intended_action says what enforce would do."""
+    o = R.Rails("ifabric-network", mode="observe")
+    o.before_tool("cr-author___patch_cr", {})
+    o.before_tool("network-twin___predict_rsrp", {"site": "DU-DEN-12-A"})
+    o.tools(["network-twin___predict_rsrp", "cr-author___patch_cr"])
+    o.ingress(P("hello " + FAKE_KEY))
+    o.after_tool("network-twin___predict_rsrp", "no twin data")
+    by = dict(((d["rail.id"], d["verdict"]), d) for d in o.records)
+    assert by[("X-02", "BLOCK")]["rail.intended_action"] == "block"
+    for k in (("X-03", "MODIFY"), ("X-01", "MODIFY"), ("I-02", "MODIFY")):
+        assert by[k]["rail.intended_action"] == "modify", k
+    assert all(d["inline.action"] == "proceed" for d in o.records)
+    assert "rail.intended_action" not in by[("T-02", "FLAG")]            # a FLAG has no other action
+    e = R.Rails("ifabric-network", mode="enforce")
+    e.before_tool("cr-author___patch_cr", {})
+    assert e.records[0]["inline.action"] == "block" and "rail.intended_action" not in e.records[0]
 
 
 if __name__ == "__main__":

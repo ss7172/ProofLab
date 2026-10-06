@@ -1,33 +1,27 @@
-"""B-G1 size budget: the rails ship inside each single-file agent (bundle gate 24,000 gzip+base64 chars)."""
+"""Size rule (orchestrator D-A): the binding gate is the bundle's len(base64(gzip -9n(file))) <= 24,000 per agent
+file; PR-05's own DONE check is rails.py gz+b64 <= 6,144 chars. The raw byte count is advisory and only printed."""
 import base64, gzip, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = os.path.join(ROOT, "adapters", "runtime", "rails.py")
 RAW = open(SRC, "rb").read()
 PACKED = len(base64.b64encode(gzip.compress(RAW, 9, mtime=0)))
-MIN_BUDGET = 6144      # B-G1 / FEATURE-MAP PR-05 DONE: MIN source <= 6 KB (amend here if the orchestrator does)
-P2_CEILING = 10240     # B-G1: <= 10 KB with P2
+PACKED_BUDGET = 6144   # D-A: rails.py gzip -9n + base64 chars
 
 
-def test_rails_within_p2_ceiling_10kb():
-    print("rails.py raw=%d bytes, gzip+b64=%d chars" % (len(RAW), PACKED))
-    assert len(RAW) <= P2_CEILING
+def test_rails_packed_within_6144_chars():
+    print("rails.py raw=%d bytes (advisory), gzip+b64=%d chars (budget %d)" % (len(RAW), PACKED, PACKED_BUDGET))
+    assert PACKED <= PACKED_BUDGET, PACKED
 
 
-def test_rails_packed_size_reported():
-    print("rails.py raw=%d bytes, gzip+b64=%d chars (of the 24,000 bundle gate)" % (len(RAW), PACKED))
-    assert PACKED < 24000 // 3
+def test_packed_measure_matches_gzip_cli_shape():
+    """The measure is gzip -9n (no name, mtime 0) then base64 without newlines, as tools/gate.sh counts."""
+    blob = gzip.compress(RAW, 9, mtime=0)
+    assert blob[:2] == b"\x1f\x8b" and blob[4:8] == b"\x00\x00\x00\x00" and len(base64.b64encode(blob)) == PACKED
 
 
-try:
-    import pytest
-    _xfail = pytest.mark.xfail(strict=True, reason="B-G1 MIN budget 6,144 B raw: measured 9,532 B with fail-closed "
-                                                   "wrappers (declared miss; amendment requested)")
-except ImportError:  # plain-interpreter smoke runs
-    def _xfail(f):
-        return f
-
-
-@_xfail
-def test_rails_min_budget_6kb_raw():
-    assert len(RAW) <= MIN_BUDGET
+if __name__ == "__main__":
+    for name, fn in sorted(globals().items()):
+        if name.startswith("test_"):
+            fn()
+            print("ok", name)
