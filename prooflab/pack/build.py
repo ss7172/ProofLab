@@ -23,9 +23,12 @@ import sys
 
 PACK_TOP = ("store", "raw", "derived", "assessments", "findings", "register", "kit-crosscheck",
             "reviews", "servicenow", "adversarial", "answers", "architecture", "records", "runs", "auditor", "gaps",
-            "window.json", "live-lane-log.jsonl", "security-matrix.md", "pack-index.json")
+            "window.json", "live-lane-log.jsonl", "security-matrix.md", "pack-index.json", "t1",
+            "named-runs.md", "decisions-log.md")
 WORKDIR_FILES = ("register.yaml", "gap-list.md", "run-ids.txt", "sketch.png")
 STAGED_FROM_WORKDIR = ("gap-list.md", "run-ids.txt", "sketch.png")
+# Files the README names: from --src or --workdir when there, else the checked-in copy (said so in a warning).
+README_DOCS = ("named-runs.md", "decisions-log.md", "security-matrix.md")
 # The three CR token paths (ARCH 9.3): never in the pack.
 DROP_ANNOTATIONS = ("kubectl.kubernetes.io/last-applied-configuration",
                     "kopf.zalando.org/last-handled-configuration")
@@ -237,6 +240,18 @@ def _precheck_register(a):
                             "it under register/draft/)")
 
 
+def _missing_t1(src):
+    """PR-48: the register versions under <src>/register/versions with no T1 proof (<v>.head.json beside it or at
+    register/<v>.head.json): without one the console can only say NOT_PROVEN. Run tools/stage_t1.py first."""
+    if not src:
+        return []
+    vdir = os.path.join(src, "register", "versions")
+    names = sorted(n[:-5] for n in (os.listdir(vdir) if os.path.isdir(vdir) else [])
+                   if n.endswith(".yaml") and not n.endswith(".risks.yaml") and not n.startswith("inv-"))
+    return [n for n in names if not os.path.isfile(os.path.join(vdir, n + ".head.json"))
+            and not os.path.isfile(os.path.join(src, "register", n + ".head.json"))]
+
+
 def _stage(out, a):
     warnings = []
     src = a.src
@@ -268,6 +283,26 @@ def _stage(out, a):
                                 "(NO-VERSION-FROZEN.md written)")
         else:
             warnings.append("workdir has no register.yaml")
+    for name in README_DOCS:
+        dst = os.path.join(out, name)
+        if not os.path.isfile(dst) and wd and os.path.isfile(os.path.join(wd, name)):
+            _copy(os.path.join(wd, name), dst)
+        if not os.path.isfile(dst):
+            tmpl = os.path.join(_repo_root(), "evidence-templates", name)
+            if os.path.isfile(tmpl):
+                _copy(tmpl, dst)
+                warnings.append("%s: not in --src or --workdir; staged the checked-in evidence-templates/%s "
+                                "(fill it before submit if it still says template)" % (name, name))
+    adv = os.path.join(out, "adversarial")
+    if not os.path.isdir(adv):
+        repo_adv = os.path.join(_repo_root(), "evidence", "adversarial")
+        if os.path.isdir(repo_adv):
+            _copy(repo_adv, adv)
+            warnings.append("adversarial/: not in --src; staged the repo's evidence/adversarial/ (pre-registered cases%s)"
+                            % ("" if os.path.isfile(os.path.join(adv, "log.jsonl")) else "; no log.jsonl, so no observed result is claimed"))
+    for sub in ("findings", "servicenow"):
+        if not os.path.isdir(os.path.join(out, sub)):
+            warnings.append("%s/: not in --src (copy it into the snapshot before the final build; see the runbook)" % sub)
     sketch = os.path.join(out, "sketch.png")
     if not os.path.isfile(sketch):      # D2: the checked-in render of architecture/one-page.svg; never silently absent
         tmpl = os.path.join(_repo_root(), "evidence-templates", "sketch.png")
@@ -341,7 +376,10 @@ def _project_console(out, warnings):
                            env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         if r.returncode != 0:
             raise RuntimeError("projector exit %d: %s" % (r.returncode, r.stderr.strip()[-300:]))
-        for name in ("pack-index.json", "records", "projected-assessments"):
+        for line in r.stderr.splitlines():     # every skipped assessment is said, never silent
+            if line.strip():
+                warnings.append(line.strip())
+        for name in ("pack-index.json", "records", "projected-assessments", "projection-report.json"):
             s = os.path.join(pj, name)
             if os.path.exists(s):
                 dst = os.path.join(out, name)
@@ -363,8 +401,11 @@ def cmd_build(argv):
     p.add_argument("--scan-values-stdin", action="store_true")
     p.add_argument("--strict-readme", action="store_true",
                    help="fail the build while the staged README still holds a <PLACEHOLDER> or the template note")
+    p.add_argument("--label", default=None, help="the submit label for the README (submit-1, submit-2, final)")
     p.add_argument("--allow-draft-register", action="store_true",
                    help="stage an unfrozen register.yaml under register/draft/ instead of refusing")
+    p.add_argument("--allow-missing-t1", action="store_true",
+                   help="build although a register version has no <v>.head.json T1 proof (its rule date reads NOT_PROVEN)")
     a = p.parse_args(argv)
     out = os.path.abspath(a.out)
     if os.path.exists(out) and os.listdir(out):
@@ -375,9 +416,17 @@ def cmd_build(argv):
     except DraftRegister as exc:
         print("pack: " + str(exc), file=sys.stderr)
         return 2
+    no_t1 = _missing_t1(a.src)
+    if no_t1 and not a.allow_missing_t1:
+        print("pack: no T1 date proof for register version(s) %s (register/versions/<v>.head.json); run "
+              "tools/stage_t1.py --from <ops-lane dirs> --to <src>/register/versions first, or pass --allow-missing-t1 "
+              "(the rule date then reads NOT_PROVEN, never 'after')" % ", ".join(no_t1), file=sys.stderr)
+        return 2
     os.makedirs(out, exist_ok=True)
     try:
         warnings = _stage(out, a)
+        if no_t1:
+            warnings.append("--allow-missing-t1: no T1 proof for %s; those rule dates read NOT_PROVEN" % ", ".join(no_t1))
     except SketchMissing as exc:
         print("pack: " + str(exc), file=sys.stderr)
         return 2
@@ -393,7 +442,7 @@ def cmd_build(argv):
     if not redact_errors:
         try:
             from prooflab.pack import readme as _readme
-            rf = _readme.fill(out)
+            rf = _readme.fill(out, label=a.label)
             if rf["not_available"]:
                 warnings.append("README: %d placeholder(s) not fillable from the pack, stated as 'not yet available': %s"
                                 % (len(rf["not_available"]), "; ".join(rf["not_available"][:6])))

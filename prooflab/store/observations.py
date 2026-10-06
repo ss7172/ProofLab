@@ -118,7 +118,8 @@ def _gateway_record(kv: dict, raw_ref: str, lineno: int, line_sha: str, provenan
     tokens_out = _int(kv.get("gen_ai.usage.output_tokens"))
     sighting = None
     if run_id:
-        sighting = {"run_id": run_id, "source": "gateway", "ts": at, "tokens_in": tokens_in, "tokens_out": tokens_out}
+        sighting = {"run_id": run_id, "source": "gateway", "ts": at, "tokens_in": tokens_in, "tokens_out": tokens_out,
+                    "action_id": kv.get("modaas.action_id") or None}
     refused = status is not None and status >= 400
     if run_id and not _ids.is_valid_run_id(run_id):
         if known_action_ids and _TRACE_RE.match(run_id) and kv.get("modaas.action_id") in known_action_ids:

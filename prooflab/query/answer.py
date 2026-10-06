@@ -134,6 +134,13 @@ def _rule(pack, control, a, gaps):
     if lim is None:
         lim = _num(entry.get("observation_limit"))
     extra = {}
+    if lim is None and control == "C9":
+        # C9's numbers in one string (`max_relative_change_pct=..;violating_windows_max_pct=..;errors_max=..`, the form
+        # prooflab.evaluators.c9 reads): the judged limit is the relative change against the frozen baseline, inclusive
+        from prooflab.evaluators import claim as _claim
+        parts = _claim.parse_limits(entry.get("observation_limit"))
+        lim, op = _num(parts.get("max_relative_change_pct")), "<="
+        extra = dict((k, _num(v)) for k, v in parts.items() if k != "max_relative_change_pct" and _num(v) is not None)
     if lim is None and control == "C7":
         # C7's numbers live in one string (`coverage_min_pct=..;gap_max_ms=..;violating_gap_share_max_pct=..`, the form
         # prooflab.evaluators.c7.limits_of reads): coverage is the judged floor, so the operator is >=
@@ -147,18 +154,36 @@ def _rule(pack, control, a, gaps):
     if tol is None:
         gaps.append({"id": "G-TOL", "text": "exception_tolerance missing or not numeric in the register; shown as 0 allowed", "affects": "rule.exception_tolerance"})
         tol = 0
-    unit = (a.get("measured") or {}).get("unit") or E.UNKNOWN
+    unit = (a.get("measured") or {}).get("unit") or (("% relative change vs baseline") if control == "C9" else E.UNKNOWN)
     approval = top.get("approval")
     approval = ({"status": "APPROVED", "ref": approval} if isinstance(approval, str) and re.match(r"^[a-z][a-z0-9-]*:\S", approval)
                 else {"status": "MISSING"})
     if approval["status"] == "MISSING":
+        # the T2 files: register/approval*/ (Finding + canonical note), the delivery log, the ServiceNow export
+        from prooflab.pack import history as _h
+        t2 = _h.approvals(pack.root).get(str(rname))
+        if t2:
+            approval = dict((k, t2[k]) for k in ("status", "ref", "at", "approver") if t2.get(k))
+            if approval["status"] != "APPROVED":
+                gaps.append({"id": "G-APPR", "text": "register %s approval is %s: %s" % (rname, t2["status"], t2.get("note") or ""),
+                             "affects": "rule.approval"})
+    if approval["status"] == "MISSING":
         gaps.append({"id": "G-APPR", "text": "no register approval record in the pack (register/ carries none)", "affects": "rule.approval"})
-    first_run = E._utc_key(a.get("scope_start"))
-    before = bool(t1 and first_run and E._utc_key(frozen) and E._utc_key(frozen) <= first_run)
+    proof = E.date_proof(pack, a["threshold_version"], control, a.get("scope_start"))
+    before = proof["state"] == "PROVEN_BEFORE"      # the boolean of schema v1, kept: True only when PROVEN
+    if proof["state"] == "NOT_PROVEN":
+        gaps.append({"id": "G-T1", "text": "rule date NOT PROVEN against the scope: %s; the register's own frozen_at %s is "
+                     "a claim, not a proof" % (proof["reason"], _utc_or(vdate) or E.UNKNOWN), "affects": "rule.date_proof"})
+    elif proof["state"] == "PROVEN_AFTER":
+        gaps.append({"id": "G-T1", "text": "rule DATED AFTER the test: %s" % proof["reason"], "affects": "rule.date_proof"})
+    date_proof = {"state": proof["state"], "t1_at": proof["t1_at"], "version_id": proof["version_id"], "key": proof["key"],
+                  "register_file": proof["register_file"], "checksum_verified": proof["checksum_verified"],
+                  "register_frozen_at": _utc_or(vdate), "reason": proof["reason"]}
     owner = entry.get("owner") or top.get("register_owner")
     rule = {"register_version": str(rname), "threshold_version": a["threshold_version"],
             "version_date": vdate[:10] if re.match(r"^\d{4}-\d\d-\d\d", vdate) else "1970-01-01",
             "frozen_at": frozen, "owner": _person(owner), "approval": approval, "date_before_scope": before,
+            "date_proof": date_proof,
             "statement": entry.get("metric") or entry.get("name") or E.UNKNOWN,
             "observation_limit": _limit(lim, op, unit),
             "exception_tolerance": _limit(tol, "<=", "breached runs"),
@@ -182,9 +207,28 @@ def _tick_text(ok, manifest_status, a, rc, rule, corr=None):
             "A": "agreed to MANIFEST.json (%s)" % manifest_status,
             "T": ("corroboration report: %d mismatches" % len(corr.get("mismatches", []))) if isinstance(corr, dict)
                  else "not traced: no corroboration report for this scope in the pack",
-            "V": ("vouched: owner approval, register dated %s, before the scope" % rule["frozen_at"])
-                 if (rule["date_before_scope"] and rule["approval"]["status"] == "APPROVED")
-                 else "not vouched: no owner approval proven dated before the scope"}
+            "V": _vouch_text(rule)}
+
+
+def date_words(rule):
+    """(words, flag) for the rule's date proof; 'DATED AFTER' only when a T1 proof in the pack shows it (PROVEN_AFTER)."""
+    dp = rule.get("date_proof") or {}
+    state = dp.get("state") or ("PROVEN_BEFORE" if rule.get("date_before_scope") else "NOT_PROVEN")
+    if state == "PROVEN_BEFORE":
+        return ("dated before the scope (S3 T1 %s%s)" % (dp.get("t1_at") or rule.get("frozen_at"),
+                                                          (", version " + dp["version_id"]) if dp.get("version_id") else ""), "OK")
+    if state == "PROVEN_AFTER":
+        return ("RULE DATED AFTER TEST (S3 T1 %s is later than the scope start)" % dp.get("t1_at"), "FLAG")
+    return ("date proof not in this pack (register says frozen %s, unproven)" % (dp.get("register_frozen_at") or rule.get("frozen_at")),
+            "GAP")
+
+
+def _vouch_text(rule):
+    words, _ = date_words(rule)
+    approved = rule["approval"]["status"] == "APPROVED"
+    if approved and rule["date_before_scope"]:
+        return "vouched: owner approval, register %s" % words
+    return "not vouched: %s; register %s" % ("owner approval on record" if approved else "no owner approval record in the pack", words)
 
 
 def _record_rows(recs, ok, manifest_status, rc_matches):
@@ -317,10 +361,9 @@ def _audit_question(control, a, rule, ctx):
         "under_whose_authority": _txt("register owner %s; approval %s" % (rule["owner"]["name"], rule["approval"]["status"]),
                                       [rule["source_ref"]], "OK" if rule["approval"]["status"] == "APPROVED" else "FLAG"),
         "rule_checked": _txt("%s %s: %s" % (control, rule["threshold_version"], rule["statement"]), [rule["source_ref"]]),
-        "limit_in_force": _txt("%s %s %s per run, version %s, frozen %s (%s the scope)" % (
-            rule["observation_limit"]["operator"], rule["observation_limit"]["value"], rule["observation_limit"]["unit"], rule["threshold_version"], rule["frozen_at"],
-            "before" if rule["date_before_scope"] else "NOT proven before"), [rule["source_ref"]],
-            "OK" if rule["date_before_scope"] else "FLAG"),
+        "limit_in_force": _txt("%s %s %s per run, version %s, %s" % (
+            rule["observation_limit"]["operator"], rule["observation_limit"]["value"], rule["observation_limit"]["unit"], rule["threshold_version"],
+            date_words(rule)[0]), [rule["source_ref"]], date_words(rule)[1]),
         "decision": {"text": "control test %s (%s)%s" % (a["verdict"], V.display(a["verdict"]), "; a call was DENIED inline" if stopped else ""),
                      "refs": ["assessment:%s" % a["assessment_id"]] if a.get("assessment_id") else [],
                      # the outcome follows THIS control's assessment: a stop, else a breach escalated to a human, else allowed

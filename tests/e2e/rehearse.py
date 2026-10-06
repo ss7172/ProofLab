@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import base64
 import hashlib
 import io
 import json
@@ -196,6 +197,11 @@ def step_registry(R):
                              "--risks", _p(reg_dir, "risks.yaml"), "--out", reg_dir])
     v0 = _p(reg_dir, "versions", "v0-pilot.yaml")
     R.check("registry freeze v0-pilot (working copy)", rc == 0 and os.path.isfile(v0), (out + err).strip()[:160])
+    if os.path.isfile(v0):      # PR-48: pack build refuses a register version with no T1 proof; S3's base64 checksum form
+        _write(_p(reg_dir, "versions", "v0-pilot.head.json"), json.dumps({
+            "_note": "SYNTHETIC T1 stand-in (the live lane stages it with tools/stage_t1.py)", "VersionId": "synthetic-v0",
+            "LastModified": _iso(time.time() - 7200), "ETag": "synthetic", "Key": "ifabric/register/v0-pilot.yaml",
+            "ChecksumSHA256": base64.b64encode(hashlib.sha256(_read(v0, "rb")).digest()).decode("ascii")}, indent=1, sort_keys=True))
     rc2, _, err2, _ = R.cli(["registry", "freeze", "--version", "v0-pilot", "--register", _p(reg_dir, "register.yaml"),
                              "--risks", _p(reg_dir, "risks.yaml"), "--out", reg_dir])
     R.check("registry freeze refuses a rewrite", rc2 == 2 and "already frozen" in err2, err2.strip()[:120])

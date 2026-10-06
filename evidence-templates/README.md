@@ -51,7 +51,9 @@ account is deleted after the event; this states the rule we would operate under 
    (`export PYTHONDONTWRITEBYTECODE=1`): Python otherwise writes `prooflab/__pycache__/`, and the
    check then lists those files as unlisted. If that happens, delete the `__pycache__` folders and
    run it again. (`python3 -m prooflab pack verify .` does the same check and ignores bytecode.)
-2. Raw captures under `raw/` are never edited; a correction is a new file.
+2. Raw captures under `raw/` are never edited; a correction is a new file. The AgentCore runtime ARNs in
+   them carry the workshop AWS account id: an identifier, not a secret, kept as captured so every raw file's
+   SHA-256 still matches its capture.
 3. The upload's key, version id and time are recorded in section 7 (set by AWS, not by us).
 4. **Root published (unsigned).** At each submit (`<submit-1 / submit-2 / final>`) we posted the
    SHA-256 of `MANIFEST.json` as a work note on ServiceNow incident `<INCnnnnnnn>`, a system we do

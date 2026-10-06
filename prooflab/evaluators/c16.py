@@ -116,6 +116,29 @@ def _model_calls(calls):
     return by_id, noid, other, sorted(set(conflicts))
 
 
+def _invocations(ep1):
+    """{id(decision): invocation key} for EP-1 decisions. An invocation is the handoff stream when the decision names
+    one, else the actor's run of decisions in emitted order: `seq.in_stream` restarting (not increasing) opens a new
+    invocation of the same actor. A decision with no actor gets no key (never scoped away)."""
+    out, last = {}, {}
+    order = sorted(ep1, key=lambda d: (str(_g(d, "emitted.at") or ""), _g(d, "seq.in_stream") or 0))
+    for d in order:
+        actor = _g(d, "actor.id")
+        if not actor:
+            continue
+        hid = _g(d, "handoff.id")
+        if hid:
+            out[id(d)] = "%s:%s" % (actor, hid)
+            continue
+        seq = _g(d, "seq.in_stream")
+        n, prev = last.get(actor, (0, None))
+        if n == 0 or (isinstance(seq, int) and isinstance(prev, int) and seq <= prev):
+            n += 1
+        last[actor] = (n, seq if isinstance(seq, int) else prev)
+        out[id(d)] = "%s#%d" % (actor, n)
+    return out
+
+
 def _is_served(status):
     return _n(status) and 200 <= status < 300
 
@@ -196,20 +219,32 @@ def assess_run(run_id, calls, scenario_attrs, decisions, pin, completeness, as_o
     skew = comp.get("clock_skew_ms")
     skew = skew if _n(skew) else 0
     if pin.mode == "enforce":
+        inv_of = _invocations(ep1)
+        call_inv = dict((_g(d, "call.id"), inv_of.get(id(d))) for d in ep1
+                        if _g(d, "call.id") and _g(d, "verdict") == "ALLOW")
         for d in ep1:
             if _g(d, "inline.action") != "halt":
                 continue
             t_halt = _ts(_g(d, "emitted.at"))
             if t_halt is None:
                 continue
-            hid = _g(d, "handoff.id")
+            hid, inv = _g(d, "handoff.id"), inv_of.get(id(d))
             for aid in sorted(by_id):
                 r = by_id[aid]
                 t = _ts(r["start"])
                 if t is None or (r["handoff_id"] and hid and r["handoff_id"] != hid):
                     continue
+                # the halt holds within the invocation that was denied; a call EP-1 decided in ANOTHER
+                # invocation is by design (handoffs never block); a call EP-1 never decided is unattributed and
+                # still counts (it may be the halted invocation bypassing EP-1)
+                if aid in call_inv and inv is not None and call_inv[aid] != inv:
+                    continue
                 if (t - t_halt).total_seconds() * 1000 > skew:
                     violations.append({"call": aid, "halt_at": _g(d, "emitted.at"), "span_start": r["start"]})
+    first_halt = {}
+    for v in sorted(violations, key=lambda v: (v["call"], str(v["halt_at"]))):
+        first_halt.setdefault(v["call"], v)
+    violations = list(first_halt.values())
     violations = sorted(set((v["call"], v["halt_at"], v["span_start"]) for v in violations))
     violations = [{"call": c, "halt_at": h, "span_start": s} for c, h, s in violations]
     if violations:
@@ -237,14 +272,27 @@ def assess_run(run_id, calls, scenario_attrs, decisions, pin, completeness, as_o
     times = sorted(t for t in (_ts(r[k]) for r in by_id.values() for k in ("start", "end")) if t is not None)
     first = _clocks.format_utc(times[0]) if times else ""
     last = _clocks.format_utc(times[-1]) if times else ""
-    suff = "MISSING" if not by_id else ("PARTIAL" if gaps else "COMPLETE")
+    # the second EP: with EP-1 decisions but no EP-2 replay the measurement stands, the corroboration does not
+    # (a note in `measured`, not an exception: it qualifies the evidence, never the requirement)
+    ep2_missing = bool(ep1) and not ep2
+    pins1 = sorted(set(_g(d, "pin.sha256") for d in ep1 if _g(d, "pin.sha256")))
+    pins2 = sorted(set(_g(d, "pin.sha256") for d in ep2 if _g(d, "pin.sha256")))
+    pin_differs = bool(pins1 and pins2 and pins1 != pins2)
+    corroboration = None
+    if ep2_missing:
+        corroboration = "EP-2 replay missing: %s" % (comp.get("ep2_note") or "no EP-2 decision for the run")
+    elif pin_differs:
+        corroboration = "EP-1 pin %s differs from EP-2 pin %s" % (",".join(p[:8] for p in pins1),
+                                                                  ",".join(p[:8] for p in pins2))
+    suff = "MISSING" if not by_id else ("PARTIAL" if (gaps or ep2_missing or pin_differs) else "COMPLETE")
     measured = {
         "total_tokens": total, "calls": len(by_id), "missing_usage_calls": len(missing), "cap": cap, "tier": tier,
         "tier_basis": tier_basis, "overshoot": overshoot, "headroom_committed_minus_cap": total - cap,
         "mode": pin.mode, "envelope_tier": envelope, "provenance": sa.get("provenance"),
         "condition": sa.get("condition"), "first_span_at": first, "non_model_spans_ignored": other,
         "ep1_decisions": len(ep1), "ep2_decisions": len(ep2), "ep1_denied_earlier": earlier,
-        "operation_note": op_note}
+        "operation_note": op_note, "ep2_corroboration": corroboration or (
+            "EP-1 and EP-2 reconciled call by call" if ep1 and ep2 else None)}
     denominators = {"model_calls": len(by_id), "usage_records": len(expected_ids)}
     completeness_out = {"expected": len(expected_ids), "captured": len(expected_ids) - len(missing_spans),
                         "missing": missing_spans, "missing_usage": missing, "spans_ingested": ingested}

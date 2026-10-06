@@ -35,6 +35,8 @@ from prooflab.query import c9_inputs as _c9in
 from prooflab.query import workflow_map as _wf
 from prooflab.registry import pinned as _pinned
 from prooflab.stitch import toolcalls as _toolcalls
+from prooflab.adapters.postrun import c16_replay as _ep2
+from prooflab.store import ingest as _ingest
 
 CONDITIONAL_EVENTS = _wf.CONDITIONAL_EVENTS
 OURS_PREFIX = "ifabric-"
@@ -270,6 +272,7 @@ def assess_snapshot(root, register=None, controls=("C16", "C7", "C9"), runs=None
     written, skipped = [], []
     pins = {}
     metrics, warmups, c9_runs = None, (), []
+    ep2_records, ep2_runs = [], []
     for cid in cids:
         recs = by_run.get(cid, [])
         if not recs:
@@ -293,7 +296,16 @@ def assess_snapshot(root, register=None, controls=("C16", "C7", "C9"), runs=None
                       "provenance": prov, "condition": cond}
                 comp = {"expected_action_ids": [d["call.id"] for d in ep1 if d.get("call.id")],
                         "spans_ingested": bool(f["calls"]), "blocked_action_ids": f["blocked"]}
-                docs.append(c16.assess_run(cid, f["calls"], sa, f["decisions"], pins[mode], comp, as_of,
+                # EP-2 (PR-51a): the post-run replay of the same core with the same pin over this run's gateway
+                # spans; its decisions are stored (ep.id EP-2) and reconciled call by call against EP-1
+                owners = [d.get("control.owner") for d in ep1 if d.get("control.owner")]
+                ep2, ep2_note = _ep2.replay_store(cid, recs, pins[mode], as_of, tier=sa["envelope_tier"],
+                                                  owner=owners[0] if owners else None)
+                ep2_records.extend(ep2)
+                ep2_runs.append(cid)
+                if ep2_note:
+                    comp["ep2_note"] = ep2_note
+                docs.append(c16.assess_run(cid, f["calls"], sa, f["decisions"] + ep2, pins[mode], comp, as_of,
                                            snapshot_id=snap_id))
         if "C7" in controls:
             if "C7" not in entries:
@@ -332,7 +344,9 @@ def assess_snapshot(root, register=None, controls=("C16", "C7", "C9"), runs=None
             written.append((d["control_ref"], cid, d["requirement_verdict"], path))
     if c9_runs:
         written += c9_hourly(root, c9_runs, as_of, snap_id)
-    return {"written": written, "skipped": skipped, "register": reg_path}
+    if ep2_runs:
+        _ingest.merge_replay(root, ep2_records, ep2_runs, _ep2.is_replay_record)
+    return {"written": written, "skipped": skipped, "register": reg_path, "ep2_decisions": len(ep2_records)}
 
 
 def worst_exit(written):

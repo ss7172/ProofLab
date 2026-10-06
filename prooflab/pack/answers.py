@@ -3,7 +3,8 @@
 The console only locates stored answer documents; it composes none (no verdict logic in the console). `pack build` runs
 this on the staged tree so a judge who unzips the pack finds answers/<key>.json and the pack-index answers[] entries.
 
-  compose(root) -> (entries, skipped)   per-run answers for C16 and C7, then one window answer per control over window.json
+  compose(root) -> (entries, skipped)   per-run answers for C16, C7 and C9, one window answer per control over window.json,
+                                         and one C9 answer per stored hourly window assessment
   compose_auditor(root) -> (entries, skipped)  auditor/<cid>.json (the six questions) for every assessed run   writes <root>/answers/<C>_run_<id>.json for every run-scoped assessment
                                          whose answer composes (kind 'answer'); a question that yields a gap document
                                          is listed in `skipped` with its message, never written as an answer.
@@ -14,7 +15,7 @@ import json
 import os
 import re
 
-CONTROLS = ("C16", "C7")
+CONTROLS = ("C16", "C7", "C9")
 
 
 def _num(ref):
@@ -65,9 +66,40 @@ def _write_doc(root, sub, fname, doc):
         fh.write("\n")
 
 
-def _windows(root, pack, entries, skipped):
-    """One window answer per control over the declared window (window.json), from the same ask() as the CLI."""
+def _ask_window(root, pack, ctl, start, end, entries, skipped, seen):
     from prooflab.query import answer as A
+    q = "control %s between %s and %s" % (_num(ctl), start, end)
+    if q in seen:
+        return
+    seen.add(q)
+    res = A.ask(pack, q)
+    if res["kind"] != "answer":
+        skipped.append({"query": q, "reason": res["doc"].get("message")})
+        return
+    d = res["doc"]
+    sc = d.get("scope") or {}
+    key = "%s|%s|%s" % (ctl, sc.get("kind", "interval"), sc.get("id"))
+    _write_doc(root, "answers", re.sub(r"[^A-Za-z0-9_.-]", "_", key) + ".json", d)
+    entries.append({"key": key, "control_ref": ctl, "scope": sc.get("id"), "verdict": d["verdict"]["value"],
+                    "answer_id": d["answer_id"]})
+
+
+def _windows(root, pack, entries, skipped):
+    """One window answer per control over the declared window (window.json), and one C9 answer per stored hourly
+    window assessment (C9 is judged per closed UTC hour), from the same ask() as the CLI."""
+    seen = set()
+    for path in sorted(glob.glob(os.path.join(root, "assessments", "C9", "*.json"))):
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                doc = json.load(fh)
+        except (IOError, OSError, ValueError):
+            continue
+        if doc.get("scope_kind") == "window" and doc.get("scope_start") and doc.get("scope_end"):
+            _ask_window(root, pack, "C9", doc["scope_start"], doc["scope_end"], entries, skipped, seen)
+    _declared_window(root, pack, entries, skipped, seen)
+
+
+def _declared_window(root, pack, entries, skipped, seen):
     try:
         with open(os.path.join(root, "window.json"), "r", encoding="utf-8") as fh:
             w = json.load(fh)
@@ -79,17 +111,7 @@ def _windows(root, pack, entries, skipped):
     for ctl in CONTROLS:
         if not glob.glob(os.path.join(root, "assessments", ctl, "*.json")):
             continue
-        q = "control %s between %s and %s" % (_num(ctl), w["start"], w["end"])
-        res = A.ask(pack, q)
-        if res["kind"] != "answer":
-            skipped.append({"query": q, "reason": res["doc"].get("message")})
-            continue
-        d = res["doc"]
-        sc = d.get("scope") or {}
-        key = "%s|%s|%s" % (ctl, sc.get("kind", "interval"), sc.get("id"))
-        _write_doc(root, "answers", re.sub(r"[^A-Za-z0-9_.-]", "_", key) + ".json", d)
-        entries.append({"key": key, "control_ref": ctl, "scope": sc.get("id"), "verdict": d["verdict"]["value"],
-                        "answer_id": d["answer_id"]})
+        _ask_window(root, pack, ctl, w["start"], w["end"], entries, skipped, seen)
 
 
 def compose_auditor(root):
