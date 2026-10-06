@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # tools/gate.sh: the merge gate (T0.4). Run from anywhere; checks the repo that holds this script.
 #
-#   tools/gate.sh [--no-scan] [--no-tests] [--root DIR]
+#   tools/gate.sh [--no-scan] [--no-tests] [--integration] [--no-integration] [--root DIR]
 #
-# Checks: (a) pytest on tests/, prooflab/tests/, tools/tests/ with the 3.9 interpreter (PY39); (b) the secret
-# scan (must print "RESULT: clean"); (c) the code searches. Exit codes:
+# Checks: (a) pytest on tests/ and tools/tests/ with the 3.9 interpreter (PY39); (a2) Arth's suite prooflab/tests alone: exactly
+# 152 passed, 0 failed (ARTH_PASS_COUNT overrides, for the gate's own tests); (a3) Arth byte-identity against
+# handoffs/ifabric-handoff-3; (b) the secret scan (must print "RESULT: clean"); (c) the code searches; (d) the integration
+# stage tools/integration_check.sh (rehearse.py + ops-lane dryrun.sh), run by default when tests run, forced by --integration,
+# dropped by --no-integration. Exit codes:
 #   0  everything green, scan clean
 #   1  at least one check failed
 #   3  all other checks green but the scan was skipped (--no-scan): NOT mergeable, the scan must still run
@@ -12,13 +15,15 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-DO_SCAN=1; DO_TESTS=1
+DO_SCAN=1; DO_TESTS=1; DO_INTEG=auto
 while [ $# -gt 0 ]; do
   case "$1" in
     --no-scan) DO_SCAN=0 ;;
     --no-tests) DO_TESTS=0 ;;
+    --integration) DO_INTEG=1 ;;
+    --no-integration) DO_INTEG=0 ;;
     --root) shift; ROOT="$(cd "$1" && pwd)" ;;
-    *) echo "usage: gate.sh [--no-scan] [--no-tests] [--root DIR]"; exit 2 ;;
+    *) echo "usage: gate.sh [--no-scan] [--no-tests] [--integration] [--no-integration] [--root DIR]"; exit 2 ;;
   esac
   shift
 done
@@ -46,10 +51,121 @@ check_tests() {
     echo "WARNING: using $py" >&2
   fi
   local dirs="" d
-  for d in tests prooflab/tests tools/tests; do [ -d "$ROOT/$d" ] && dirs="$dirs $d"; done
+  # prooflab/tests (Arth's) is run alone by check_arth_suite
+  for d in tests tools/tests; do [ -d "$ROOT/$d" ] && dirs="$dirs $d"; done
   if [ -z "$dirs" ]; then na "tests: no test directories"; return; fi
   # shellcheck disable=SC2086
   if (cd "$ROOT" && "$py" -m pytest -q -p no:cacheprovider $dirs); then pass "pytest ($py):$dirs"; else fail "pytest ($py):$dirs"; fi
+}
+
+check_arth_suite() {  # Arth's own suite, alone: exactly ARTH_PASS_COUNT (152) passed, 0 failed
+  local want="${ARTH_PASS_COUNT:-152}"
+  if [ ! -d "$ROOT/prooflab/tests" ]; then na "Arth suite (no prooflab/tests)"; return; fi
+  local py="${PY39:-$HOME/firstmate-homes/TrustworthyAI/workshop-local/.venv-py39/bin/python}"
+  [ -x "$py" ] || py="$(command -v python3)"
+  local out; out="$(cd "$ROOT" && "$py" -m pytest -q -p no:cacheprovider prooflab/tests 2>&1)"
+  local summary; summary="$(echo "$out" | grep -E '^=*[[:space:]]*[0-9]+ (passed|failed|error)|no tests ran' | tail -1)"
+  echo "      $summary"
+  local passed failed
+  passed="$(echo "$summary" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' || true)"
+  failed=""; echo "$summary" | grep -qE '[0-9]+ (failed|error)' && failed=1
+  if [ "${passed:-x}" = "$want" ] && [ -z "$failed" ]; then pass "Arth suite prooflab/tests: exactly $want passed, 0 failed ($py)"
+  else echo "$out" | tail -5 | sed 's/^/      /'; fail "Arth suite prooflab/tests: want exactly $want passed and 0 failed"; fi
+}
+
+check_arth_identity() {  # Arth's code is never edited here: byte-identical to the handoff copy
+  local py="${PY39:-$HOME/firstmate-homes/TrustworthyAI/workshop-local/.venv-py39/bin/python}"
+  [ -x "$py" ] || py="$(command -v python3)"
+  local out code
+  IFS= read -r -d '' code <<'PY'
+import ast, os, sys
+root = os.environ["ROOT"]
+H = os.path.join(root, "handoffs", "ifabric-handoff-3")
+HC = os.path.join(H, "code", "prooflab")
+def rd(p):
+    with open(p, "rb") as fh:
+        return fh.read()
+def tree(base):
+    out = {}
+    for dp, dn, fns in os.walk(base):
+        dn[:] = [d for d in dn if d != "__pycache__"]
+        for fn in fns:
+            if not fn.endswith(".pyc"):
+                full = os.path.join(dp, fn)
+                out[os.path.relpath(full, base)] = full
+    return out
+def say(ok, name, why=""):
+    print("ARTH %s %s%s" % ("OK" if ok else "FAIL", name, (": " + why) if why else ""))
+def na(name, why):
+    print("ARTH NA %s: %s" % (name, why))
+if not os.path.isdir(HC):
+    na("all", "no handoffs/ifabric-handoff-3/code/prooflab under the root")
+    sys.exit(0)
+for sub in ("servicenow", "tests"):
+    mine, theirs = os.path.join(root, "prooflab", sub), os.path.join(HC, sub)
+    name = "prooflab/%s == handoff" % sub
+    if not os.path.isdir(theirs):
+        na(name, "no handoff copy"); continue
+    if not os.path.isdir(mine):
+        say(False, name, "directory missing"); continue
+    a, b = tree(mine), tree(theirs)
+    bad = ["only in repo: " + k for k in sorted(set(a) - set(b))] + ["only in handoff: " + k for k in sorted(set(b) - set(a))]
+    bad += ["differs: " + k for k in sorted(set(a) & set(b)) if rd(a[k]) != rd(b[k])]
+    say(not bad, name, "; ".join(bad[:4]))
+cons = os.path.join(root, "prooflab", "console")
+for fn in ("ifabric-case-panel.js", "ifabric-case-panel.css"):
+    ref = os.path.join(HC, "servicenow", "panel", fn)
+    found = []
+    for dp, dn, fns in os.walk(cons):
+        if fn in fns:
+            found.append(os.path.join(dp, fn))
+    if not os.path.exists(ref):
+        na("console vendor " + fn, "no handoff copy")
+    elif not found:
+        na("console vendor " + fn, "no copy under prooflab/console")
+    else:
+        bad = [os.path.relpath(f, root) for f in found if rd(f) != rd(ref)]
+        say(not bad, "console vendor %s (%d cop%s)" % (fn, len(found), "y" if len(found) == 1 else "ies"), "differs: " + ", ".join(bad) if bad else "")
+bundle = os.path.join(root, "agents", "ifabric-assurance", "ifabric-assurance.py")
+ref = os.path.join(HC, "servicenow", "nemotron.py")
+if not (os.path.exists(bundle) and os.path.exists(ref)):
+    na("embedded nemotron.py", "no assurance bundle or no handoff nemotron.py")
+else:
+    emb = None
+    try:
+        for node in ast.walk(ast.parse(rd(bundle).decode("utf-8"))):
+            if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", None) == "_SOURCES":
+                emb = ast.literal_eval(node.value).get("prooflab.servicenow.nemotron")
+    except (SyntaxError, ValueError) as exc:
+        say(False, "embedded nemotron.py", "bundle does not parse: %s" % exc)
+        emb = False
+    if emb is None:
+        say(False, "embedded nemotron.py", "no _SOURCES['prooflab.servicenow.nemotron'] in the bundle")
+    elif emb is not False:
+        say(emb.encode("utf-8") == rd(ref), "embedded nemotron.py == handoff", "bytes differ" if emb.encode("utf-8") != rd(ref) else "")
+mine = os.path.join(root, "tools", "manifest.py")
+ref = os.path.join(H, "deliverables", "evidence-pack", "tools", "manifest.py")
+if not os.path.exists(ref):
+    na("tools/manifest.py", "no handoff deliverable copy")
+elif not os.path.exists(mine):
+    say(False, "tools/manifest.py == handoff", "file missing")
+else:
+    say(rd(mine) == rd(ref), "tools/manifest.py == handoff", "bytes differ" if rd(mine) != rd(ref) else "")
+PY
+  out="$(ROOT="$ROOT" "$py" -c "$code" 2>&1)"
+  echo "$out" | sed 's/^/      /'
+  if echo "$out" | grep -qE '^ARTH FAIL|Traceback'; then fail "Arth byte-identity (servicenow, tests, panel vendor, nemotron embed, manifest.py)"
+  else pass "Arth byte-identity (servicenow, tests, panel vendor, nemotron embed, manifest.py; N/A rows allowed)"; fi
+}
+
+check_integration() {
+  if [ -x "$HERE/integration_check.sh" ] || [ -f "$HERE/integration_check.sh" ]; then
+    local out rc; out="$(bash "$HERE/integration_check.sh" --root "$ROOT" 2>&1)"; rc=$?
+    echo "$out" | sed 's/^/      /'
+    if [ "$rc" = 0 ]; then pass "integration stage (tools/integration_check.sh)"; else fail "integration stage (tools/integration_check.sh)"; fi
+  else
+    fail "tools/integration_check.sh missing"
+  fi
 }
 
 # ---- (c) searches ----------------------------------------------------------------------------------------
@@ -164,11 +280,16 @@ check_console_secrets() {  # AT-06: no secret-shaped string under prooflab/conso
 # ---- run -------------------------------------------------------------------------------------------------
 echo "== gate: $ROOT =="
 if [ "$DO_TESTS" = 1 ]; then check_tests; else echo "SKIP  tests (--no-tests)"; fi
+if [ "$DO_TESTS" = 1 ]; then check_arth_suite; else echo "SKIP  Arth suite (--no-tests)"; fi
+check_arth_identity
 check_threshold_literals
 check_evaluate_import
 check_agents_py
 check_forbidden
 check_console_secrets
+
+if [ "$DO_INTEG" = 1 ] || { [ "$DO_INTEG" = auto ] && [ "$DO_TESTS" = 1 ]; }; then check_integration
+else echo "SKIP  integration stage (--no-integration or --no-tests; --integration forces it)"; fi
 
 SCAN_SKIPPED=0
 if [ "$DO_SCAN" = 1 ]; then
