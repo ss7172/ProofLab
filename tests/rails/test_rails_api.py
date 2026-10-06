@@ -18,6 +18,30 @@ def shape(o):
     return o
 
 
+def _hex(c):
+    return c * 64
+
+
+def test_orchestrator_envelope_with_digests_is_clean():
+    """The live S-2 payload shape ({"prompt", "ifabric"}) with sha256 digests in the envelope: no I-01 FLAG, no I-02 MODIFY."""
+    env = dict(ENV, handoff_id=None, tier="default", pin_sha256=_hex("a"), register_sha256=_hex("b"),
+               condition_sha256=_hex("c"), tally_tokens=0, tally_calls=0)
+    o = shape(R.check_input({"prompt": "Fronthaul degradation at SITE-DEN-12, packet loss 4.2 percent", "ifabric": env},
+                            None, "ifabric-customer"))
+    assert o["verdict"] == "ALLOW", [(d["rail_id"], d["verdict"], d["matches"]) for d in o["decisions"]]
+    assert o["output"]["ifabric"]["pin_sha256"] == _hex("a")
+
+
+def test_planted_key_and_unknown_key_still_flag():
+    env = dict(ENV, pin_sha256=_hex("a"))
+    odd = shape(R.check_input({"prompt": "x", "ifabric": env, "api" + "_key": "v"}, None, "ifabric-customer"))
+    assert [d["matches"] for d in odd["decisions"] if d["rail_id"] == "I-01"] == [{"fmt.key": 1}]
+    aws = "AK" + "IA" + "ABCDEFGHIJKLMNOP"
+    k = shape(R.check_input({"prompt": "creds " + aws, "ifabric": env}, None, "ifabric-customer"))
+    assert k["verdict"] == "MODIFY" and aws not in str(k["output"])
+    assert [d["matches"] for d in k["decisions"] if d["rail_id"] == "I-02"] == [{"secret.aws": 1}]
+
+
 def test_input_benign_and_blocked():
     o = shape(R.check_input("what is the RSRP at SITE-DEN-12?", ENV, "ifabric-network"))
     assert o["verdict"] == "ALLOW" and o["output"]["context"].startswith("what is")

@@ -78,7 +78,7 @@ class Rails:
   e=p.get("ifabric")if isinstance(p,dict)else None
   if not isinstance(p,dict)or isinstance(e,dict)and not all(type(e.get(x,0))is int and e.get(x,0)>=0 for x in("tally_tokens","tally_calls")):
    s._d("I-01","BLOCK",{"fmt.type":1},s.e,subject="input",subject_sha256_in=sha(repr(p)));return p,s.e
-  b={};u=len(set(p)-{"input","correlation_id","context","traceparent","negotiate","ifabric"})
+  b={};u=len(set(p)-{"input","prompt","correlation_id","context","traceparent","negotiate","ifabric"})
   if u:b["fmt.key"]=u
   if not isinstance(e,dict):b["fmt.no-envelope"]=1
   if len(json.dumps(p.get("context","")))>6000:b["fmt.truncate"]=1
