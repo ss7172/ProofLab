@@ -134,8 +134,16 @@ def main(argv: Optional[List[str]] = None, env: Optional[Mapping[str, str]] = No
     if argv and argv[0] == "findings":          # D4: build Finding files from the snapshot's BREACHED assessments
         from prooflab.humanloop import findings as _findings
         return _findings.main(argv[1:], env)
-    parser = argparse.ArgumentParser(prog="prooflab humanloop", description="human loop: notify")
+    if argv and argv[0] == "retest":            # M1: link a passing re-test to its incident and record the closure
+        from prooflab.humanloop import retest as _retest
+        return _retest.main(argv[1:], env, client_factory)
+    parser = argparse.ArgumentParser(prog="prooflab humanloop", description="human loop: notify",
+                                     epilog="also: `findings` (build Finding files from a snapshot: --kind breach|"
+                                            "escalation) and `retest` (close a finding with a passing re-test run); "
+                                            "each has its own --help")
     sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("findings", help="build Finding files from a snapshot (--kind breach|escalation)")
+    sub.add_parser("retest", help="link a passing re-test run to the finding's incident and record the closure")
     notify_p = sub.add_parser("notify", help="selftest, then notify new notify-due findings")
     notify_p.add_argument("--finding", action="append", default=[], help="finding JSON file (repeatable)")
     notify_p.add_argument("--findings-dir", help="directory of finding *.json files")
