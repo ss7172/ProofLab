@@ -370,12 +370,20 @@ def run_start(pack, cid, assessment=None):
     return recs[0].get("ts") if recs else None
 
 
-def run_end(pack, cid):
+def run_end(pack, cid, assessment=None):
+    """The run's own end (PR-56): index row, the assessment's scope_end, the catalogue's last_seen, then the last
+    record of the run itself; never a post-run replay record (authorship ASSURANCE) stamped at snapshot time."""
     row = pack.index_by_cid.get(cid) or {}
     for key in ("last_span", "end", "last_seen", "t_end"):
         if row.get(key):
             return row[key]
-    recs = [r for r in pack.by_cid.get(cid, []) if r.get("record_kind") != "assessment"]
+    if assessment and assessment.get("scope_end"):
+        return assessment["scope_end"]
+    cat = pack.catalogue_by_cid.get(cid) or {}
+    for key in ("last_seen", "ended_at"):
+        if cat.get(key):
+            return cat[key]
+    recs = [r for r in pack.by_cid.get(cid, []) if r.get("record_kind") != "assessment" and r.get("authorship") != "ASSURANCE"]
     return recs[-1].get("ts") if recs else None
 
 

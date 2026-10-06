@@ -605,7 +605,7 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
     tick = _tick_text(ok, src["manifest_status"], a, rc, vrule, E.read_json(pack.p("derived", "corroboration", cid + ".json")),
                       run_start=ans.get("run_start"))
     ctx = {"recs": recs, "cid": cid, "scope_kind": "run", "scope_label": parse.get("alias") or cid, "start": ans.get("run_start"),
-           "end": E.run_end(pack, cid), "manifest_status": src["manifest_status"], "findings": stored_findings(pack, cid),
+           "end": E.run_end(pack, cid, a), "manifest_status": src["manifest_status"], "findings": stored_findings(pack, cid),
            "inventory": _inventory_versions(pack), "vrule": vrule, "mval": mval, "munit": ms.get("unit") or "", "msource": msource}
     scope = {"kind": "run", "id": parse.get("alias") or cid, "cid": cid}
     if parse.get("alias"):
