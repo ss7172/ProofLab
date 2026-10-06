@@ -366,9 +366,37 @@ def project_assessment(doc, cx, report):
     fnd = a.get("finding")
     if isinstance(fnd, dict) and all(k in fnd for k in ("control_ref", "control_id", "threshold_version", "scope_kind",
                                                        "scope_id", "verdict", "summary", "detected_at")):
-        out["finding"] = fnd
+        out["finding"] = dict(fnd, summary=display_summary(fnd["summary"]))
     elif "finding" in a:
         out["finding"] = None
+    return out
+
+
+_HEADROOM = re.compile(r"headroom (-?\d+)")
+
+
+def display_summary(text):
+    """The evaluator's summary prints `headroom <total - cap>`: negative when UNDER the cap, which reads backwards.
+    Only the DISPLAYED label changes (no verdict, no number): `under cap by N` / `over cap by N`."""
+    def one(m):
+        n = int(m.group(1))
+        return "under cap by %d" % -n if n < 0 else "at cap" if n == 0 else "over cap by %d" % n
+    return _HEADROOM.sub(one, str(text))
+
+
+def delivery_by_finding(src):
+    """servicenow/delivery-log.jsonl: the last row per finding_id (INTENT -> SENT -> DELIVERED), with the incident number."""
+    out = {}
+    for line in (_read_bytes(os.path.join(src, "servicenow", "delivery-log.jsonl")) or b"").decode("utf-8", "replace").splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        fid = row.get("finding_id") if isinstance(row, dict) else None
+        if not fid:
+            continue
+        cur = out.setdefault(fid, {})
+        cur.update({k: v for k, v in row.items() if v is not None})
     return out
 
 
@@ -613,13 +641,19 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
             cases.append({"finding_id": c["finding_id"], "incident": str(c["incident"]),
                           "path": os.path.relpath(path, src), "sha256": hashlib.sha256(data).hexdigest()})
     findings = []
+    delivered = delivery_by_finding(src)
     for p in docs:
         f = p.get("finding")
         if f:
-            findings.append({"finding_id": "ifabric:%s:%s:%s:%s:finding" % (p["control_ref"], p["threshold_version"],
-                                                                         p["scope"]["kind"], p["scope"]["id"]),
-                             "control_ref": p["control_ref"], "scope_id": p["scope"]["id"], "verdict": f["verdict"],
-                             "kind": f.get("kind") or "finding", "summary": f["summary"]})
+            fid = "ifabric:%s:%s:%s:%s:finding" % (p["control_ref"], p["threshold_version"], p["scope"]["kind"], p["scope"]["id"])
+            row = {"finding_id": fid,
+                   "control_ref": p["control_ref"], "scope_id": p["scope"]["id"], "verdict": f["verdict"],
+                   "kind": f.get("kind") or "finding", "summary": display_summary(f["summary"])}
+            d = delivered.get(fid)
+            if d:      # the delivery log is the source (INTENT, SENT, DELIVERED); a case snapshot, when present, comes via cases[]
+                row["delivery_state"] = str(d.get("state") or "UNKNOWN")
+                row["incident"] = str(d["number"]) if d.get("number") else None
+            findings.append(row)
     runs = []
     for cid, alias in sorted(cx["run_ids"].items(), key=lambda kv: kv[1]):
         rr = [r for r in cx["records"] if (r.get("run.id") or r.get("correlation_id")) == cid and _utc(r.get("ts"))]

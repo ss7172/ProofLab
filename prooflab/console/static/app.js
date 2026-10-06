@@ -92,7 +92,7 @@ function answerView(key) {
       h("div", { class: "row muted", style: "margin:6px 0 12px;font-size:12px" }, "Rule " + r.threshold_version + " (" + r.register_version + ") · dated " + r.version_date + " · frozen " + hms(r.frozen_at) + " · ", ap(r).status === "MISSING" ? spill("approval MISSING", "bad") : "approved by " + apName(r) + " " + hms(ap(r).at), " ", r.date_before_scope ? spill("✓ dated before the scope", "good") : spill("RULE DATED AFTER TEST", "bad"), " · owner " + nm(r.owner) + " · evidence " + a.verdict.evidence_sufficiency),
       isC16 && a.comparison && a.comparison.limit != null && a.measurement.value != null ? bullet(a) : ser && ser.length ? bars(ser, a.measurement.unit || "", "limit " + (ol.operator || "") + " " + fmt(ol.value)) : h("p", { class: "mono", style: "font-size:13px" }, "measured " + fmt(a.measurement.value) + " " + (a.measurement.unit || "") + " · limit " + (ol.operator || "") + " " + fmt(ol.value) + " " + (ol.unit || "")),
       h("div", { class: "row", style: "margin-top:10px;gap:20px;font-size:12px" }, h("span", {}, h("span", { class: "label" }, "Observation limit "), (ol.operator || "") + " " + fmt(ol.value) + " " + (ol.unit || "")), h("span", {}, h("span", { class: "label" }, "Exception tolerance "), (et.operator || "") + " " + fmt(et.value) + " " + (et.unit || "")), (a.comparison || {}).exception_fraction != null ? h("span", {}, h("span", { class: "label" }, "Observed exceptions "), a.comparison.exceptions_count + " = " + a.comparison.exception_fraction + "%") : null)),
-    h("div", { class: "pop" }, [["expected", (pop.expected || {}).count], ["observed", pop.observed], ["matched", pop.matched], ["missing", pop.missing], ["dupes removed", pop.duplicates_removed], ["blocked", pop.blocked], ["unmeasurable", pop.unmeasurable]].map(([k, v]) => h("div", {}, h("span", { class: "label" }, k), h("b", { class: (k === "missing" || k === "unmeasurable") && v ? "v-unknown" : "" }, fmt(v))))),
+    h("div", { class: "pop" }, [["expected", (pop.expected || {}).count], ["observed", pop.observed], ["matched", pop.matched], ["missing", pop.missing], ["dupes removed", pop.duplicates_removed], ["blocked", pop.blocked], ["unmeasurable", pop.unmeasurable]].map(([k, v]) => h("div", {}, h("span", { class: "label" }, k), h("b", { class: (k === "missing" || k === "unmeasurable") && v ? "v-unknown" : "" }, fmt(v))))), (pop.missing_events || []).length ? h("div", { class: "mono v-unknown", style: "font-size:11.5px;margin-top:6px" }, "expected but not captured: " + pop.missing_events.join(", ")) : null,
     h("div", { class: "aq" }, group("The action", [["what_was_done", "What was done"], ["by_which_agent", "By which agent"], ["where", "Where"], ["when", "When"]]), group("The decision", [["under_whose_authority", "Under whose authority"], ["rule_checked", "Which rule"], ["limit_in_force", "Limit in force at that moment"], ["decision", "Allowed, stopped or escalated"]]), group("The proof", [["who_was_told", "Who was told"], ["unchanged_since", "Unchanged since?"]])),
     h("div", { class: "grid2" },
       card("Control test (tester) — judges the control", kv([["tester", h("span", { class: "mono" }, (enf.tester || {}).name + " @ " + (enf.tester || {}).version)], ["formula", h("span", { class: "mono" }, a.measurement.formula)], ["mode", tp(enf.mode || "UNKNOWN")], ["exceptions", (a.exceptions || []).length ? a.exceptions.map(e => h("div", { class: "mono", style: "font-size:11.5px" }, "▲ " + (e.why || e.note || e.key || e.kind || JSON.stringify(e)))) : "none"], ["threshold source", h("span", { class: "mono" }, r.source_ref)]])),
@@ -147,8 +147,11 @@ function loop(arg) {
       h("p", { class: "sub" }, "The drop-in panel, rendered from the case snapshots listed in pack-index cases[]. The console never calls ServiceNow."),
       pick.length ? h("a", { class: "chip btn", href: "#/loop" }, "← all " + all.length + " cases") : null),
     card(null, box));
-  if (!window.IFabricCasePanel || !all.length) { box.append(h("p", { class: "muted" }, "No cases listed in this pack (pack-index cases[]).")); return page; }
-  window.IFabricCasePanel.render(box, shown);
+  const fl = P.findings || [];
+  const findingsCard = card("Findings staged in this pack (" + fl.length + ") · delivery from servicenow/delivery-log.jsonl", fl.length ? h("table", { class: "t" }, h("thead", {}, h("tr", {}, ["Control", "Scope", "Verdict", "Delivery", "Incident", "Summary"].map(x => h("th", {}, x)))),
+    h("tbody", {}, fl.map(f => h("tr", {}, h("td", { class: "mono" }, f.control_ref), h("td", { class: "mono" }, f.scope_id), h("td", {}, vpill(f.verdict)), h("td", {}, f.delivery_state || "not recorded"), h("td", { class: "mono" }, f.incident || "—"), h("td", {}, f.summary || ""))))) : h("p", { class: "muted" }, "No findings staged in this pack."));
+  if (!window.IFabricCasePanel || !all.length) { box.append(h("p", { class: "muted" }, "No ServiceNow case snapshots are listed in this pack (pack-index cases[]). The panel needs a snapshot written by the loop (servicenow/cases/*.json); none was supplied, so none is shown. The findings below are listed from the pack itself.")); page.append(findingsCard); return page; }
+  window.IFabricCasePanel.render(box, shown); page.append(findingsCard);
   box.querySelectorAll(":scope > .ifab-card").forEach((el, i) => {
     const c = shown[i]; if (!c) return;
     el.before(caseLinks(c));
@@ -222,13 +225,9 @@ async function loadAll() {
   await startSession();
   const pj = await api("/api/v1/pack"); P = pj.data; META = pj.meta || {}; VOCAB = META.vocab || {};
   VL = Object.fromEntries(Object.entries(VOCAB).map(([k, v]) => [k, v.label])); GLYPH = Object.fromEntries(Object.entries(VOCAB).map(([k, v]) => [k, v.glyph]));
-  const jobs = [];
-  (P.answers || []).forEach(a => jobs.push(api("/api/v1/answer?key=" + encodeURIComponent(a.key)).then(j => { D.answers[a.key] = j.data; }).catch(() => {})));
-  (P.auditor || []).forEach(a => jobs.push(api("/api/v1/auditor/" + encodeURIComponent(a.id)).then(j => { D.auditor[a.id] = j.data; }).catch(() => {})));
-  (P.runs || []).forEach(r => jobs.push((async () => { let cur = "", out = []; do { const j = await api("/api/v1/records?run=" + encodeURIComponent(r.alias) + (cur ? "&cursor=" + encodeURIComponent(cur) : "")); out = out.concat(j.data); cur = (j.meta || {}).next_cursor || ""; } while (cur); D.records[r.alias] = out; })().catch(() => {})));
-  jobs.push(api("/api/v1/cases").then(j => { D.cases = j.data; }).catch(() => {}));
-  jobs.push(api("/api/v1/runs").then(j => { D.runList = j.data; D.runWindow = (j.meta || {}).window || null; }).catch(() => {}));
-  await Promise.all(jobs);
+  const bj = await api("/api/v1/boot");   // one request carries every view's data: no burst, no 429 on a normal first load
+  D.answers = bj.data.answers || {}; D.auditor = bj.data.auditor || {}; D.records = bj.data.records || {}; D.cases = bj.data.cases || [];
+  D.runList = bj.data.runs || []; D.runWindow = bj.data.window || null;
   const m = META.mode || {};
   const rb = $("ribbon"); rb.textContent = m.banner || ""; rb.className = "ribbon " + (m.tone || "");
   $("modeChip").textContent = m.chip || "PACK · read-only"; $("integrityBtn").textContent = "MANIFEST " + (m.integrity_text || "?");
