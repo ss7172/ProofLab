@@ -57,7 +57,7 @@ def sha256_bytes(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def enforcement_points(ep_seen):
+def enforcement_points(ep_seen, ep_notes=None):
     """Our EP-0..EP-16 with an honest status. `ep_seen` = {ep id: [evidence refs]} counted from the stored records.
 
     BUILT only where records of that EP exist; EP-13 is ALERT_ONLY by design (a notification, never a refusal) once
@@ -76,6 +76,8 @@ def enforcement_points(ep_seen):
             status, note = "EVIDENCED", "observed from the platform's own records; not ours to change"
         else:
             status, note = "BUILT", "records of this enforcement point are in the pack"
+        if seen and (ep_notes or {}).get(ep_id):
+            note = "%s; %s" % (note, ep_notes[ep_id])
         out.append({"id": ep_id, "name": name, "kind": kind, "kind_detail": detail, "transport": transport,
                     "can_refuse": can_refuse, "status": status, "controls": list(controls),
                     "evidence_refs": refs, "note": note})
@@ -269,9 +271,9 @@ def build_index(ctx):
         "adversarial": ctx.get("adversarial") or [],
         "gaps": ctx.get("gaps") or [],
         "levels": ctx.get("levels") or [
-            {"level": l, "status": "NOT_SHOWN", "items": []} for l in ("L1_FOUNDATION", "L2_OBSERVABILITY", "L3_EXTENDED_CHAIN")],
+            {"level": l, "status": "NOT_SHOWN", "items": [], "note": "not evaluated in this pack: no stored judging-level data"} for l in ("L1_FOUNDATION", "L2_OBSERVABILITY", "L3_EXTENDED_CHAIN")],
         "environments": ctx.get("environments") or [],
-        "enforcement_points": enforcement_points(ctx.get("ep_seen") or {}),
+        "enforcement_points": enforcement_points(ctx.get("ep_seen") or {}, ctx.get("ep_notes") or {}),
         "integrity": ctx["integrity"],
     }
 

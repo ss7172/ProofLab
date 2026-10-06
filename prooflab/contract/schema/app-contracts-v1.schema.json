@@ -3490,6 +3490,9 @@
                 "items": {
                   "$ref": "#/$defs/textWithRefs"
                 }
+              },
+              "note": {
+                "type": "string"
               }
             }
           }

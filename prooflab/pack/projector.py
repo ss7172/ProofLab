@@ -143,6 +143,23 @@ def infer_control(rec, kind):
     return None
 
 
+# records that carry no ep.id but whose kind names the enforcement point (the record is never rewritten; the view says how)
+EP_BY_KIND = (("EP-2", lambda r: r.get("record_kind") == "observation", "ep.id not recorded; identified by record kind (observation = gateway span)"),
+              ("EP-11", lambda r: r.get("record_kind") == "metric", "ep.id not recorded; identified by record kind (metric = AgentCore metric)"),
+              ("EP-13", lambda r: r.get("record_kind") == "notification", "ep.id not recorded; identified by record kind (notification)"),
+              ("EP-0", lambda r: str(r.get("phase") or "").startswith("ep0."), "ep.id not recorded; identified by record kind (phase ep0.*)"))
+
+
+def ep_of_record(rec):
+    """(ep id, how identified): the record's own ep.id (how=None), else the EP its record kind or phase names."""
+    if rec.get("ep.id"):
+        return rec["ep.id"], None
+    for ep, pred, how in EP_BY_KIND:
+        if pred(rec):
+            return ep, how
+    return None, None
+
+
 def decision_of(rec):
     """Inline decision -> ALLOW | ALERT | DENY | None (DENY under observe is an ALERT)."""
     verdict = rec.get("verdict")
@@ -635,10 +652,19 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
     for rel, doc, src_rec in proj_records:
         files.append((rel, doc))
         counts[doc["control.ref"]] = counts.get(doc["control.ref"], 0) + 1
-    for r in cx["records"]:
-        ep = r.get("ep.id")
+    ep_notes = {}
+    named_ids = set(cx["run_ids"] or [])
+    # the named runs' own records are cited first, never a warm-up's (a warm-up record only when no named run has one)
+    ordered = sorted(cx["records"], key=lambda r: 0 if (r.get("correlation_id") or r.get("run.id")) in named_ids else 1)
+    for r in ordered:
+        ep, how = ep_of_record(r)
         if ep:
             ep_seen.setdefault(ep, []).append("record:%s" % r.get("record_id"))
+            if how:
+                ep_notes.setdefault(ep, how)
+    if os.path.exists(os.path.join(src, "servicenow", "delivery-log.jsonl")):
+        ep_seen.setdefault("EP-13", []).append("file:servicenow/delivery-log.jsonl")
+        ep_notes.setdefault("EP-13", "identified by the ServiceNow delivery log (joined-from: servicenow/delivery-log.jsonl)")
     report["written"] = {"records": len(proj_records), "assessments": len(docs)}
 
     window = cx["window"]
@@ -698,7 +724,7 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
     ictx = {"as_of": cx["as_of"], "generated_at": generated_at or cx["as_of"], "pack": pack, "claim": cx["claim"],
             "assessments": [dict(p, _path="%s/%s/%s.json" % (assessments_dir, p["control_ref"], safe(p["assessment_id"]))) for p in docs],
             "findings": findings, "cases": cases, "runs": runs, "named_runs": named, "artefacts": artefacts,
-            "integrity": integrity, "record_counts": counts, "ep_seen": ep_seen, "register": cx["register"],
+            "integrity": integrity, "record_counts": counts, "ep_seen": ep_seen, "ep_notes": ep_notes, "register": cx["register"],
             "register_controls": cx["register_controls"], "register_versions": cx["register_versions"],
             "approval": approval_of_head(cx),
             "first_assessed_run_at": min((r["started_at"] for r in runs if r.get("started_at") and r.get("provenance") == "ASSESSED"), default=None),
