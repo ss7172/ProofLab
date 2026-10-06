@@ -103,8 +103,6 @@ def validate(obj):
     if not isinstance(reason, str) or not reason.strip():
         errs.append("reason must be a non-empty string")
     ev = obj.get("deciding_evidence")
-    if isinstance(ev, str) and ev.strip():   # one id as a bare string: tolerated as a one-item list
-        ev = [x.strip() for x in ev.split(",") if x.strip()]
     if not isinstance(ev, list) or not all(isinstance(e, str) and e.strip() for e in ev):
         errs.append("deciding_evidence must be a list of evidence refs (E<n> or record ids)")
         ev = []
@@ -184,17 +182,11 @@ def _last_key(text, key):
     return ""
 
 
-def _prose(text):
-    """The answer's sentences (think blocks and JSON objects removed)."""
-    t = strip_reasoning(text or "")
-    for o in extract_objects(t):
-        t = t.replace(json.dumps(o), " ")
-    t = re.sub(r"\{[^{}]*\}", " ", t)
-    return [x.strip(" -*\t") for x in re.split(r"(?<=[.!?])\s+|\n+", t) if x.strip(" -*\t")]
-
-
-def _said(text, words):
-    return " ".join(x for x in _prose(text) if any(w in x.lower() for w in words))[:1500]
+def _said(text, words=()):
+    """The answer's sentences (think blocks and flat JSON removed) that name one of `words` (all if none)."""
+    t = re.sub(r"\{[^{}]*\}", " ", strip_reasoning(text or ""))
+    return " ".join(x for x in (y.strip(" -*") for y in re.split(r"(?<=[.!?])\s+|\n+", t))
+                    if x and (not words or any(w in x.lower() for w in words)))[:1500]
 
 
 def proposal_of(fields, text):
@@ -203,10 +195,9 @@ def proposal_of(fields, text):
     Never empty while the answer has text: without a J2 resolution it carries the answer's resolution and risk
     sentences (else the whole answer)."""
     f = fields or {}
-    res = f.get("proposed_action") or _last_key(text, "proposed_action") or f.get("reversible_step") or _said(
-        text, ("resol", "propos", "recommend", "fix", "switch", "replace", "reroute", "move")) or " ".join(
-        _prose(text))[:1500]
-    return {"resolution": res, "change_risk": _last_key(text, "change_risk") or _said(text, ("risk",)) or "not stated",
+    return {"resolution": f.get("proposed_action") or _last_key(text, "proposed_action") or f.get("reversible_step")
+            or _said(text, ("resol", "propos")) or _said(text),
+            "change_risk": _last_key(text, "change_risk") or _said(text, ("risk",)) or "not stated",
             "disposition": f.get("disposition"), "reason": f.get("reason"),
             "evidence_needed": f.get("named_evidence_needed")}
 
@@ -219,8 +210,8 @@ def proposal_empty(proposal):
 
 def no_proposal_judgment(constraints=None):
     """Gateway C with an empty proposal: gather-evidence in code (no model or tool call); a freeze escalates."""
-    j = Judgment(GATHER, "no proposal received; need " + NO_PROPOSAL_NEED, reversible_step="none: no change was made",
-                 precedence_rule=R_NO_PROPOSAL, named_evidence_needed=[NO_PROPOSAL_NEED])
+    j = Judgment(GATHER, "no proposal received; need " + NO_PROPOSAL_NEED, precedence_rule=R_NO_PROPOSAL,
+                 named_evidence_needed=[NO_PROPOSAL_NEED])
     return apply_precedence(j, constraints)
 
 
@@ -275,8 +266,7 @@ def resolve_site_ids(element_ids, inventory):
     return sites, missing
 
 
-REASK = ("Thanks. Please add one final line with the JSON summary of your answer: disposition (auto-resolve, "
-         "gather-evidence or escalate), deciding_evidence (the E ids you used), reversible_step and reason.")
+REASK = "Please add a final line with the JSON summary: disposition, deciding_evidence, reversible_step and reason."
 
 
 def build_reask_prompt(errors=None, previous_answer=""):
@@ -309,15 +299,12 @@ def derived_judgment(answer, constraints=None, tool_evidence=None, evidence_need
     no structured evidence); then the J2 precedence rules (freeze escalates, empty tool evidence gathers)."""
     t = strip_reasoning(answer or "").lower()
     base = ESCALATE if "escalat" in t else GATHER
-    j = Judgment(base, "re-ask blocked by the platform guardrail; derived from the answer and tool evidence",
-                 deciding_evidence=sorted(set(re.findall(r"\bE\d+\b", answer or ""))), named_evidence_needed=list(evidence_needed or []) or [
-                     "a structured disposition from the agent"], valid=False, reasked=True,
-                 errors=["re-ask blocked by the platform guardrail (content_filter)"])
+    j = Judgment(base, "the platform guardrail blocked the re-ask",
+                 deciding_evidence=sorted(set(re.findall(r"\bE\d+\b", answer or ""))), named_evidence_needed=evidence_needed, valid=False, reasked=True)
     apply_precedence(j, constraints, tool_evidence, evidence_needed)
-    fired = j.precedence_rule
-    j.precedence_rule = R_GUARD   # set after precedence: _tighten would overwrite it
-    if fired:
-        j.reason += "; " + fired
+    if j.precedence_rule:   # the rule that fired stays in the reason; the label is set after (_tighten overwrites)
+        j.reason += "; " + j.precedence_rule
+    j.precedence_rule = R_GUARD
     return j
 
 
