@@ -17,34 +17,35 @@
 
 | id | phase | status | branch | merged sha |
 |---|---|---|---|---|
-| PR-00 | 1 | building | PR-00-setup | |
-| PR-01 | 1 | building | PR-01-contracts | |
-| PR-02 | 1 | building | PR-02-c16core | |
-| PR-03 | 1 | building | PR-03-modelcall-hook | |
-| PR-04 | 1 | building | PR-04-emit | |
-| PR-05 | 1 | building | PR-05-rails | |
-| PR-06 | 1 | building | PR-06-bundler-trio | |
-| PR-07 | 1 | building | PR-07-j2 | |
-| PR-24 | 1 | queued | PR-24-cedar-texts | |
-| PR-11 | 1 | queued | PR-11-registry | |
-| PR-08a | 1 | queued | PR-08a-orchestrator | |
-| PR-09a | 1 | queued | PR-09a-evaluators | |
-| PR-12a | 1 | queued | PR-12a-collectors | |
-| PR-13a | 1 | queued | PR-13a-store-stitch | |
-| PR-23 | 1 | queued | PR-23-ep2-replay | |
-| PR-20a | 1 | queued | PR-20a-notify | |
-| PR-15a | 1 | queued | PR-15a-query-cli | |
-| PR-21 | 1 | queued | PR-21-pack-build | |
-| PR-22a | 1 | queued | PR-22a-docs-min | |
-| PR-19 | 2 | queued | PR-19-assurance-runtime | |
-| PR-17 | 2 | queued | PR-17-console-p0 | |
-| PR-16 | 2 | queued | PR-16-projector | |
+| PR-00 | 1 | merged | PR-00-setup | 28a3629 |
+| PR-01 | 1 | fix | PR-01-contracts |  |
+| PR-02 | 1 | green, merges after PR-01 | PR-02-c16core |  |
+| PR-03 | 1 | green, merges after PR-01 | PR-03-modelcall-hook |  |
+| PR-04 | 1 | fix (after PR-01) | PR-04-emit |  |
+| PR-05 | 1 | fix | PR-05-rails |  |
+| PR-06 | 1 | fix (two-stage) | PR-06-bundler-trio |  |
+| PR-07 | 1 | green, merges after PR-01 | PR-07-j2 |  |
+| PR-00b | 1 | fix | PR-00b-gate | |
+| PR-24 | 1 | merged | PR-24-cedar-texts | cb03cd7 |
+| PR-11 | 1 | green | PR-11-registry |  |
+| PR-08a | 1 | needs PR-01 route | PR-08a-orchestrator |  |
+| PR-09a | 1 | green | PR-09a-evaluators |  |
+| PR-12a | 1 | fix | PR-12a-collectors |  |
+| PR-13a | 1 | green | PR-13a-store-stitch |  |
+| PR-23 | 1 | green | PR-23-ep2-replay |  |
+| PR-20a | 1 | needs PR-00 sync (now merged) | PR-20a-notify |  |
+| PR-15a | 1 | green | PR-15a-query-cli |  |
+| PR-21 | 1 | green | PR-21-pack-build |  |
+| PR-22a | 1 | green | PR-22a-docs-min |  |
+| PR-19 | 2 | green (needs PR-00b gate rule) | PR-19-assurance-runtime |  |
+| PR-17 | 2 | green | PR-17-console-p0 |  |
+| PR-16 | 2 | green | PR-16-projector |  |
 | PR-15b | 2 | queued | PR-15b-answer-grammar | |
 | PR-20b | 2 | queued | PR-20b-humanloop-loop | |
 | PR-12b | 2 | queued | PR-12b-collectors-ph2 | |
 | PR-13b | 2 | queued | PR-13b-corroboration | |
-| PR-10 | 2 | queued | PR-10-recheck | |
-| PR-14 | 2 | queued | PR-14-watch | |
+| PR-10 | 2 | green | PR-10-recheck |  |
+| PR-14 | 2 | green | PR-14-watch |  |
 | PR-09r | 2 | queued | PR-09r-risk | |
 | PR-05b | 2 | queued | PR-05b-rails-v2 | |
 | PR-22b | 2→3 | queued | PR-22b-docs-full | |
@@ -52,6 +53,14 @@
 | PR-09b | 3 | queued | PR-09b-adv-r06-change | |
 | PR-08b | 3 | queued | PR-08b-tamper-tally | |
 | PR-09i | 3 (cut first) | queued | PR-09i-inv | |
+
+---
+
+## Orchestrator decisions (binding; 02:50Z)
+- **D-A.** The rails' "≤ 6 KB raw" budget is advisory, not a DONE check. The binding size rule is the bundle gate: `len(base64(gzip -9n(file))) ≤ 24,000` per `agents/*/ifabric-*.py`. PR-05's own size check: `rails.py` gz+b64 ≤ 6,144 chars. (Captain asked why a raw budget exists: it was only a proxy for the compressed budget.)
+- **D-B.** Agent packaging is **two-stage** (ARCH §7.1 fallback; work/05 AR-03). Measured 02:45Z: one role's bundle is ~33K gz+b64 even stripped, against 24K. A shared base bundle `agents/ifabric-base/ifabric-base.py` (loader + `c16_core` byte-identical with its sha marker + the shared runtime) is built once (`ifabric-base-<sha>`), then each role bundle `agents/ifabric-<role>/ifabric-<role>.py` is built `FROM <repo>@<base digest>`. Each file ≤ 24,000; each buildspec ≤ 25,600. Four CodeBuild runs instead of three. New PR **PR-00b** (gate rules for this layout and the Assurance bundle's C16 exemption).
+- **D-C.** The rails modes are `enforce` | `observe` only (no `off`).
+- **D-D.** PR-01's contract is the single schema. Optional fields justified by ARCH (EP-3 before/after, EP-4 judgment, lifecycle, the rail's intended action in observe mode) are added there; adapters fold everything else into reason/detail.
 
 ---
 
