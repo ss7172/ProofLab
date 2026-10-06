@@ -333,7 +333,8 @@ def gen_run(R, name, cid, plan, client):
     prov = "FAULT_INJECTION" if plan["suppress"] else "LIVE_SUBJECT"
     mk = lambda kind, detail, **kw: ORCH.make(kind, cid, detail, "not applicable: " + kind, provenance=prov,  # noqa: E731
                                             **dict({"trace.id": trace, "run.condition": "none"}, **kw))
-    client.emit(mk("lifecycle", "run started: scenario %s mode %s" % (plan["scenario"], plan["mode"])))
+    client.emit(mk("lifecycle", "run started: scenario %s mode %s" % (plan["scenario"], plan["mode"]),
+                   phase="run.started"))   # the phases prooflab/adapters/orchestrator/run.py emits (C7, D5)
     spans, actions, workflow, stops = [], [], [], []
     tally_tokens = tally_calls = 0
     prev, n_call, halted = "orchestrator", 0, False
@@ -341,7 +342,7 @@ def gen_run(R, name, cid, plan, client):
     for n, agent in enumerate(ROLES):
         hid = IDS.handoff_id(cid, n) if n >= 1 else None
         if hid:
-            client.emit(mk("handoff", "handoff %s sent: %s -> %s" % (hid, prev, agent),
+            client.emit(mk("handoff", "handoff %s sent: %s -> %s" % (hid, prev, agent), phase="handoff.sent",
                            **{"handoff.id": hid, "handoff.from": prev, "handoff.to": agent,
                               "handoff.payload_sha256": hashlib.sha256(cid.encode()).hexdigest(),
                               "handoff.data_classification": "internal", "ep.id": "EP-5",
@@ -350,6 +351,8 @@ def gen_run(R, name, cid, plan, client):
                             pin_sha256=env["IFABRIC_PIN_SHA256"], handoff_id=hid, handoff_from=prev, handoff_to=agent,
                             trace_id=trace, control_owner="Sree")
         stream = "%s:%s" % (agent, hid or "h0")
+        client.emit(ec.lifecycle_record(ctx, "invocation.received", "received %s" % hid,   # as ifabric_app.invoke
+                                        extra={"phase": "invocation.received"}))
         J.record_intent(client, ctx, "%s answers handoff %s" % (agent, hid or "(none)"))
         workflow += [{"agent": agent, "event": "intent", "stream": stream, "order": 0}]
         tally = RunTally(cid, "default")
@@ -392,13 +395,13 @@ def gen_run(R, name, cid, plan, client):
             workflow += [{"agent": agent, "event": "escalation", "stream": stream, "order": 2}]
         tally_tokens, tally_calls = tally.committed, tally.calls
         client.emit(mk("handoff", "invocation of %s returned status=OK halted=%s" % (agent, halted),
-                       **dict({"ep.id": "EP-5", "ep.kind": "orchestrator (record only)",
+                       phase="handoff.received", **dict({"ep.id": "EP-5", "ep.kind": "orchestrator (record only)",
                                "ep.responsible": "team iFabric (Sree)"},
                               **({"handoff.id": hid, "handoff.from": prev, "handoff.to": agent} if hid else {}))))
         prev = agent
         if halted:
             break
-    client.emit(mk("lifecycle", "run finished: status FINISHED"))
+    client.emit(mk("lifecycle", "run finished: status FINISHED", phase="run.finished"))
     return {"cid": cid, "spans": spans, "actions": actions, "workflow": workflow, "stops": stops, "halted": halted,
             "tally_tokens": tally_tokens, "start": _iso(first), "end": _iso(time.time()), "provenance": prov,
             "plan": plan}
@@ -684,15 +687,16 @@ def assess_glue(R, snap):
             d = claim.as_dict(a)
             _write(_p(snap, "assessments", d["control_ref"], cid + ".json"), json.dumps(d, indent=1, sort_keys=True))
         out[name] = {"C16": a16.requirement_verdict, "C7": a7.requirement_verdict}
-        # the register-faithful C7 expectation (all workflow_events + ep1_deployed) for the D5/D6 rows
+        # the register-faithful C7 expectation (all workflow_events + ep1_deployed) for the D5/D6 rows: the
+        # register's names placed by the production mapping (prooflab/query/workflow_map.py, what
+        # `assess --snapshot` uses): run.*/handoff.* on the orchestrator, the rest per agent invocation
         if name == "N5":
+            from prooflab.query import assess_snapshot as ASN
             pin_reg, entry = c7_pin(R, faithful=False)
-            wf = [{"agent": ag, "event": ev.strip(), "stream": "%s:all" % ag, "order": i}
-                  for ag in ROLES for i, ev in enumerate(entry["workflow_events"].split(","))
-                  if ev.strip() not in ("escalation", "decision")]   # conditional / per-call events: not per agent
+            wf = ASN.workflow_events(entry, None, obs)
             af = c7.assess_run(cid, c7.expected_events(cid, run["actions"], [], wf, [], pin_reg), obs, [], pin_reg,
                                _iso(time.time()))
-            out["N5-register-events"] = (af.requirement_verdict, [x.get("key") for x in af.exceptions][:4])
+            out["N5-register-events"] = (af.requirement_verdict, [x.get("key") for x in af.exceptions][:4], len(wf))
             pin_ep1, _ = c7_pin(R, faithful=True)
             ae = c7.assess_run(cid, c7.expected_events(cid, run["actions"], [], run["workflow"], [], pin_ep1), obs, [],
                                pin_ep1, _iso(time.time()))
@@ -733,11 +737,12 @@ def step_assess(R):
             "real %s vs glue %s" % (sorted((n, real.get((n, "C16"))) for n in runs),
                                     sorted((n, got[n]["C16"]) for n in runs)))
     R.check("C7 N3 (stopped agent) with workflow_events_after_stop", got["N3"]["C7"] == V.SATISFIED,
-            "verdict %s: lifecycle.stop / handoff.received are never emitted under those names" % got["N3"]["C7"],
-            xfail="D5")
-    v, ex = got["N5-register-events"]
-    R.check("C7 N5 with the register's own workflow_events", v == V.SATISFIED, "verdict %s missing %s" % (v, ex),
-            xfail="D5")
+            "verdict %s (decision, stop, judgment from the stopped agent)" % got["N3"]["C7"])
+    v, ex, n_wf = got["N5-register-events"]
+    R.check("C7 N5 with the register's own workflow_events", v == V.SATISFIED and n_wf > 0,
+            "verdict %s missing %s; %d workflow events placed by prooflab/query/workflow_map.py (run.*/handoff.* on"
+            " the orchestrator, the rest per invocation; this driver has no Gateway C, so no negotiation)"
+            % (v, ex, n_wf))
     v, ex = got["N5-ep1-decisions"]
     R.check("C7 N5 expecting one EP-1 decision per model call", v == V.SATISFIED, "verdict %s missing %s" % (v, ex),
             xfail="D6")
