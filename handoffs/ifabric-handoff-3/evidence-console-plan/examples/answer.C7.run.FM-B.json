@@ -1,0 +1,611 @@
+{
+  "schema": "ifabric.answer/v1",
+  "answer_id": "f1495f253b91711c9de024c683dab4c7b1816c4f860fc1b7abff92a9a74776be",
+  "query": {
+    "text": "Was control 7 satisfied for run FM-B?",
+    "normalized": "controltest 7 --run FM-B",
+    "control_ref": "C7",
+    "scope": {
+      "kind": "run",
+      "id": "FM-B",
+      "alias": "FM-B",
+      "cid": "fault-1791244802-b7d20f"
+    },
+    "grammar_version": "g1"
+  },
+  "answered_at": "2026-10-06T15:20:00Z",
+  "elapsed_ms": 297,
+  "source": {
+    "mode": "PACK",
+    "pack_root": "evidence/",
+    "manifest_sha256": "826b52d007ee90a02338ea48868e7e03b8fc346a443c3709c55bfbc3a6ef91eb",
+    "manifest_status": "VERIFIED",
+    "records_scanned": 214
+  },
+  "provenance": "SYNTHETIC",
+  "control": {
+    "ref": "C7",
+    "id": "AIA-LOG-001",
+    "name": "Automatic event recording",
+    "mode": "event-driven",
+    "parent_id": "AIA-LOG-001",
+    "child_id": "AIA-LOG-001.01"
+  },
+  "rule": {
+    "register_version": "R-2026-10-05-v1",
+    "threshold_version": "L-v1",
+    "version_date": "2026-10-05",
+    "frozen_at": "2026-10-05T22:10:00Z",
+    "owner": {
+      "name": "Sree Annapurna Rallabandi",
+      "id": "annapurna@invences.com",
+      "role": "accountable management · control owner"
+    },
+    "approval": {
+      "status": "APPROVED",
+      "ref": "servicenow:INC0090201",
+      "at": "2026-10-05T22:31:04Z",
+      "approver": {
+        "name": "Sree Annapurna Rallabandi",
+        "id": "annapurna@invences.com",
+        "role": "accountable management · control owner"
+      }
+    },
+    "date_before_scope": true,
+    "statement": "Every expected in-scope event of a run is recorded and joined to the run, with no unexplained gap between consecutive events.",
+    "observation_limit": {
+      "value": 100,
+      "operator": ">=",
+      "unit": "% coverage"
+    },
+    "exception_tolerance": {
+      "value": 10,
+      "operator": "<=",
+      "unit": "% violating gaps"
+    },
+    "measurement_basis": "Expected: expected/<scenario>.yaml (16 events per run). Observed: ledger /records?cid= (JSONL) + orchestrator handoff records. Gaps only within one clock (ledger ts); a missing middle event makes both of its gaps unmeasurable.",
+    "source_ref": "register:register/register.yaml@L-v1#C7",
+    "register_sha256": "a6fa581e8e6ce48dc8c2555b2615bb2f8e7ba063c91698f54c4ea526077f9e40",
+    "secondary_limits": [
+      {
+        "value": 30000,
+        "operator": "<",
+        "unit": "ms per gap",
+        "label": "illustrative gap limit"
+      }
+    ]
+  },
+  "scope": {
+    "kind": "run",
+    "id": "FM-B",
+    "alias": "FM-B",
+    "cid": "fault-1791244802-b7d20f",
+    "start": "2026-10-06T00:00:02Z",
+    "end": "2026-10-06T00:05:52Z"
+  },
+  "population": {
+    "expected": {
+      "count": 16,
+      "source": "expected/S2.yaml (scenario spec, outside the graded agent)",
+      "ref": "expected:expected/S2.yaml"
+    },
+    "observed": 15,
+    "matched": 15,
+    "missing": 1,
+    "unmatched": 0,
+    "duplicates_removed": 0,
+    "blocked": 0,
+    "unmeasurable": 2
+  },
+  "measurement": {
+    "value": 93.75,
+    "unit": "% coverage",
+    "formula": "matched / expected events; gaps between consecutive expected events (same clock)",
+    "breakdown": {
+      "violating_gap_fraction_pct": 15.4
+    },
+    "series": [
+      {
+        "id": "G01",
+        "label": "run.start → customer.INTENT",
+        "value": 430,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G02",
+        "label": "customer.INTENT → customer.TOOL-INVOCATION",
+        "value": 7120,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G03",
+        "label": "customer.TOOL-INVOCATION → customer.INVOCATION",
+        "value": 1311,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G04",
+        "label": "customer.INVOCATION → customer.RESULT-INSPECTION",
+        "value": 8020,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G05",
+        "label": "customer.RESULT-INSPECTION → handoff.customer→it (gateway A)",
+        "value": 401,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G06",
+        "label": "handoff.customer→it (gateway A) → it.INTENT",
+        "value": 702,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G07",
+        "label": "it.INTENT → it.TOOL-INVOCATION",
+        "value": 6113,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G08",
+        "label": "it.TOOL-INVOCATION → it.INVOCATION",
+        "value": 48210,
+        "limit": 30000,
+        "violates": true,
+        "status": "VIOLATES"
+      },
+      {
+        "id": "G09",
+        "label": "it.INVOCATION → it.RESULT-INSPECTION",
+        "value": 997,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G10",
+        "label": "it.RESULT-INSPECTION → handoff.it→network (gateway B)",
+        "value": 415,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G11",
+        "label": "handoff.it→network (gateway B) → network.INTENT",
+        "value": 33904,
+        "limit": 30000,
+        "violates": true,
+        "status": "VIOLATES"
+      },
+      {
+        "id": "G12",
+        "label": "network.INTENT → network.TOOL-INVOCATION",
+        "value": 9021,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G13",
+        "label": "network.TOOL-INVOCATION → network.INVOCATION",
+        "value": 1288,
+        "limit": 30000,
+        "violates": false,
+        "status": "OK"
+      },
+      {
+        "id": "G14",
+        "label": "network.INVOCATION → network.RESULT-INSPECTION",
+        "value": null,
+        "limit": 30000,
+        "violates": null,
+        "status": "UNMEASURABLE",
+        "note": "an endpoint is missing (never bridged)"
+      },
+      {
+        "id": "G15",
+        "label": "network.RESULT-INSPECTION → run.end",
+        "value": null,
+        "limit": 30000,
+        "violates": null,
+        "status": "UNMEASURABLE",
+        "note": "an endpoint is missing (never bridged)"
+      }
+    ]
+  },
+  "comparison": {
+    "limit": 100,
+    "operator": ">=",
+    "delta": -6.25,
+    "within_limit": false,
+    "exceptions_count": 2,
+    "exceptions_allowed": 10,
+    "exceptions_unit": "% violating gaps",
+    "exception_fraction": 15.4,
+    "secondary": [
+      {
+        "name": "gap limit",
+        "limit": 30000,
+        "operator": "<",
+        "unit": "ms"
+      }
+    ]
+  },
+  "exceptions": [
+    {
+      "id": "G08",
+      "value": 48210,
+      "why": "it.TOOL-INVOCATION → it.INVOCATION: 48,210 ms ≥ 30,000 ms"
+    },
+    {
+      "id": "G11",
+      "value": 33904,
+      "why": "handoff.it→network (gateway B) → network.INTENT: 33,904 ms ≥ 30,000 ms"
+    },
+    {
+      "id": "network.RESULT-INSPECTION",
+      "value": null,
+      "why": "expected event never recorded"
+    }
+  ],
+  "verdict": {
+    "value": "BREACHED",
+    "label": "NOT SATISFIED",
+    "reason": "15/16 events recorded (coverage 93.75%); 2/13 gaps ≥ 30,000 ms = 15.4% (≤ 10% allowed). Missing: network.RESULT-INSPECTION; 2 gaps unmeasurable (never bridged).",
+    "evidence_sufficiency": "COMPLETE",
+    "built_properly": true,
+    "actually_worked": false
+  },
+  "enforcement": {
+    "mode": "POST_RUN",
+    "tester": {
+      "name": "prooflab.evaluators.c7.test",
+      "version": "git:3f9a1c2"
+    },
+    "evaluator": null,
+    "inline_decisions": [],
+    "stop_records": []
+  },
+  "audit_question": {
+    "what_was_done": {
+      "text": "Run FM-B: 16 expected events (orchestrator, three agents, two zone crossings); 15 recorded.",
+      "refs": [
+        "expected:expected/S2.yaml"
+      ]
+    },
+    "by_which_agent": {
+      "text": "ifabric-run, ifabric_customer_agent, ifabric_it_agent, ifabric_network_agent (ledger actor field).",
+      "refs": [
+        "ledger:cid=fault-1791244802-b7d20f"
+      ]
+    },
+    "where": {
+      "text": "Audit ledger (audit-store) /records?cid=, captured as JSONL; orchestrator handoff records.",
+      "refs": [
+        "capture:raw/ledger/fault-1791244802-b7d20f/records.capture.json"
+      ]
+    },
+    "when": {
+      "text": "2026-10-06T00:00:02Z → 2026-10-06T00:05:52Z (ledger clock).",
+      "refs": [
+        "capture:raw/ledger/fault-1791244802-b7d20f/records.capture.json"
+      ]
+    },
+    "under_whose_authority": {
+      "text": "Agents write with the platform-injected ledger token (readable in specs — gap B5).",
+      "refs": [],
+      "flag": "FLAG"
+    },
+    "rule_checked": {
+      "text": "C7 AIA-LOG-001 · L-v1: coverage ≥ 100%; each gap < 30,000 ms; violating gaps ≤ 10%.",
+      "refs": [
+        "register:register/register.yaml@L-v1#C7"
+      ]
+    },
+    "limit_in_force": {
+      "text": "L-v1 dated 2026-10-05, frozen 22:10Z, approved 22:31Z, before this run ✓.",
+      "refs": [
+        "servicenow:INC0090201"
+      ]
+    },
+    "decision": {
+      "text": "Event-driven control: recorded, then tested post-run (nothing to stop in the path).",
+      "refs": [],
+      "outcome": "ALLOWED"
+    },
+    "who_was_told": {
+      "text": "Sree via INC0090220 (DELIVERED 00:06:31Z; NO_RESPONSE_OBSERVED by cutoff; Assurance note WRITTEN).",
+      "refs": [
+        "servicenow:INC0090220"
+      ]
+    },
+    "unchanged_since": {
+      "text": "Ledger lines hashed in MANIFEST; each event corroborated by gateway or orchestrator records where they exist.",
+      "refs": [
+        "manifest:MANIFEST.json"
+      ]
+    }
+  },
+  "human_loops": [
+    {
+      "finding_id": "ifabric:C7:L-v1:run:FM-B:finding",
+      "incident": "INC0090220",
+      "owner": {
+        "name": "Sree Annapurna Rallabandi",
+        "id": "annapurna@invences.com",
+        "role": "accountable management · control owner"
+      },
+      "delivery": {
+        "state": "DELIVERED",
+        "at": "2026-10-06T00:06:31Z"
+      },
+      "response": {
+        "state": "NO_RESPONSE_OBSERVED",
+        "actor": null,
+        "at": null,
+        "cutoff": "2026-10-06T14:00:00Z"
+      },
+      "assurance_agent": {
+        "state": "WRITTEN",
+        "at": "2026-10-06T00:07:40Z",
+        "backend": "agentcore:ifabric_assurance_agent",
+        "model_alias": "nemotron-super-120b",
+        "action_ids": [
+          "agw-1c40be77"
+        ],
+        "reason": null
+      },
+      "closure": {
+        "state": "OPEN",
+        "retest_ref": null,
+        "at": null
+      },
+      "case_ref": "servicenow:cases/ifabric_C7_L-v1_run_FM-B_finding.json"
+    }
+  ],
+  "aict": {
+    "status": "DISCOVERED",
+    "connection": "iFabric Hackathon 2026",
+    "assets": [
+      "ifabric_customer_agent",
+      "ifabric_it_agent",
+      "ifabric_network_agent",
+      "ifabric_assurance_agent"
+    ],
+    "last_import_at": "2026-10-06T13:45:00Z",
+    "monitor": "NONE",
+    "refs": [
+      "aict:inventory/2026-10-06T13-45Z.json",
+      "raw:raw/cloudtrail/assumerole-SgcAictReadOnlyAccessRole.json"
+    ]
+  },
+  "records": [
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e01",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L1",
+      "sha256": "c320115966182831b4404746df7052ac4b457eb2e62a86ad4612b0dba663e174",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "run.start @ 00:00:02.000"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e02",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L2",
+      "sha256": "d84a893d23ad2b09dcc5e81d08d064a3c9d3d5c83c6fad9afa94b0ad7ca47f76",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "customer.INTENT @ 00:00:02.430"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e03",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L3",
+      "sha256": "8001ca81d3643af5379dac2edaa31274d51d5083cada082428b1ec873d819301",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "customer.TOOL-INVOCATION @ 00:00:09.550"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e04",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L4",
+      "sha256": "507802f6dd6704ac68dd3311e36f1a74f29dc52b49b5b947067bfb864e9c83ad",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "customer.INVOCATION @ 00:00:10.861"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e05",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L5",
+      "sha256": "a348cc33a660f87a3843a20e950b5c5cc58e12919399af90ae4af04ffbe19b75",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "customer.RESULT-INSPECTION @ 00:00:18.881"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e06",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L6",
+      "sha256": "79f14662f7c3a6636250f9191c0c0dda6e758eb21788d63096723b03e2811a80",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "handoff.customer→it (gateway A) @ 00:00:19.282"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e07",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L7",
+      "sha256": "ceab70f7df7577bd68c4d6ff6ccdca04d4e4a2bc2451124bf599d5519023d145",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "it.INTENT @ 00:00:19.984"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e08",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L8",
+      "sha256": "ce98cb0a4d0dd22f8f75da9107b464457b23620dc6b6ff0281e74d5f9ea90e2a",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "it.TOOL-INVOCATION @ 00:00:26.097"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e09",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L9",
+      "sha256": "46bbb1972fc6800d3832c321ad7d3ca6e965aacfa0dc629a24ad9b1b56b06d96",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "it.INVOCATION @ 00:01:14.307"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e10",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L10",
+      "sha256": "7f8996f1e203c65be0361148a6d23a6c698a9704446050da141482baabaa6ca5",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "it.RESULT-INSPECTION @ 00:01:15.304"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e11",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L11",
+      "sha256": "a3c863bfb44013af3fe6f3636d9eaadb0c2cc7ed3a7d48fe78edbfcf65b37247",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "handoff.it→network (gateway B) @ 00:01:15.719"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e12",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L12",
+      "sha256": "4d6f2bbfd25d7c570fd93be6e308b31ae8ab2d4db16661f158fb154c4bf179fe",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "network.INTENT @ 00:01:49.623"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e13",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L13",
+      "sha256": "3fb80a6a7aa7370d151fe9d41e9abaed40c9eccc9e450288e695022314fb9d7a",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "network.TOOL-INVOCATION @ 00:01:58.644"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e14",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L14",
+      "sha256": "6a0eb7db768dd614bdf2c696f316dfa5f93aa4f9e1415397b6c6871d0ea18e42",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "network.INVOCATION @ 00:01:59.932"
+    },
+    {
+      "ref": "record:ev:C7:L-v1:FM-B:e16",
+      "role": "population",
+      "surface": "ledger",
+      "raw_ref": "raw:raw/ledger/fault-1791244802-b7d20f/records.jsonl#L15",
+      "sha256": "44e8b3b1da358dfa5e0799f4b02b7d45e8e64b5f06368f748cd338a0ecfa58ab",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "run.end @ 00:05:51.000"
+    }
+  ],
+  "gaps": [
+    {
+      "id": "B6",
+      "text": "Ledger write of network.RESULT-INSPECTION never arrived (no retry in the reference ledger client).",
+      "affects": "C7"
+    }
+  ],
+  "tickmarks": {
+    "R": "Recomputed from raw records by the evaluator (pure function of facts + frozen register)",
+    "A": "Agreed to source: raw capture sha256 is listed in MANIFEST.json",
+    "T": "Traced: the same call/event found on >= 2 independent surfaces by its join keys",
+    "V": "Vouched: owner approval of this rule is dated before the scope began"
+  },
+  "links": {
+    "lane": "run:FM-B"
+  }
+}

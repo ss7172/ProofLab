@@ -1,0 +1,304 @@
+{
+  "schema": "ifabric.auditor/v1",
+  "auditor_id": "auditor:INC0090216",
+  "title": "C16 breach · run FM-B · INC0090216",
+  "scope": {
+    "kind": "incident",
+    "id": "INC0090216",
+    "incident": "INC0090216",
+    "finding_id": "ifabric:C16:G-FM-v1:run:FM-B:finding",
+    "run_alias": "FM-B",
+    "cid": "fault-1791244802-b7d20f"
+  },
+  "window": {
+    "start": "2026-10-06T00:00:02Z",
+    "end": "2026-10-06T02:58:10Z"
+  },
+  "generated_at": "2026-10-06T15:20:00Z",
+  "provenance": "SYNTHETIC",
+  "questions": {
+    "who": {
+      "status": "PARTIAL",
+      "answer": "Three governed agents acting for run FM-B, started by the operator; the gateway cannot tell agents apart (one shared key).",
+      "refs": [
+        "run:FM-B/run.json"
+      ],
+      "gaps": [
+        "B1"
+      ],
+      "facts": [
+        {
+          "label": "Agents",
+          "value": "ifabric_customer_agent → ifabric_it_agent → ifabric_network_agent",
+          "refs": [
+            "cr:AgentConfig/ifabric-it-agent@3"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "On whose behalf",
+          "value": "Run FM-B (S2) started via ifabric-run by the operator — CloudTrail InvokeAgentRuntime principal WSParticipantRole",
+          "refs": [
+            "raw:raw/cloudtrail/aict-invocations.json"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Scope",
+          "value": "Model alias nemotron-super-120b (customer, network), nemotron-nano-9b (IT); tools customer-records, runbook-lookup, network-twin",
+          "refs": [
+            "run:FM-B/run.json"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Gateway principal",
+          "value": "ServiceIdentity::\"bootstrap-key\" for every agent (shared) — per-agent identity not provisioned",
+          "refs": [
+            "pdp:principal;cid=fault-1791244802-b7d20f"
+          ],
+          "flag": "FLAG"
+        }
+      ]
+    },
+    "what": {
+      "status": "ANSWERED",
+      "answer": "15 model calls (1 guardrail-blocked) and 13 tool calls; one tool call was outside the network agent's declared tools.",
+      "refs": [
+        "raw:raw/gateway/fault-1791244802-b7d20f/gateway-stdout.log"
+      ],
+      "gaps": [],
+      "facts": [
+        {
+          "label": "Models",
+          "value": "nvidia.nemotron-super-3-120b ×6 · nvidia.nemotron-nano-9b-v2 ×9",
+          "refs": [
+            "raw:raw/gateway/fault-1791244802-b7d20f/gateway-stdout.log"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Tools",
+          "value": "customer-records ×1 · runbook-lookup ×9 (IT) · network-twin ×1 · runbook-lookup ×2 via the network-twin route",
+          "refs": [
+            "pdp:route_alias;cid=fault-1791244802-b7d20f"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Undeclared use",
+          "value": "network agent → runbook-lookup (route_alias=network-twin) — ALLOWED by the PDP",
+          "refs": [
+            "adversarial:R2"
+          ],
+          "flag": "FLAG"
+        },
+        {
+          "label": "Resources",
+          "value": "Synthetic customer CUST-1004; no change executed",
+          "refs": [
+            "record:customer-records/CUST-1004"
+          ],
+          "flag": "OK"
+        }
+      ]
+    },
+    "authorized": {
+      "status": "ANSWERED",
+      "answer": "Every call was decided by the MoDaaS PDP against the policy of the asset called; one guardrail block is joined to its gateway line (the PDP logs it as ALLOW).",
+      "refs": [
+        "raw:raw/pdp/both-replicas.log"
+      ],
+      "gaps": [
+        "B2"
+      ],
+      "facts": [
+        {
+          "label": "Model policy",
+          "value": "model-nemotron-super-120b v331993 · model-nemotron-nano-9b v331981 — ALLOW ×15",
+          "refs": [
+            "pdp:policy=model-nemotron-super-120b"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Tool policy",
+          "value": "modaas-toolconfig-runbook-lookup — ALLOW ×11",
+          "refs": [
+            "pdp:policy=modaas-toolconfig-runbook-lookup"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Guardrail",
+          "value": "c-0007 content_filter, 0 tokens — PDP ALLOW, gateway BLOCKED (we report BLOCKED)",
+          "refs": [
+            "gateway:action_id=agw-0fcb4c2b"
+          ],
+          "flag": "FLAG"
+        },
+        {
+          "label": "Evaluated where",
+          "value": "modaas-pdp (2 replicas, both captured) behind extAuth fail-closed",
+          "refs": [
+            "raw:raw/pdp/both-replicas.log"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Run budget",
+          "value": "EP2 admission (observe mode) ALERT before c-0015",
+          "refs": [
+            "record:C16:FM-B"
+          ],
+          "flag": "OK"
+        }
+      ]
+    },
+    "approved": {
+      "status": "ANSWERED",
+      "answer": "Every asset in the chain has an approval record; the rule was approved by the owner before the run.",
+      "refs": [
+        "raw:raw/cr-status/approvals.json"
+      ],
+      "gaps": [
+        "B4"
+      ],
+      "facts": [
+        {
+          "label": "Agents",
+          "value": "AgentConfig ifabric-{customer,it,network}-agent gen 3 — approved by Sree 21:48:30Z, attestation 'Reviewed for C-FM-01 runs'",
+          "refs": [
+            "cr:AgentConfig/ifabric-it-agent@3"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Models",
+          "value": "nemotron-super-120b / nemotron-nano-9b ModelConfigs Approved (approver + attestation)",
+          "refs": [
+            "cr:ModelConfig/nemotron-super-120b"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Tools actually called",
+          "value": "customer-records, runbook-lookup, network-twin ToolConfigs Approved (system-admin at install)",
+          "refs": [
+            "cr:ToolConfig/runbook-lookup"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Approval covers the running version?",
+          "value": "yes — FM-B ran on generation 3 (approved 21:48:30Z), the generation that breached; the fix shipped as generation 4, approved by Sree 02:31:40Z, before re-test FM-C",
+          "refs": [
+            "cr:AgentConfig/ifabric-it-agent@3",
+            "cr:AgentConfig/ifabric-it-agent@4"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Threshold rule",
+          "value": "Register R-2026-10-05-v1 approved by Sree 22:31:04Z (INC0090201) — 1h29m before the run",
+          "refs": [
+            "servicenow:INC0090201"
+          ],
+          "flag": "OK"
+        }
+      ]
+    },
+    "integrity": {
+      "status": "ANSWERED",
+      "answer": "Records are unchanged since capture: every pack file matches MANIFEST, and each call is corroborated by independent surfaces.",
+      "refs": [
+        "manifest:MANIFEST.json"
+      ],
+      "gaps": [
+        "B5"
+      ],
+      "facts": [
+        {
+          "label": "MANIFEST",
+          "value": "214/214 files match (SHA-256), verified 14:02:40Z on the S3 download",
+          "refs": [
+            "manifest:MANIFEST.json"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Corroboration",
+          "value": "15/15 calls seen on gateway stdout + durable gateway log + /modaas/evidence + X-Ray",
+          "refs": [
+            "xray:trace_id=c15727ab6733fc1615fade1f49e3e72d"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Raw captures",
+          "value": "never edited; capture sidecars record the exact command and time",
+          "refs": [
+            "capture:raw/gateway/fault-1791244802-b7d20f/gateway-stdout.capture.json"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Ledger",
+          "value": "no ledger verify route exists; forged write without token → 401; with the leaked token → accepted (adversarial R3)",
+          "refs": [
+            "adversarial:R3"
+          ],
+          "flag": "FLAG"
+        },
+        {
+          "label": "Seal",
+          "value": "out of scope (no signatures or hash chains, per the brief)",
+          "refs": [],
+          "flag": "OK"
+        },
+        {
+          "label": "Assurance note",
+          "value": "WRITTEN 00:07:02Z by Nemotron via agentcore:ifabric_assurance_agent (action agw-7f3c91d2); its SHA-256 is in our delivery log, so it is trusted",
+          "refs": [
+            "servicenow:INC0090216"
+          ],
+          "flag": "OK"
+        }
+      ]
+    },
+    "reconstruct": {
+      "status": "ANSWERED",
+      "answer": "The run replays end to end from evidence: 41 time-ordered events from run start to finding closure.",
+      "refs": [
+        "run:FM-B/run.json#lane"
+      ],
+      "gaps": [],
+      "facts": [
+        {
+          "label": "Timeline",
+          "value": "2026-10-06T00:00:02Z → 00:05:51Z run; 00:06:12Z finding; 00:06:20Z incident; 02:58:10Z closed by re-test FM-C",
+          "refs": [
+            "run:FM-B/run.json#lane"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Join keys",
+          "value": "CID fault-1791244802-b7d20f · trace c15727ab6733… · 15 action ids",
+          "refs": [
+            "run:FM-B/run.json"
+          ],
+          "flag": "OK"
+        },
+        {
+          "label": "Missing",
+          "value": "network.RESULT-INSPECTION never reached the ledger (C7 breach) — shown, not bridged",
+          "refs": [
+            "answer:C7|run|FM-B"
+          ],
+          "flag": "FLAG"
+        }
+      ]
+    }
+  }
+}

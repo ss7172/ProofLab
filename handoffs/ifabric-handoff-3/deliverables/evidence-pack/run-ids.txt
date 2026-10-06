@@ -1,0 +1,10 @@
+# Named runs for judging. Written BEFORE judging; never edited afterwards (append a dated correction instead).
+# Written at (UTC): <YYYY-MM-DDTHH:MM:SSZ>    Register version in force: <register_version>
+#
+# control  expected   run_id / window                    time range (UTC)                         notes
+C16        PASS       <run id>                           <start> .. <end>                         <e.g. 9,600 tokens>
+C16        BREACH     <run id>                           <start> .. <end>                         <e.g. 10,800 tokens, INC…>
+C7         PASS       <run id>                           <start> .. <end>
+C7         BREACH     <run id>                           <start> .. <end>
+C9         PASS       <window id>                        <start> .. <end>
+C9         BREACH     <window id>                        <start> .. <end>                         <crossing; INC…>

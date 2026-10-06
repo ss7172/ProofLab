@@ -1,0 +1,3753 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ifabric.invalid/schemas/contracts.schema.json",
+  "title": "iFabric ProofLab evidence contracts",
+  "description": "All data contracts between the AWS-side pipeline (capture, normalize, bind, evaluate, publish, query, pack) and the Evidence Console. Validate an instance against one $defs entry, e.g. #/$defs/answer. Contracts are additive: new optional keys may appear; key order is meaningless. Existing contracts reused unchanged: Finding (prooflab/servicenow/finding.py), ifabric.servicenow.case/v1 (case_view.py), ifabric.assurance-agent.run/v1, ifabric.evidence-manifest/v1 (tools/manifest.py). Dev-time validation only (jsonschema is a dev dependency like pytest); runtime code stays standard-library.",
+  "$defs": {
+    "utc": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$"
+    },
+    "utcOrNull": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/utc"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "ref": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*:\\S.*$",
+      "description": "prefix:value. Known prefixes: raw: gateway: ledger: cloudwatch: cr: assessment: register: servicenow: aict: record: finding: run: pdp: xray: span: expected: baseline: adversarial: gap: capture: manifest: s3: answer: auditor: console:"
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ref"
+      }
+    },
+    "provenance": {
+      "enum": [
+        "ASSESSED",
+        "EXPLORATORY",
+        "WIRING_TEST",
+        "SYNTHETIC"
+      ],
+      "description": "ASSESSED = after the register freeze, under the frozen version. EXPLORATORY = before the freeze (excluded from verdicts). WIRING_TEST = integration tests (excluded). SYNTHETIC = fixtures/demo (never in the pack)."
+    },
+    "verdict": {
+      "enum": [
+        "SATISFIED",
+        "BREACHED",
+        "INDETERMINATE",
+        "NOT_ASSESSED"
+      ],
+      "description": "Display: SATISFIED; BREACHED -> 'NOT SATISFIED'; INDETERMINATE; NOT ASSESSED."
+    },
+    "claimVerdict": {
+      "enum": [
+        "SATISFIED",
+        "NOT_SATISFIED",
+        "NOT_ESTABLISHED"
+      ]
+    },
+    "controlRef": {
+      "enum": [
+        "C7",
+        "C9",
+        "C16",
+        "ESC"
+      ]
+    },
+    "controlId": {
+      "enum": [
+        "AIA-LOG-001",
+        "AIA-ARC-006",
+        "ACN-COST-001",
+        "AGENT-ESCALATION"
+      ]
+    },
+    "controlMode": {
+      "enum": [
+        "static",
+        "scheduled",
+        "event-driven",
+        "in-transaction",
+        "continuous"
+      ]
+    },
+    "operator": {
+      "enum": [
+        "<",
+        "<=",
+        ">",
+        ">=",
+        "=="
+      ]
+    },
+    "tickmark": {
+      "enum": [
+        "R",
+        "A",
+        "T",
+        "V"
+      ],
+      "description": "Auditor tickmarks. R = recomputed from raw by the evaluator; A = agreed to source (sha256 in MANIFEST); T = traced across >=2 independent surfaces by join keys; V = vouched (owner approval dated before the scope)."
+    },
+    "person": {
+      "type": "object",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "limit": {
+      "type": "object",
+      "required": [
+        "value",
+        "operator",
+        "unit"
+      ],
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "operator": {
+          "$ref": "#/$defs/operator"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "run",
+            "window",
+            "interval",
+            "incident",
+            "escalation"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "alias": {
+          "type": "string"
+        },
+        "cid": {
+          "type": "string"
+        },
+        "runtime": {
+          "type": "string"
+        },
+        "start": {
+          "$ref": "#/$defs/utc"
+        },
+        "end": {
+          "$ref": "#/$defs/utc"
+        }
+      }
+    },
+    "textWithRefs": {
+      "type": "object",
+      "required": [
+        "text"
+      ],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "refs": {
+          "$ref": "#/$defs/refs"
+        },
+        "flag": {
+          "enum": [
+            "OK",
+            "FLAG",
+            "GAP"
+          ]
+        }
+      }
+    },
+    "seriesItem": {
+      "type": "object",
+      "required": [
+        "id",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "limit": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "violates": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "OK",
+            "VIOLATES",
+            "UNKNOWN",
+            "UNMEASURABLE",
+            "MISSING"
+          ]
+        },
+        "start": {
+          "$ref": "#/$defs/utc"
+        },
+        "end": {
+          "$ref": "#/$defs/utc"
+        },
+        "ref": {
+          "$ref": "#/$defs/ref"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "population": {
+      "type": "object",
+      "required": [
+        "expected",
+        "observed",
+        "matched",
+        "missing"
+      ],
+      "properties": {
+        "expected": {
+          "type": "object",
+          "required": [
+            "count",
+            "source"
+          ],
+          "properties": {
+            "count": {
+              "type": "integer"
+            },
+            "source": {
+              "type": "string"
+            },
+            "ref": {
+              "$ref": "#/$defs/ref"
+            }
+          }
+        },
+        "observed": {
+          "type": "integer"
+        },
+        "matched": {
+          "type": "integer"
+        },
+        "missing": {
+          "type": "integer"
+        },
+        "unmatched": {
+          "type": "integer"
+        },
+        "duplicates_removed": {
+          "type": "integer"
+        },
+        "blocked": {
+          "type": "integer"
+        },
+        "unmeasurable": {
+          "type": "integer"
+        }
+      }
+    },
+    "finding": {
+      "description": "Unchanged Finding contract from prooflab/servicenow/finding.py (handoff 1 section 6).",
+      "type": "object",
+      "required": [
+        "control_ref",
+        "control_id",
+        "threshold_version",
+        "scope_kind",
+        "scope_id",
+        "verdict",
+        "summary",
+        "detected_at"
+      ],
+      "properties": {
+        "control_ref": {
+          "$ref": "#/$defs/controlRef"
+        },
+        "control_id": {
+          "$ref": "#/$defs/controlId"
+        },
+        "threshold_version": {
+          "type": "string"
+        },
+        "scope_kind": {
+          "enum": [
+            "run",
+            "window",
+            "interval",
+            "escalation"
+          ]
+        },
+        "scope_id": {
+          "type": "string"
+        },
+        "verdict": {
+          "enum": [
+            "BREACHED",
+            "ESCALATED",
+            "INDETERMINATE",
+            "SATISFIED"
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "detected_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "kind": {
+          "type": "string"
+        }
+      }
+    },
+    "evidenceRecord": {
+      "description": "ifabric.evidence/v1: one bound evidence record (MC-11 / MC-33 field names). A span or log line is not evidence until bound like this.",
+      "type": "object",
+      "required": [
+        "schema",
+        "evidence_id",
+        "provenance",
+        "record_kind",
+        "run.id",
+        "control.id",
+        "control.ref",
+        "threshold.version",
+        "threshold.value",
+        "measured.value",
+        "measured.unit",
+        "verdict",
+        "actor.id",
+        "emitted.at",
+        "emitted.by",
+        "source",
+        "seal"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.evidence/v1"
+        },
+        "evidence_id": {
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "record_kind": {
+          "enum": [
+            "model-call",
+            "tool-call",
+            "event",
+            "window",
+            "decision",
+            "approval"
+          ]
+        },
+        "run.id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "call.id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "control.id": {
+          "$ref": "#/$defs/controlId"
+        },
+        "control.ref": {
+          "$ref": "#/$defs/controlRef"
+        },
+        "threshold.version": {
+          "type": "string"
+        },
+        "threshold.value": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "measured.value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "C16 per-call records: the run's cumulative total after this call (MC-33 shows the run total)."
+        },
+        "measured.call": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "This record's own contribution (e.g. this call's tokens)."
+        },
+        "measured.unit": {
+          "type": "string"
+        },
+        "verdict": {
+          "$ref": "#/$defs/verdict"
+        },
+        "decision": {
+          "enum": [
+            "ALLOW",
+            "ALERT",
+            "DENY",
+            null
+          ],
+          "description": "Inline evaluator decision at an EP, if one was taken before this call."
+        },
+        "actor.id": {
+          "type": "string"
+        },
+        "emitted.at": {
+          "$ref": "#/$defs/utc"
+        },
+        "emitted.by": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "joins": {
+          "type": "object",
+          "properties": {
+            "cid": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "trace_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "action_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "span_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "finding_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "facts": {
+          "type": "object"
+        },
+        "source": {
+          "type": "object",
+          "required": [
+            "surface",
+            "raw_ref",
+            "sha256",
+            "captured_at",
+            "clock"
+          ],
+          "properties": {
+            "surface": {
+              "enum": [
+                "gateway-stdout",
+                "gateway-durable",
+                "modaas-evidence",
+                "pdp",
+                "ledger",
+                "spans",
+                "xray",
+                "agentcore-metrics",
+                "cr-status",
+                "tmf639",
+                "aict-invocations",
+                "servicenow",
+                "orchestrator",
+                "expected",
+                "register",
+                "adapter"
+              ]
+            },
+            "raw_ref": {
+              "$ref": "#/$defs/ref"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "capture_ref": {
+              "$ref": "#/$defs/ref"
+            },
+            "captured_at": {
+              "$ref": "#/$defs/utc"
+            },
+            "clock": {
+              "enum": [
+                "gateway",
+                "ledger",
+                "cloudwatch",
+                "orchestrator",
+                "agent",
+                "servicenow",
+                "pdp",
+                "capture"
+              ]
+            },
+            "corroborated_by": {
+              "$ref": "#/$defs/refs"
+            }
+          }
+        },
+        "seal": {
+          "const": "out-of-scope"
+        }
+      }
+    },
+    "assessment": {
+      "description": "ifabric.assessment/v1: one control test result per control x scope (extends handoff 1 section 8.2). Never edited; a correction is a new revision.",
+      "type": "object",
+      "required": [
+        "schema",
+        "assessment_id",
+        "revision",
+        "control_ref",
+        "control_id",
+        "threshold_version",
+        "register_version",
+        "threshold",
+        "owner",
+        "scope",
+        "provenance",
+        "population",
+        "measured",
+        "verdict",
+        "formula",
+        "evaluator",
+        "evaluated_at",
+        "evidence_refs",
+        "gaps"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.assessment/v1"
+        },
+        "assessment_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "supersedes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "control_ref": {
+          "$ref": "#/$defs/controlRef"
+        },
+        "control_id": {
+          "$ref": "#/$defs/controlId"
+        },
+        "threshold_version": {
+          "type": "string"
+        },
+        "register_version": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "object",
+          "required": [
+            "observation_limit",
+            "exception_tolerance",
+            "source_ref",
+            "register_sha256"
+          ],
+          "properties": {
+            "observation_limit": {
+              "$ref": "#/$defs/limit"
+            },
+            "exception_tolerance": {
+              "$ref": "#/$defs/limit"
+            },
+            "secondary_limits": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/limit"
+              }
+            },
+            "source_ref": {
+              "$ref": "#/$defs/ref"
+            },
+            "register_sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "owner": {
+          "$ref": "#/$defs/person"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "population": {
+          "$ref": "#/$defs/population"
+        },
+        "measured": {
+          "type": "object",
+          "required": [
+            "value",
+            "unit"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "unit": {
+              "type": "string"
+            },
+            "breakdown": {
+              "type": "object"
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/seriesItem"
+              }
+            },
+            "by_actor": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "actor",
+                  "value"
+                ],
+                "properties": {
+                  "actor": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "number"
+                  },
+                  "calls": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "why"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "ref": {
+                "$ref": "#/$defs/ref"
+              },
+              "value": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "why": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "verdict": {
+          "$ref": "#/$defs/verdict"
+        },
+        "formula": {
+          "type": "string"
+        },
+        "evaluator": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "kind"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "control-test",
+                "evaluator"
+              ]
+            }
+          }
+        },
+        "enforcement": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "INLINE_ENFORCE",
+                "INLINE_OBSERVE",
+                "POST_RUN"
+              ]
+            },
+            "ep_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "decisions_ref": {
+              "$ref": "#/$defs/ref"
+            },
+            "stop_records": {
+              "$ref": "#/$defs/refs"
+            }
+          }
+        },
+        "evaluated_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/refs"
+        },
+        "actors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "finding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/finding"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retest_of": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "finding_id this assessment re-tests"
+        },
+        "closes_finding": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "finding_id closed by this SATISFIED re-test"
+        }
+      }
+    },
+    "answer": {
+      "description": "ifabric.answer/v1: what the control test tool returns for one question. The console renders it; the CLI prints it as one screen of text. answer_id = sha256 of the canonical JSON without answered_at, elapsed_ms and source.mode.",
+      "type": "object",
+      "required": [
+        "schema",
+        "answer_id",
+        "query",
+        "answered_at",
+        "elapsed_ms",
+        "source",
+        "provenance",
+        "control",
+        "rule",
+        "scope",
+        "population",
+        "measurement",
+        "comparison",
+        "exceptions",
+        "verdict",
+        "enforcement",
+        "audit_question",
+        "human_loops",
+        "aict",
+        "records",
+        "gaps",
+        "tickmarks"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.answer/v1"
+        },
+        "answer_id": {
+          "$ref": "#/$defs/sha256"
+        },
+        "query": {
+          "type": "object",
+          "required": [
+            "text",
+            "normalized",
+            "control_ref",
+            "scope",
+            "grammar_version"
+          ],
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "normalized": {
+              "type": "string"
+            },
+            "control_ref": {
+              "$ref": "#/$defs/controlRef"
+            },
+            "scope": {
+              "$ref": "#/$defs/scope"
+            },
+            "grammar_version": {
+              "type": "string"
+            }
+          }
+        },
+        "answered_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "elapsed_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source": {
+          "type": "object",
+          "required": [
+            "mode",
+            "manifest_sha256",
+            "manifest_status",
+            "records_scanned"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "PACK",
+                "LIVE"
+              ]
+            },
+            "pack_root": {
+              "type": "string"
+            },
+            "manifest_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "manifest_status": {
+              "enum": [
+                "VERIFIED",
+                "MODIFIED",
+                "UNVERIFIED"
+              ]
+            },
+            "records_scanned": {
+              "type": "integer"
+            }
+          }
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "control": {
+          "type": "object",
+          "required": [
+            "ref",
+            "id",
+            "name",
+            "mode"
+          ],
+          "properties": {
+            "ref": {
+              "$ref": "#/$defs/controlRef"
+            },
+            "id": {
+              "$ref": "#/$defs/controlId"
+            },
+            "name": {
+              "type": "string"
+            },
+            "mode": {
+              "$ref": "#/$defs/controlMode"
+            },
+            "parent_id": {
+              "type": "string"
+            },
+            "child_id": {
+              "type": "string"
+            }
+          }
+        },
+        "rule": {
+          "type": "object",
+          "required": [
+            "register_version",
+            "threshold_version",
+            "version_date",
+            "frozen_at",
+            "owner",
+            "approval",
+            "date_before_scope",
+            "statement",
+            "observation_limit",
+            "exception_tolerance",
+            "measurement_basis",
+            "source_ref",
+            "register_sha256"
+          ],
+          "properties": {
+            "register_version": {
+              "type": "string"
+            },
+            "threshold_version": {
+              "type": "string"
+            },
+            "version_date": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "frozen_at": {
+              "$ref": "#/$defs/utc"
+            },
+            "owner": {
+              "$ref": "#/$defs/person"
+            },
+            "approval": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "APPROVED",
+                    "PENDING",
+                    "MISSING"
+                  ]
+                },
+                "ref": {
+                  "$ref": "#/$defs/ref"
+                },
+                "at": {
+                  "$ref": "#/$defs/utc"
+                },
+                "approver": {
+                  "$ref": "#/$defs/person"
+                }
+              }
+            },
+            "date_before_scope": {
+              "type": "boolean"
+            },
+            "statement": {
+              "type": "string"
+            },
+            "observation_limit": {
+              "$ref": "#/$defs/limit"
+            },
+            "exception_tolerance": {
+              "$ref": "#/$defs/limit"
+            },
+            "secondary_limits": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/limit"
+              }
+            },
+            "measurement_basis": {
+              "type": "string"
+            },
+            "source_ref": {
+              "$ref": "#/$defs/ref"
+            },
+            "register_sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "population": {
+          "$ref": "#/$defs/population"
+        },
+        "measurement": {
+          "type": "object",
+          "required": [
+            "value",
+            "unit",
+            "formula"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "unit": {
+              "type": "string"
+            },
+            "formula": {
+              "type": "string"
+            },
+            "breakdown": {
+              "type": "object"
+            },
+            "by_actor": {
+              "type": "array"
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/seriesItem"
+              }
+            }
+          }
+        },
+        "comparison": {
+          "type": "object",
+          "required": [
+            "limit",
+            "operator",
+            "within_limit",
+            "exceptions_count",
+            "exceptions_allowed"
+          ],
+          "properties": {
+            "limit": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "operator": {
+              "$ref": "#/$defs/operator"
+            },
+            "delta": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "within_limit": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "exceptions_count": {
+              "type": "integer"
+            },
+            "exceptions_allowed": {
+              "type": "number"
+            },
+            "exceptions_unit": {
+              "type": "string"
+            },
+            "exception_fraction": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "secondary": {
+              "type": "array"
+            }
+          }
+        },
+        "exceptions": {
+          "type": "array"
+        },
+        "verdict": {
+          "type": "object",
+          "required": [
+            "value",
+            "label",
+            "reason",
+            "evidence_sufficiency"
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/$defs/verdict"
+            },
+            "label": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "evidence_sufficiency": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN"
+              ]
+            },
+            "built_properly": {
+              "type": "boolean"
+            },
+            "actually_worked": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "enforcement": {
+          "type": "object",
+          "required": [
+            "mode",
+            "tester"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "INLINE_ENFORCE",
+                "INLINE_OBSERVE",
+                "POST_RUN"
+              ]
+            },
+            "tester": {
+              "type": "object",
+              "required": [
+                "name",
+                "version"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              }
+            },
+            "evaluator": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "version"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "ep": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "inline_decisions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "call_id",
+                  "decision",
+                  "at"
+                ],
+                "properties": {
+                  "call_id": {
+                    "type": "string"
+                  },
+                  "decision": {
+                    "enum": [
+                      "ALLOW",
+                      "ALERT",
+                      "DENY"
+                    ]
+                  },
+                  "at": {
+                    "$ref": "#/$defs/utc"
+                  },
+                  "committed": {
+                    "type": "number"
+                  },
+                  "reserved": {
+                    "type": "number"
+                  },
+                  "limit": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "stop_records": {
+              "$ref": "#/$defs/refs"
+            }
+          }
+        },
+        "audit_question": {
+          "type": "object",
+          "required": [
+            "what_was_done",
+            "by_which_agent",
+            "where",
+            "when",
+            "under_whose_authority",
+            "rule_checked",
+            "limit_in_force",
+            "decision",
+            "who_was_told",
+            "unchanged_since"
+          ],
+          "properties": {
+            "what_was_done": {
+              "$ref": "#/$defs/textWithRefs"
+            },
+            "by_which_agent": {
+              "$ref": "#/$defs/textWithRefs"
+            },
+            "where": {
+              "$ref": "#/$defs/textWithRefs"
+            },
+            "when": {
+              "$ref": "#/$defs/textWithRefs"
+            },
+            "under_whose_authority": {
+              "$ref": "#/$defs/textWithRefs"
+            },
+            "rule_checked": {
+              "$ref": "#/$defs/textWithRefs"
+            },
+            "limit_in_force": {
+              "$ref": "#/$defs/textWithRefs"
+            },
+            "decision": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/textWithRefs"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "outcome"
+                  ],
+                  "properties": {
+                    "outcome": {
+                      "enum": [
+                        "ALLOWED",
+                        "STOPPED",
+                        "ESCALATED"
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            "who_was_told": {
+              "$ref": "#/$defs/textWithRefs"
+            },
+            "unchanged_since": {
+              "$ref": "#/$defs/textWithRefs"
+            }
+          }
+        },
+        "aict": {
+          "type": "object",
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "DISCOVERED",
+                "NOT_DISCOVERED",
+                "UNKNOWN"
+              ]
+            },
+            "connection": {
+              "type": "string"
+            },
+            "assets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "last_import_at": {
+              "$ref": "#/$defs/utcOrNull"
+            },
+            "monitor": {
+              "enum": [
+                "SESSIONS",
+                "NONE",
+                "UNKNOWN"
+              ]
+            },
+            "refs": {
+              "$ref": "#/$defs/refs"
+            }
+          }
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ref",
+              "role",
+              "manifest",
+              "tickmarks"
+            ],
+            "properties": {
+              "ref": {
+                "$ref": "#/$defs/ref"
+              },
+              "role": {
+                "enum": [
+                  "measurement",
+                  "population",
+                  "context",
+                  "operation",
+                  "decision"
+                ]
+              },
+              "surface": {
+                "type": "string"
+              },
+              "raw_ref": {
+                "$ref": "#/$defs/ref"
+              },
+              "sha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "manifest": {
+                "enum": [
+                  "OK",
+                  "MISSING",
+                  "CHANGED"
+                ]
+              },
+              "tickmarks": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/tickmark"
+                }
+              },
+              "summary": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              },
+              "affects": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "tickmarks": {
+          "type": "object",
+          "required": [
+            "R",
+            "A",
+            "T",
+            "V"
+          ],
+          "properties": {
+            "R": {
+              "type": "string"
+            },
+            "A": {
+              "type": "string"
+            },
+            "T": {
+              "type": "string"
+            },
+            "V": {
+              "type": "string"
+            }
+          }
+        },
+        "links": {
+          "type": "object"
+        },
+        "human_loops": {
+          "description": "One entry per finding raised for this scope (a window/interval can raise several: one per crossing + monitoring gaps). Empty when nothing needed telling.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "finding_id",
+              "delivery",
+              "response",
+              "assurance_agent",
+              "closure"
+            ],
+            "properties": {
+              "finding_id": {
+                "type": "string"
+              },
+              "incident": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "owner": {
+                "$ref": "#/$defs/person"
+              },
+              "delivery": {
+                "type": "object",
+                "required": [
+                  "state"
+                ],
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "$ref": "#/$defs/utcOrNull"
+                  }
+                }
+              },
+              "response": {
+                "type": "object",
+                "required": [
+                  "state"
+                ],
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  },
+                  "actor": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "at": {
+                    "$ref": "#/$defs/utcOrNull"
+                  },
+                  "cutoff": {
+                    "$ref": "#/$defs/utc"
+                  }
+                }
+              },
+              "assurance_agent": {
+                "type": "object",
+                "required": [
+                  "state"
+                ],
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "$ref": "#/$defs/utcOrNull"
+                  },
+                  "backend": {
+                    "type": "string"
+                  },
+                  "model_alias": {
+                    "type": "string"
+                  },
+                  "action_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "closure": {
+                "type": "object",
+                "required": [
+                  "state"
+                ],
+                "properties": {
+                  "state": {
+                    "enum": [
+                      "OPEN",
+                      "CLOSED_BY_RETEST",
+                      "ACCEPTED_WITH_EXPIRY",
+                      "NOT_APPLICABLE"
+                    ]
+                  },
+                  "retest_ref": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/ref"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "at": {
+                    "$ref": "#/$defs/utcOrNull"
+                  }
+                }
+              },
+              "case_ref": {
+                "$ref": "#/$defs/ref"
+              }
+            }
+          }
+        }
+      }
+    },
+    "auditorQuestion": {
+      "type": "object",
+      "required": [
+        "status",
+        "answer",
+        "facts",
+        "refs"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "ANSWERED",
+            "PARTIAL",
+            "GAP"
+          ]
+        },
+        "answer": {
+          "type": "string"
+        },
+        "facts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "label",
+              "value"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "refs": {
+                "$ref": "#/$defs/refs"
+              },
+              "flag": {
+                "enum": [
+                  "OK",
+                  "FLAG"
+                ]
+              }
+            }
+          }
+        },
+        "refs": {
+          "$ref": "#/$defs/refs"
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "auditor": {
+      "description": "ifabric.auditor/v1: the six auditor questions (AWS kickoff deck p7) for one incident/run picked from the event window.",
+      "type": "object",
+      "required": [
+        "schema",
+        "auditor_id",
+        "scope",
+        "window",
+        "generated_at",
+        "provenance",
+        "questions"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.auditor/v1"
+        },
+        "auditor_id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "object",
+          "required": [
+            "kind",
+            "id"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "incident",
+                "run",
+                "window"
+              ]
+            },
+            "id": {
+              "type": "string"
+            },
+            "incident": {
+              "type": "string"
+            },
+            "finding_id": {
+              "type": "string"
+            },
+            "run_alias": {
+              "type": "string"
+            },
+            "cid": {
+              "type": "string"
+            }
+          }
+        },
+        "window": {
+          "type": "object",
+          "required": [
+            "start",
+            "end"
+          ],
+          "properties": {
+            "start": {
+              "$ref": "#/$defs/utc"
+            },
+            "end": {
+              "$ref": "#/$defs/utc"
+            }
+          }
+        },
+        "generated_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "questions": {
+          "type": "object",
+          "required": [
+            "who",
+            "what",
+            "authorized",
+            "approved",
+            "integrity",
+            "reconstruct"
+          ],
+          "properties": {
+            "who": {
+              "$ref": "#/$defs/auditorQuestion"
+            },
+            "what": {
+              "$ref": "#/$defs/auditorQuestion"
+            },
+            "authorized": {
+              "$ref": "#/$defs/auditorQuestion"
+            },
+            "approved": {
+              "$ref": "#/$defs/auditorQuestion"
+            },
+            "integrity": {
+              "$ref": "#/$defs/auditorQuestion"
+            },
+            "reconstruct": {
+              "$ref": "#/$defs/auditorQuestion"
+            }
+          }
+        }
+      }
+    },
+    "laneEvent": {
+      "type": "object",
+      "required": [
+        "seq",
+        "t",
+        "zone",
+        "kind",
+        "label"
+      ],
+      "properties": {
+        "seq": {
+          "type": "integer"
+        },
+        "t": {
+          "$ref": "#/$defs/utc"
+        },
+        "t_end": {
+          "$ref": "#/$defs/utc"
+        },
+        "zone": {
+          "enum": [
+            "orchestrator",
+            "customer",
+            "it",
+            "network",
+            "gateway",
+            "governance",
+            "servicenow"
+          ]
+        },
+        "actor": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "run-start",
+            "run-end",
+            "handoff",
+            "model-call",
+            "tool-call",
+            "ledger",
+            "guardrail-block",
+            "admission",
+            "stop",
+            "finding",
+            "incident",
+            "note",
+            "response"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "call_id": {
+          "type": "string"
+        },
+        "tokens": {
+          "type": "integer"
+        },
+        "cumulative": {
+          "type": "integer"
+        },
+        "decision": {
+          "enum": [
+            "ALLOW",
+            "ALERT",
+            "DENY"
+          ]
+        },
+        "ep": {
+          "type": "string"
+        },
+        "flag": {
+          "enum": [
+            "OK",
+            "WARN",
+            "BREACH"
+          ]
+        },
+        "refs": {
+          "$ref": "#/$defs/refs"
+        }
+      }
+    },
+    "run": {
+      "description": "ifabric.run/v1: run manifest written by the orchestrator, plus the reconstruction lane composed by the query engine.",
+      "type": "object",
+      "required": [
+        "schema",
+        "run_alias",
+        "cid",
+        "scenario",
+        "purpose",
+        "provenance",
+        "started_at",
+        "ended_at",
+        "agents",
+        "enforcement",
+        "totals",
+        "lane"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.run/v1"
+        },
+        "run_alias": {
+          "type": "string"
+        },
+        "cid": {
+          "type": "string"
+        },
+        "trace_id": {
+          "type": "string"
+        },
+        "scenario": {
+          "enum": [
+            "S1",
+            "S2",
+            "S3",
+            "CUSTOM"
+          ]
+        },
+        "scenario_name": {
+          "type": "string"
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "started_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "ended_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "orchestrator": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "model_alias"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "zone": {
+                "type": "string"
+              },
+              "runtime_id": {
+                "type": "string"
+              },
+              "cr": {
+                "type": "string"
+              },
+              "generation": {
+                "type": "integer"
+              },
+              "model_alias": {
+                "type": "string"
+              },
+              "model_id": {
+                "type": "string"
+              },
+              "image_digest": {
+                "type": "string"
+              },
+              "approval_ref": {
+                "$ref": "#/$defs/ref"
+              },
+              "approved_by": {
+                "type": "string"
+              },
+              "approved_at": {
+                "$ref": "#/$defs/utc"
+              }
+            }
+          }
+        },
+        "dispositions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "agent",
+              "disposition",
+              "expected"
+            ],
+            "properties": {
+              "agent": {
+                "type": "string"
+              },
+              "disposition": {
+                "type": "string"
+              },
+              "expected": {
+                "type": "string"
+              },
+              "matches": {
+                "type": "boolean"
+              },
+              "evidence_named": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reversible_action": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "enforcement": {
+          "type": "object",
+          "required": [
+            "c16"
+          ],
+          "properties": {
+            "c16": {
+              "enum": [
+                "ENFORCE",
+                "OBSERVE",
+                "OFF"
+              ]
+            },
+            "register_version": {
+              "type": "string"
+            },
+            "threshold_version": {
+              "type": "string"
+            }
+          }
+        },
+        "totals": {
+          "type": "object",
+          "required": [
+            "model_calls",
+            "tokens"
+          ],
+          "properties": {
+            "model_calls": {
+              "type": "integer"
+            },
+            "tool_calls": {
+              "type": "integer"
+            },
+            "blocked_calls": {
+              "type": "integer"
+            },
+            "tokens": {
+              "type": "integer"
+            },
+            "cost_usd": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "journey": {
+          "description": "AGENT MOVEMENT: every hop the work took (zone crossings via Gateway A/B, handoffs, the way back). Built from orchestrator handoff records + ledger + gateway calls.",
+          "type": "object",
+          "required": [
+            "hops"
+          ],
+          "properties": {
+            "hops": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/hop"
+              }
+            }
+          }
+        },
+        "decisions": {
+          "description": "DECISION TRACE + EVIDENCE + POLICY ALIGNMENT: one decision record per agent step.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/decision"
+          }
+        },
+        "outcome": {
+          "$ref": "#/$defs/outcomeValidation"
+        },
+        "lane": {
+          "type": "object",
+          "required": [
+            "zones",
+            "t0",
+            "t_end",
+            "events"
+          ],
+          "properties": {
+            "zones": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "label"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "t0": {
+              "$ref": "#/$defs/utc"
+            },
+            "t_end": {
+              "$ref": "#/$defs/utc"
+            },
+            "cap": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "version": {
+                  "type": "string"
+                }
+              }
+            },
+            "events": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/laneEvent"
+              }
+            }
+          }
+        }
+      }
+    },
+    "hop": {
+      "type": "object",
+      "required": [
+        "seq",
+        "from",
+        "to",
+        "via",
+        "t"
+      ],
+      "properties": {
+        "seq": {
+          "type": "integer"
+        },
+        "from": {
+          "type": "string",
+          "description": "agent or zone id, e.g. customer"
+        },
+        "to": {
+          "type": "string"
+        },
+        "via": {
+          "enum": [
+            "gateway-A",
+            "gateway-B",
+            "orchestrator-handoff",
+            "return-path",
+            "servicenow"
+          ]
+        },
+        "t": {
+          "$ref": "#/$defs/utc"
+        },
+        "payload": {
+          "type": "string",
+          "description": "what was handed over, in one line (ticket id, findings summary) - never prompt text"
+        },
+        "admission": {
+          "enum": [
+            "ALLOW",
+            "ALERT",
+            "DENY",
+            null
+          ],
+          "description": "EP3 handoff admission, if built"
+        },
+        "refs": {
+          "$ref": "#/$defs/refs"
+        }
+      }
+    },
+    "policyCheck": {
+      "description": "One deterministic, host-side check of an agent decision against a versioned agent policy (never judged by the model itself).",
+      "type": "object",
+      "required": [
+        "policy_id",
+        "policy_version",
+        "title",
+        "result",
+        "basis"
+      ],
+      "properties": {
+        "policy_id": {
+          "type": "string"
+        },
+        "policy_version": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "ALIGNED",
+            "VIOLATION",
+            "NOT_APPLICABLE",
+            "UNKNOWN"
+          ]
+        },
+        "basis": {
+          "type": "string"
+        },
+        "refs": {
+          "$ref": "#/$defs/refs"
+        },
+        "checked_by": {
+          "type": "string"
+        },
+        "checked_at": {
+          "$ref": "#/$defs/utc"
+        }
+      }
+    },
+    "decision": {
+      "description": "ifabric.decision/v1: one agent's decision, as a STRUCTURED FINAL ANSWER plus host-side checks. Traces observable steps (inputs, tools, model calls, cited evidence, disposition). Never contains private model reasoning (think-tags are stripped and never stored).",
+      "type": "object",
+      "required": [
+        "schema",
+        "decision_id",
+        "cid",
+        "agent",
+        "zone",
+        "step",
+        "intent",
+        "evidence_consulted",
+        "disposition",
+        "rationale",
+        "policy_checks",
+        "model_calls",
+        "emitted_at",
+        "provenance"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.decision/v1"
+        },
+        "decision_id": {
+          "type": "string"
+        },
+        "cid": {
+          "type": "string"
+        },
+        "trace_id": {
+          "type": "string"
+        },
+        "agent": {
+          "type": "string"
+        },
+        "zone": {
+          "enum": [
+            "customer",
+            "it",
+            "network",
+            "assurance"
+          ]
+        },
+        "step": {
+          "type": "integer"
+        },
+        "intent": {
+          "type": "string",
+          "description": "the task the agent was asked to do (ledger INTENT record)"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/textWithRefs"
+          },
+          "description": "what it received from the previous hop"
+        },
+        "evidence_consulted": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ref",
+              "summary"
+            ],
+            "properties": {
+              "ref": {
+                "$ref": "#/$defs/ref"
+              },
+              "tool": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "declared_tool": {
+                "type": "boolean"
+              },
+              "status": {
+                "enum": [
+                  "OK",
+                  "EMPTY",
+                  "ERROR",
+                  "DENIED"
+                ]
+              }
+            }
+          }
+        },
+        "disposition": {
+          "enum": [
+            "auto-resolve",
+            "gather-evidence",
+            "escalate",
+            "handoff",
+            "halted-by-budget",
+            "refused",
+            "undetermined"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 400,
+          "description": "the agent's own one-paragraph justification, a required field of its final structured answer; cites evidence ids"
+        },
+        "cited_evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ref"
+          }
+        },
+        "named_evidence_needed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "S2: the evidence that would separate the candidate root causes"
+        },
+        "reversible_action": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "proposed_action": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "action_executed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "what was actually executed (agents have no change tool: null). Claimed vs executed is checked in outcome validation"
+        },
+        "handoff_to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "policy_checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/policyCheck"
+          }
+        },
+        "model_calls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "call ids (gateway action ids) used for this decision"
+        },
+        "emitted_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "ledger_refs": {
+          "$ref": "#/$defs/refs"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "outcomeValidation": {
+      "description": "OUTCOME VALIDATION: the run's result checked against an INDEPENDENT expectation (scenario spec / ground truth), not against the agent's own claim.",
+      "type": "object",
+      "required": [
+        "scenario",
+        "expected",
+        "actual",
+        "result",
+        "checks"
+      ],
+      "properties": {
+        "scenario": {
+          "type": "string"
+        },
+        "expected": {
+          "type": "object",
+          "required": [
+            "disposition",
+            "source"
+          ],
+          "properties": {
+            "disposition": {
+              "type": "string"
+            },
+            "requirements": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "source": {
+              "$ref": "#/$defs/ref"
+            }
+          }
+        },
+        "actual": {
+          "type": "object",
+          "required": [
+            "disposition"
+          ],
+          "properties": {
+            "disposition": {
+              "type": "string"
+            },
+            "by": {
+              "type": "string"
+            },
+            "decision_ref": {
+              "$ref": "#/$defs/ref"
+            }
+          }
+        },
+        "result": {
+          "enum": [
+            "VALIDATED",
+            "PARTIAL",
+            "FAILED",
+            "UNKNOWN"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "check",
+              "result"
+            ],
+            "properties": {
+              "check": {
+                "type": "string"
+              },
+              "result": {
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  "UNKNOWN",
+                  "NOT_APPLICABLE"
+                ]
+              },
+              "detail": {
+                "type": "string"
+              },
+              "refs": {
+                "$ref": "#/$defs/refs"
+              }
+            }
+          }
+        },
+        "ground_truth": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "$ref": "#/$defs/ref"
+            },
+            "statement": {
+              "type": "string"
+            },
+            "agrees": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "claimed_vs_executed": {
+          "type": "object",
+          "properties": {
+            "claimed": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "executed": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "consistent": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "diagnostic": {
+          "type": "object",
+          "description": "score-run.py result, shown as a DIAGNOSTIC only (it is not the judging rubric)",
+          "properties": {
+            "tool": {
+              "type": "string"
+            },
+            "score": {
+              "type": "string"
+            },
+            "ref": {
+              "$ref": "#/$defs/ref"
+            }
+          }
+        }
+      }
+    },
+    "adversarialCase": {
+      "description": "ifabric.adversarial-case/v1: attack -> expected defence -> observed -> evidence -> what broke / what changed.",
+      "type": "object",
+      "required": [
+        "schema",
+        "case_id",
+        "alert_level",
+        "title",
+        "attack",
+        "target",
+        "expected_defence",
+        "observed",
+        "outcome",
+        "evidence_refs",
+        "what_broke",
+        "what_changed",
+        "run_at",
+        "provenance"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.adversarial-case/v1"
+        },
+        "case_id": {
+          "type": "string"
+        },
+        "alert_level": {
+          "enum": [
+            "ALERT0_VANILLA",
+            "ALERT1_HOSTILE",
+            "ALERT2_ROGUE"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "attack": {
+          "type": "string"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "ep": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "control": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "expected_defence": {
+          "type": "string"
+        },
+        "observed": {
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "DEFENDED",
+            "DETECTED",
+            "BROKE_FIXED",
+            "BROKE_OPEN",
+            "NOT_RUN"
+          ]
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/refs"
+        },
+        "what_broke": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "what_changed": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retest_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "generated_by": {
+          "type": "string"
+        },
+        "run_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "gap": {
+      "description": "ifabric.gap/v1: one gap-list entry (what / why / affects / impact / next / status).",
+      "type": "object",
+      "required": [
+        "schema",
+        "gap_id",
+        "section",
+        "title",
+        "what",
+        "why",
+        "affects",
+        "impact",
+        "next",
+        "status"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.gap/v1"
+        },
+        "gap_id": {
+          "type": "string"
+        },
+        "section": {
+          "enum": [
+            "A",
+            "B"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "what": {
+          "type": "string"
+        },
+        "why": {
+          "type": "string"
+        },
+        "affects": {
+          "type": "object",
+          "properties": {
+            "controls": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "claim": {
+              "type": "boolean"
+            },
+            "levels": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "auditor_questions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "impact": {
+          "type": "string"
+        },
+        "next": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "OPEN",
+            "MITIGATED",
+            "CLOSED"
+          ]
+        },
+        "refs": {
+          "$ref": "#/$defs/refs"
+        }
+      }
+    },
+    "enforcementPoint": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "transport",
+        "can_refuse",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "model-gateway",
+            "sdk-interceptor",
+            "sub-agent-handoff",
+            "human-approval-queue",
+            "kill-switch",
+            "tool-call"
+          ]
+        },
+        "transport": {
+          "enum": [
+            "evaluate",
+            "emit",
+            "callback",
+            "pull",
+            "out-of-band"
+          ]
+        },
+        "can_refuse": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "BUILT",
+            "BUILT_WAITING",
+            "ALERT_ONLY",
+            "EVIDENCED",
+            "PLANNED",
+            "NOT_BUILT",
+            "NOT_RUN"
+          ]
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "changed_adapter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unchanged_core": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/refs"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "registerControl": {
+      "type": "object",
+      "required": [
+        "ref",
+        "id",
+        "name",
+        "mode",
+        "version",
+        "version_date",
+        "owner",
+        "metric",
+        "observation_limit",
+        "exception_tolerance",
+        "measurement_basis",
+        "enforcement_point",
+        "justification",
+        "governance"
+      ],
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/controlRef"
+        },
+        "id": {
+          "$ref": "#/$defs/controlId"
+        },
+        "child_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/controlMode"
+        },
+        "version": {
+          "type": "string"
+        },
+        "version_date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "owner": {
+          "$ref": "#/$defs/person"
+        },
+        "statement": {
+          "type": "string"
+        },
+        "metric": {
+          "type": "string"
+        },
+        "observation_limit": {
+          "$ref": "#/$defs/limit"
+        },
+        "exception_tolerance": {
+          "$ref": "#/$defs/limit"
+        },
+        "secondary_limits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/limit"
+          }
+        },
+        "baseline": {
+          "type": "string"
+        },
+        "measurement_basis": {
+          "type": "string"
+        },
+        "enforcement_point": {
+          "type": "string"
+        },
+        "applicability": {
+          "type": "string"
+        },
+        "frequency": {
+          "type": "string"
+        },
+        "test_procedure": {
+          "type": "string"
+        },
+        "evidence_artefacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "justification": {
+          "type": "object",
+          "required": [
+            "why_this_metric",
+            "why_this_value",
+            "how_measured",
+            "when_it_stops_holding"
+          ],
+          "properties": {
+            "why_this_metric": {
+              "type": "string"
+            },
+            "why_this_value": {
+              "type": "string"
+            },
+            "how_measured": {
+              "type": "string"
+            },
+            "when_it_stops_holding": {
+              "type": "string"
+            }
+          }
+        },
+        "governance": {
+          "type": "object",
+          "required": [
+            "objective",
+            "risk",
+            "control_test",
+            "evidence"
+          ],
+          "properties": {
+            "objective": {
+              "type": "string"
+            },
+            "risk": {
+              "type": "string"
+            },
+            "control_test": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "string"
+            }
+          }
+        },
+        "risk_rating": {
+          "type": "object",
+          "properties": {
+            "inherent": {
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH"
+              ]
+            },
+            "residual": {
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH"
+              ]
+            },
+            "basis": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "packIndex": {
+      "description": "ifabric.pack-index/v1: the console's table of contents for one Evidence Pack, generated by `prooflab pack index`. Every path the console may open is listed here (allow-list).",
+      "type": "object",
+      "required": [
+        "schema",
+        "generated_at",
+        "provenance",
+        "pack",
+        "claim",
+        "register",
+        "artefacts",
+        "named_runs",
+        "runs",
+        "findings",
+        "answers",
+        "auditor",
+        "adversarial",
+        "gaps",
+        "levels",
+        "enforcement_points",
+        "integrity"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.pack-index/v1"
+        },
+        "generated_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "pack": {
+          "type": "object",
+          "required": [
+            "title",
+            "team",
+            "event_window",
+            "as_of"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "team": {
+              "type": "string"
+            },
+            "event_window": {
+              "type": "object",
+              "required": [
+                "start",
+                "end"
+              ],
+              "properties": {
+                "start": {
+                  "$ref": "#/$defs/utc"
+                },
+                "end": {
+                  "$ref": "#/$defs/utc"
+                }
+              }
+            },
+            "as_of": {
+              "$ref": "#/$defs/utc"
+            },
+            "judging_starts_at": {
+              "$ref": "#/$defs/utc"
+            },
+            "response_cutoff": {
+              "$ref": "#/$defs/utc"
+            }
+          }
+        },
+        "claim": {
+          "type": "object",
+          "required": [
+            "id",
+            "text",
+            "verdict",
+            "summary",
+            "controls"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            },
+            "verdict": {
+              "$ref": "#/$defs/claimVerdict"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "controls": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "ref",
+                  "id",
+                  "name",
+                  "mode",
+                  "verdict_overall",
+                  "completeness"
+                ],
+                "properties": {
+                  "ref": {
+                    "$ref": "#/$defs/controlRef"
+                  },
+                  "id": {
+                    "$ref": "#/$defs/controlId"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "$ref": "#/$defs/controlMode"
+                  },
+                  "verdict_overall": {
+                    "$ref": "#/$defs/verdict"
+                  },
+                  "pass": {
+                    "type": "object"
+                  },
+                  "breach": {
+                    "type": "object"
+                  },
+                  "completeness": {
+                    "type": "object",
+                    "required": [
+                      "a_register",
+                      "b_bound_records",
+                      "c_evaluator",
+                      "d_named_runs",
+                      "e_owner_alerted",
+                      "f_query_under_2min",
+                      "g_gaps_recorded"
+                    ],
+                    "properties": {
+                      "a_register": {
+                        "type": "boolean"
+                      },
+                      "b_bound_records": {
+                        "type": "boolean"
+                      },
+                      "c_evaluator": {
+                        "type": "boolean"
+                      },
+                      "d_named_runs": {
+                        "type": "boolean"
+                      },
+                      "e_owner_alerted": {
+                        "type": "boolean"
+                      },
+                      "f_query_under_2min": {
+                        "type": "boolean"
+                      },
+                      "g_gaps_recorded": {
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "findings_open": {
+                    "type": "integer"
+                  },
+                  "built_properly": {
+                    "type": "boolean"
+                  },
+                  "actually_worked": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "register": {
+          "type": "object",
+          "required": [
+            "version",
+            "sha256",
+            "frozen_at",
+            "owner",
+            "builder",
+            "approval",
+            "first_assessed_run_at",
+            "controls"
+          ],
+          "properties": {
+            "version": {
+              "type": "string"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "frozen_at": {
+              "$ref": "#/$defs/utc"
+            },
+            "owner": {
+              "$ref": "#/$defs/person"
+            },
+            "builder": {
+              "$ref": "#/$defs/person"
+            },
+            "assurance": {
+              "$ref": "#/$defs/person"
+            },
+            "approval": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "APPROVED",
+                    "PENDING",
+                    "MISSING"
+                  ]
+                },
+                "ref": {
+                  "$ref": "#/$defs/ref"
+                },
+                "requested_at": {
+                  "$ref": "#/$defs/utc"
+                },
+                "at": {
+                  "$ref": "#/$defs/utc"
+                },
+                "approver": {
+                  "$ref": "#/$defs/person"
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            },
+            "first_assessed_run_at": {
+              "$ref": "#/$defs/utcOrNull"
+            },
+            "exploratory_runs": {
+              "type": "integer"
+            },
+            "versions": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "controls": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/registerControl"
+              }
+            }
+          }
+        },
+        "artefacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "path",
+              "present"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "present": {
+                "type": "boolean"
+              },
+              "sha256": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/sha256"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "named_runs": {
+          "type": "object",
+          "required": [
+            "written_at",
+            "entries"
+          ],
+          "properties": {
+            "written_at": {
+              "$ref": "#/$defs/utc"
+            },
+            "register_version": {
+              "type": "string"
+            },
+            "entries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "control",
+                  "expected",
+                  "scope"
+                ],
+                "properties": {
+                  "control": {
+                    "$ref": "#/$defs/controlRef"
+                  },
+                  "expected": {
+                    "enum": [
+                      "PASS",
+                      "BREACH"
+                    ]
+                  },
+                  "scope": {
+                    "$ref": "#/$defs/scope"
+                  },
+                  "observed": {
+                    "$ref": "#/$defs/verdict"
+                  },
+                  "answer_ref": {
+                    "$ref": "#/$defs/ref"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "alias",
+              "cid",
+              "provenance"
+            ],
+            "properties": {
+              "alias": {
+                "type": "string"
+              },
+              "cid": {
+                "type": "string"
+              },
+              "scenario": {
+                "type": "string"
+              },
+              "purpose": {
+                "type": "string"
+              },
+              "provenance": {
+                "$ref": "#/$defs/provenance"
+              },
+              "started_at": {
+                "$ref": "#/$defs/utc"
+              },
+              "ended_at": {
+                "$ref": "#/$defs/utc"
+              },
+              "tokens": {
+                "type": "integer"
+              },
+              "verdicts": {
+                "type": "object"
+              },
+              "run_ref": {
+                "$ref": "#/$defs/ref"
+              }
+            }
+          }
+        },
+        "assessments": {
+          "type": "array"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "finding_id",
+              "control_ref",
+              "verdict"
+            ],
+            "properties": {
+              "finding_id": {
+                "type": "string"
+              },
+              "control_ref": {
+                "$ref": "#/$defs/controlRef"
+              },
+              "scope_id": {
+                "type": "string"
+              },
+              "verdict": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "incident": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "delivery_state": {
+                "type": "string"
+              },
+              "response_state": {
+                "type": "string"
+              },
+              "response_actor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "response_at": {
+                "$ref": "#/$defs/utcOrNull"
+              },
+              "assurance_state": {
+                "type": "string"
+              },
+              "assurance_reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "closure": {
+                "type": "object"
+              },
+              "deficiency": {
+                "enum": [
+                  "design",
+                  "operation",
+                  "both",
+                  null
+                ]
+              }
+            }
+          }
+        },
+        "answers": {
+          "type": "array"
+        },
+        "auditor": {
+          "type": "array"
+        },
+        "adversarial": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/adversarialCase"
+          }
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gap"
+          }
+        },
+        "levels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "level",
+              "status",
+              "items"
+            ],
+            "properties": {
+              "level": {
+                "enum": [
+                  "L1_FOUNDATION",
+                  "L2_OBSERVABILITY",
+                  "L3_EXTENDED_CHAIN"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "VERIFIED",
+                  "PARTIAL",
+                  "NOT_SHOWN"
+                ]
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/textWithRefs"
+                }
+              }
+            }
+          }
+        },
+        "environments": {
+          "type": "array"
+        },
+        "enforcement_points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/enforcementPoint"
+          }
+        },
+        "integrity": {
+          "type": "object",
+          "required": [
+            "manifest_sha256",
+            "files",
+            "status"
+          ],
+          "properties": {
+            "manifest_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "files": {
+              "type": "integer"
+            },
+            "verified_at": {
+              "$ref": "#/$defs/utc"
+            },
+            "status": {
+              "enum": [
+                "VERIFIED",
+                "MODIFIED",
+                "UNVERIFIED"
+              ]
+            },
+            "changed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "unlisted": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "corroboration": {
+              "type": "object",
+              "properties": {
+                "calls_total": {
+                  "type": "integer"
+                },
+                "calls_two_plus_surfaces": {
+                  "type": "integer"
+                }
+              }
+            },
+            "submission": {
+              "type": "object",
+              "properties": {
+                "bucket": {
+                  "type": "string"
+                },
+                "key": {
+                  "type": "string"
+                },
+                "etag": {
+                  "type": "string"
+                },
+                "version_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "uploaded_at": {
+                  "$ref": "#/$defs/utc"
+                },
+                "readback_verified": {
+                  "type": "boolean"
+                },
+                "readback_at": {
+                  "$ref": "#/$defs/utcOrNull"
+                }
+              }
+            }
+          }
+        },
+        "cases": {
+          "description": "Every ServiceNow case snapshot in the pack (ifabric.servicenow.case/v1, written by the evaluator loop's case --out, 08 §7.1). GET /api/v1/cases serves only these paths.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "finding_id",
+              "incident",
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "finding_id": {
+                "type": "string"
+              },
+              "incident": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "consoleAction": {
+      "description": "ifabric.console-action/v1: one operator request and its lifecycle (P2). The console writes REQUESTED; only the actuator writes later states. Append-only in evidence/console/actions.jsonl.",
+      "type": "object",
+      "required": [
+        "schema",
+        "action_id",
+        "kind",
+        "state",
+        "requested_by",
+        "requested_at",
+        "reason",
+        "params"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ifabric.console-action/v1"
+        },
+        "action_id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "RUN_CONTROLTEST",
+            "SERVICENOW_CHECK",
+            "PACK_SEAL",
+            "PACK_SUBMIT",
+            "RUN_SCENARIO",
+            "KILL_SWITCH_DRILL"
+          ]
+        },
+        "state": {
+          "enum": [
+            "REQUESTED",
+            "ACCEPTED",
+            "REFUSED",
+            "STARTED",
+            "SUCCEEDED",
+            "FAILED"
+          ]
+        },
+        "requested_by": {
+          "type": "object",
+          "required": [
+            "operator",
+            "session"
+          ],
+          "properties": {
+            "operator": {
+              "type": "string"
+            },
+            "session": {
+              "type": "string"
+            }
+          }
+        },
+        "requested_at": {
+          "$ref": "#/$defs/utc"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 3
+        },
+        "params": {
+          "type": "object"
+        },
+        "confirmation": {
+          "type": "string",
+          "description": "the target id the operator typed to confirm intent"
+        },
+        "approved_by": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "operator",
+                "at"
+              ],
+              "properties": {
+                "operator": {
+                  "type": "string"
+                },
+                "at": {
+                  "$ref": "#/$defs/utc"
+                }
+              }
+            }
+          ]
+        },
+        "executed_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "started_at": {
+          "$ref": "#/$defs/utcOrNull"
+        },
+        "effective_at": {
+          "$ref": "#/$defs/utcOrNull"
+        },
+        "finished_at": {
+          "$ref": "#/$defs/utcOrNull"
+        },
+        "argv": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "exit_code": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "outputs": {
+          "$ref": "#/$defs/refs"
+        },
+        "refusal_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

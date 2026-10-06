@@ -1,0 +1,12 @@
+{
+  "control_ref": "C16",
+  "control_id": "ACN-COST-001",
+  "threshold_version": "TEST",
+  "scope_kind": "run",
+  "scope_id": "ADAPTER-WIRING-TEST-1",
+  "verdict": "INDETERMINATE",
+  "summary": "TEST ONLY - adapter wiring check, no real control result",
+  "detected_at": "2026-10-05T08:00:00Z",
+  "evidence": ["test:no-evidence"],
+  "kind": "wiring-test"
+}

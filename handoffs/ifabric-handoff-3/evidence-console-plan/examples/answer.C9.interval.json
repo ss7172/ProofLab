@@ -1,0 +1,548 @@
+{
+  "schema": "ifabric.answer/v1",
+  "answer_id": "16c365eade12b25eee16de7a3bf08e22613c2aeaf53bcb4507e88c2830c9f337",
+  "query": {
+    "text": "Was control 9 satisfied between 23:00Z and 09:00Z?",
+    "normalized": "controltest 9 --from 2026-10-05T23:00:00Z --to 2026-10-06T09:00:00Z",
+    "control_ref": "C9",
+    "scope": {
+      "kind": "interval",
+      "id": "2026-10-05T23:00:00Z..2026-10-06T09:00:00Z",
+      "start": "2026-10-05T23:00:00Z",
+      "end": "2026-10-06T09:00:00Z",
+      "runtime": "ifabric_it_agent"
+    },
+    "grammar_version": "g1"
+  },
+  "answered_at": "2026-10-06T15:20:00Z",
+  "elapsed_ms": 356,
+  "source": {
+    "mode": "PACK",
+    "pack_root": "evidence/",
+    "manifest_sha256": "826b52d007ee90a02338ea48868e7e03b8fc346a443c3709c55bfbc3a6ef91eb",
+    "manifest_status": "VERIFIED",
+    "records_scanned": 214
+  },
+  "provenance": "SYNTHETIC",
+  "control": {
+    "ref": "C9",
+    "id": "AIA-ARC-006",
+    "name": "Drift and performance",
+    "mode": "continuous",
+    "parent_id": "AIA-ARC-006",
+    "child_id": "AIA-ARC-006.01"
+  },
+  "rule": {
+    "register_version": "R-2026-10-05-v1",
+    "threshold_version": "D-v1",
+    "version_date": "2026-10-05",
+    "frozen_at": "2026-10-05T22:10:00Z",
+    "owner": {
+      "name": "Sree Annapurna Rallabandi",
+      "id": "annapurna@invences.com",
+      "role": "accountable management · control owner"
+    },
+    "approval": {
+      "status": "APPROVED",
+      "ref": "servicenow:INC0090201",
+      "at": "2026-10-05T22:31:04Z",
+      "approver": {
+        "name": "Sree Annapurna Rallabandi",
+        "id": "annapurna@invences.com",
+        "role": "accountable management · control owner"
+      }
+    },
+    "date_before_scope": true,
+    "statement": "Hourly maximum invocation latency per agent runtime stays within the allowed relative increase over a frozen baseline; every crossing alerts the named owner.",
+    "observation_limit": {
+      "value": 50,
+      "operator": "<=",
+      "unit": "% relative increase per window",
+      "label": "illustrative drift limit"
+    },
+    "exception_tolerance": {
+      "value": 0,
+      "operator": "<=",
+      "unit": "% violating windows"
+    },
+    "measurement_basis": "CloudWatch AWS/Bedrock-AgentCore Latency Maximum + Errors Sum, period 3600, dimension Name=<runtime>::DEFAULT; query, time range and capture time stored with every value. A missing hour is UNKNOWN (monitoring-gap finding), never healthy.",
+    "source_ref": "register:register/register.yaml@D-v1#C9",
+    "register_sha256": "a6fa581e8e6ce48dc8c2555b2615bb2f8e7ba063c91698f54c4ea526077f9e40",
+    "secondary_limits": [
+      {
+        "value": 100,
+        "operator": ">=",
+        "unit": "% window coverage"
+      }
+    ]
+  },
+  "scope": {
+    "kind": "interval",
+    "id": "2026-10-05T23:00:00Z..2026-10-06T09:00:00Z",
+    "start": "2026-10-05T23:00:00Z",
+    "end": "2026-10-06T09:00:00Z",
+    "runtime": "ifabric_it_agent"
+  },
+  "population": {
+    "expected": {
+      "count": 10,
+      "source": "closed UTC hours in the interval × declared runtime",
+      "ref": "baseline:baselines/B-C9-v1.json"
+    },
+    "observed": 9,
+    "matched": 9,
+    "missing": 1,
+    "unmatched": 0,
+    "duplicates_removed": 0,
+    "blocked": 0,
+    "unmeasurable": 0
+  },
+  "measurement": {
+    "value": 61.0,
+    "unit": "% max relative increase",
+    "formula": "(M − B) / B per closed hour; M = hourly Maximum latency; B = 9,800 ms (B-C9-v1)",
+    "series": [
+      {
+        "id": "W01",
+        "label": "23:00Z",
+        "value": 7.0,
+        "limit": 50,
+        "violates": false,
+        "status": "OK",
+        "start": "2026-10-05T23:00:00Z",
+        "end": "2026-10-06T00:00:00Z",
+        "note": "max 10,486 ms vs baseline 9,800 ms",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-05T23:00:00Z;period=3600"
+      },
+      {
+        "id": "W02",
+        "label": "00:00Z",
+        "value": 61.0,
+        "limit": 50,
+        "violates": true,
+        "status": "VIOLATES",
+        "start": "2026-10-06T00:00:00Z",
+        "end": "2026-10-06T01:00:00Z",
+        "note": "max 15,778 ms vs baseline 9,800 ms → INC0090217 (owner responded)",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T00:00:00Z;period=3600"
+      },
+      {
+        "id": "W03",
+        "label": "01:00Z",
+        "value": null,
+        "limit": 50,
+        "violates": null,
+        "status": "UNKNOWN",
+        "start": "2026-10-06T01:00:00Z",
+        "end": "2026-10-06T02:00:00Z",
+        "note": "no datapoint although invocations occurred → monitoring-gap finding INC0090218",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T01:00:00Z;period=3600"
+      },
+      {
+        "id": "W04",
+        "label": "02:00Z",
+        "value": 15.0,
+        "limit": 50,
+        "violates": false,
+        "status": "OK",
+        "start": "2026-10-06T02:00:00Z",
+        "end": "2026-10-06T03:00:00Z",
+        "note": "max 11,270 ms vs baseline 9,800 ms",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T02:00:00Z;period=3600"
+      },
+      {
+        "id": "W05",
+        "label": "03:00Z",
+        "value": 8.0,
+        "limit": 50,
+        "violates": false,
+        "status": "OK",
+        "start": "2026-10-06T03:00:00Z",
+        "end": "2026-10-06T04:00:00Z",
+        "note": "max 10,584 ms vs baseline 9,800 ms",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T03:00:00Z;period=3600"
+      },
+      {
+        "id": "W06",
+        "label": "04:00Z",
+        "value": 3.0,
+        "limit": 50,
+        "violates": false,
+        "status": "OK",
+        "start": "2026-10-06T04:00:00Z",
+        "end": "2026-10-06T05:00:00Z",
+        "note": "max 10,094 ms vs baseline 9,800 ms",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T04:00:00Z;period=3600"
+      },
+      {
+        "id": "W07",
+        "label": "05:00Z",
+        "value": 6.0,
+        "limit": 50,
+        "violates": false,
+        "status": "OK",
+        "start": "2026-10-06T05:00:00Z",
+        "end": "2026-10-06T06:00:00Z",
+        "note": "max 10,388 ms vs baseline 9,800 ms",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T05:00:00Z;period=3600"
+      },
+      {
+        "id": "W08",
+        "label": "06:00Z",
+        "value": 1.0,
+        "limit": 50,
+        "violates": false,
+        "status": "OK",
+        "start": "2026-10-06T06:00:00Z",
+        "end": "2026-10-06T07:00:00Z",
+        "note": "max 9,898 ms vs baseline 9,800 ms",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T06:00:00Z;period=3600"
+      },
+      {
+        "id": "W09",
+        "label": "07:00Z",
+        "value": 4.0,
+        "limit": 50,
+        "violates": false,
+        "status": "OK",
+        "start": "2026-10-06T07:00:00Z",
+        "end": "2026-10-06T08:00:00Z",
+        "note": "max 10,192 ms vs baseline 9,800 ms",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T07:00:00Z;period=3600"
+      },
+      {
+        "id": "W10",
+        "label": "08:00Z",
+        "value": 9.0,
+        "limit": 50,
+        "violates": false,
+        "status": "OK",
+        "start": "2026-10-06T08:00:00Z",
+        "end": "2026-10-06T09:00:00Z",
+        "note": "max 10,682 ms vs baseline 9,800 ms",
+        "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T08:00:00Z;period=3600"
+      }
+    ]
+  },
+  "comparison": {
+    "limit": 50,
+    "operator": "<=",
+    "delta": 11.0,
+    "within_limit": false,
+    "exceptions_count": 1,
+    "exceptions_allowed": 0,
+    "exceptions_unit": "% violating windows",
+    "exception_fraction": 11.1,
+    "secondary": [
+      {
+        "name": "window coverage",
+        "limit": 100,
+        "operator": ">=",
+        "unit": "%",
+        "measured": 90.0
+      }
+    ]
+  },
+  "exceptions": [
+    {
+      "id": "W02",
+      "value": 61.0,
+      "why": "00:00Z: +61.0% > 50%"
+    },
+    {
+      "id": "W03",
+      "value": null,
+      "why": "missing window = UNKNOWN (not healthy) → monitoring-gap finding"
+    }
+  ],
+  "verdict": {
+    "value": "BREACHED",
+    "label": "NOT SATISFIED",
+    "reason": "1 of 9 measured windows over +50% (0% allowed) and 1 window UNKNOWN. Detection working does not erase the breach.",
+    "evidence_sufficiency": "PARTIAL",
+    "built_properly": true,
+    "actually_worked": false
+  },
+  "enforcement": {
+    "mode": "POST_RUN",
+    "tester": {
+      "name": "prooflab.evaluators.c9.test",
+      "version": "git:3f9a1c2"
+    },
+    "evaluator": null,
+    "inline_decisions": [],
+    "stop_records": []
+  },
+  "audit_question": {
+    "what_was_done": {
+      "text": "Hourly drift test of ifabric_it_agent latency over 10 closed UTC hours.",
+      "refs": [
+        "baseline:baselines/B-C9-v1.json"
+      ]
+    },
+    "by_which_agent": {
+      "text": "Measured runtime: ifabric_it_agent (AgentCore); test run by the scheduled C9 job.",
+      "refs": []
+    },
+    "where": {
+      "text": "CloudWatch AWS/Bedrock-AgentCore, Latency (Maximum) per runtime, period 3600 s.",
+      "refs": [
+        "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-05T23:00:00Z;period=3600"
+      ]
+    },
+    "when": {
+      "text": "2026-10-05T23:00:00Z → 2026-10-06T09:00:00Z (CloudWatch clock; closed hours only).",
+      "refs": []
+    },
+    "under_whose_authority": {
+      "text": "Scheduled pull by the C9 job using the participant role (read-only); baseline frozen with the register.",
+      "refs": []
+    },
+    "rule_checked": {
+      "text": "C9 AIA-ARC-006 · D-v1: relative increase ≤ 50% per window; 0% violating windows; 100% window coverage.",
+      "refs": [
+        "register:register/register.yaml@D-v1#C9"
+      ]
+    },
+    "limit_in_force": {
+      "text": "D-v1 dated 2026-10-05, frozen 22:10Z, approved by Sree 22:31Z (INC0090201) — before the first window (23:00Z) ✓. Baseline B-C9-v1 frozen from earlier healthy hours.",
+      "refs": [
+        "servicenow:INC0090201",
+        "baseline:baselines/B-C9-v1.json"
+      ]
+    },
+    "decision": {
+      "text": "Continuous control: verdict per closed window; every crossing alerted the named owner.",
+      "refs": [],
+      "outcome": "ALLOWED"
+    },
+    "who_was_told": {
+      "text": "W02 crossing → INC0090217 (owner RESPONDED 01:12:44Z). W03 missing → INC0090218 monitoring gap (NO_RESPONSE_OBSERVED; Assurance Agent REFUSED, reason shown).",
+      "refs": [
+        "servicenow:INC0090217",
+        "servicenow:INC0090218"
+      ]
+    },
+    "unchanged_since": {
+      "text": "Each window stores the exact CloudWatch query, the statistic, the unit and the capture time; values hashed in MANIFEST.",
+      "refs": [
+        "manifest:MANIFEST.json"
+      ]
+    }
+  },
+  "human_loops": [
+    {
+      "finding_id": "ifabric:C9:D-v1:window:2026-10-06T00:finding",
+      "incident": "INC0090217",
+      "owner": {
+        "name": "Sree Annapurna Rallabandi",
+        "id": "annapurna@invences.com",
+        "role": "accountable management · control owner"
+      },
+      "delivery": {
+        "state": "DELIVERED",
+        "at": "2026-10-06T01:05:22Z"
+      },
+      "response": {
+        "state": "RESPONDED",
+        "actor": "Sree Annapurna Rallabandi",
+        "at": "2026-10-06T01:12:44Z",
+        "cutoff": "2026-10-06T14:00:00Z"
+      },
+      "assurance_agent": {
+        "state": "WRITTEN",
+        "at": "2026-10-06T01:06:10Z",
+        "backend": "agentcore:ifabric_assurance_agent",
+        "model_alias": "nemotron-super-120b",
+        "action_ids": [
+          "agw-58aa0c31"
+        ],
+        "reason": null
+      },
+      "closure": {
+        "state": "OPEN",
+        "retest_ref": null,
+        "at": null
+      },
+      "case_ref": "servicenow:cases/ifabric_C9_D-v1_window_2026-10-06T00_finding.json"
+    },
+    {
+      "finding_id": "ifabric:C9:D-v1:window:2026-10-06T01:monitoring-gap",
+      "incident": "INC0090218",
+      "owner": {
+        "name": "Sree Annapurna Rallabandi",
+        "id": "annapurna@invences.com",
+        "role": "accountable management · control owner"
+      },
+      "delivery": {
+        "state": "DELIVERED",
+        "at": "2026-10-06T02:05:20Z"
+      },
+      "response": {
+        "state": "NO_RESPONSE_OBSERVED",
+        "actor": null,
+        "at": null,
+        "cutoff": "2026-10-06T14:00:00Z"
+      },
+      "assurance_agent": {
+        "state": "REFUSED",
+        "at": "2026-10-06T02:06:02Z",
+        "backend": "agentcore:ifabric_assurance_agent",
+        "model_alias": "nemotron-super-120b",
+        "action_ids": [
+          "agw-90d1e2aa",
+          "agw-90d1e2ab"
+        ],
+        "reason": "facts differ from the finding: 'Next step' is not the policy sentence for INDETERMINATE (attempt 2/2)"
+      },
+      "closure": {
+        "state": "OPEN",
+        "retest_ref": null,
+        "at": null
+      },
+      "case_ref": "servicenow:cases/ifabric_C9_D-v1_window_2026-10-06T01_monitoring-gap.json"
+    }
+  ],
+  "aict": {
+    "status": "DISCOVERED",
+    "connection": "iFabric Hackathon 2026",
+    "assets": [
+      "ifabric_customer_agent",
+      "ifabric_it_agent",
+      "ifabric_network_agent",
+      "ifabric_assurance_agent"
+    ],
+    "last_import_at": "2026-10-06T13:45:00Z",
+    "monitor": "NONE",
+    "refs": [
+      "aict:inventory/2026-10-06T13-45Z.json",
+      "raw:raw/cloudtrail/assumerole-SgcAictReadOnlyAccessRole.json"
+    ]
+  },
+  "records": [
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-05T23:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W01 23:00Z: +7.0%"
+    },
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T00:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W02 00:00Z: +61.0%"
+    },
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T01:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W03 01:00Z: UNKNOWN"
+    },
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T02:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W04 02:00Z: +15.0%"
+    },
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T03:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W05 03:00Z: +8.0%"
+    },
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T04:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W06 04:00Z: +3.0%"
+    },
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T05:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W07 05:00Z: +6.0%"
+    },
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T06:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W08 06:00Z: +1.0%"
+    },
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T07:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W09 07:00Z: +4.0%"
+    },
+    {
+      "ref": "cloudwatch:AWS/Bedrock-AgentCore/Latency;Name=ifabric_it_agent::DEFAULT;stat=Maximum;start=2026-10-06T08:00:00Z;period=3600",
+      "role": "measurement",
+      "surface": "agentcore-metrics",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A"
+      ],
+      "summary": "W10 08:00Z: +9.0%"
+    }
+  ],
+  "gaps": [
+    {
+      "id": "B8",
+      "text": "Hourly granularity: an hourly maximum is never presented as the latency of one specific run.",
+      "affects": "C9"
+    }
+  ],
+  "tickmarks": {
+    "R": "Recomputed from raw records by the evaluator (pure function of facts + frozen register)",
+    "A": "Agreed to source: raw capture sha256 is listed in MANIFEST.json",
+    "T": "Traced: the same call/event found on >= 2 independent surfaces by its join keys",
+    "V": "Vouched: owner approval of this rule is dated before the scope began"
+  },
+  "links": {}
+}

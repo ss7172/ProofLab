@@ -1,0 +1,481 @@
+Building a Trustworthy AI System
+Accenture lightning talk: slide text, full speaker notes and image descriptions, extracted from the deck
+Speakers: Emmanuel Munguia Tapia and Jay Subrahmonia (Accenture Trustworthy AI)
+Source: /Users/satyabratsrikumar/Downloads/Accenture_lightning_talk_v6.pptx
+Saved copy: hackathon-context/sources/Accenture_lightning_talk_v6.pptx (502,662 bytes, SHA-256 4738f2e4fbae42bb37a0a8c1f4cc6227b9c3f3b963ad5403cc304072ebded852;
+  byte-identical to the source, checked with cmp)
+Date saved: 2026-10-05
+Deck metadata (docProps): 11 slides, 11 notes pages, 0 hidden; file title "Trustworthy AI: From
+  Governance to Real-Time Assurance"; created 2026-10-03T02:18:23Z, last modified
+  2026-10-05T17:32:22Z by e.munguia.tapia.
+
+How this was extracted: slide order from ppt/presentation.xml; slide text = every <a:t> run in
+shape (z) order, groups included, XML entities decoded; slide-number fields omitted; "Notes:" =
+the notes body placeholder, verbatim and complete. The "›" lines are the deck's own arrow glyphs
+between steps. Two independent audits (an XML-tree pass and a raw-XML regex pass) confirmed that
+every text run of every slide (slide numbers aside) and of every notes body appears below.
+
+Images: the deck has 18 PNG files in ppt/media/. The 13 icons on slides 4, 6 and 7 carry meaning
+and are described under their slide ("Images" blocks; each mapped by its position to the label it
+sits next to). The other 5 are decorative layout art, not repeated per slide: image1.png (purple
+background with chevron outlines; title and closing layouts, slides 1 and 11), image2.png (purple
+background with double chevron outlines; section-divider layout, slides 3 and 8), image3.png
+(white Accenture ">" mark; slides 3 and 8), image4.png (pastel lilac-to-peach header wash) and
+image5.png (purple Accenture ">" mark), both on the content layout (slides 2, 4-7, 9, 10). No
+image contains text; the diagrams on slides 4-7 are native slide shapes, so their text is below.
+
+Extractor notes (not deck content):
+- The notes are written for a 30-minute talk in four parts (Part 2 "GRC foundations" and Part 3
+  "risk", then Control Plane / Switchboard slides after the modules). This v6 deck has only Part 1
+  and the offering (labelled Part 2 on slide 8 and Part 4 on slides 9-10), so some notes and
+  transitions point at slides that are not here. Slide 2's agenda lists two items; its notes
+  describe four parts and an idea "in the purple box", which is not on the slide (its only purple
+  shapes are the two number badges).
+- Slide 3's notes are the same text as slide 8's. Slide 7's notes have no TIMING line.
+- Kept verbatim from the source: slide 1 notes "Governance, Risk and : instruments" and slide 5
+  notes "06 Perform AI system : contact owners" (a word is missing in the source); slide 4 notes
+  "Humans over trust With ..."; slide 8 "lifecycle if AI"; slide 10 "tests,, findings".
+
+=== Slide 1 ===
+TRUSTWORTHY AI · LIGHTNING TALK
+Building a Trustworthy AI System
+How AI systems are governed before and in production, and the Accenture offerings that put it into practice.
+Accenture Trustworthy AI
+Emmanuel Munguia Tapia and Jay Subrahmonia
+
+Notes:
+TIMING: 0:45 on this slide | elapsed 0:45 of 30:00
+
+KEY MESSAGE: Trustworthy AI is something you prove, twice: before an AI system goes live and continuously while it runs.
+
+TALKING POINTS:
+- Welcome. Over the next thirty minutes we go from the "why" to the "how" to the "with what".
+- We start with the lifecycle of an AI system, before production and in production.
+- Then a short, practical introduction to Governance, Risk and : instruments, controls, evidence, and how risk behaves for AI.
+- We close with the Accenture Responsible AI offering that operationalises all of it.
+
+TRANSITION: Here is the plan.
+
+=== Slide 2 ===
+BRIEFING · AGENDA
+Agenda
+1
+How do you create a trustworthy AI system?
+2
+Accenture’s Trustworthy AI Offerings
+
+Notes:
+TIMING: 0:45 on this slide | elapsed 1:30 of 30:00
+
+KEY MESSAGE: Four parts. Concepts first, then products, so the products make sense when we get there.
+
+TALKING POINTS:
+- Part 1, the lifecycle: what an organization sets up once, and what every AI system goes through before and after it reaches production.
+- Part 2, GRC foundations: the vocabulary. Instruments, controls, custom and child controls, the five ways a control runs, and why a log is not evidence.
+- Part 3, risk: what happens when a control fails, why the probabilistic nature of AI means risk changes in real time, and why we should choose the risk first and derive the controls from it.
+- Part 4, the Accenture offering.
+- Read the idea in the purple box, and come back to it at the end.
+
+TRANSITION: Let us start with the lifecycle.
+
+=== Slide 3 ===
+PART 1 · INTRODUCTION
+How do you create
+Trustworthy AI?
+
+Notes:
+TIMING: 0:15 on this slide
+
+KEY MESSAGE: Everything we just described maps onto the Accenture Responsible AI platform.
+
+TALKING POINTS:
+- Section divider. Three slides: the ten modules and their offerings across two slides, then the Control Plane and Switchboard that sit underneath.
+
+TRANSITION: The modules at a glance.
+
+=== Slide 4 ===
+PART 1 · THE TRUSTWORTHY AI LIFECYCLE
+Trust is earned twice: before production and in production
+BEFORE PRODUCTION   ·   prove the system is fit for purpose
+IN PRODUCTION  ·  prove it stays fit
+IDEATION &
+INTAKE
+Register the use case, owner and intended purpose
+›
+DESIGN &
+DEVELOPMENT
+Data, models, agents and prompts, versioned and documented
+›
+PRE-PRODUCTION
+TESTING
+Metrics, thresholds, red teaming; pass / fail evidence
+›
+APPROVAL
+GATE
+Report signed off by a named approver
+›
+PRODUCTION &
+MONITORING
+Live metrics, guardrails, alerts, incidents, remediation
+›
+CHANGE OR
+RETIRE
+Re-assess on material change; decommission with records kept
+drift, incidents and regulatory change send the system back to testing
+WHY AI NEEDS ASSURANCE IN BOTH PHASES
+Behaviour is probabilistic
+Performance decays silently
+Humans over-trust the output
+
+Images (extractor description, not slide text):
+- image6.png: purple square-wave (step signal) icon, beside "Behaviour is probabilistic"
+- image7.png: purple clock with a counter-clockwise (rewind) arrow, beside "Performance decays silently"
+- image8.png: purple group-of-three-people icon, beside "Humans over-trust the output"
+
+Notes:
+TIMING: 2:30 on this slide | elapsed 4:00 of 30:00
+
+KEY MESSAGE: A trustworthy AI system has to be proven fit before it goes live, and proven to stay fit while it runs. One without the other is not enough.
+
+TALKING POINTS:
+- Walk the six stages left to right. The first four sit before production: register the use case and owner, build it with versioned data, models, agents and prompts, test it against metrics and thresholds, and pass an approval gate with a named approver.
+- The last two sit in production: monitor live, with guardrails, alerts and remediation, and re-assess on material change or retire with the records kept.
+- Point to the loop. Drift, incidents and regulatory change send a production system back to testing. This is a cycle, not a line.
+- Why both phases? Three properties of AI break the assumptions of classic software controls:
+  1. Behaviour is probabilistic. A model has an error rate as a property of the system. "Correct" is a distribution, not a value.
+  2. Performance decays without any change. Nobody deployed anything; the world moved. That is why monitoring has to be treated as a control, not just an operational one.
+  3. Humans over-trust the output. A human in the loop reliably degrades into confirmation when the system is right most of the time. You can see it in the data: agreement rates climbing, override counts falling.
+- The next two slides show the same journey in more detail: first what the organization sets up once, then what every AI system goes through.
+
+Probabilistic behavior: A model has an error rate, not a bug. “Correct” is a distribution, so pass / fail against a specification has nothing to grip.
+
+Performance decay:  The world moves. Accuracy can degrade with no deployment and no change ticket, so monitoring is a control.
+
+Humans over trust With a system that is usually right, human review drifts into confirmation. Oversight itself has to be measured
+
+TRANSITION: First, the organization level.
+
+=== Slide 5 ===
+PART 1 · STEP 1 · BECOMING RAI COMPLIANT AT THE ORGANIZATION LEVEL
+Setting Up a Responsible AI Organization
+1
+TAKE SELF
+ASSESSMENTS
+›
+STEPS
+Take maturity assessments to uptake AI, GenAI, RAI
+Take readiness assessments for legislation (EU AI Act, NIST, etc.)
+Compare against industry competitors
+2
+SET UP
+GOVERNANCE BODY
+›
+STEPS
+Select CoE members and standards
+Define meeting frequency
+Define reviewers
+Define escalation pathways
+Define organizations by geography
+3
+DEFINE RISK,
+POLICIES & CONTROLS
+›
+STEPS
+Select applicable legislation
+Define acceptable risks
+Define RAI policies
+Define controls
+RAI practitioner enablement
+Define review frequency
+4
+SELECT AI SYSTEMS'
+ASSESSMENTS
+›
+STEPS
+Select assessments to score risk for AI systems
+Select other qualitative assessments
+Select workflow to answer questionnaires
+Select approval process for experimentation and pre-production
+5
+CREATE AI SYSTEMS'
+INVENTORY
+›
+STEPS
+List all AI systems in pre-production
+List all AI systems in production
+Record AI System metadata: industry, AI problem, geography, models, agents, prompt, datasets, owners, etc.
+6
+PERFORM AI SYSTEM
+SETUP
+STEPS
+Contact AI system owners
+Perform AI system risk scoring
+Answer qualitative assessments
+Perform pre-production testing
+Perform continuous monitoring in production
+Steps 1–3 set up GRC: governance body, acceptable risk, policies and controls
+Steps 4–6 apply them to every AI system, before and in production
+
+Notes:
+TIMING: 2:30 on this slide | elapsed 6:30 of 30:00
+
+KEY MESSAGE: Before any individual AI system can be compliant, the organization has to set up the machinery once: governance, acceptable risk, policies and controls, assessments and an inventory.
+
+TALKING POINTS:
+- 01 Take self assessments: maturity to uptake AI, GenAI and RAI; readiness for legislation such as the EU AI Act and NIST; benchmark against competitors.
+- 02 Set up the governance body: CoE members and standards, meeting frequency, reviewers, escalation pathways, and which organizations must comply by geography.
+- 03 Define risk, policies and controls: select applicable legislation, define acceptable risks, define RAI policies and controls, enable practitioners, set review frequency. Note "define acceptable risks" comes before "define controls". We return to that ordering in Part 3.
+- 04 Select AI systems' assessments: which risk scoring and qualitative assessments apply, the workflow to answer them, and the approval process for experimentation and pre-production.
+- 05 Create the AI systems' inventory: every system in pre-production and production, with metadata.
+- 06 Perform AI system : contact owners, score risk, answer assessments, test before production, monitor in production.
+- The strip at the bottom: steps 1 to 3 are GRC set-up; steps 4 to 6 apply it to each AI system.
+
+TRANSITION: Step 6 is where each AI system goes through its own workflow.
+
+=== Slide 6 ===
+PART 1 · STEP 2 · MAKING EVERY DEPLOYED AI SYSTEM RAI COMPLIANT
+Creating a Trustworthy AI System
+BEFORE PRODUCTION
+IN PRODUCTION
+1  PROVIDE AI SYSTEM'S METADATA
+Provide AI system data such as:
+Use case description
+Deployment geography
+AI problems solved
+Models, agents, prompts used
+Test datasets used
+Owners data
+2  ANSWER RISK ASSESSMENTS
+Assign a risk score to the AI system:
+Take one or more risk questionnaires to determine risk level (low, medium, high)
+Questionnaires can follow a specific sequence in a workflow
+3  ANSWER QUALITATIVE ASSESSMENTS
+Provide use-case specific info:
+Take one or more qualitative questionnaires on your use case
+Questionnaires can follow a specific sequence or workflow
+4  PERFORM PRE- PRODUCTION TESTING
+Prove the AI system is well tested:
+Select metrics and thresholds
+Compute metrics over models and agents using test datasets
+Evaluate pass / fail; remediate and re-run until compliant
+Send report for approval
+5  PERFORM CONTINUOUS MONITORING
+Monitor in real time:
+Create guardrails and threshold alerts
+Select and apply remediations in real time
+View monitoring dashboards and alerts
+Create and manage incident reports
+Generate periodic reports
+
+Images (extractor description, not slide text):
+- image9.png: purple outline cube on a base line, for step 1 "PROVIDE AI SYSTEM'S METADATA"
+- image10.png: purple bullseye target, for step 2 "ANSWER RISK ASSESSMENTS"
+- image11.png: purple outline shield, for step 3 "ANSWER QUALITATIVE ASSESSMENTS"
+- image12.png: purple right triangle with rising bars inside, for step 4 "PERFORM PRE- PRODUCTION TESTING"
+- image13.png: purple rising trend line with data points and an up-right arrow, for step 5 "PERFORM CONTINUOUS MONITORING"
+
+Notes:
+TIMING: 2:30 on this slide | elapsed 9:00 of 30:00
+
+KEY MESSAGE: Every AI system goes through five stages. Four happen before production and prove it is fit; the fifth runs for as long as the system is live.
+
+TALKING POINTS:
+- 01 Provide metadata: use case, geography, AI problems solved, models, agents and test datasets. Everything later depends on this record.
+- 02 Answer risk assessments: questionnaires determine a risk level of low, medium or high. That tier decides how much scrutiny follows.
+- 03 Answer qualitative assessments: use-case specific information that a risk score cannot capture.
+- 04 Pre-production testing: choose metrics and thresholds, compute them on test data, evaluate pass or fail, remediate and re-run until compliant, then send the report for approval.
+- 05 Continuous monitoring: guardrails, threshold alerts, real-time remediation, dashboards, incident management and periodic reporting.
+- Notice the words that keep appearing: thresholds, pass / fail, remediation, report, approval. Those are GRC words. To make this workflow defensible we need that vocabulary.
+
+TRANSITION: So, Part 2. What is GRC?
+
+=== Slide 7 ===
+TARGET ARCHITECTURE DESIGN PRINCIPLE
+Maintaining Trustworthy AI in Production
+Centralized governance
+Registry · Policy as code · Audit
+Centralized observability
+Traces · Metrics · Logs · Evals
+Centralized
+responsible AI
+Fairness · Safety · Guardrails
+›
+Classical ML / AI
+fraud · churn · forecasting
+Generative AI
+assistants · RAG · summarization
+Agentic AI
+co-pilots · ops agents · code agents
+AI ARCHITECTURE
+Data & feature plane
+storage · vectors · features
+Model & prompt plane
+registry · prompts · evals
+Serving & gateway plane
+AI gateway · serving · routing
+Agent & orchestration
+agents · tools · memory · MCP
+Cloud foundation  ·  public cloud vendors  ·  private cloud  ·  on-premises Kubernetes
+compute · GPUs · object storage · identity · networking · secrets · logs
+managed Kubernetes  ·  object storage and data lake  ·  cloud identity and directory  ·  key management service  ·  secrets vault
+
+Images (extractor description, not slide text):
+- image14.png: white database (stacked cylinders) icon, for "Data & feature plane"
+- image15.png: white archive-box icon, for "Model & prompt plane"
+- image16.png: white icon of a route between two map pins, for "Serving & gateway plane"
+- image17.png: white robot-head icon, for "Agent & orchestration"
+- image18.png: lilac cloud icon, for the "Cloud foundation" band
+
+Notes:
+KEY MESSAGE: Governance, observability and responsible AI sit outside the AI estate and apply to every kind of AI, on any cloud.
+
+TALKING POINTS:
+- Top row: three kinds of AI the organization runs today, classical ML, generative AI and agentic AI. They differ in risk profile but share the same architecture underneath.
+- Middle: four planes. Data and features; models and prompts; serving and the AI gateway; agents, tools, memory and MCP.
+- Bottom: the cloud foundation. Deliberately vendor-neutral: public cloud vendors, private cloud or on-premises Kubernetes, each providing the same primitives (compute, GPUs, storage, identity, networking, secrets, logs).
+- Left: the three centralized capabilities. They are not tied to any one cloud vendor, so the same registry, the same trace and the same guardrail policy apply wherever the AI runs.
+
+TRANSITION: How do we make one policy apply across many vendor estates?
+
+=== Slide 8 ===
+PART 2 · THE ACCENTURE TRUSTWORTHY AI OFFERINGS
+Accenture's
+Responsible AI Suite
+Platform modules that operationalise the lifecycle if AI
+
+Notes:
+TIMING: 0:15 on this slide
+
+KEY MESSAGE: Everything we just described maps onto the Accenture Responsible AI platform.
+
+TALKING POINTS:
+- Section divider. Three slides: the ten modules and their offerings across two slides, then the Control Plane and Switchboard that sit underneath.
+
+TRANSITION: The modules at a glance.
+
+=== Slide 9 ===
+PART 4 · ACCENTURE RAI OFFERING · MODULES 1–5 OF 10
+The Responsible AI Modules at a Glance (1/2)
+1
+ORG SET-UP
+Regulatory, Organizational & Market Assessments
+Self-assess maturity across organization, regulation and market.
+BEGINNER
+OFFERING
+Assessments library and assessment services
+2
+ORG SET-UP
+Regulations Navigator
+Legislation and policies that apply by country and industry, with effective dates.
+BEGINNER
+OFFERING
+Legislation applicability exploration software
+3
+ORG SET-UP
+AI System Catalog
+Inventory of every AI system and its owners, models, agents and datasets.
+INTERMEDIATE
+OFFERING
+Inventory software and inventory services
+4
+ORG SET-UP
+Inventory Scan
+Scans client clouds to auto-discover deployed models, agents and data sources.
+INTERMEDIATE
+OFFERING
+Scanning software and scanning services
+5
+BEFORE PRODUCTION
+Risk Assessment Companion
+Chatbot that scores AI system risk Low / Medium / High vs AI Instruments such as EU AI Act, NIST, ISO.
+INTERMEDIATE
+OFFERING
+Risk assessment software and assessment services
+
+Notes:
+Risk category in EU Act on AI: prohibited, high-risk, limited-risk (transparency) and minimal-risk.
+
+TIMING: 1:30 on this slide
+
+KEY MESSAGE: The first five modules help an organization understand where it stands, build its inventory and tier each AI system by risk. Each module comes with a software and a services offering.
+
+TALKING POINTS:
+- 1 Regulatory, Organizational and Market Assessments: self-assess maturity across organization, regulation and market. Offering: an assessments library and assessment services.
+- 2 Regulations Navigator: which legislation and policies apply by country and industry, with effective dates. Offering: legislation exploration software.
+- 3 AI System Catalog: the inventory of every AI system with its owners, models and datasets. Offering: inventory software and inventory services.
+- 4 Inventory Scan: scans client clouds to auto-discover deployed models, agents and data sources. Offering: scanning software and services.
+- 5 Risk Assessment Companion: tiers each system low, medium or high against the EU AI Act, NIST and ISO. Offering: risk assessment software and services. This is step 02 of the risk-first approach from Part 3.
+- The maturity tags (beginner, intermediate, advanced) indicate a typical adoption path.
+
+TRANSITION: The next five modules cover testing, monitoring and controls.
+
+=== Slide 10 ===
+PART 4 · ACCENTURE RAI OFFERING · MODULES 6–10 OF 10
+The Responsible AI Modules at a Glance (2/2)
+6
+BEFORE PRODUCTION
+Custom Assessments
+Upload and auto-grade client questionnaires, reusable across approval workflows.
+INTERMEDIATE
+OFFERING
+Custom assessments software and services
+7
+BEFORE PRODUCTION
+RAI Test Enablement
+300+ metrics, thresholds and pre-production tests with reporting.
+ADVANCED
+OFFERING
+Testing suite and testing services
+8
+BEFORE PRODUCTION
+Red Teaming
+Adversarial prompts to identify vulnerabilities in your AI system.
+ADVANCED
+OFFERING
+Red teaming software and services
+9
+IN PRODUCTION
+Continuous Monitoring
+Real-time metric alarms and automatic remediations in production.
+ADVANCED
+OFFERING
+Continuous monitoring software and services
+10
+ACROSS THE LIFECYCLE
+Controls Management
+Control library, risks library applicability, owners, tests,, findings and exceptions.
+INTERMEDIATE
+OFFERING
+Controls and risks library and services
+
+Notes:
+TIMING: 1:30 on this slide
+
+KEY MESSAGE: The remaining five modules prove an AI system is fit before production, keep proving it in production, and manage the controls and risks across the whole lifecycle.
+
+TALKING POINTS:
+- 6 Custom Assessments: client-specific questionnaires and approval workflows. Offering: custom assessments software and services.
+- 7 RAI Test Enablement: metrics against dated thresholds before production. Offering: a testing suite and testing services.
+- 8 Red Teaming: adversarial testing with generated prompts. Offering: red teaming software and services.
+- 9 Continuous Monitoring: live metrics, alarms and automatic remediation. This is the continuous control mode from Part 2 and the real-time risk loop from Part 3. Offering: continuous monitoring software and services.
+- 10 Controls Management: the control and risk library, applicability, owners, tests, evidence, findings and exceptions. Offering: a controls and risks library and services. Note the tag: this module is under development.
+
+TRANSITION: Finally, the infrastructure layer underneath.
+
+=== Slide 11 ===
+Thank you
+Accenture Trustworthy AI
+Emmanuel Munguia Tapia and Jay Subrahmonia
+[e.munguia.tapia@accenture.com]
+
+Notes:
+TIMING: 0:45 | close at 30:00
+
+KEY MESSAGE: Three things to remember.
+
+TALKING POINTS:
+- One: trust is proven twice, before production and continuously in production.
+- Two: a control is something you do that somebody else can check, and what it produces must be evidence a stranger can verify, not just a log.
+- Three: decide the risk you can accept first and derive the controls from it; then watch that risk live, because for AI it moves.
+- Return to the opening idea: a trustworthy AI system is one whose safeguards can be checked by somebody who does not trust you.
+- Thank the audience and open for questions.

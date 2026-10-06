@@ -1,0 +1,140 @@
+# ProofLab · team iFabric · one-page architecture (text version)
+
+This is the text of `architecture/one-page.svg` (1600×1842, self-contained, every text run at least 14 px). It was first written 2026-10-05, gained the risk-and-ownership row the same day at the captain's request, and was redrawn on 2026-10-06 after the two architecture reviews (changes: `architecture/work/11a-phase2-design-changelog.md`). The full design, with sources, is `architecture/ARCHITECTURE.md`.
+
+**For the hand-in:** `submit.sh` packages only `sketch.png` or `sketch.jpg` from WORKDIR. Render the SVG with `rsvg-convert -w 3200 architecture/one-page.svg -o sketch.png` (twice the drawing's size, so the 14 px text stays sharp). `rsvg-convert` is on the laptop.
+
+**Only ONE question sits in the live path: the C16 check before each model call. Before a run, EP-0 may decline to start an assessed run.**
+
+**Claim C-FM-01:** during fault resolution, the three `ifabric-` agents meet our declared event-recording (C7), drift (C9) and token-spend (C16) requirements.
+
+---
+
+## The live path (blue = our code, grey = the platform's)
+
+**Orchestrating script** (laptop, `prooflab run`; ours) · PRE + CONT:
+- mints the run id (CID) and invokes the three agents in sequence (×3);
+- carries the tier, the C16 tally, and the register version and sha256;
+- EP-5 handoffs go to `emit()`, which never blocks (the blue arrow from the script to the `emit()` pill);
+- **EP-0, the optional pre-run gate (D13):** is each agent's running version an approved one? It may decline to **start** an assessed run; inside a run, nothing waits on it.
+
+**AgentCore Runtime (ours):** `ifabric-customer` → `ifabric-it` → `ifabric-network`, on `nemotron-super-120b`; our only code in the model-call path. CONT.
+
+| Inside each agent | What it does |
+|---|---|
+| **EP-1 · THE ONE IN-PATH QUESTION** | Before each model call, `evaluate(C16)`: committed + reserved + bound ≤ cap(tier)? **enforce:** a DENY halts the agent's calls. **observe:** a DENY is recorded; only the safety ceiling halts. The pin is a frozen extract of the register, set in env at deploy |
+| **c16 core** | The evaluator itself, **embedded in the agent** (one file per agent), with the same sha256 as the repo's `c16_core.py`. It returns ALLOW or DENY and the action to take. The red `evaluate()` arrow ends here, **in process**: nothing on the governance side is called |
+| EP-3 tool calls | `emit()` for every call, with its real status (403 / 404) |
+| EP-4 judgment (J2) | `emit()` the disposition, the deciding evidence and the reason |
+| emit client | Async, to THE ONE STORE. It never blocks the agent |
+| Start-up | Fails closed without the keys or the pin |
+
+A grey dashed line labelled **"same function, same sha256"** runs from the c16 core down to the stateless evaluators on the governance side: the same function runs again there, after the run, at EP-2.
+
+**Platform enforcement points (not ours).** They refuse on their own; we pull their decisions into the one store:
+- the `modaas-agw` gateway (one shared key), with:
+  - authz: API key, fail-closed;
+  - the PDP / Cedar tool policy. **We configure one forbid rule (if D15);**
+  - Bedrock guardrails (a block is logged as ALLOW);
+  - rate ceilings: 100 req/min, 2.5M tokens/h;
+  - the kill switch: pause → 404 (logged as ALLOW);
+- admission (CEL + VAP) and approvals;
+- Bedrock Nemotron, reached only through the gateway;
+- AWS AgentCore Gateway → Lambda tools (never touched).
+
+**Telemetry (platform-written; it never judges):**
+- `aws/spans` (30 d): run id, action id and tokens. This is the C16 figure of record;
+- `/modaas/evidence` (30 d): decision and policy version;
+- PDP and gateway pod logs;
+- AgentCore metrics (→ C9);
+- `aict-invocations` (7 d): each invocation carries its CID and session id;
+- CR status and approvals.
+
+**The registry's pinned copy (green dashed arrow, from the control registry up to EP-1):** set at deploy, before the run. The registry is never called in the path.
+
+## One contract · four transports · one record (`ifabric.evidence/1`)
+Every enforcement point reaches us the same way. Every adapter writes the same record: control · version · run · actor · verdict.
+
+| Transport | Meaning | On the sketch |
+|---|---|---|
+| `evaluate()` | Synchronous, in process, C16 only | EP-1 → the c16 core, both inside the agent |
+| `emit()` | Asynchronous records; never waits | From the script (handoffs), from the agents' emit client, and from `callback()`; into THE ONE STORE |
+| `callback()` | A verdict that arrives later: notify, then poll | ServiceNow → `callback()` (the owner's verdict, polled by `check`) → `emit()` → a record |
+| `pull()` | By run id and by time window | Telemetry → `pull()` → the pull adapters |
+
+## The governance side: off the path, always async (laptop hub)
+
+| Component | What it is |
+|---|---|
+| **Control registry** · PRE | `register.yaml` → frozen `v1`, `v1.1` + sha256, in the kit's flat format. **Each control carries its own version and date.** Date proof: the S3 write-once object (T1); the owner's ServiceNow approval corroborates. It hands out a pinned extract and is **never in the path** |
+| **Stitcher** · POST | A pure join over one snapshot, keyed in order: 1 CID · 2 action id · 3 trace id (refusals) · 4 handoff id · 5 CID + session id on the AWS invoke record · 6 finding id → register · 7 actor → inventory (owners). Gaps are join facts |
+| **THE ONE STORE** | The platform ledger `audit-store`: append-only, any JSON. **Every decision:** ours at action time; the platform's normalized, each pointing at its raw source. No update or delete route (D16, pending captain) |
+| **Stateless evaluators** · CONT + POST | `c16`, `c7`, `c9` are pure functions: records + pinned version → verdict. No I/O, no clock, no memory. **The c16 core is the SAME function at EP-1 (inline) and at EP-2 (post-run).** The tester (`assess_run`, `assess_window`) is separate: `Decision` ≠ `Assessment`. The rechecker is written separately |
+| **Pull adapters (collectors)** · CONT + POST | **EP-2: `aws/spans` → the C16 floor, and the same c16 core once per call, post-run** (the green "EP-2 · same c16" arrow into the evaluators). EP-6 PDP + `/modaas/evidence`; EP-7 the real outcome (BLOCKED, 404) next to ALLOW; EP-8 pause; EP-10 CR status; EP-11 metrics and invocations → C9; EP-12 Lambda CodeSha256. By run AND by window; the raw source stays where it is. Their normalized records go into THE ONE STORE |
+| **Evidence Pack** · POST | **Exports of THE ONE STORE:** per run (to S3, with a MANIFEST) plus the final export, with the store's records, the raw captures, the derived files and the assessments, → the versioned team bucket with `MANIFEST.json` (sha256). **REDACTED: no tokens. Copies, never a second store** |
+| **Control test / query tool + dashboard (offline)** · POST | `prooflab query --control C16\|C7\|C9 --run <CID> \| --window T1..T2`. It recomputes every verdict from the pack · exit 0/1/2 · under 2 minutes. Every answer names who is responsible, who acted, and the decision at each EP. The dashboard is static HTML: **a VIEW that sees everything and refuses nothing (not an EP)** |
+
+**The flows:**
+- `emit()` → THE ONE STORE; pull adapters → normalized → THE ONE STORE;
+- THE ONE STORE → stitcher → Evidence Pack; THE ONE STORE → per-run exports → Evidence Pack;
+- Evidence Pack → the control test (it reads the pack only);
+- pull adapters (EP-2) → the evaluators: the same c16, post-run;
+- evaluators → findings → the risk loop → `notify()` → ServiceNow;
+- ServiceNow → the owner's verdict, polled by `check` → `callback()` → `emit()`.
+
+## Risk and ownership (governance side, off the path)
+The chain: **AI inventory → risk register → control registry** (appetite → thresholds) → evaluators → **findings → the risk loop** (residual back to inherent) → remediation → **re-test** → closed. "Decide the risk you can accept first and derive the controls from it; then watch that risk live, because for AI it moves" [Accenture talk, slide 11].
+
+| Component | What it is |
+|---|---|
+| **AI inventory** (`inventory.yaml`) · PRE | Versioned. The system "customer fault resolution", owner Sree. **Risk tier: high, our own 5×5 rating; the EU AI Act class is unverified (OC-21).** Agents, models, tools and prompts, each with an owner and an approved version. **Joined at query time; never in the path** |
+| **Risk register** (`risks.yaml`) · PRE | Frozen and dated with `register.yaml`. R-C16, R-C7, R-C9 and two of ours. Likelihood × severity (5×5) → inherent; the appetite → each threshold; residual; owner. **Decide the risk first** |
+| **Findings → the risk loop** · POST | A failed test → a finding: is the deficiency in design or in operation? The risk is exposed: residual back to inherent. Fix, compensate, or accept (a named approver and an expiry). **Closed ONLY by a passing re-test** |
+| **ServiceNow human loop (EP-13)** · POST | A finding → `notify()` → an incident assigned to the owner (Sree). Her verdict returns through `callback()`: `check` polls it, or records the silence. **Records only; never holds work.** AICT: discovery of our runtimes (observed, not built) |
+| **INV reconciliation** (optional) · CONT | `AIA-INV-001.01`, scheduled; built only after C16, C7 and C9. A `pull()` every hour and before each assessed run compares the CRs and the AICT export with the inventory. No owner, not inventoried, or an unapproved version → a finding, in the same loop |
+| **Five habits** | 1 the telemetry store never judges · 2 the evaluator never remembers · 3 the register is never in the path · 4 the ledger never interprets · 5 seal where made: out of scope (a MANIFEST only) |
+
+**The arrows:** risk register → control registry ("appetite → thresholds"); inventory → risk register; evaluators → findings; the risk loop → risk register ("residual back to inherent"); the risk loop → `notify()` → ServiceNow.
+
+## Control timing layers (before · while · after it runs [slides p13])
+
+| Layer | What runs | Scores |
+|---|---|---|
+| **PRE**: before it runs; may this go live? | C16's cap from the pilots; the register frozen and dated (T1). C7's spec and limits frozen; C9's baseline frozen in `v1.1`. The platform's approvals, admission, Cedar and guardrails. EP-0: running = approved? It may decline to start | APPROVED · dated thresholds · the risk decided first |
+| **CONTINUOUS**: while it runs; is this allowed now? | C16's inline `evaluate()` before each call: the ONE wait. C7's records, emitted as each event happens. C9's near-real-time pull every few minutes: not in the path, and not claimed as the bonus | The continuous-compliance bonus (C16 inline only) |
+| **POST**: after it ran; did it hold between T1 and T2? | C16's floor over `aws/spans` (the figure of record). C7's coverage and gaps; C9 per run and per window. Finding → ServiceNow → fix → a passing re-test. `query --run` / `--window`, offline from the pack | Axis 1 (controls complete) · the two-minute test |
+
+## Five control modes → transport
+
+| Mode | Control | Transport | Status |
+|---|---|---|---|
+| In transaction | C16 inline | `evaluate()` | built |
+| Event driven | C7 | `emit()` (+ pull for the expected set) | built |
+| Continuous | C9 | `pull()` + alerts | built |
+| Scheduled | INV + the hourly pulls | `pull()` | INV optional |
+| Static | Register review | `pull()` | drawn only |
+
+## Every kind of enforcement point (slide 14) → transport
+
+| EP kind | Ours | Transport | Status |
+|---|---|---|---|
+| SDK interceptor in the process | EP-1 | `evaluate()` | built |
+| Managed gateway: read its log | EP-2, EP-6, EP-7 | `pull()` | built |
+| Human approval queue | EP-13 | `callback()` | refuses nothing |
+| Scheduled batch job | EP-2's post-run placement | `pull()` | built |
+| Third-party SaaS | ServiceNow `check` | `pull()` | built |
+| Third-party SaaS | AICT | `pull()` | observed |
+| Kill switch, out of band | EP-8 | `emit()` + `pull()` | records only |
+
+## Legend
+- **Red:** waits: the ONE in-path question. The red arrow is the one wait.
+- **Blue:** our code. It records and never waits.
+- **Grey:** the platform's (not ours).
+- **Green dashed region:** off the path, always async.
+- **Purple:** the human loop. It records and never holds work.
+- **Orange:** THE ONE STORE and its exports.
+- **Teal:** the control test.
+- **Amber:** the contract and the habits.
+- **Chips** on a box's top edge: PRE · CONT · POST, its timing layer.
+- **Dashed green arrow:** a pinned copy, set before the run.
+- **Dashed grey line:** the same function (one sha256) in two places.

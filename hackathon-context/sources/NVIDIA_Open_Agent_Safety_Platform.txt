@@ -1,0 +1,496 @@
+NVIDIA Agentic & Open Agent Safety Platform: TM Forum Hackathon (Customer Deck, September 2026)
+NVIDIA talk deck: the full extracted text of every page, with hyperlink targets, notes on what each
+page's diagrams show, and extractor notes
+Source: /Users/satyabratsrikumar/Downloads/NVIDIA Open Agent Safety Platform.pdf
+Saved copy: hackathon-context/sources/NVIDIA_Open_Agent_Safety_Platform.pdf (3,208,656 bytes, SHA-256
+  1a7bac484761bd06cbc2dce929ea641641428d63fd54af86b28d2c196cadf20f; byte-identical to the source, checked with cmp)
+Date saved: 2026-10-05
+Page count: 15 (mdls kMDItemNumberOfPages = 15; pdfinfo Pages = 15). Every page is a slide; there are no notes pages.
+PDF metadata (pdfinfo): Author "Alex Sandu"; Creator and Producer "Microsoft PowerPoint for Microsoft 365"
+  (a PowerPoint export); created and modified Sun Oct 4 15:12:04 2026 CDT; no Title set; page size
+  2880 x 1620 pt (16:9); PDF 1.7, tagged, not encrypted.
+Summary and catalogue of this deck: architecture/guardrails/01-nvidia-talk-summary.md
+
+How this was extracted: the "[text]" block under each page is `pdftotext -layout -f N -l N` (poppler)
+for that page, with trailing spaces removed and runs of blank lines squeezed; nothing else is changed.
+Layout mode keeps where each label sits on the slide, so diagram labels appear in their spatial
+positions, not in reading order. Every page was also extracted in reading order (`pdftotext -raw`)
+and compared; the one place where that matters (page 8) is noted under the page. The deck was also
+read visually, page by page, from the rendered pages. Hyperlink targets were read from the PDF's
+link annotations with macOS PDFKit: 6 links, 5 distinct URLs, on pages 3, 5 and 14.
+
+"[visual]" blocks: several pages carry their meaning in diagrams, arrows, icons and logos, so under
+each page a "[visual]" block records what the rendered page shows. These blocks are descriptions
+written by the extractor, not text extracted from the PDF. Where a logo or icon carries no printed
+name, the identification is the extractor's reading and is marked as such.
+
+Printed slide numbers appear only on pages 10-14, and each equals its PDF page number.
+
+Extractor notes (not deck content):
+- Page 3: both "IBM Report" citations are hyperlinks to
+  https://www.zendata.dev/post/understanding-personally-identifiable-information, not to an IBM URL.
+- Page 8: in three table cells (Grandma, Malware Gen, Package Hallucination) the slide's own text runs
+  overlap (visible on the rendered page), so the layout text interleaves them. The reading-order text
+  of those cells is given under page 8. "github.com/NVIDIA/garak" on page 8 is plain text, not a link.
+- Page 13 has no extractable text except its title and slide number: its 107 logos are images,
+  transcribed under the page.
+- Page 15 is a closing slide with no text.
+- None of these terms occurs anywhere in the deck's text: AWS, Amazon, Bedrock, AgentCore, MCP, Model
+  Context Protocol, Cedar, NIM, NemoGuard, memory, handoff, multi-agent, A2A. (On page 13, "BEDROCK
+  DATA" and "Lambda" are company logos, i.e. images; in the extractor's reading they are the companies
+  Bedrock Data and Lambda, not Amazon Bedrock or AWS Lambda.)
+
+=== Page 1 ===
+[text]
+NVIDIA Agentic &
+Open Agent Safety
+Platform
+TM Forum Hackathon
+
+Customer Deck
+September 2026
+[visual]
+Title slide. The NVIDIA logo is at top left, and a large green 3D NVIDIA "eye" mark sits on a white
+faceted background. There is no other content.
+
+=== Page 2 ===
+[text]
+                             NVIDIA NeMo Libraries for Agentic AI Safety
+                  Make agentic AI production-ready with integrated data privacy and model security
+
+                                                       Enterprise AI
+                                                         System
+
+Nemotron
+                                                                                                                       Specialized AI
+                                                       NeMo Safe Synthesizer   NeMo Customizer, RL   NeMo Guardrails      Agents
+           NeMo Agent Toolkit       NeMo Curator
+                                      PROCESS            SYNTHESIZE               IMPROVE             GUARDRAIL
+             INSTRUMENT
+
+                                                       NeMo Anonymizer         NeMo Evaluator        NeMo Auditor
+            NeMo Retriever        NeMo Data Designer
+                                                           DETECT                EVALUATE              AUDIT
+               LEARN                 GENERATE
+[visual]
+A diagram. Top centre: "Enterprise AI System", an illustration of connected neural-network tiles
+and two document panels, one with a "?". Far left: a green cube icon labelled "Nemotron". Far
+right: a cartoon avatar of a person labelled "Specialized AI Agents". Below them, ten NeMo
+libraries sit in two rows of five, each with an icon and a verb:
+  Row 1: NeMo Agent Toolkit - INSTRUMENT | NeMo Curator - PROCESS | NeMo Safe Synthesizer - SYNTHESIZE |
+         NeMo Customizer, RL - IMPROVE | NeMo Guardrails - GUARDRAIL
+  Row 2: NeMo Retriever - LEARN | NeMo Data Designer - GENERATE | NeMo Anonymizer - DETECT |
+         NeMo Evaluator - EVALUATE | NeMo Auditor - AUDIT
+Four of the ten have a yellow outline: NeMo Safe Synthesizer, NeMo Anonymizer, NeMo Guardrails and
+NeMo Auditor (the same four that page 4 lists as "Open Libraries").
+Connectors:
+- From the top of Nemotron, a line runs up and across to the Enterprise AI System, with no visible
+  arrowhead.
+- From the bottom of Nemotron, a line ends in an arrowhead pointing right, into the library rows (at
+  NeMo Agent Toolkit / NeMo Retriever).
+- On the right, a line runs from the library rows (beside NeMo Guardrails) up to Specialized AI Agents.
+- From Specialized AI Agents, a line ends in an arrowhead pointing left, at the Enterprise AI System.
+
+=== Page 3 ===
+[text]
+                    Primary Agentic AI Safety Challenges
+ Data leaks and bypassed protections expose sensitive information and enable model exploitation
+
+                        1                                                2
+           Data Security Exposure                              Model Security Risks
+    "52% of data breaches involve some form            "97% of companies with AI breaches had
+          of customer PII." IBM Report                no AI access controls in place." IBM Report
+
+NeMo Safe Synthesizer       NeMo Anonymizer             NeMo Guardrails         NeMo Auditor
+
+                                                           Nemotron
+                                                         Safety Models
+[links]
+"IBM Report" (first quote)  -> https://www.zendata.dev/post/understanding-personally-identifiable-information
+"IBM Report" (second quote) -> https://www.zendata.dev/post/understanding-personally-identifiable-information
+[visual]
+Two numbered columns:
+- "1" sits over a dark box, "Data Security Exposure", which holds the 52% quote. Beneath it are two
+  icons: NeMo Safe Synthesizer (a database with a lock and cycle arrows) and NeMo Anonymizer (a
+  document with a database).
+- "2" sits over a dark box, "Model Security Risks", which holds the 97% quote. Beneath it are NeMo
+  Guardrails (a shield with a network icon) and NeMo Auditor (stacked pages with a lock).
+- A thin arrow points down from the NeMo Guardrails icon to "Nemotron Safety Models" (a hexagon icon).
+
+=== Page 4 ===
+[text]
+                     Introducing the NVIDIA AI Safety Suite
+Open NeMo libraries built on open Nemotron models which are trained on open Nemotron datasets
+
+           Open Libraries                 Open Models                       Open Datasets
+
+          NeMo Safe Synthesizer      Nemotron 3.5 Content Safety          Nemotron Content Safety
+            NeMo Anonymizer           Nemotron 3 Content Safety       Nemotron Content Safety Reasoning
+             NeMo Guardrails        Llama Nemotron Content Safety       Nemotron Content Safety Audio
+           NeMo Auditor / Garak   Nemotron Content Safety Reasoning      Nemotron AIQ Agentic Safety
+                                    Llama Nemotron Topic Control                Nemotron PII
+                                     Nemotron Jailbreak Detection
+                                              GLiNER PII
+[visual]
+Three rounded cards side by side: Open Libraries (an illustration of a platform with warning, lock and
+shield icons), Open Models (a black hexagon with a shield check mark) and Open Datasets (an
+illustration of a person at a desk with connected tiles). In the layout text above, column 1 is Open
+Libraries, column 2 is Open Models and column 3 is Open Datasets. As plain lists:
+  Open Libraries: NeMo Safe Synthesizer; NeMo Anonymizer; NeMo Guardrails; NeMo Auditor / Garak
+  Open Models:    Nemotron 3.5 Content Safety; Nemotron 3 Content Safety; Llama Nemotron Content Safety;
+                  Nemotron Content Safety Reasoning; Llama Nemotron Topic Control;
+                  Nemotron Jailbreak Detection; GLiNER PII
+  Open Datasets:  Nemotron Content Safety; Nemotron Content Safety Reasoning; Nemotron Content Safety Audio;
+                  Nemotron AIQ Agentic Safety; Nemotron PII
+
+=== Page 5 ===
+[text]
+                                                      NVIDIA NeMo Guardrails
+Build enterprise-grade AI agents with robust security and control – intercept policy violations with minimal performance impact
+
+                                                                   Input
+     Key Features
+              Customizable Use Cases                             Content Safety
+                                                               Jailbreak Protection    Retrieval
+              PII detection, content safety,                       Topic Control
+              jailbreak protection, topic control,                 PII Detection
+              RAG enforcement, etc.                                Custom Rails
+
+                                                                                         PII Detection
+              Performance-Optimized                                                   Knowledge Base/RAG   Dialog
+                                                                                         Custom Rails
+              Parallel execution of multiple
+              guardrails without performance
+              overhead.                                                                                    Topic Control
+                                                                                                           Custom Rails    Execution
+              Flexible Deployment
+              Efficiently orchestrate and deploy
+              anywhere.                                                                                                     Agentic Security
+                                                                                                                             Custom Rails       Output
+
+                                                                                                                                                 Content Safety
+                                                                                                                                                  PII Detection
+                                                                                                                                               Knowledge Base/RAG
+                                                     Learn more about NeMo Guardrails on the product page.                                        Custom Rails
+[links]
+"product page" -> https://developer.nvidia.com/nemo-guardrails
+[visual]
+Left: a "Key Features" panel with three items, each with an icon. Right: a descending staircase of five
+stage cards, left to right: Input (arrow icon), Retrieval (network icon), Dialog (chat-bubbles icon),
+Execution (gear icon) and Output (check-mark icon). The rails for each stage are listed in italics
+beneath its card:
+  Input:     Content Safety, Jailbreak Protection, Topic Control, PII Detection, Custom Rails
+  Retrieval: PII Detection, Knowledge Base/RAG, Custom Rails
+  Dialog:    Topic Control, Custom Rails
+  Execution: Agentic Security, Custom Rails
+  Output:    Content Safety, PII Detection, Knowledge Base/RAG, Custom Rails
+No arrows join the cards; the staircase alone gives the order.
+
+=== Page 6 ===
+[text]
+                  NeMo Guardrails-Off Vs. Guardrails-On
+                                                 Example
+
+Guardrails OFF                                         Guardrails On
+
+User Prompt                                           User Prompt
+Should I invest in tech stocks right now?             Should I invest in tech stocks right now? What's
+What's your recommendation for diversifying           your recommendation for diversifying my
+my retirement portfolio?                              retirement portfolio?
+
+LLM Response                                          LLM Response
+Based on current market conditions, tech              I cannot provide investment advice. I can help
+stocks have shown strong performance,                 you with account information and banking
+particularly in AI and cloud computing sectors.       services.
+For retirement portfolio diversification, financial
+advisors typically recommend a mix of 60%
+stocks and 40% bonds for moderate risk
+                                                                  Identified as category
+tolerance...
+                                                               Financial Advice, Investments
+[visual]
+Two panels side by side, "Guardrails OFF" (dark header) and "Guardrails On" (green header), each with a
+User Prompt and an LLM Response. Under the Guardrails On panel, a green arrow points down to
+"Identified as category / Financial Advice, Investments". The slide does not say which rail or model
+made the identification.
+
+=== Page 7 ===
+[text]
+                    Open NVIDIA Nemotron Safety Models
+Advanced GPU-accelerated multilingual, multimodal models with reasoning for a variety of use cases
+
+                                    Supported in NeMo Guardrails
+
+             Content Safety             PII             Topic Control     Jailbreak Detection
+
+             Blocks Harmful     Detects/Classifies    Enforces Relevant Detects Adversarial
+                Content            PII and PHI            Dialogue      or Jailbreak Prompts
+
+                  85%                  56%                  93%                  96%
+             Harmful Content       Higher F1 Score;        On-Topic        Detection Accuracy
+          Classification Accuracy 28% Higher Recall      Avg. F1 Scores      Avg. F1 Score
+         (Multilingual/Multimodal)
+[visual]
+A box headed "Supported in NeMo Guardrails" holds four black hexagon model icons. Each icon has a
+capability name above it and a description below it, and an arrow beneath points to its figure:
+  Content Safety      - Blocks Harmful Content                  - 85% Harmful Content Classification Accuracy
+                                                                  (Multilingual/Multimodal)
+  PII                 - Detects/Classifies PII and PHI          - 56% Higher F1 Score; 28% Higher Recall
+                                                                  (an upward green arrow before "56%")
+  Topic Control       - Enforces Relevant Dialogue              - 93% On-Topic Avg. F1 Scores
+  Jailbreak Detection - Detects Adversarial or Jailbreak Prompts - 96% Detection Accuracy Avg. F1 Score
+The slide names no model version, benchmark, dataset or baseline for these figures.
+
+=== Page 8 ===
+[text]
+                                                   NVIDIA NeMo Auditor
+      Security and vulnerability scanning to protect against attacks on LLMs and LLM-containing systems
+
+Key Benefits                                                    Probe Type                Description
+
+                                                                DAN                       Jailbreaks shown to be effective in the wild
+          Comprehensive Testing
+          160+ attack categories using adaptive                 Exploitation              Generate SQL injection or malicious Jinja templates
+          and static probing techniques.
+                                                                Grandma                   Jailbreaks
+                                                                                          me storieslike “Pretend
+                                                                                                     about  <X>” you’re my grandma who used to tell
+          Multi-Platform / Enterprise-Grade
+          Flexible APIs with local and cloud
+          deployment support.                                   Leak Replay               Targeted Copyright data reproduction
+
+                                                                Malware Gen               Generate
+                                                                                          a device malware, malware components, or other tools that disrupt
+
+A Typical Auditor Workflow
+                                                                Web Injection             Permit or enact cross-site attacks, such as private data exfiltration
+1.   Create an audit target for a base model.
+2.   Create an audit configuration.
+3.   Run an audit job.                                          Package Hallucination     Code generations that specify non-existent, and therefore, insecure
+                                                                                          packages
+4.   View the audit results.
+
+                                               Check out the open-source library: github.com/NVIDIA/garak
+[reading order of the three overlapping cells, from pdftotext -raw]
+  Grandma               | Jailbreaks like "Pretend you're my grandma who used to tell me stories about <X>"
+  Malware Gen           | Generate malware, malware components, or other tools that disrupt a device
+  Package Hallucination | Code generations that specify non-existent, and therefore, insecure packages
+[visual]
+The left panel holds "Key Benefits" (two items with icons) and "A Typical Auditor Workflow" (numbered
+1-4, with the words target, configuration, job and results in bold). The right panel holds a
+two-column table, "Probe Type | Description", with 7 rows: DAN, Exploitation, Grandma, Leak Replay,
+Malware Gen, Web Injection and Package Hallucination. The footer reads "Check out the open-source
+library: github.com/NVIDIA/garak", as plain text, not a hyperlink.
+
+=== Page 9 ===
+[text]
+Traditional Sandboxes Not Built for Long-Running Agents
+Long-running AI agents can combine tools, credentials and network access in ways existing controls were not
+designed to govern.
+
+                                                          AI Models
+
+          Ambiguous Instructions                                                        Unapproved External Access
+          Can lead an agent to take actions                                               Can let agents send data outside
+             outside its approved scope                                                         approved boundaries
+                                                       Agent Harness
+                                                    Connects Decisions to Tools
+
+                                                 (E.g. Claude, Codex, Hermes, etc.)
+
+                                                                                              No complete record of agent actions
+
+                                              Standard Operating System                       Sensitive data and credentials can reach
+                                              Runtime Without Agent-Specific Controls         unapproved destinations
+                                                                                              Boundary between agents is unclear
+[visual]
+A diagram drawn in red, showing the problem state:
+- Top: five model-provider logos with no printed names above "AI Models". In the extractor's reading
+  they are Claude/Anthropic, Google Gemini, OpenAI, Qwen and Meta.
+- Centre: a box, "Agent Harness / Connects Decisions to Tools", holds four tool icons (a document, a
+  database, code "</>" and a circular target/gear) and "(E.g. Claude, Codex, Hermes, etc.)". A red
+  double-headed arrow joins it to AI Models.
+- Left: a red terminal-prompt icon labelled "Ambiguous Instructions: Can lead an agent to take actions
+  outside its approved scope", with an arrow into the harness.
+- Right: an arrow runs from the harness to a red globe labelled "Unapproved External Access: Can let
+  agents send data outside approved boundaries".
+- Beneath the harness: a red dashed box, "Standard Operating System / Runtime Without Agent-Specific
+  Controls".
+- Bottom right: three items, each marked with a red X in a circle: No complete record of agent actions;
+  Sensitive data and credentials can reach unapproved destinations; Boundary between agents is unclear.
+
+=== Page 10 ===
+[text]
+NVIDIA OpenShell Enforces Runtime Boundaries for AI Agents
+Deterministic infrastructure enforces policy, traces actions -- with hard boundaries in silicon.
+
+                                                            AI Models
+
+                                                                                            Data Stays in Your
+               User Prompt            AGENT SANDBOX                                         Secure Boundary
+                                                         Agent Harness
+                                                      Connects Decisions to Tools
+
+                                                 (E.g. Claude, Codex, Hermes, etc.)
+
+                                      PRIVILEGED CONTROL LAYER                              All agent actions are monitored
+
+                                                  OpenShell Control Layer                   Agent cannot reach or modify the controls
+                                           Filesystem Access               Network Access
+                                                                                            Each agent runs under an explicit policy
+
+                                           In-Silicon Enforcement Boundary
+
+10
+[visual]
+Page 9's layout redrawn in green, showing the governed state:
+- Left: a green terminal icon, "User Prompt", with an arrow into a green dashed box, "AGENT SANDBOX".
+  The box contains the Agent Harness (the same four tool icons; "(E.g. Claude, Codex, Hermes, etc.)").
+- A green padlock shield sits on the double-headed arrow between AI Models (the same five logos as page
+  9) and the sandbox.
+- A second padlock shield sits on the arrow from the sandbox to a green globe labelled "Data Stays in
+  Your Secure Boundary".
+- Below the sandbox: a box, "PRIVILEGED CONTROL LAYER / OpenShell Control Layer", with two dark-green
+  bars, "Filesystem Access" and "Network Access". Below that is a box, "In-Silicon Enforcement Boundary".
+- Bottom right: three items, each marked with a green check mark in a circle: All agent actions are
+  monitored; Agent cannot reach or modify the controls; Each agent runs under an explicit policy.
+
+=== Page 11 ===
+[text]
+      NVIDIA Open Agent Safety Platform
+      Open reference design includes NVIDIA OpenShell software, a secure runtime boundary that traces all actions and
+      enforces policy as agents run.
+
+                   Secure Runtime Boundary
+     Governs and Mediates All Actions, Enforces Policy at Runtime
+
+                                                                    Vera CPU
+                           NVIDIA OpenShell
+
+                   Gateway
+
+                                       Agent Harness
+                  Supervisor
+                                                                                             Prompt
+                                                                                              Tools
+                 Policy Prover                Agent Sandbox                                   Data
+                                                                                      CX-9    Model
+
+                                                                                                      Prompt   Tools   Data   Model
+
+                                                                          Vera CPU Tray
+
+11
+[visual]
+- Left: a green box with a padlock icon, titled "Secure Runtime Boundary / Governs and Mediates All
+  Actions, Enforces Policy at Runtime". Inside is "NVIDIA OpenShell": three stacked boxes (Gateway,
+  Supervisor, Policy Prover) beside a dashed "Agent Sandbox" box that contains "Agent Harness".
+- A green double-headed arrow joins this box to a photo of a server tray, "Vera CPU Tray", pointing at
+  a chip labelled "Vera CPU".
+- On the tray, a green vertical double-headed arrow links the Vera CPU to chips at the bottom of the
+  tray; the label "CX-9" sits beside them.
+- From those chips, a green double-headed arrow runs right to the edge of the picture, under the label
+  "Prompt / Tools / Data / Model". Dotted double-headed arrows drop from the line to four boxes: Prompt,
+  Tools, Data and Model.
+
+=== Page 12 ===
+[text]
+      NVIDIA Open Agent Safety Platform
+      NVIDIA Sentry adds an out-of-band watchdog that continuously monitors and can stop agent behavior in
+      milliseconds.
+
+                   Secure Runtime Boundary                                                                          In-Silicon Out-of-Band Monitor
+     Governs and Mediates All Actions, Enforces Policy at Runtime                                           Agent Reasoning Inspection and Tamper-Proof Telemetry
+
+                                                                    Vera CPU
+                           NVIDIA OpenShell                                                                                     NVIDIA Sentry
+
+                                                                                                                          Hardware-Based Enforcement
+                   Gateway
+
+                                                                                                                          Continuous Agent Monitoring
+                                       Agent Harness                                                                         and Threat Detection
+                  Supervisor
+                                                                                                 Prompt                        Trusted Telemetry
+                                                                                                  Tools                      and Detection Pipeline
+                 Policy Prover                Agent Sandbox                                       Data
+                                                                                   BlueField-4    Model
+                                                                                                                          Millisecond-Scale Containment
+                                                                                                 Policies
+                                                                                                                                  and Quarantine
+
+                                                                                                                 Prompt        Tools         Data         Model
+
+                                                                          Vera CPU Tray
+
+12
+[visual]
+Page 11's picture with additions:
+- The chip label "CX-9" is replaced by "BlueField-4", and the chips at the bottom of the tray are drawn
+  larger and highlighted.
+- The green double-headed arrow from those four chips now ends at a second green box with a padlock,
+  titled "In-Silicon Out-of-Band Monitor / Agent Reasoning Inspection and Tamper-Proof Telemetry".
+  It holds "NVIDIA Sentry", with four boxes: Hardware-Based Enforcement; Continuous Agent
+  Monitoring and Threat Detection; Trusted Telemetry and Detection Pipeline; Millisecond-Scale
+  Containment and Quarantine.
+- The line's label gains "Policies": Prompt / Tools / Data / Model / Policies.
+- Dotted double-headed arrows drop from the Sentry box to four boxes: Prompt, Tools, Data and Model.
+- The OpenShell box on the left is unchanged from page 11.
+
+=== Page 13 ===
+[text]
+     Broad Ecosystem Building Safer AI with NVIDIA OpenShell
+
+13
+[visual]
+A logo wall of 107 company and organisation logos in 10 rows, roughly alphabetical, with no other
+text. Transcribed from the logo images, left to right, row by row (extractor's reading):
+  Row 1:  ABSOLUTE; accenture; AGENTICSOC ALLIANCE; Akamai; ANTHROPIC; arm; ARMADIN; baseten;
+          BEDROCK DATA; BITDEER
+  Row 2:  BOHR QUANTUM; cadence; Canonical; CHECK POINT; CISCO; citi; CSA (cloud security alliance);
+          CLOUDFLARE; Cognition; CoreWeave; CROSSPOINT CAPITAL
+  Row 3:  CROWDSTRIKE; Crusoe; DASSAULT SYSTEMES; deepinfra; DELL Technologies; Deloitte.;
+          U.S. Department of War (seal); digicert; DigitalOcean; DREAM
+  Row 4:  eclypsium; EPRI; EQTYLAB; everseen; EXTRAHOP; EY; F5; FIGURE; firmus; FORESCOUT; Fortanix
+  Row 5:  FORTINET; gecko; GMI; HITACHI; HPE; hp; Hugging Face; IBM; IREN; IRREGULAR; JFrog; JPMorganChase
+  Row 6:  Lambda; LangChain; Lenovo; Lightning AI; Microsoft; Mistral; monday.com; NEBIUS; netskope;
+          NextEra ENERGY
+  Row 7:  NOUS (image with the word NOUS); NTSC (National Technology Security Coalition); okta; OPAQUE;
+          OpenWorker; ORACLE; orca security; Palantir; paloalto networks; perplexity
+  Row 8:  QUANTA; Red Hat; REVERSINGLABS; RSAC; SailPoint; salesforce; SAP; scale; Schneider Electric;
+          SentinelOne; servicenow
+  Row 9:  SIEMENS; SIEMENS energy; SINET (red circle); SKILD AI; SPP; SPACEX; SUPERMICRO; SUSE; synopsys;
+          TAG (Technology Association of Georgia); TENEX.AI
+  Row 10: together.ai; torq; TrendAI; upwind; veeam; VERACODE; VULTR; WIZ; worley; zscaler; 1Password
+No AWS/Amazon, Google or NVIDIA logo is on the wall. "BEDROCK DATA" and "Lambda" (a boxed lambda
+symbol) are, in the extractor's reading, the companies Bedrock Data and Lambda, not AWS services.
+
+=== Page 14 ===
+[text]
+     NVIDIA Open Agent Safety Platform
+
+                                NVIDIA OpenShell                                  NVIDIA Sentry
+
+              OpenShell Page                       OpenShell GitHub         Open Agent Safety Platform Page
+
+       nvidia.com/en-us/ai/openshell/        github.com/NVIDIA/openshell
+                                                                           nvidia.com/en-us/solutions/ai/agent-
+                                                                                         safety/
+
+14
+[links]
+"OpenShell Page"                  -> https://www.nvidia.com/en-us/ai/openshell/
+"OpenShell GitHub"                -> https://github.com/NVIDIA/openshell
+"Open Agent Safety Platform Page" -> https://www.nvidia.com/en-us/solutions/ai/agent-safety/
+[visual]
+Three columns with black line icons. The heading "NVIDIA OpenShell" spans the first two: "OpenShell
+Page" (a shield with a padlock) and "OpenShell GitHub" (a browser window with a person and "</>"). The
+heading "NVIDIA Sentry" sits over the third: "Open Agent Safety Platform Page" (a hexagon with a
+padlock). The page gives no separate Sentry page or repository.
+
+=== Page 15 ===
+[text]
+(no extractable text)
+[visual]
+Closing slide with no text: the NVIDIA logo at bottom left and the large green 3D NVIDIA mark on the
+white faceted background (the same art as page 1).

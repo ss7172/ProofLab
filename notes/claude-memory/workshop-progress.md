@@ -1,14 +1,14 @@
 ---
 name: workshop-progress
-description: "Where the user is in the MoDaaS workshop modules, what live cluster state exists and who created it, and what was done along the way; context gathering status, playbook check, evidence snapshot, handoff note"
+description: "Where the user is in the MoDaaS workshop modules, what live cluster state exists and who created it, and what was done along the way; context gathering status, playbook check, evidence snapshot, handoff note; status 2026-10-05 late: architecture written and vetted, Phase 2 fixes running, guardrails workstream started from the NVIDIA talk, the plan next"
 metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T19:14:06.000Z
+  modified: 2026-10-05T23:58:00.000Z
 ---
 
-**Progress (last updated 2026-10-05, after Module 11, the page checks and the playbook check):**
+**Progress (last updated 2026-10-05 ~23:58 UTC: architecture vetted, see the last progress bullet; before that, after Module 11, the page checks and the playbook check):**
 - **Module 2:** done from the laptop on 2026-10-04. Step 6 (Amazon Q, console-only) was skipped.
 - **Module 3:** done on 2026-10-04; `validate-canvas.sh` gave 6 passed, 0 failed.
 - **Module 4 overview:** done on 2026-10-05.
@@ -261,12 +261,12 @@ metadata:
   - **Trust policy:** only `user/ServiceNowAictUser`, no condition. The user has no policies of its own.
   - **Role inline policy `SgcAictReadOnlyAccessPolicy`:** ALLOW sts:GetCallerIdentity, ec2:DescribeRegions, bedrock List/GetInferenceProfile(s), logs StartQuery/GetQueryResults, cloudtrail LookupEvents, and agentcore List/Get Gateways/GatewayTargets/AgentRuntimes (all Resource *). Explicit DENY (`DenyTokenAndSecretIssuance`) on GetWorkloadAccessToken*, GetResourceApiKey, GetResourceOauth2Token. NO bedrock:ListGuardrails (the page is right).
   - **AICT IS LIVE:** CloudTrail shows ServiceNowAictUser AssumeRole about every minute (session `613052889143-session`).
-    - Calls OK: GetAgentRuntime ×21, ListAgentRuntimes, ListGateways, and every 15 min a Logs Insights StartQuery/GetQueryResults on /aws/bedrock/aict-invocations ("stats … count(*) by eventName, requestParameters.sessionId …").
+    - Calls OK: GetAgentRuntime ×21, ListAgentRuntimes, ListGateways, and every 15 min a Logs Insights StartQuery/GetQueryResults on /aws/bedrock/aict-invocations ("stats … count(*) by eventName, requestParameters.sessionId …"). That field is empty on `InvokeAgentRuntime` records; their session id is in `responseElements` (corrected 2026-10-05 after live re-check).
     - **AccessDenied:** bedrock ListAgents, sagemaker ListModelCards, agentcore ListBrowsers/ListCodeInterpreters. So the page's "discovers Bedrock agents and SageMaker models" fails with this role.
   - **`/aws/bedrock/aict-invocations` = CloudTrail data events, AWS-written, kept 7 d (retention re-checked 2026-10-05).** Sample (500 events, 00:01–08:32 UTC):
     - bedrock ConverseStream ×466 + Converse ×11 by role `a-01-eks-cluster-agentgateway-bedrock`; requestParameters = modelId, guardrailConfig, inferenceConfig (no prompts)
     - bedrock-agentcore InvokeAgentRuntime ×23 by WSParticipantRole, plus 2 by the IDE role
-    - **A potential independent evidence source (WHO invoked agents, timestamps, guardrail config per model call)**; no run id; join by time/session id.
+    - **A potential independent evidence source (WHO invoked agents, timestamps, guardrail config and verdict per model call).** The `InvokeAgentRuntime` records carry the run's CID, session id and traceparent in `responseElements` (their `requestParameters` is empty), so they join a run exactly. The model-call records carry no run id and join only by time + model (corrected 2026-10-05 after live re-check; the ~21:00 UTC version of this line said "no session id", from 03 F11; repo `architecture/work/10-f11-resolution.md`).
   - **Checkpoint:** role exists.
   - **DONE:** 5 reader subagents + 3 independent reviewers. The synthesis is in repo `notes/servicenow/servicenow-context.md` (raw notes in `raw/`). See [[servicenow-context]].
 - **Context gathering COMPLETE (2026-10-05)**, except the pending inputs: the Evidence Pack format (from the user) and more slides. "What the platform gives you" is done: it was extracted from the workshop KB and verified live on 2026-10-05 (see [[challenge-requirements]]).
@@ -276,6 +276,13 @@ metadata:
 - **Handoff note: drafted (2026-10-05)** at repo root `PLANNING-HANDOFF.md` (§0–§10), independently reviewed the same day, with its fixes applied in parallel. See [[planning-handoff]].
 - **Evidence snapshot: taken (2026-10-05; MANIFEST 17:42Z, ledger dump 17:44Z)** in `workshop-local/evidence-snapshots/20261005T173727Z/` (see Live state below).
 - **Next (user plan, updated 2026-10-05):** the user will share MORE ServiceNow material and other resources first. Claude finishes the reviewed ServiceNow notes, then takes in the new material. Write the HANDOFF NOTE only when the user says so; then the user restarts for PLANNING. (2026-10-05: the handoff note is drafted; planning starts from it, see [[planning-handoff]].)
+- **Architecture written and vetted (2026-10-05, late):**
+  - Repo `architecture/` (ARCHITECTURE.md, decisions.md, one-page) was reviewed adversarially and independently (`architecture/work/04`, `04b`).
+  - Four read-only subagents then vetted its infrastructure feasibility (`work/05`–`08`, ~22:55–23:45 UTC): the infrastructure supports the design. The facts are in [[platform-verified-facts]], "Infra feasibility vetting".
+  - F11 was corrected after a live re-check (`work/10-f11-resolution.md`, ~23:55 UTC).
+  - Phase 2 fixes are running (changelogs `work/11a`, `work/11b`). Two fixers own ARCHITECTURE.md, decisions.md and the one-page files.
+  - A guardrails workstream started from the NVIDIA "Open Agent Safety Platform" talk (`architecture/guardrails/`).
+  - Next: the plan.
 
 **Live state and who made it:**
 - **Reference agents:** 3 AgentConfigs (customer-experience, it-resolution, network-resolution) deployed by Claude at 04:35–04:38 UTC (Module 7 set-up, user "OK"). Approved by `satyabratsrikumar@team` ("Reviewed: reference agent on AgentCore"). The CodeBuild image is in ECR. **it-resolution-agent is on `nemotron-nano-9b`** (generation 2, swap at 05:47; still 1 approval record).

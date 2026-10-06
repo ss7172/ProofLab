@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T18:37:55.907Z
+  modified: 2026-10-05T23:58:00.000Z
 ---
 
 **Full verified synthesis:** repo `notes/servicenow/servicenow-context.md`, with the raw reader notes and three reviews in `notes/servicenow/raw/`. Built on 2026-10-05 from 5 parallel reader subagents and 3 independent reviewers (all corrections applied), plus Claude's live read-only checks. The connector secret was checked for readability only, never printed.
@@ -15,10 +15,14 @@ metadata:
 - **Discovery:** only AgentCore runtimes and gateways. Bedrock ListAgents, SageMaker ListModelCards and agentcore ListBrowsers/ListCodeInterpreters are AccessDenied (template "deviation 6"). Module 11's "Bedrock agents and SageMaker models" is false here.
 - **Usage counting:** a 15-min Logs Insights query on `/aws/bedrock/aict-invocations` with `filter eventName = "InvokeAgent"`, while our traffic has ZERO InvokeAgent events. So AICT's usage count for our agents is 0.
 - **`/aws/bedrock/aict-invocations` = AWS-written CloudTrail data events (kept 7 d, re-checked 2026-10-05):**
-  - ConverseStream/Converse by the gateway role, with modelId + guardrailConfig
-  - InvokeAgentRuntime with the invoking principal (participant role / IDE role)
-  - No run id.
-  - **A candidate independent evidence source** (WHO invoked, timestamps, guardrail per call).
+  - **ConverseStream/Converse by the gateway role:** modelId + guardrailConfig. Each streamed call also has a service-event twin carrying the tokens and the guardrail's verdict (`No action.` / `Guardrail blocked.`). They hold no run, session or trace id, so they join a run only by time + role + model.
+  - **InvokeAgentRuntime, with the invoking principal** (participant role / IDE role). **These DO carry the run** (corrected 2026-10-05 after live re-check; an earlier line here said "no session id either", from 03 F11, which had read only `requestParameters`):
+    - `requestParameters` is empty, but `responseElements` holds the caller-sent `runtimeSessionId` (`<CID>-<hex>`), `traceParent` and `baggage` (`modaas-correlation-id=<CID>`), on 28 of 28 records.
+    - So they join a run exactly, by CID and session id.
+    - `eventTime` is the end of the call; the record is delivered 19–328 s later.
+    - AICT's own usage query groups by `requestParameters.sessionId`, which is empty on these records.
+    - Repo `architecture/work/10-f11-resolution.md`.
+  - **A candidate independent evidence source:** WHO invoked which runtime for which run, timestamps, and the guardrail's verdict per call.
   - Validated integrity is S3-only and facilitator-only (our role is denied describe-trails, the bucket and validate-logs).
 - **Role permissions:** explicitly DENIES token and credential retrieval (GetResourceApiKey etc.); no ListGuardrails.
 - **Vendor PDFs** (recorded demos on instance `platformdemoh8`; the demos are not our live state). CORRECTED 2026-10-05: this line said `platformdemoh8` was "not ours", but per the SN handoff (not independently verified) it is the SHARED hackathon instance. From the demos:

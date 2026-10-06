@@ -1,0 +1,60 @@
+{
+  "record": "ServiceNow AI Agent Studio manual test (Testing > Manual test)",
+  "captured_at": "2026-10-05T08:54:00Z",
+  "captured_by": "Claude via Chrome, from the AI Agent Studio test page",
+  "agent": {
+    "name": "iFabric Assurance Agent",
+    "sys_id": "0b849474ebf34750429ef4ffbad0cdc7",
+    "version": "1",
+    "model": "ServiceNow platform LLM (Gen AI - AIA ReAct Engine); not a Nemotron model",
+    "user_access_role": "itil",
+    "run_as": "Dynamic user, role masking itil",
+    "tools": [
+      "Look up iFabric finding incident (record operation, incident, Look up records, autonomous, read-only)"
+    ],
+    "tool_conditions": "number = {{incident_number}} AND short_description STARTSWITH [iFabric]; max 1 record"
+  },
+  "execution_plan_id": "d82958bceb774750429ef4ffbad0cd9d",
+  "task": "Analyze incident INC0010232",
+  "decision_log_steps": [
+    "Access verification: Completed",
+    "iFabric Assurance Agent: Completed",
+    "Gen AI - AIA ReAct Engine: Completed",
+    "Tool - Look up iFabric finding incident: Completed",
+    "Gen AI - AIA ReAct Engine: Completed (High latency flag)",
+    "Communicator: Completed"
+  ],
+  "tool_output": {
+    "message": "1 out of 1 records returned from the Incident table.",
+    "status": "success",
+    "record": {
+      "number": "INC0010232",
+      "short_description": "[iFabric][C16 ACN-COST-001 v=TEST] run AGENT-ANALYSIS-TEST-2 INDETERMINATE: TEST ONLY - ServiceNow agent analysis check, no real control result",
+      "assigned_to": "Sree Annapurna Rallabandi (d6d03ce7ebe38b50429ef4ffbad0cd63)",
+      "caller_id": "iFabric Integration (7759a728ebb30750429ef4ffbad0cdf4)",
+      "correlation_id": "ifabric:C16:TEST:run:AGENT-ANALYSIS-TEST-2:wiring-test",
+      "state": "2 (In Progress)",
+      "sys_updated_by": "ifabric.integration",
+      "sys_created_on": "2026-10-05 08:51:09 UTC",
+      "urgency": "3 - Low"
+    }
+  },
+  "agent_answer": {
+    "Control": "C16 ACN-COST-001",
+    "Threshold version": "TEST",
+    "Scope": "run AGENT-ANALYSIS-TEST-2",
+    "Verdict": "INDETERMINATE",
+    "Measured vs limit": "missing",
+    "Evidence refs": "ProofLab finding ifabric:C16:TEST:run:AGENT-ANALYSIS-TEST-2:wiring-test; test:gateway-action-none; test:ledger-cid-none",
+    "Owner": "Sree Annapurna Rallabandi",
+    "State": "In Progress",
+    "Owner response": "No",
+    "Missing evidence": "measured value",
+    "Next step": "Restore monitoring and re-run the assessment; do not recommend closing without a linked passing re-test.",
+    "footer": "This analysis was produced by the ServiceNow platform LLM and is read-only."
+  },
+  "review": "Every column matches the incident record. Measured value is correctly reported missing (test finding has none). No record was changed.",
+  "screenshot": "run1-INC0010232-test-view.jpg",
+  "note": "TEST ONLY run on a wiring-test incident; not a real control result. This ServiceNow-native agent ran on the ServiceNow platform LLM. On 2026-10-05 the facilitators ruled that the assurance agent must use NVIDIA Nemotron; the ServiceNow agent was set inactive (sn_aia_agent_config.active=false, 2026-10-05 16:30:35 instance time) and replaced by the Nemotron assurance agent on AWS (modaas-agw).",
+  "status": "SUPERSEDED - history only, not a claim"
+}

@@ -1,11 +1,11 @@
 ---
 name: platform-verified-facts
-description: "Live-verified facts (2026-10-05) about the MoDaaS platform's evidence surfaces, governance mechanics and cockpit that the ProofLab plan can rely on — incl. where per-run IDs and tokens actually live, and where the handoff's assumptions were wrong; plus the Resources/Glossary/screenshot checks (authz log has no per-call records, PDP/authz pod-only, get-agent-runtime exposes env tokens), the 2026-10-05 live verification (the gateway's spans in aws/spans carry run id + tokens for 30 d; gateway key only in runtime env), the evidence snapshot / ledger PVC, and the 2026-10-05 platform-contract page checks (gateway stdout values are quoted; 6 gateway policies; no Cedar policy DENY ever; participant RBAC allows CRD and gateway-policy writes, but the admission VAP refuses them; can-i checked 2026-10-05)"
+description: "Live-verified facts (2026-10-05) about the MoDaaS platform's evidence surfaces, governance mechanics and cockpit that the ProofLab plan can rely on — incl. where per-run IDs and tokens actually live, and where the handoff's assumptions were wrong; plus the Resources/Glossary/screenshot checks (authz log has no per-call records, PDP/authz pod-only, get-agent-runtime exposes env tokens), the 2026-10-05 live verification (the gateway's spans in aws/spans carry run id + tokens for 30 d; gateway key only in runtime env), the evidence snapshot / ledger PVC, and the 2026-10-05 platform-contract page checks (gateway stdout values are quoted; 6 gateway policies; no Cedar policy DENY ever; participant RBAC allows CRD and gateway-policy writes, but the admission VAP refuses them; can-i checked 2026-10-05); plus the 2026-10-05 architecture-work corrections (the evidence bucket IS versioned and the IDE role can list its versions; the IDE role has no Logs Insights; the ModelConfig external enforcer is not a hook; aict-invocations: corrected after a live re-check, its InvokeAgentRuntime records DO carry the caller-sent CID, session id and traceparent in responseElements, model-call records carry none); plus the 2026-10-05 infra feasibility vetting (single-file agent build limit and image-tag trap, S2's IT agent invoked twice, no finish reason on spans, aict-invocations delay, ledger token in 3 places, ledger server 256Mi single-threaded, facilitator twin-fix objects, 12-h credentials expiring 2026-10-06T06:29:19Z, guardrail/TLS/pause/Cedar limits, generation 2 on generation-1 approvals, closed open checks, live-lane budget)"
 metadata:
   node_type: memory
   type: project
   originSessionId: ca14fa49-a079-47de-a9fb-a38b37dcff99
-  modified: 2026-10-05T19:44:15.907Z
+  modified: 2026-10-05T23:58:00.000Z
 ---
 
 Verified live with read-only commands on 2026-10-05 (UTC); items marked (review) were verified by an independent reviewer subagent. Re-verify before assessed runs.
@@ -20,6 +20,7 @@ Verified live with read-only commands on 2026-10-05 (UTC); items marked (review)
   - Spans: `aws/spans` (the X-Ray Transaction Search log group, 30-day retention, created 2026-10-04 10:03Z) holds one span per gateway request (service `modaas-agw`, name `POST /`). Each carries `attributes.modaas.run_id` = the baggage CID (via the authz correlation id; with no CID, the trace id) and `attributes.modaas.action_id` (distinct per call); model calls also carry `gen_ai.usage.input_tokens`/`output_tokens`, `aws.genai.token_count_total`, `agw.ai.usage.cost.total` and `gen_ai.request.model`. Path: gateway → collector `traces` pipeline → `awsxray` → `aws/spans`.
   - Verified: S2 `fault-1791177342-d3f892` (2026-10-05 05:15–05:20 UTC): 353 spans (174 llm + 179 MCP), 353 distinct action ids, 1,999,001 tokens, $0.3033. S1 `fault-1791179282-8ef1a8`: 24 spans (9 llm), 37,664 tokens. Also S1 `fault-1791177843-fde682` 50,246 and S3 `fault-1791177926-b0ce69` 37,799. All equal the gateway stdout figure of record exactly.
   - So C16's figure of record is durable for 30 days, until the account teardown (whichever comes first). Logs Insights on `aws/spans`: filter attributes.modaas.run_id = "<CID>" and attributes.listener = "llm", then sum the input and output tokens.
+  - **Run that pull on the laptop (WSParticipantRole, Insights on all log groups) or in CloudShell, not in the IDE** (corrected 2026-10-05, from live reads during the architecture work; IAM re-read ~21:00 UTC): the IDE role has no `logs:StartQuery`, `GetQueryResults` or `FilterLogEvents`, only `GetLogEvents`, `DescribeLogStreams` and `DescribeLogGroups` (`ide-workshop`; its other policies `AictGetRole`, `EvidenceVersionRead` and the attached `AmazonSSMManagedInstanceCore` add no logs actions).
   - Caveats: only gateway spans are in `aws/spans` (agent spans live in each runtime's log group). Requests without an authz correlation id carry no run id: the kill-switch 404 (0 spans with its CID) and MCP `GET` 405s. The run's trace also holds attribute-less `modaas-agw` child spans (one per MCP call), so count by run id, not by trace. X-Ray holds the same fields as segment metadata (not annotations, so no X-Ray filter by run id), but `batch-get-traces` truncates long runs (S2: `LimitExceeded`, 22 of 174 llm calls), and X-Ray totals double-count agent subsegments.
 - **`/modaas/evidence`** (stream `modaas-evidence`, retention 30 days, from the collector's `logs/audit` pipeline): records with `modaas.evidence.{correlation_id, action_id, trace_id, decision, policy_id, principal, phase,…}`. (review): `correlation_id` is on 60/60 records, and all 4 token records join to a CID through `trace_id` → evidence.
 - **X-Ray:** the collector's `traces` pipeline exports to `awsxray`.
@@ -141,7 +142,7 @@ Verified live with read-only commands on 2026-10-05 (UTC); items marked (review)
 - **WHO/AUTHORIZED logs:**
   - `modaas-authz` writes NO per-call records to its pod log: each of the 2 pods has only 4 uvicorn startup lines. Its per-call records go only to `/modaas/evidence` over OTel (`attested_by=modaas-authz`); all 39 records in the hour checked had principal `ServiceIdentity::"bootstrap-key"`. So the guide's WHO step (`kubectl logs deploy/modaas-authz`) shows nothing.
   - PDP decision lines carry no principal. `kubectl logs deploy/modaas-pdp` reads only 1 of the 2 replicas, and each action_id is in one replica only: read both with `-l app.kubernetes.io/name=modaas-pdp`. 24 h: 1,016 decisions, all ALLOW.
-  - **PDP and authz logs are pod-only:** no CloudWatch log group for either. Durable: `/modaas/evidence` 30 d, `/aws/modaas/gateway` 7 d; the 5 runtime log groups never expire. `/aws/bedrock/aict-invocations` keeps 7 d (two reviewers, live, 2026-10-05).
+  - **PDP and authz logs are pod-only:** no CloudWatch log group for either. Durable: `/modaas/evidence` 30 d, `/aws/modaas/gateway` 7 d; the 5 runtime log groups never expire. `/aws/bedrock/aict-invocations` keeps 7 d (two reviewers, live, 2026-10-05). **Its `InvokeAgentRuntime` records DO carry the run** (corrected 2026-10-05 after live re-check; this line used to say "no run or session id", from 03 F11, which had read only `requestParameters`): `requestParameters` is empty, but `responseElements` holds the caller-sent `runtimeSessionId` (`<CID>-<32 hex>`), `traceParent` and `baggage` (`modaas-correlation-id=<CID>`), plus `statusCode`, on 28 of 28 records in retention. So they join a run exactly by CID, session id and trace; `eventTime` is the end of the call. The model-call records (`Converse*`, by the gateway's role) carry no run, session or trace id and join only by time + role + model. Details in "Infra feasibility vetting" below and repo `architecture/work/10-f11-resolution.md`.
   - **The PDP, not the operator, loads the policy ConfigMaps;** the operator only writes the generated ones. 15 ConfigMaps carry the part-of=modaas-pdp label: 10 `modaas-toolconfig-*`, 4 `model-*` and `my-team-policy` (the per-asset ones above plus ours). `my-team-policy` was named in 0 of 1,037 decisions on both PDP replicas over their whole life (2026-10-04 18:07 → 2026-10-05 17:33 UTC; evidence snapshot; notes #33).
   - `demo-crm-lookup` is still Reviewing, yet its Cedar ConfigMap exists and the PDP has loaded it (it has no route).
 - **Run ids:**
@@ -152,7 +153,13 @@ Verified live with read-only commands on 2026-10-05 (UTC); items marked (review)
   - EKS control-plane logging is OFF for all 5 types (api, audit, authenticator, controllerManager, scheduler).
   - CloudTrail `lookup-events` works (90-day management history), but `describe-trails` is AccessDenied for WSParticipantRole, so whether a trail archives events is unknown. CloudTrail doesn't record kubectl or gateway calls.
   - Live CRs: 18 Approved (4 Model, 9 Tool, 5 Agent), 1 Reviewing (`demo-crm-lookup`), none Paused. Each Approved CR has the 2 approval annotations and 1 approval record; **`signature` is empty on all 18.** Approvers: system-admin ×11, satyabratsrikumar@team ×5, cloudshell-user@team ×2.
-  - **Evidence bucket config is unreadable to us:** versioning, object lock and lifecycle on `team-evidence-…` are AccessDenied; the bucket was empty at the check. `submit.sh`'s fallback bucket lookup (`… | [0]`) returns empty in this account; it works only because TEAM_EVIDENCE_BUCKET is set.
+  - **Evidence bucket: versioned, though its settings are unreadable to us** (corrected 2026-10-05, from live reads during the architecture work; this line used to say only "unreadable").
+    - WSParticipantRole gets AccessDenied on GetBucketVersioning, GetLifecycleConfiguration, GetBucketLogging, ListObjectVersions and `cloudformation:GetTemplate` (re-checked 20:55 UTC).
+    - CloudTrail (which it can read) shows the `a-02-code-editor` stack (WSSystemRole via CloudFormation, 2026-10-04 10:19:54–55 UTC) set: versioning Enabled; noncurrent versions expire after 7 days; server access logging to `modaas-evidence-access-logs-<acct>` (prefix `team-evidence/`, 30-day expiry, no participant access); SSE-S3; a full public-access block; no Object Lock (none at CreateBucket, no PutObjectLockConfiguration event). The kit's `workshop-static/cfn/02-code-editor.yaml` matches.
+    - WSOpsRole added the inline policy `EvidenceVersionRead` to the IDE role at 2026-10-05 18:10:39 UTC: `s3:ListBucketVersions`, `GetObjectVersion`, `GetObjectVersionAttributes`.
+    - No team role has `s3:DeleteObjectVersion`; the participant's DeleteObject only adds a delete marker (the IDE role has no DeleteObject).
+    - So the version history gives AWS-set upload times and replacements (old versions kept 7 d), readable from the IDE role, not proof of content.
+    - The bucket was still empty at 20:55 UTC. `submit.sh`'s fallback bucket lookup (`… | [0]`) returns empty in this account; it works only because TEAM_EVIDENCE_BUCKET is set.
   - **The ledger service has no verify route:** `audit-store.py` GET routes are only `/healthz`, `/records`, `/timeline`, plus the write.
 - **Keys and tokens (names, types and lengths only):**
   - **No runtime has `GATEWAY_API_KEY`.** The gateway key arrives as `OPENAI_API_KEY` (models) and `AGENTCORE_GATEWAY_MCP_TOKEN` (tools), injected by the operator: AgentConfig specs have only literal env, no `valueFrom` and no reference to `agw-apikeys`. Secret `agentgateway-system/agw-apikeys` exists (checked by name), but no spec references it. In the kit the name appears only in the stale `reference-impl/agents.yaml`. CONFIRMED live 2026-10-05 by in-memory value comparison: no AgentConfig CR (spec, annotations or status) holds the gateway key under any name, and on all 5 runtimes `OPENAI_API_KEY` and `AGENTCORE_GATEWAY_MCP_TOKEN` both equal the `agw-apikeys` eval key (48 characters), one shared key for every agent.
@@ -222,6 +229,7 @@ Verified live with read-only commands on 2026-10-05 (UTC); items marked (review)
   - `can-i` checks RBAC only, not admission; the refusal itself is untested (no write).
 - **Declarations:**
   - All 4 ModelConfigs: `safety.required: true`, `enforcer {kind: bedrockGuardrail, enforcedAt: self}`, `allowedConsumers: ['bootstrap-key']`. 4 READY guardrails `canvas-<alias>`.
+  - **The `external` enforcer kind is not a hook** (corrected 2026-10-05, from live reads during the architecture work): for `kind: external` the model operator only copies the endpoint, timeout and fail-open flag into status ("just echoes endpoint config to status for gateway consumption", `operators/aws-model-operator/model_operator.py` :459–481). Nothing in the platform source reads `enforcerEndpoint` (a grep finds only the operator writing it and the CRD declaring it), and `gatewayFilter` is "not yet implemented". So it gives no gateway-side place for our own check.
   - All 10 ToolConfigs set `access.cedarPolicy`. No AgentConfig sets `spec.access` or `spec.agentPolicy`, or has `status.agentPolicy` (#39, live).
   - The 15 PDP ConfigMaps are 10 tool, 4 model and `my-team-policy`.
 - **Stores and pipelines:**
@@ -230,6 +238,76 @@ Verified live with read-only commands on 2026-10-05 (UTC); items marked (review)
   - Collector pipelines: traces → `awsxray`, metrics → `debug`, `logs/audit` → `/modaas/evidence`, `logs/gateway` → `/aws/modaas/gateway`.
   - The AWS AgentCore gateway `modaas-agw` is `AWS_IAM`, MCP, READY.
 - **Still stale at 19:12Z:** `ReconcilePaused=True` with `spec.paused=false` on nano-9b (since 04:05Z), super-120b (09:13Z) and modaas-docs (05:56Z), so "conditions settle within ~2 min" fails for pause conditions.
+
+**Infra feasibility vetting (2026-10-05)** (four read-only vetter subagents, ~22:55–23:45 UTC, repo `architecture/work/05`–`08`; the F11 re-check is `architecture/work/10-f11-resolution.md`; all as WSParticipantRole, no secret printed). Verdict: the infrastructure supports the design. One packaging redesign (AR-03) and two run-plumbing must-fixes (AR-18, AR-20); nothing on the chosen path is BLOCKED.
+- **An agent build carries ONE source file (AR-03, AR-05):**
+  - The kit's `build-agent-image.sh` embeds one gzip+base64 file (`:171`; the Dockerfile does `COPY agent.py`) and refuses a buildspec over 25,600 chars (`:197-201`). That leaves **24,049 chars** of gzip+base64 source, about 50–80 KB of Python.
+  - There is no other source channel: the CodeBuild role reads only the event bucket, and participants can't push to ECR. A multi-file agent builds, gets approved and goes READY, then dies at its first invoke with an ImportError.
+  - Fix: bundle each agent into ONE file named `ifabric-<role>.py` (never `agent.py`), with a CI gate of ≤ 24,000 chars and a local arm64 Docker run before CodeBuild.
+  - **Image-tag trap:** a source named `agent.py` with no `IMAGE_TAG` falls through to `TAG=reference-agent-v5-agentcore` (`:72`, `:113-134`) and pushes OVER the reference trio's tag (ECR tags are MUTABLE). Always pass a unique `IMAGE_TAG=ifabric-<role>-<gitsha>`.
+  - Timing: ARM builds 44–47 s, queued 0 s; READY about 40 s after the approval annotation.
+- **S2's IT agent was invoked twice (AR-18):** two ledger IT `intent` records 180 s apart (05:16:01, 05:19:01), and two AWS `InvokeAgentRuntime` records with the SAME session id (`…6d9d81230049`), both 200, ending 05:20:24 and 05:20:39. That fits the kit's `ask_agent.py` (`--cli-read-timeout 180` plus the CLI's default retries) re-sending after the read timeout. S2's 1,999,001 tokens span both copies. For our runs: `AWS_MAX_ATTEMPTS=1`, a read timeout of about 900 s, record a TIMEOUT and never re-invoke, and an agent-side in-flight guard.
+- **The AWS invocation records' ids (F11 corrected; see "WHO/AUTHORIZED logs" above):**
+  - `InvokeAgentRuntime`: `requestParameters` is empty; `responseElements` holds `runtimeSessionId` (`<CID>-<hex>`), `traceParent`, `baggage` (the CID) and `statusCode` (28 of 28).
+  - The ids are the ones the caller sent (`ask_agent.py:49, 56, 66-68`). The record, `eventTime`, the principal and the runtime ARN are AWS-set.
+  - A CLI retry reuses the session id; only `requestID` differs, and the CLI doesn't expose it.
+  - Model calls (`Converse*`) carry no ids: they join by time + the gateway's role + model, and their token counts equal the gateway spans' exactly.
+- **Guardrail outcome:**
+  - No gateway span carries a finish reason (`status.code` UNSET; only `http.status`), so a guardrail block read from spans is an INFERENCE: `http.status=200` + 0/0 tokens + cost 0 (06 A5). Strands also maps `content_filter` to `end_turn` (AR-12).
+  - The only record outside the agent that names the block is the AWS model-call record in `aict-invocations`: `guardrailTrace.actionReason = "Guardrail blocked."` (2 records: 03:32:41Z, the nano-9b probe; 09:12:28Z, the my-agent attack; all 252 other gateway calls read "No action."). It has no run id: join by time + model.
+- **`aict-invocations` timing:** `eventTime` = the END of the call. CloudWatch delivery comes 19–328 s later for `InvokeAgentRuntime` (median 280 s, n = 28) and 9–341 s later for model calls. Records arrive in batches sharing one timestamp, so `@timestamp` ≠ `eventTime`. Pull at least 10 min after a run, and join on `eventTime`.
+- **The ledger token sits in 3 places per AgentConfig** (06 D4):
+  - `spec.awsAgentCore.environmentVariables.AUDIT_WRITE_TOKEN`;
+  - annotation `kubectl.kubernetes.io/last-applied-configuration`;
+  - annotation `kopf.zalando.org/last-handled-configuration`.
+
+  So the kit's `pull-evidence.sh` CR dump holds **15 copies** (5 AgentConfigs × 3). CR status and `tmf639.json` hold none. Redaction must drop all three paths on every CR kind, plus the exact-value scan.
+- **The ledger server, not its 1Gi PVC, is the binding limit** (AR-21, 06 C5):
+  - one replica (`Recreate`);
+  - a plain **single-threaded** `HTTPServer` (HTTP/1.0), so a GET blocks POSTs;
+  - memory limit **256Mi**, CPU request 50m;
+  - every GET parses the whole file; no fsync.
+
+  Estimate, not measured: about 20–30K records before a full GET risks an OOM. Export per CID; no full GET or fast `tail` while a run is live.
+- **Facilitator twin-fix objects in our team bucket:**
+  - Four `facilitator/` objects landed at 21:14–21:21Z: `fix-twin.sh`; `twin-dataset.json` (byte-identical to the kit's); a rewritten `twin-scenario.sh` helper; and `twin-vs-agent.json`, precomputed from our ledger, `disagree: false`.
+  - Per repo `architecture/work/09-twin-fix-check.md`, the `network-twin` Lambda is unchanged (same CodeSha256), so #58 and gap 10 stand.
+  - Write only under `ifabric/` and `submissions/`; never delete others' objects.
+- **AWS credentials last 12 h** (08 OP-01): CloudTrail AssumeRole into WSParticipantRole shows `durationSeconds=43200` on all 11 issuances. The current key was issued 18:29:19Z and **expires 2026-10-06T06:29:19Z**. A refresh between 03:30 and 06:29 UTC covers a 15:00 UTC deadline; new credentials don't revoke the old ones.
+- **Governance and security limits (07):**
+  - **GS-03, BLOCKED:** an `ifabric-` ToolConfig that adopts an existing gateway target decides nothing. authz picks the policy from the wire tool name `<target>___<tool>`, so the platform's policy decides every `tools/call`. Only a custom tool (our own MCP server in `components`, via `new-tool.sh`) lets our Cedar decide. Never set `access.agentPolicy.engine.cedar.policyId`: a custom id makes every call DENY.
+  - **GS-04, BLOCKED by rule:** a managed-mode target over an existing Lambda writes to the shared AWS AgentCore Gateway, and deleting our CR could delete a same-named target.
+  - **GS-05, BLOCKED by rule:** IAM allows `team-*` Lambda create and update, but a new Lambda is forbidden.
+  - **GS-14: an AgentConfig pause is a record, not a stop.** The runtime stays READY and a direct `InvokeAgentRuntime` still works. Check `spec.paused` before runs; contain a run by pausing our own tool or by C16 `enforce`.
+  - **GS-15, BLOCKED:** participants are explicitly denied creating, updating and deleting guardrails (`DenyAiAssetWritesOutsideModaas`); reads are allowed.
+  - **GS-16, BLOCKED per call and per agent:** the guardrail is fixed per model alias route. super-120b → `yclc11u8sb3j` v2; nano-9b → `req57sb37n4d` v3. Both are PROMPT_ATTACK, input HIGH, output NONE, with no PII, topic, word or grounding policy (re-read live ~23:50Z; the helper alias's guardrail DRAFT, not the v1 its route uses, also has a PII policy). An agent picks a guardrail only by picking a model. Versions move on reconcile: super-120b v2 was created at the 09:13Z resume.
+  - **GS-25:** the :8443 TLS listener serves model routes only; there is no MCP TLS listener. It presents a **self-signed certificate with an empty subject and the placeholder SAN `<PERIMETER-HOST>`** (plus the in-cluster name), valid 2026-10-04 10:33:57Z → 2027-01-02. The source says the placeholder MUST be substituted before apply; it never was. So the gateway key crosses in the clear on every tool call.
+  - **GS-27, BLOCKED (platform):** per-agent Cedar (the AgentConfig `access.cedarPolicy` overlay or `agentPolicy`) is not wired; there is one principal, `bootstrap-key`.
+- **Generation 2 running on a generation-1 approval** (07 GS-22, 05 AR-15):
+  - Two agents were approved at generation 1 and now run generation 2, each with its single approval: `it-resolution-agent` (model swap; runtime v2 at 05:47:50Z) and `network-resolution-agent` (added env `IT_AGENT_RUNTIME_ARN`; runtime v2 at 04:39:08Z).
+  - Approval records store no generation. The approved generation is only in the participant-writable PublishedNotification `ApprovalRecorded.observedGeneration`; corroborate it with the AWS Agent Registry `updatedAt` and the runtime versions.
+  - An env patch re-provisions the runtime with NO re-approval (OC-12 closed). A bad env value sets the CR to Failed while the runtime keeps the OLD env.
+- **Open checks closed by the vetting:**
+  - **OC-1:** a hook cancel is a normal `end_turn` with the cancel text, usage 0.
+  - **OC-2:** Strands' 429 retries re-enter the hook; the OpenAI client's 2 retries don't, so set `max_retries=0`.
+  - **OC-4:** MCP spans carry `mcp.method.name` (listener `http`); no span has a finish reason.
+  - **OC-5:** the CLI can't capture `requestID`. Moot now: the record carries the CID and session id.
+  - **OC-7:** a Cedar edit keeps the approval, by source plus precedent. No Cedar text has ever been edited live.
+  - **OC-9:** container stdout lands in the `[runtime-logs]` streams about 0.9 s later, so no new log group is needed.
+  - **OC-12:** see the generation bullet above.
+  - **OC-13:** tool Lambda CodeSha256 is readable. Never call `GetFunction`: it returns a presigned code URL.
+  - **OC-14:** `tmf639.json` holds no token.
+  - **OC-16:** the redaction switch is `OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_unredacted_attributes=`. From source; the live check is pending.
+  - **OC-18:** moved to gap 9.
+  - **OC-19:** the field paths for the running version.
+  - **Narrowed:** OC-3. `x-modaas-action-id` is set by the gateway's response transformation on all listeners, verified on non-streaming calls only.
+  - **Partly answered:** OC-17. No bucket-policy or Object Lock event exists.
+  - **Still open:** OC-3 on streamed responses; OC-8 (a ledger POST from the laptop); OC-10 (forced structured output on Nemotron); OC-20 (the metric publication delay); a participant PutObject on the evidence bucket.
+- **Python:** `/usr/bin/python3` is 3.9.6 (the judge side; stdlib-only `prooflab/` compiles). The shell's `python3` is Anaconda 3.12.7. The pinned agent SDKs need ≥ 3.10. The earlier "46 passed" ran on 3.12.
+- **Live-lane budget (08 §G):**
+  - About 37–45 runs ≈ 2.5–4.3M tokens over about 10 h (about 50K per S1/S3-class run). The peak hour is about 1.2M against the 2.5M tokens/h ceiling; requests (49/min peak) don't bind.
+  - Feasible if the observe-mode safety ceiling is ≤ about 300K and the inline halt is proven on a low cap before any S2-class run. One unbounded S2 costs about 2.0M in about 5 min.
+  - The binding constraints are human OK latency on a serial lane, the 06:29:19Z credential expiry and overnight availability. The last 8 h of `aws/spans` showed 1–2 model calls an hour, so headroom was full.
 
 **Not yet verified:** the OAuth/JWT path, direct-AgentCore denial, and refusal of unapproved models.
 

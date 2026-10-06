@@ -1,0 +1,132 @@
+{
+  "schema": "ifabric.assessment/v1",
+  "assessment_id": "C16:G-FM-v1:run:FM-B:r1",
+  "revision": 1,
+  "supersedes": null,
+  "control_ref": "C16",
+  "control_id": "ACN-COST-001",
+  "threshold_version": "G-FM-v1",
+  "register_version": "R-2026-10-05-v1",
+  "threshold": {
+    "observation_limit": {
+      "value": 60000,
+      "operator": "<=",
+      "unit": "tokens per run",
+      "label": "illustrative cap"
+    },
+    "exception_tolerance": {
+      "value": 0,
+      "operator": "<=",
+      "unit": "runs over cap"
+    },
+    "source_ref": "register:register/register.yaml@G-FM-v1#C16",
+    "register_sha256": "a6fa581e8e6ce48dc8c2555b2615bb2f8e7ba063c91698f54c4ea526077f9e40"
+  },
+  "owner": {
+    "name": "Sree Annapurna Rallabandi",
+    "id": "annapurna@invences.com",
+    "role": "accountable management · control owner"
+  },
+  "scope": {
+    "kind": "run",
+    "id": "FM-B",
+    "alias": "FM-B",
+    "cid": "fault-1791244802-b7d20f",
+    "start": "2026-10-06T00:00:02Z",
+    "end": "2026-10-06T00:05:52Z"
+  },
+  "provenance": "SYNTHETIC",
+  "population": {
+    "expected": {
+      "count": 15,
+      "source": "gateway llm lines with modaas.run_id = CID, reconciled with /modaas/evidence by trace_id",
+      "ref": "capture:raw/gateway/fault-1791244802-b7d20f/gateway-stdout.capture.json"
+    },
+    "observed": 15,
+    "matched": 15,
+    "missing": 0,
+    "unmatched": 0,
+    "duplicates_removed": 15,
+    "blocked": 1,
+    "unmeasurable": 0
+  },
+  "measured": {
+    "value": 63420,
+    "unit": "tokens",
+    "breakdown": {
+      "input": 61264,
+      "output": 2156
+    },
+    "by_actor": [
+      {
+        "actor": "ifabric_customer_agent",
+        "value": 8807,
+        "calls": 2
+      },
+      {
+        "actor": "ifabric_it_agent",
+        "value": 34657,
+        "calls": 9
+      },
+      {
+        "actor": "ifabric_network_agent",
+        "value": 19956,
+        "calls": 4
+      }
+    ]
+  },
+  "exceptions": [
+    {
+      "id": "c-0015",
+      "ref": "gateway:action_id=agw-68ba9efe",
+      "value": 63420,
+      "why": "run total 63,420 exceeds the cap 60,000 by 3,420"
+    }
+  ],
+  "verdict": "BREACHED",
+  "formula": "Σ(input + output) over accepted gateway executions of the run (dedup by action_id) <= cap",
+  "evaluator": {
+    "name": "prooflab.evaluators.c16.test",
+    "version": "git:3f9a1c2",
+    "kind": "control-test"
+  },
+  "enforcement": {
+    "mode": "INLINE_OBSERVE",
+    "ep_refs": [
+      "EP2",
+      "EP3"
+    ],
+    "decisions_ref": "record:C16:FM-B",
+    "stop_records": []
+  },
+  "evaluated_at": "2026-10-06T00:06:13Z",
+  "evidence_refs": [
+    "raw:raw/gateway/fault-1791244802-b7d20f/gateway-stdout.log",
+    "ledger:cid=fault-1791244802-b7d20f"
+  ],
+  "actors": [
+    "ifabric_customer_agent",
+    "ifabric_it_agent",
+    "ifabric_network_agent"
+  ],
+  "gaps": [],
+  "finding": {
+    "control_ref": "C16",
+    "control_id": "ACN-COST-001",
+    "threshold_version": "G-FM-v1",
+    "scope_kind": "run",
+    "scope_id": "FM-B",
+    "verdict": "BREACHED",
+    "summary": "63,420 tokens > cap 60,000 (all 3 agents + retries)",
+    "detected_at": "2026-10-06T00:06:12Z",
+    "evidence": [
+      "assessment:assessments/C16/run_FM-B.r1.json",
+      "gateway:action_id=agw-68ba9efe",
+      "ledger:cid=fault-1791244802-b7d20f",
+      "register:register/register.yaml@G-FM-v1"
+    ],
+    "kind": "finding"
+  },
+  "retest_of": null,
+  "closes_finding": null
+}

@@ -1,4 +1,4 @@
 - What this is: a snapshot of Claude Code's persistent project memory for this project.
 - Live location: `~/.claude/projects/-/memory/`; `MEMORY.md` is the index (start with `planning-handoff.md`).
 - Refreshed with every commit.
-- Snapshot time: 2026-10-05 19:44 UTC; includes the platform-contract page check and its independent review (2026-10-05).
+- Snapshot time: 2026-10-06 00:34 UTC; includes the platform-contract page check and its independent review (2026-10-05).

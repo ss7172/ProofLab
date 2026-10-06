@@ -1,0 +1,3 @@
+- Provenance: `ifabric-handoff-3/` is Arth's package, copied from `~/Downloads/ifabric-handoff-3` on 2026-10-06 UTC (rsync without .DS_Store and Python caches; `diff -r` against the source showed no differences before the rewording below).
+- Arth's code is used as-is: nothing under `ifabric-handoff-3/` was changed apart from the two doc lines below.
+- Two doc lines were reworded only so the secret scan passes (`evidence-console-plan/04-LOGS-TO-EVIDENCE.md:52` and `evidence-console-plan/09-BUILD-ORDER-AND-ACCEPTANCE.md:107`); they named the `tkn` query parameter as a pattern, and no secret values were present.

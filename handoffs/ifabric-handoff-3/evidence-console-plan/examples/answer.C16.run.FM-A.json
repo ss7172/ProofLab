@@ -1,0 +1,471 @@
+{
+  "schema": "ifabric.answer/v1",
+  "answer_id": "75d61e74a264cb236fa30c911daed17d2422e42e13d076371b0113f0da68a317",
+  "query": {
+    "text": "Show me control 16 for run FM-A",
+    "normalized": "controltest 16 --run FM-A",
+    "control_ref": "C16",
+    "scope": {
+      "kind": "run",
+      "id": "FM-A",
+      "alias": "FM-A",
+      "cid": "fault-1791241331-4c1e9a"
+    },
+    "grammar_version": "g1"
+  },
+  "answered_at": "2026-10-06T15:20:00Z",
+  "elapsed_ms": 388,
+  "source": {
+    "mode": "PACK",
+    "pack_root": "evidence/",
+    "manifest_sha256": "826b52d007ee90a02338ea48868e7e03b8fc346a443c3709c55bfbc3a6ef91eb",
+    "manifest_status": "VERIFIED",
+    "records_scanned": 214
+  },
+  "provenance": "SYNTHETIC",
+  "control": {
+    "ref": "C16",
+    "id": "ACN-COST-001",
+    "name": "Per-run token spend cap",
+    "mode": "in-transaction",
+    "parent_id": "ACN-COST-001",
+    "child_id": "ACN-COST-001.01"
+  },
+  "rule": {
+    "register_version": "R-2026-10-05-v1",
+    "threshold_version": "G-FM-v1",
+    "version_date": "2026-10-05",
+    "frozen_at": "2026-10-05T22:10:00Z",
+    "owner": {
+      "name": "Sree Annapurna Rallabandi",
+      "id": "annapurna@invences.com",
+      "role": "accountable management · control owner"
+    },
+    "approval": {
+      "status": "APPROVED",
+      "ref": "servicenow:INC0090201",
+      "at": "2026-10-05T22:31:04Z",
+      "approver": {
+        "name": "Sree Annapurna Rallabandi",
+        "id": "annapurna@invences.com",
+        "role": "accountable management · control owner"
+      }
+    },
+    "date_before_scope": true,
+    "statement": "Total input + output tokens per fault-resolution run, all three agents and every retry, stay within the cap; no over-cap run is permitted.",
+    "observation_limit": {
+      "value": 60000,
+      "operator": "<=",
+      "unit": "tokens per run",
+      "label": "illustrative cap"
+    },
+    "exception_tolerance": {
+      "value": 0,
+      "operator": "<=",
+      "unit": "runs over cap"
+    },
+    "measurement_basis": "Gateway stdout listener=llm lines with modaas.run_id = CID (captured right after each run); durable cross-check: /aws/modaas/gateway trace_id ↔ /modaas/evidence correlation_id. Dedupe by action_id. Guardrail blocks counted as blocked calls (0 tokens).",
+    "source_ref": "register:register/register.yaml@G-FM-v1#C16",
+    "register_sha256": "a6fa581e8e6ce48dc8c2555b2615bb2f8e7ba063c91698f54c4ea526077f9e40"
+  },
+  "scope": {
+    "kind": "run",
+    "id": "FM-A",
+    "alias": "FM-A",
+    "cid": "fault-1791241331-4c1e9a",
+    "start": "2026-10-05T23:02:11Z",
+    "end": "2026-10-05T23:03:28Z"
+  },
+  "population": {
+    "expected": {
+      "count": 9,
+      "source": "gateway llm lines with modaas.run_id = CID, reconciled with /modaas/evidence by trace_id",
+      "ref": "capture:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.capture.json"
+    },
+    "observed": 9,
+    "matched": 9,
+    "missing": 0,
+    "unmatched": 0,
+    "duplicates_removed": 9,
+    "blocked": 0,
+    "unmeasurable": 0
+  },
+  "measurement": {
+    "value": 37664,
+    "unit": "tokens",
+    "formula": "Σ(input + output) over accepted gateway executions of the run (dedup by action_id) <= cap",
+    "breakdown": {
+      "input": 36166,
+      "output": 1498
+    },
+    "by_actor": [
+      {
+        "actor": "ifabric_customer_agent",
+        "value": 8411,
+        "calls": 2
+      },
+      {
+        "actor": "ifabric_it_agent",
+        "value": 8450,
+        "calls": 2
+      },
+      {
+        "actor": "ifabric_network_agent",
+        "value": 20803,
+        "calls": 5
+      }
+    ]
+  },
+  "comparison": {
+    "limit": 60000,
+    "operator": "<=",
+    "delta": -22336,
+    "within_limit": true,
+    "exceptions_count": 0,
+    "exceptions_allowed": 0,
+    "exceptions_unit": "runs over cap",
+    "exception_fraction": null
+  },
+  "exceptions": [],
+  "verdict": {
+    "value": "SATISFIED",
+    "label": "SATISFIED",
+    "reason": "37,664 tokens ≤ cap 60,000 (margin 22,336); population complete.",
+    "evidence_sufficiency": "COMPLETE",
+    "built_properly": true,
+    "actually_worked": true
+  },
+  "enforcement": {
+    "mode": "INLINE_ENFORCE",
+    "tester": {
+      "name": "prooflab.evaluators.c16.test",
+      "version": "git:3f9a1c2"
+    },
+    "evaluator": {
+      "name": "prooflab.evaluators.c16.admit",
+      "version": "git:3f9a1c2",
+      "ep": "EP2 agent adapter"
+    },
+    "inline_decisions": [
+      {
+        "call_id": "c-0001",
+        "decision": "ALLOW",
+        "at": "2026-10-05T23:02:16.333Z",
+        "committed": 0,
+        "reserved": 4521,
+        "limit": 60000,
+        "reason": "committed + reserved <= cap"
+      },
+      {
+        "call_id": "c-0002",
+        "decision": "ALLOW",
+        "at": "2026-10-05T23:02:21.666Z",
+        "committed": 4180,
+        "reserved": 4560,
+        "limit": 60000,
+        "reason": "committed + reserved <= cap"
+      },
+      {
+        "call_id": "c-0003",
+        "decision": "ALLOW",
+        "at": "2026-10-05T23:02:40.666Z",
+        "committed": 8411,
+        "reserved": 4602,
+        "limit": 60000,
+        "reason": "committed + reserved <= cap"
+      },
+      {
+        "call_id": "c-0004",
+        "decision": "ALLOW",
+        "at": "2026-10-05T23:02:53.333Z",
+        "committed": 12609,
+        "reserved": 4641,
+        "limit": 60000,
+        "reason": "committed + reserved <= cap"
+      },
+      {
+        "call_id": "c-0005",
+        "decision": "ALLOW",
+        "at": "2026-10-05T23:03:10.333Z",
+        "committed": 16861,
+        "reserved": 4393,
+        "limit": 60000,
+        "reason": "committed + reserved <= cap"
+      },
+      {
+        "call_id": "c-0006",
+        "decision": "ALLOW",
+        "at": "2026-10-05T23:03:13.666Z",
+        "committed": 20932,
+        "reserved": 4446,
+        "limit": 60000,
+        "reason": "committed + reserved <= cap"
+      },
+      {
+        "call_id": "c-0007",
+        "decision": "ALLOW",
+        "at": "2026-10-05T23:03:16.999Z",
+        "committed": 25060,
+        "reserved": 4509,
+        "limit": 60000,
+        "reason": "committed + reserved <= cap"
+      },
+      {
+        "call_id": "c-0008",
+        "decision": "ALLOW",
+        "at": "2026-10-05T23:03:20.333Z",
+        "committed": 29261,
+        "reserved": 4490,
+        "limit": 60000,
+        "reason": "committed + reserved <= cap"
+      },
+      {
+        "call_id": "c-0009",
+        "decision": "ALLOW",
+        "at": "2026-10-05T23:03:23.666Z",
+        "committed": 33438,
+        "reserved": 4504,
+        "limit": 60000,
+        "reason": "committed + reserved <= cap"
+      }
+    ],
+    "stop_records": []
+  },
+  "audit_question": {
+    "what_was_done": {
+      "text": "Fault-resolution run FM-A (S1 · Fronthaul degradation (baseline)): 9 model calls (0 blocked) and 6 tool calls across three agents.",
+      "refs": [
+        "run:FM-A/run.json"
+      ]
+    },
+    "by_which_agent": {
+      "text": "ifabric_customer_agent → ifabric_it_agent → ifabric_network_agent (AgentCore runtimes; CRs ifabric-*-agent gen 3, approved by Sree 21:48:30Z).",
+      "refs": [
+        "cr:AgentConfig/ifabric-it-agent@3"
+      ]
+    },
+    "where": {
+      "text": "Customer zone → Gateway A → IT zone → Gateway B → Network zone; every model call through EP1 modaas-agw (us-east-1).",
+      "refs": [
+        "run:FM-A/run.json#journey"
+      ]
+    },
+    "when": {
+      "text": "2026-10-05T23:02:11Z → 2026-10-05T23:03:28Z (gateway clock, UTC).",
+      "refs": [
+        "capture:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.capture.json"
+      ]
+    },
+    "under_whose_authority": {
+      "text": "Run started by the operator via ifabric-run (WSParticipantRole, CloudTrail InvokeAgentRuntime); gateway principal ServiceIdentity::\"bootstrap-key\" (shared team key — WHO is PARTIAL, gap B1).",
+      "refs": [
+        "raw:raw/cloudtrail/aict-invocations.json"
+      ],
+      "flag": "FLAG"
+    },
+    "rule_checked": {
+      "text": "C16 ACN-COST-001 · G-FM-v1: Σ(input+output) per run, all agents + retries ≤ 60,000 tokens; 0 over-cap runs permitted.",
+      "refs": [
+        "register:register/register.yaml@G-FM-v1#C16"
+      ]
+    },
+    "limit_in_force": {
+      "text": "60,000 tokens — G-FM-v1 dated 2026-10-05, frozen 22:10:00Z, approved by Sree 22:31:04Z (INC0090201), before this run started ✓.",
+      "refs": [
+        "servicenow:INC0090201"
+      ]
+    },
+    "decision": {
+      "text": "Allowed — every call admitted. Control test: SATISFIED.",
+      "refs": [
+        "record:C16:FM-A"
+      ],
+      "outcome": "ALLOWED"
+    },
+    "who_was_told": {
+      "text": "No one needed telling: SATISFIED (no finding). The run's evidence is in the pack; owner alerts are raised only for breaches.",
+      "refs": []
+    },
+    "unchanged_since": {
+      "text": "214/214 pack files match MANIFEST (SHA-256) · 9/9 calls corroborated on ≥2 independent surfaces · S3 readback 14:02:40Z · raw captures never edited.",
+      "refs": [
+        "manifest:MANIFEST.json",
+        "s3:team-evidence-613052889143/submission-ifabric-20261006T1401Z.zip"
+      ]
+    }
+  },
+  "human_loops": [],
+  "aict": {
+    "status": "DISCOVERED",
+    "connection": "iFabric Hackathon 2026",
+    "assets": [
+      "ifabric_customer_agent",
+      "ifabric_it_agent",
+      "ifabric_network_agent",
+      "ifabric_assurance_agent"
+    ],
+    "last_import_at": "2026-10-06T13:45:00Z",
+    "monitor": "NONE",
+    "refs": [
+      "aict:inventory/2026-10-06T13-45Z.json",
+      "raw:raw/cloudtrail/assumerole-SgcAictReadOnlyAccessRole.json"
+    ]
+  },
+  "records": [
+    {
+      "ref": "record:ev:C16:G-FM-v1:FM-A:c-0001",
+      "role": "measurement",
+      "surface": "gateway-stdout",
+      "raw_ref": "raw:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.log#L1",
+      "sha256": "ed9b0310c9d2fc77bf65dd52a87c2eaf863695d7607cd44e3fc4e3e9ae06a4d2",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A",
+        "T"
+      ],
+      "summary": "c-0001 ifabric_customer_agent 4,180 tok → Σ 4,180"
+    },
+    {
+      "ref": "record:ev:C16:G-FM-v1:FM-A:c-0002",
+      "role": "measurement",
+      "surface": "gateway-stdout",
+      "raw_ref": "raw:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.log#L2",
+      "sha256": "3afe95c659d729ffe881deb29959dbf88eada432fb1a7cd7b55220604113076a",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A",
+        "T"
+      ],
+      "summary": "c-0002 ifabric_customer_agent 4,231 tok → Σ 8,411"
+    },
+    {
+      "ref": "record:ev:C16:G-FM-v1:FM-A:c-0003",
+      "role": "measurement",
+      "surface": "gateway-stdout",
+      "raw_ref": "raw:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.log#L3",
+      "sha256": "d5a6b9de1a05166bb60b07cea1df95ead73b7b4f3b3f5e94f15e863facd2abf4",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A",
+        "T"
+      ],
+      "summary": "c-0003 ifabric_it_agent 4,198 tok → Σ 12,609"
+    },
+    {
+      "ref": "record:ev:C16:G-FM-v1:FM-A:c-0004",
+      "role": "measurement",
+      "surface": "gateway-stdout",
+      "raw_ref": "raw:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.log#L4",
+      "sha256": "67a6108319b27c68b692a141b80873494df32cae39fa79c03784bc34b1816b7c",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A",
+        "T"
+      ],
+      "summary": "c-0004 ifabric_it_agent 4,252 tok → Σ 16,861"
+    },
+    {
+      "ref": "record:ev:C16:G-FM-v1:FM-A:c-0005",
+      "role": "measurement",
+      "surface": "gateway-stdout",
+      "raw_ref": "raw:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.log#L5",
+      "sha256": "8621d1339c3e45c69e55456443c0a06a5a4cb7c36aae32e67aaa3c79cf9e02c9",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A",
+        "T"
+      ],
+      "summary": "c-0005 ifabric_network_agent 4,071 tok → Σ 20,932"
+    },
+    {
+      "ref": "record:ev:C16:G-FM-v1:FM-A:c-0006",
+      "role": "measurement",
+      "surface": "gateway-stdout",
+      "raw_ref": "raw:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.log#L6",
+      "sha256": "8c07e12e8badeb914c8612df591654214a7060b370b4a50bd3771eca9fe628a1",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A",
+        "T"
+      ],
+      "summary": "c-0006 ifabric_network_agent 4,128 tok → Σ 25,060"
+    },
+    {
+      "ref": "record:ev:C16:G-FM-v1:FM-A:c-0007",
+      "role": "measurement",
+      "surface": "gateway-stdout",
+      "raw_ref": "raw:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.log#L7",
+      "sha256": "74abbbf47960c263652498901f4c98f64c9f13a20b430a0cdd0491c17436984d",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A",
+        "T"
+      ],
+      "summary": "c-0007 ifabric_network_agent 4,201 tok → Σ 29,261"
+    },
+    {
+      "ref": "record:ev:C16:G-FM-v1:FM-A:c-0008",
+      "role": "measurement",
+      "surface": "gateway-stdout",
+      "raw_ref": "raw:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.log#L8",
+      "sha256": "aa1d7f75b5a885459e9c75ad70abc4804510218caa0ce80d83218361c1cbf281",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A",
+        "T"
+      ],
+      "summary": "c-0008 ifabric_network_agent 4,177 tok → Σ 33,438"
+    },
+    {
+      "ref": "record:ev:C16:G-FM-v1:FM-A:c-0009",
+      "role": "measurement",
+      "surface": "gateway-stdout",
+      "raw_ref": "raw:raw/gateway/fault-1791241331-4c1e9a/gateway-stdout.log#L9",
+      "sha256": "b6df46d8223a6d54a2773dc730e93b23fd085c15d5c3f912546f2d54d74c4fa1",
+      "manifest": "OK",
+      "tickmarks": [
+        "R",
+        "A",
+        "T"
+      ],
+      "summary": "c-0009 ifabric_network_agent 4,226 tok → Σ 37,664"
+    },
+    {
+      "ref": "register:register/register.yaml@G-FM-v1#C16",
+      "role": "context",
+      "surface": "register",
+      "manifest": "OK",
+      "tickmarks": [
+        "A",
+        "V"
+      ],
+      "summary": "rule G-FM-v1, frozen 22:10Z, approved 22:31Z"
+    }
+  ],
+  "gaps": [
+    {
+      "id": "B1",
+      "text": "Gateway identity is one shared key: per-agent WHO comes from runtime logs and CloudTrail, not the gateway.",
+      "affects": "WHO"
+    }
+  ],
+  "tickmarks": {
+    "R": "Recomputed from raw records by the evaluator (pure function of facts + frozen register)",
+    "A": "Agreed to source: raw capture sha256 is listed in MANIFEST.json",
+    "T": "Traced: the same call/event found on >= 2 independent surfaces by its join keys",
+    "V": "Vouched: owner approval of this rule is dated before the scope began"
+  },
+  "links": {
+    "lane": "run:FM-A",
+    "auditor": null,
+    "case": null
+  }
+}

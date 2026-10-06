@@ -1,0 +1,20 @@
+{
+  "schema": "ifabric.gap/v1",
+  "gap_id": "A10",
+  "section": "A",
+  "title": "AICT sees the agent only on AgentCore",
+  "what": "Only the AgentCore runtime ifabric_assurance_agent is an AICT asset; direct gateway calls are ledger-recorded, not AICT assets.",
+  "why": "Connector scope",
+  "affects": {
+    "controls": [],
+    "claim": false,
+    "levels": [
+      "L3"
+    ],
+    "auditor_questions": []
+  },
+  "impact": "The AICT line exists only after the AgentCore deploy.",
+  "next": "Deploy before the named runs",
+  "status": "OPEN",
+  "refs": []
+}

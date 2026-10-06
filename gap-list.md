@@ -32,6 +32,7 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 - The guide's suggested WHO source, the `modaas-authz` pod log, holds no per-call records, only its startup lines. The per-call identity is in `/modaas/evidence`, and there every authenticated call names `bootstrap-key`.
 - Per-agent Keycloak identities exist (one `IdentityConfig` per agent), but none is provisioned (`listenerRegistered: false`).
 - Every AgentCore runtime, ours included, runs as the same IAM role (`a-01-eks-cluster-agentcore-runtime`).
+- Nor can a guardrail be chosen per agent: each model alias carries one fixed Bedrock guardrail (the two our agents use filter only prompt attacks, on input), and participants are explicitly denied creating or editing guardrails. An agent gets a different guardrail only by calling a different model alias.
 
 **Impact:** *"which identity acted, on whose behalf, with what scope?"* is answered by the agents' own ledger `actor` field, not by an independent record.
 
@@ -65,7 +66,7 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
   - the guardrail blocked the attack (*"Input blocked by policy."*, 0 tokens)
   - the policy decision and `/modaas/evidence` both say `ALLOW`, with no guardrail field
   - the agent's ledger records `http_status=200` and `disposition=undetermined`
-  - No record anywhere says a guardrail acted.
+  - The only record outside the agent that says a guardrail acted is AWS's own model-call log (`/aws/bedrock/aict-invocations`), which reads `Guardrail blocked.` for that call. It carries no run id, so it joins the run only by time and model (corrected 2026-10-05 after live re-check).
 - **The kill switch is recorded the same way** (Module 9 Step 3: `nemotron-super-120b` paused at 09:13:04 UTC; CID `my-agent-1791191585-4d9744`):
   - the agent's call was refused within 2 s (HTTP 404, route withdrawn)
   - but `/modaas/evidence` and the policy-decision log record `decision=ALLOW` (policy `model-nemotron-super-120b`, version 331993)
@@ -74,7 +75,7 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
   - Only the agent's own ledger says `disposition=refused`.
 - The reference agents write no guardrail verdict to the ledger, so the grader's guardrail check fails on every run.
 
-**Impact:** an auditor reading the platform's decision records would count a blocked attack, and a call stopped by the kill switch, as allowed calls. The only record that names either refusal is written by the agent itself. On the platform side there is just a 0-token answer (the guardrail) or a bare 404 joinable only by trace id (the pause).
+**Impact:** an auditor reading the platform's decision records would count a blocked attack, and a call stopped by the kill switch, as allowed calls. The only records that name either refusal are the agent's own and, for the guardrail only, AWS's model-call log, which has no run id. On the platform side there is just a 0-token answer (the guardrail) or a bare 404 joinable only by trace id (the pause).
 
 **If you had one more day:** join each decision to its gateway line (by action id, or by trace id where the line has none) and report the real outcome per call: served, blocked by guardrail, or refused by pause.
 
@@ -88,6 +89,7 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 - An approval is two free-text annotations, stored with an empty `signature` (all 18 approval records in the cluster, re-checked 2026-10-05), and EKS control-plane logging, audit included, is off for all five log types. So who set them isn't recorded independently.
 - Changing an approved agent's model needed no re-review (the Module 7 swap). The guide states the same for image changes, from its own measurement; we haven't tested it.
 - The "re-attest" annotation added no approval record. The IT agent's only approval (04:37 UTC) predates its model change (05:47 UTC).
+- So the IT and network agents now run generation 2 on a generation-1 approval: the IT agent since its model swap, the network agent since an added environment variable (04:38 UTC). Each still holds its single approval, and the approval record stores no generation (live, 2026-10-05).
 
 **Impact:** *"attestation for every asset in the chain?"* can return an attestation that doesn't cover what ran.
 
@@ -105,7 +107,7 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 - Participants can also read the write token from each agent runtime's environment variables (`get-agent-runtime`), not only from the AgentConfig specs.
 - The kit's own evidence pull copies the token into the Evidence Pack: `pull-evidence.sh` (line 78) saves the full Model/Tool/AgentConfig objects, specs included, as `cr-status.json`. `submit.sh` then zips the evidence folder as it is, uploads it to the team evidence bucket (stack output `TeamEvidenceBucketName`), which the judges read, and leaves a copy of the zip in the directory it was run from.
 - Its timestamps are the writer's: the store keeps any `ts` a writer sends and assigns only `seq` itself, so a forged record can also carry a chosen time.
-- The hand-in bucket can't vouch for the records either. Participants can't read its versioning, object-lock or lifecycle settings (AccessDenied), yet the same credentials can overwrite or delete its objects and can't list or read earlier versions. `submit.sh` prints no `VersionId`. A `head-object` after upload shows one only if versioning is on, and even then it shows only that versioning was on, not that the submission is unaltered.
+- The hand-in bucket can vouch for upload times, not for content (corrected 2026-10-05, from live reads during the architecture work). CloudTrail shows it was created versioned (2026-10-04 10:19 UTC), with old versions kept 7 days, server access logging to a bucket participants can't reach, and no Object Lock. Participants can't read those settings or list versions (AccessDenied), and can't remove a version: a delete only adds a delete marker, and an overwrite keeps the old version for 7 days. Since 2026-10-05 18:10 UTC the IDE role can list and read versions. `submit.sh` prints no `VersionId`. So the upload time and version history are set by AWS, but they can't show the records were unaltered before upload.
 
 **Impact:** *"can you show the records were not altered?"* can be answered by corroboration, not proof.
 
@@ -139,6 +141,7 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 - The only limits are account-wide: 100 model requests a minute and 2.5M tokens an hour.
 - The S2 loop peaked at 49 model calls a minute, so the request limit never engaged, yet it used 80% of the hourly token budget in under five minutes.
 - Pausing a model took 33–41 s to take effect, and Cedar keeps no state it could count with.
+- Work can also double without anyone asking for it. In S2 the IT agent was invoked twice in one session: two IT intents in the ledger 180 s apart, and two AWS invocation records with the same session id, ending 15 s apart (05:20:24 and 05:20:39 UTC). That fits the AWS CLI re-sending the call after the kit's 180 s read timeout. Both copies ran, the run's 1,999,001 tokens span both, and no platform limit stops a retry.
 
 **Impact:** one run can exhaust the team's shared budget before any platform control acts.
 
@@ -153,11 +156,12 @@ Gaps 1 and 10 are about agent judgment, the gap the challenge asks us to close. 
 **Why:**
 - `customer-records` declares no data classification, so its own "restricted" Cedar rule can never fire.
 - The agents' spans store the full prompt context, including customer records, in CloudWatch Logs.
-- Every agent calls the gateway's public endpoint over plain HTTP, so the team key travels unencrypted on every model and tool call. A TLS listener is configured (:8443), but we haven't tested it.
+- Every agent calls the gateway's public endpoint over plain HTTP, so the team key travels unencrypted on every model and tool call.
+- The TLS listener (:8443) serves model calls only, and its certificate is self-signed with a placeholder hostname (`<PERIMETER-HOST>`) that the installer was meant to replace and never did (TLS handshake without credentials, 2026-10-05), so agents can't use it as deployed: a client that checks certificates rejects it. Tool calls have no TLS listener at all.
 
 **Impact:** an auditor can't show that customer data was handled under a declared classification, or that credentials and prompts were protected in transit and at rest.
 
-**If you had one more day:** classify the tool, decide deliberately what our agent's spans keep (and say so), and ask for agents to be wired to the TLS listener.
+**If you had one more day:** classify the tool, decide deliberately what our agent's spans keep (and say so), and ask the platform team for a real certificate, a TLS route for tool calls, and agents wired to both.
 
 ---
 

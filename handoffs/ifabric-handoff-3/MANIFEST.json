@@ -1,0 +1,597 @@
+{
+  "schema": "ifabric.evidence-manifest/v1",
+  "generated_at": "2026-10-05T23:12:34Z",
+  "algorithm": "sha256",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "51f5b80cc31d90d641c329a979b15d12fa50ab59e5996a8cb5cc0fd1d233436c",
+      "bytes": 8479
+    },
+    {
+      "path": "code/prooflab/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "code/prooflab/servicenow/README.md",
+      "sha256": "faef55b1c6d58769d70324589d53578f01511564f896bdb97d993d3fc0cfb70c",
+      "bytes": 6220
+    },
+    {
+      "path": "code/prooflab/servicenow/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "code/prooflab/servicenow/__main__.py",
+      "sha256": "bbc387de7a947036e7d6a31e7c6dde49d8feb88daf99cab341e5aaf92d910166",
+      "bytes": 71
+    },
+    {
+      "path": "code/prooflab/servicenow/analysis.py",
+      "sha256": "760b17e2b66d111f14d38ba9893ad179bcc88a0ca038882d3e4e379d42d65557",
+      "bytes": 6867
+    },
+    {
+      "path": "code/prooflab/servicenow/assurance_agent.py",
+      "sha256": "4aa080244f45b3ee9f8b845ad078b48188ae5eb0b4dc7c076c7a2977f32768cd",
+      "bytes": 14683
+    },
+    {
+      "path": "code/prooflab/servicenow/assurance_checks.py",
+      "sha256": "a7eb41c564aff1ceb55bb27f01ce2f897ad965f7c89a5c4d51d7d239bf7bf577",
+      "bytes": 15830
+    },
+    {
+      "path": "code/prooflab/servicenow/case_view.py",
+      "sha256": "a059262f5d426af170aba165fa3f30f49191e5bbc8a4d91b3aeca91c5f451341",
+      "bytes": 9678
+    },
+    {
+      "path": "code/prooflab/servicenow/cli.py",
+      "sha256": "56786890b734a5f9f13dc09dd1e5f8d9a9cef1b58ce412e805e00c997f55d692",
+      "bytes": 8718
+    },
+    {
+      "path": "code/prooflab/servicenow/client.py",
+      "sha256": "146bb850202dfb72a4be015694ccfab69519dfdf9944e66e7f8f5a0bfaa24982",
+      "bytes": 8744
+    },
+    {
+      "path": "code/prooflab/servicenow/delivery_log.py",
+      "sha256": "b5c914b02523b6621add7ecbb9f8c6ebf2202eabc0b95bdcf6d40468cbffc55e",
+      "bytes": 1777
+    },
+    {
+      "path": "code/prooflab/servicenow/examples/cases.sample-fake-data.json",
+      "sha256": "b2ba830eddc1cdc39dce55915af20a9e88d681eefcbbe6fac0c9e88d37feda59",
+      "bytes": 37828
+    },
+    {
+      "path": "code/prooflab/servicenow/examples/test_finding.json",
+      "sha256": "d628bc05ce632ce45018d2fb440da5fa6564985d0fb22f688dfce91081edf49a",
+      "bytes": 357
+    },
+    {
+      "path": "code/prooflab/servicenow/examples/test_finding_agent.json",
+      "sha256": "754e83955fdf5d7fe585e0ede0dcf7af855403e510ef3c346a96458c4de90621",
+      "bytes": 1784
+    },
+    {
+      "path": "code/prooflab/servicenow/finding.py",
+      "sha256": "81d0a7f0f35538e3f892f075f1393f3e88bc3d466383f6f4b4964a97875325c7",
+      "bytes": 7240
+    },
+    {
+      "path": "code/prooflab/servicenow/finding_context.py",
+      "sha256": "eeb33844e44e9f4b18016f4f7e1cd2ec9df58b5cc7c513570fdc79525a81438e",
+      "bytes": 5568
+    },
+    {
+      "path": "code/prooflab/servicenow/nemotron.py",
+      "sha256": "a86eea0bfb73543f01bb7ecd372ee3d7140649790dd320387e108f0bb904b3f3",
+      "bytes": 8308
+    },
+    {
+      "path": "code/prooflab/servicenow/notifier.py",
+      "sha256": "aa514266dc824775c2f598c837293c74439c02bc7f633e929a54faeed6963797",
+      "bytes": 12489
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/ifabric-case-panel.css",
+      "sha256": "907f587ca9770d806e3c28bce43e16d7d8bebf5b5b966cd2f8c458a8e295d0e8",
+      "bytes": 13360
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/ifabric-case-panel.js",
+      "sha256": "7dbbb79aa0ca3cb32abdfc63ef4bdf9b747047cd54fc808ed1ca87ac3507c946",
+      "bytes": 23272
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/index.html",
+      "sha256": "7ddae121fa739799787d0ea70feaf642cb3dad51435989b9584dd066aa7ada73",
+      "bytes": 722
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/preview-assurance-dark-fake-data.jpg",
+      "sha256": "afc0a49ca8dfb58abb35d735e44c37c723c8ac5fc8fbcaa744331cbfd4d859e0",
+      "bytes": 74616
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/preview-assurance-decision-trace-fake-data.jpg",
+      "sha256": "1e9c6ab8638b03242705e4b879f7f5e9fb8c53637464eda47519732288e4fd4b",
+      "bytes": 82915
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/preview-assurance-movement-policy-fake-data.jpg",
+      "sha256": "c0ebb2d0127e9bc7a773be7b4025e887ddc58b399af2061fcb26279560d35478",
+      "bytes": 100686
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/preview-assurance-refused-fake-data.jpg",
+      "sha256": "e631cb34df632cfd7a401b62aa5954d2c0a950fbb9b423abdf80beb80e0daad0",
+      "bytes": 94826
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/preview-assurance-route-broken-fake-data.jpg",
+      "sha256": "92a92b4b2ee2b243cb4c508821f8d63333d94f1d078b9f2387198b9c5477133f",
+      "bytes": 101696
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/preview-forged-note-fake-data.jpg",
+      "sha256": "7cdc720ec878b4829ea7a82af35034cd47ea3b7b2bb372b46e04c6f3e238884c",
+      "bytes": 73234
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/preview-refused-fake-data.jpg",
+      "sha256": "17f0d7bde97f3ffbbee8fd6a762617168d5c4a0151ba15edc84e67e1464af2a2",
+      "bytes": 80203
+    },
+    {
+      "path": "code/prooflab/servicenow/panel/preview-written-fake-data.jpg",
+      "sha256": "0c385555d9979a1d777d4b10148672ad8f7424d9a4deb313c2a129a349dfd3d3",
+      "bytes": 77546
+    },
+    {
+      "path": "code/prooflab/servicenow/serve.py",
+      "sha256": "1bfb6b3b17a6e3e9d42791765b4e5e1c7669ab25761ca63318e22dec5701bc26",
+      "bytes": 4861
+    },
+    {
+      "path": "code/prooflab/tests/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "code/prooflab/tests/fake_gateway.py",
+      "sha256": "b116d986155f0fadf95301f96bb2702abf8dae4ea56c77f74e952e973484c4aa",
+      "bytes": 3012
+    },
+    {
+      "path": "code/prooflab/tests/fake_servicenow.py",
+      "sha256": "698e1b55401f0910b20307299f7ef7796449bf3b8659479d464720a6889b7126",
+      "bytes": 12022
+    },
+    {
+      "path": "code/prooflab/tests/test_servicenow_adapter.py",
+      "sha256": "b775acb828d9eed495599d4d157e5331cb30d99def02359776a5e2c987f5b7c9",
+      "bytes": 18772
+    },
+    {
+      "path": "code/prooflab/tests/test_servicenow_analysis.py",
+      "sha256": "c4400e54e310e8678eb7e57bb9f1836a407af2e6637817babf576e505920a4a7",
+      "bytes": 4382
+    },
+    {
+      "path": "code/prooflab/tests/test_servicenow_assurance_agent.py",
+      "sha256": "e172ad146f74049cad2af2a6893b49096545d2239cc4499e0d10d520088931d3",
+      "bytes": 19758
+    },
+    {
+      "path": "code/prooflab/tests/test_servicenow_assurance_checks.py",
+      "sha256": "30d5c0b8d899bfef75cde0a1d37c2e2c31fa4c9732709a4ed737b06a8de2b0c9",
+      "bytes": 10174
+    },
+    {
+      "path": "code/prooflab/tests/test_servicenow_case_view.py",
+      "sha256": "b31ab2473301ca25384f7019b9bba85e858a6e79efd863485e5b5c5a30dfd4f7",
+      "bytes": 6393
+    },
+    {
+      "path": "code/prooflab/tests/test_servicenow_cli.py",
+      "sha256": "b0ee90e8fc5c345b245def523333151c849290160c38f04eac847923ec3533ad",
+      "bytes": 5028
+    },
+    {
+      "path": "code/prooflab/tests/test_servicenow_finding_context.py",
+      "sha256": "d5060a014d33770d6a0009a49e19d211708d42218b3c1bdce88e7b2bc6c7301e",
+      "bytes": 4238
+    },
+    {
+      "path": "code/prooflab/tests/test_servicenow_serve.py",
+      "sha256": "f558dd17dbfd06566a43e37b07e0920195f01486c861db1b1c58c5b4be514945",
+      "bytes": 3001
+    },
+    {
+      "path": "code/tools/sn_roundtrip_test.py",
+      "sha256": "c03a5dcf666d420edff9c3c82e9969b61e543d59883c1c0811db061df57150da",
+      "bytes": 6520
+    },
+    {
+      "path": "deliverables/PRESENTATION_DAY_INTEGRATION.md",
+      "sha256": "23520eaf21b00aeccecadfe6dc1a4c3503aabf637e320ef41a1336fcae20ce0c",
+      "bytes": 8181
+    },
+    {
+      "path": "deliverables/README.md",
+      "sha256": "e2cc6d08625ac1b706ae5d02adf70e14dcabbbccc2d2e874e461fe49cfe6ddb3",
+      "bytes": 5025
+    },
+    {
+      "path": "deliverables/TEAMMATE_ACTIONS.md",
+      "sha256": "773b373e3c833d8db16cb916670b5680bb38d90275b2128b36df411bd033a002",
+      "bytes": 10980
+    },
+    {
+      "path": "deliverables/architecture/servicenow-section.md",
+      "sha256": "56a345032607af212ded9ebb91954c5fbb523a267139d91d3f11144a7fda3604",
+      "bytes": 5234
+    },
+    {
+      "path": "deliverables/docs/HACKATHON_WINNING_PLAYBOOK.md",
+      "sha256": "f3eef2a6d425359cb7f6f3c128ddb2b09e6237cd296fbdbfc74c4c524cc61e80",
+      "bytes": 54668
+    },
+    {
+      "path": "deliverables/docs/SERVICENOW_INTEGRATION_HANDOFF.md",
+      "sha256": "42c97cebc07759570aa2d7819b6fc48b3ddd1105ee5deeabdccfaccf071799ee",
+      "bytes": 36934
+    },
+    {
+      "path": "deliverables/evidence-pack/README.md",
+      "sha256": "29843628d6c2a1da6a42f583dc271619ac34f2f04c9c5bf8cc710869ec0eb823",
+      "bytes": 7062
+    },
+    {
+      "path": "deliverables/evidence-pack/decisions-log.md",
+      "sha256": "732a9b007730cff9c7a7ed97dedcba2b0b09b24826abeed50df390bf169edb83",
+      "bytes": 3591
+    },
+    {
+      "path": "deliverables/evidence-pack/gap-list.md",
+      "sha256": "27a4ea31ec3d943f65eb578d7f68cdcf4e457788873bab6fd27d4588dbcf3cb7",
+      "bytes": 9384
+    },
+    {
+      "path": "deliverables/evidence-pack/run-ids.txt",
+      "sha256": "848211a5fe791f41290d941ad4976af9a74a17b9a3e849fdcb8964e2f1cbc9b6",
+      "bytes": 893
+    },
+    {
+      "path": "deliverables/evidence-pack/servicenow/README.md",
+      "sha256": "bb832f40a49dfaec9102e477061ce43c6e583a4abeae2cada35579711b10f8a1",
+      "bytes": 1321
+    },
+    {
+      "path": "deliverables/evidence-pack/servicenow/wiring-tests/INC0010231-wiring-test.json",
+      "sha256": "46da8a0af83f6311fade859a688da4403a98787df57cae7f82aff02bb93b6063",
+      "bytes": 3445
+    },
+    {
+      "path": "deliverables/evidence-pack/servicenow/wiring-tests/README.md",
+      "sha256": "a5af571f75743c8f07596aa9bef84f8270374617297f0208bf81fb444721ff8f",
+      "bytes": 1833
+    },
+    {
+      "path": "deliverables/evidence-pack/servicenow/wiring-tests/assurance-agent-roundtrip/INC0010232-assurance-note-live.jpg",
+      "sha256": "9ddde759af0de4dabf6eecf2cff90672ed19734a698b350e04901c600d570d30",
+      "bytes": 81278
+    },
+    {
+      "path": "deliverables/evidence-pack/servicenow/wiring-tests/assurance-agent-roundtrip/delivery-log-roundtrip.jsonl",
+      "sha256": "bb04b388dd433b5442bf68c0226968862c7502e76a9d1cd9bd4f7f0345d00340",
+      "bytes": 1663
+    },
+    {
+      "path": "deliverables/evidence-pack/servicenow/wiring-tests/assurance-agent-roundtrip/ifabric_C16_TEST_run_AGENT-ANALYSIS-TEST-2_wiring-test_20261005T222521Z_0.json",
+      "sha256": "be8583419a6623b869c7477665ee16cde2e7a19c45d8025372234b96416fdf3e",
+      "bytes": 5973
+    },
+    {
+      "path": "deliverables/evidence-pack/servicenow/wiring-tests/delivery-log-wiring-tests-ONLY.jsonl",
+      "sha256": "bff6c1f78763e26d21b8728b1feec23e8ba4afdfa7a7eb4f02416656973eff9a",
+      "bytes": 4413
+    },
+    {
+      "path": "deliverables/evidence-pack/servicenow/wiring-tests/sn-agent-prototype-superseded/run1-INC0010232-test-view.jpg",
+      "sha256": "598963c7698f6da0c532bf50c3dd208f36d1188ea0d637b08f463fddc8623b05",
+      "bytes": 90422
+    },
+    {
+      "path": "deliverables/evidence-pack/servicenow/wiring-tests/sn-agent-prototype-superseded/run1-INC0010232.json",
+      "sha256": "781b9324120b2891ca899d24d1f567d5a2596822eb7753950bb8b07098800707",
+      "bytes": 3258
+    },
+    {
+      "path": "deliverables/evidence-pack/tools/manifest.py",
+      "sha256": "431eb7b37d70eca6cdeb34856c461152ba2cffb081ad2c64fb2fc5b9d401d362",
+      "bytes": 3015
+    },
+    {
+      "path": "deliverables/evidence-pack/tools/test_manifest.py",
+      "sha256": "48a14a1ad90288c5af187aa1ea11c95922e914727bb68469d20a07eb015fe16b",
+      "bytes": 2301
+    },
+    {
+      "path": "deliverables/pitch/backup-demo-shot-list.md",
+      "sha256": "713433f16de17d2a90dd77dc966984e7f0a6f7c27977774c1130c2945e976e76",
+      "bytes": 1466
+    },
+    {
+      "path": "deliverables/pitch/pitch-L2-L3-script.md",
+      "sha256": "2d7baa058ebc82256de3913fbe9466c74de8b901f8a927e22c0e88b85475a0fe",
+      "bytes": 5151
+    },
+    {
+      "path": "deliverables/pitch/running-order-15min.md",
+      "sha256": "28b5651ef1898bfca83d70be5d9d6830ded9c0b0320122c9a075a900dab356a3",
+      "bytes": 2526
+    },
+    {
+      "path": "deliverables/thresholds/approval-finding.template.json",
+      "sha256": "f7786f607577a9997131aafd467841b9c444abbce2d0983d1aae6707fc068363",
+      "bytes": 499
+    },
+    {
+      "path": "deliverables/thresholds/register.template.yaml",
+      "sha256": "f0efe09b33106a6ba8e26e56906e08b9069cacfba4fca56efcbed8440e54a3e6",
+      "bytes": 6120
+    },
+    {
+      "path": "deliverables/thresholds/threshold-approval.md",
+      "sha256": "e77301699b5108a417d65ed230ce99e768599a3ba906ddfe0eabdcef9f9ea647",
+      "bytes": 4331
+    },
+    {
+      "path": "docs/HACKATHON_WINNING_PLAYBOOK.md",
+      "sha256": "f3eef2a6d425359cb7f6f3c128ddb2b09e6237cd296fbdbfc74c4c524cc61e80",
+      "bytes": 54668
+    },
+    {
+      "path": "docs/SERVICENOW_INTEGRATION_HANDOFF.md",
+      "sha256": "42c97cebc07759570aa2d7819b6fc48b3ddd1105ee5deeabdccfaccf071799ee",
+      "bytes": 36934
+    },
+    {
+      "path": "evidence-console-plan/01-JUDGING-CRITERIA.md",
+      "sha256": "f9a614398dd32ee9b715d6c370547ee7922523eee6549de6e9e29603baa7bd89",
+      "bytes": 27388
+    },
+    {
+      "path": "evidence-console-plan/02-ARCHITECTURE.md",
+      "sha256": "e735bf9d97d706c2c64f57faa3ba9aa29918bab2eb98b9076e3f54141ef60c02",
+      "bytes": 30196
+    },
+    {
+      "path": "evidence-console-plan/03-CONTRACTS.md",
+      "sha256": "c6b4527bdb58407a5bd18df86682b8fbf799ecb52c221a99185dc8fd60422725",
+      "bytes": 18470
+    },
+    {
+      "path": "evidence-console-plan/04-LOGS-TO-EVIDENCE.md",
+      "sha256": "d9f9a9bdb35dcae9f111c46bb8987ab9cc166116f8f1745d806751819e423cc5",
+      "bytes": 14147
+    },
+    {
+      "path": "evidence-console-plan/05-AWS-SIDE-BUILD.md",
+      "sha256": "768213e60513e83dd981f7dcde64d79091f453a7788f3553ab1cb0b2a60bd20e",
+      "bytes": 25107
+    },
+    {
+      "path": "evidence-console-plan/06-UI-UX-SPEC.md",
+      "sha256": "bbf7205ac3c9b0c84fcb5b3f4c583dc29b989431e605d5e1f6b76c9c3836d7c2",
+      "bytes": 23871
+    },
+    {
+      "path": "evidence-console-plan/07-CONSOLE-API-AND-SECURITY.md",
+      "sha256": "b00bd7803643c4172d41710f9f54b9c10140eb9b01068d055546d02c4ccf4b55",
+      "bytes": 8385
+    },
+    {
+      "path": "evidence-console-plan/08-SERVICENOW-AND-ASSURANCE-AGENT.md",
+      "sha256": "c1c87129dacd7b861c6c468a0917b9a6d95c32b9fdb6c3f484ae816ff95642fa",
+      "bytes": 71801
+    },
+    {
+      "path": "evidence-console-plan/09-BUILD-ORDER-AND-ACCEPTANCE.md",
+      "sha256": "be78385a36f39df3f60a5c400a7cd85a44daec0c52c22cc66e95adf6201a5c35",
+      "bytes": 13963
+    },
+    {
+      "path": "evidence-console-plan/README.md",
+      "sha256": "fc3981d34a56a582f1da6f612e6c6dd6ab7967c04eda66b3be30af7d4d26621c",
+      "bytes": 5669
+    },
+    {
+      "path": "evidence-console-plan/demo/assurance-panel/cases.js",
+      "sha256": "365d243c346e087dd2565cb1f160b866dfe5e9a89917be8ff1d76118a07cd40f",
+      "bytes": 62912
+    },
+    {
+      "path": "evidence-console-plan/demo/assurance-panel/ifabric-case-panel.css",
+      "sha256": "907f587ca9770d806e3c28bce43e16d7d8bebf5b5b966cd2f8c458a8e295d0e8",
+      "bytes": 13360
+    },
+    {
+      "path": "evidence-console-plan/demo/assurance-panel/ifabric-case-panel.js",
+      "sha256": "7dbbb79aa0ca3cb32abdfc63ef4bdf9b747047cd54fc808ed1ca87ac3507c946",
+      "bytes": 23272
+    },
+    {
+      "path": "evidence-console-plan/demo/assurance-panel/make_cases.py",
+      "sha256": "a4d71c91e40b9f2e6bd278fd452ec0fc16dc63b57d48e85bc9fe6d13c0b86a68",
+      "bytes": 19488
+    },
+    {
+      "path": "evidence-console-plan/demo/demo-data.js",
+      "sha256": "72bd1404bf7c2526851372e26bd9c6550b6fab65a084ed65fd77bac7b5e6d5b1",
+      "bytes": 391146
+    },
+    {
+      "path": "evidence-console-plan/demo/index.html",
+      "sha256": "63b354e7da04d25c475cd671e72c10071b402baa0297d263c3dce08af594c10a",
+      "bytes": 73475
+    },
+    {
+      "path": "evidence-console-plan/examples/adversarial-case.R5.json",
+      "sha256": "89dd2f961a8a7fc1c3c9b1394842ce0b748326273c9d017f64b6d2af2bf624b1",
+      "bytes": 931
+    },
+    {
+      "path": "evidence-console-plan/examples/answer.C16.run.FM-A.json",
+      "sha256": "aae2e7dd0cf5faf2271ef2cc1365a99b8ddc0dd44466701867f7f6a946d3b6bf",
+      "bytes": 14612
+    },
+    {
+      "path": "evidence-console-plan/examples/answer.C16.run.FM-B.json",
+      "sha256": "676789263ea36b70460288270d2594cfa38d5747be2635dd50d94088221c1f5d",
+      "bytes": 20372
+    },
+    {
+      "path": "evidence-console-plan/examples/answer.C7.run.FM-B.json",
+      "sha256": "b1aa6f54c45c8f2d8fca7c025bc5308b3618819347d64c9510cd137fe1b5962d",
+      "bytes": 17960
+    },
+    {
+      "path": "evidence-console-plan/examples/answer.C9.interval.json",
+      "sha256": "9e64b434a2e27924357aeecab3395112a4667ff2e0ce742de7be9fee5d2a18e6",
+      "bytes": 17857
+    },
+    {
+      "path": "evidence-console-plan/examples/assessment.C16.run.FM-B.r1.json",
+      "sha256": "2cd665057ba7d5bddac796d6f4f446c462eebe787f2ea54995fd75bb9762d70f",
+      "bytes": 3400
+    },
+    {
+      "path": "evidence-console-plan/examples/assessment.C16.run.FM-C.r1.json",
+      "sha256": "a57635d8eedcdb35e0af4a9ba645516df01acc414cdeec82591d48fe4e783c05",
+      "bytes": 2777
+    },
+    {
+      "path": "evidence-console-plan/examples/auditor.INC0090216.json",
+      "sha256": "71a5985e020e8338f268723837b9a01cfe559aada47d48b5929b30b351cdb0d9",
+      "bytes": 9677
+    },
+    {
+      "path": "evidence-console-plan/examples/console-action.example.json",
+      "sha256": "dbb712fd8e38606e442c19742d834f0b3320f21090c2b6ca1565edbbb7abe1f7",
+      "bytes": 853
+    },
+    {
+      "path": "evidence-console-plan/examples/evidence-record.C16.FM-B.c-0015.json",
+      "sha256": "76ffde5450f46cd1fa9006656dd031ba63c2ddd3c016cbc6339145b0d0124f78",
+      "bytes": 1714
+    },
+    {
+      "path": "evidence-console-plan/examples/gap.B6.json",
+      "sha256": "892b17d3fd864aab31412c94df9ddffce04b1b57f7e3a09d40c5ca0e0c00f827",
+      "bytes": 558
+    },
+    {
+      "path": "evidence-console-plan/examples/generate_examples.py",
+      "sha256": "5c0fba95d6ab8c1bec144868f853627ffa01a5b66700a60ad413a698a074bc83",
+      "bytes": 144197
+    },
+    {
+      "path": "evidence-console-plan/examples/pack-index.json",
+      "sha256": "98552ee5d943e08fca42421f6d48ee16b6c84e6e59602c968c853f2c8ac9cb39",
+      "bytes": 65954
+    },
+    {
+      "path": "evidence-console-plan/examples/run.FM-B.json",
+      "sha256": "cec35642e6158e9d7cc21102a32e600bc0560fb15206d8dc3b8531d478cbc3bf",
+      "bytes": 26998
+    },
+    {
+      "path": "evidence-console-plan/examples/run.FM-C.json",
+      "sha256": "2b4aacabf6bf5384e5badaa4d75ca12af7a69cb2617a2d2ed03d8865efa824eb",
+      "bytes": 23395
+    },
+    {
+      "path": "evidence-console-plan/presentation/JUDGING-DAY-GUIDE.html",
+      "sha256": "a7c997032bfc0bad8041f69dd03a362d956e4f2c0d5cbf383d898c18f9ba6861",
+      "bytes": 20516
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-adversarial.png",
+      "sha256": "eda68975da7ed62e6c76f9b9f4cc42f1b5acbbd1a49671098e065298f961a988",
+      "bytes": 262029
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-answer-c16-fmb.png",
+      "sha256": "1aef920b806436be72d6ac2a5d52373ac87eff8279076e857347412187f4f734",
+      "bytes": 299638
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-answer-c9.png",
+      "sha256": "2cae7f1c480d3fb3710cee97a274f1587653fef385ce60cfde801a60aa1c8ba1",
+      "bytes": 257462
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-architecture.png",
+      "sha256": "fd376089064ae796c9bf4d3cc461a0643c45864eb69f423ef87a4ba76c4e042a",
+      "bytes": 241584
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-auditor.png",
+      "sha256": "ebe16cf8db050b6f044d9ae8d1e06b2f650ba4304bd9f4554c2d91c5df3ba7d4",
+      "bytes": 313586
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-gaps.png",
+      "sha256": "27fa4b84fe502b0000399f1d6a250e0a54c7dbea01be60c715c27bd97a45ea8d",
+      "bytes": 248929
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-ledger.png",
+      "sha256": "32aac8415bc2e1a60c6eee04c43ec74fb5195f31648acb7081f86824bff8b363",
+      "bytes": 288357
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-live.png",
+      "sha256": "87464f462553c4d3aaa18175ef65b1bf216852159a77cf379d958a3a54c017a2",
+      "bytes": 194019
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-loop.png",
+      "sha256": "c6d6f6b497e265711bdb4b0c7c9f76c9e1fde52b88fa1a77415ed2be22267804",
+      "bytes": 232300
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-overview.png",
+      "sha256": "753b8d9a72d6f1aebc19736c4623bfa486f0f184fd9f44919857a4fb8e680911",
+      "bytes": 323129
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-register.png",
+      "sha256": "a96857120399d5b815551b1f0300db9c1b1b5edd2b2ee66e770f7da3478645aa",
+      "bytes": 225068
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-trail-fmb.png",
+      "sha256": "cc3f5d0ae62e37574cdb73bda0f4abaa5ccbc88653f98a9c2a3a04b585969530",
+      "bytes": 292739
+    },
+    {
+      "path": "evidence-console-plan/presentation/shot-trail-fmc.png",
+      "sha256": "92292720a7d484ea474e3b7d2200905d46a11957012a03243560c9b70c3e666d",
+      "bytes": 299207
+    },
+    {
+      "path": "evidence-console-plan/schemas/contracts.schema.json",
+      "sha256": "c272279acffd3bbf5e6318a2033c8a60f8774744ac3c879964a142e2fa045c11",
+      "bytes": 89987
+    }
+  ]
+}

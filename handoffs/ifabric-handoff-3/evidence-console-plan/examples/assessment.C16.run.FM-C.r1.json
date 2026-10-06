@@ -1,0 +1,109 @@
+{
+  "schema": "ifabric.assessment/v1",
+  "assessment_id": "C16:G-FM-v1:run:FM-C:r1",
+  "revision": 1,
+  "supersedes": null,
+  "control_ref": "C16",
+  "control_id": "ACN-COST-001",
+  "threshold_version": "G-FM-v1",
+  "register_version": "R-2026-10-05-v1",
+  "threshold": {
+    "observation_limit": {
+      "value": 60000,
+      "operator": "<=",
+      "unit": "tokens per run",
+      "label": "illustrative cap"
+    },
+    "exception_tolerance": {
+      "value": 0,
+      "operator": "<=",
+      "unit": "runs over cap"
+    },
+    "source_ref": "register:register/register.yaml@G-FM-v1#C16",
+    "register_sha256": "a6fa581e8e6ce48dc8c2555b2615bb2f8e7ba063c91698f54c4ea526077f9e40"
+  },
+  "owner": {
+    "name": "Sree Annapurna Rallabandi",
+    "id": "annapurna@invences.com",
+    "role": "accountable management · control owner"
+  },
+  "scope": {
+    "kind": "run",
+    "id": "FM-C",
+    "alias": "FM-C",
+    "cid": "fault-1791255127-e03a55",
+    "start": "2026-10-06T02:52:07Z",
+    "end": "2026-10-06T02:55:11Z"
+  },
+  "provenance": "SYNTHETIC",
+  "population": {
+    "expected": {
+      "count": 8,
+      "source": "gateway llm lines with modaas.run_id = CID, reconciled with /modaas/evidence by trace_id",
+      "ref": "capture:raw/gateway/fault-1791255127-e03a55/gateway-stdout.capture.json"
+    },
+    "observed": 8,
+    "matched": 8,
+    "missing": 0,
+    "unmatched": 0,
+    "duplicates_removed": 8,
+    "blocked": 0,
+    "unmeasurable": 0
+  },
+  "measured": {
+    "value": 36118,
+    "unit": "tokens",
+    "breakdown": {
+      "input": 34594,
+      "output": 1524
+    },
+    "by_actor": [
+      {
+        "actor": "ifabric_customer_agent",
+        "value": 8760,
+        "calls": 2
+      },
+      {
+        "actor": "ifabric_it_agent",
+        "value": 13045,
+        "calls": 3
+      },
+      {
+        "actor": "ifabric_network_agent",
+        "value": 14313,
+        "calls": 3
+      }
+    ]
+  },
+  "exceptions": [],
+  "verdict": "SATISFIED",
+  "formula": "Σ(input + output) over accepted gateway executions of the run (dedup by action_id) <= cap",
+  "evaluator": {
+    "name": "prooflab.evaluators.c16.test",
+    "version": "git:3f9a1c2",
+    "kind": "control-test"
+  },
+  "enforcement": {
+    "mode": "INLINE_ENFORCE",
+    "ep_refs": [
+      "EP2",
+      "EP3"
+    ],
+    "decisions_ref": "record:C16:FM-C",
+    "stop_records": []
+  },
+  "evaluated_at": "2026-10-06T02:55:32Z",
+  "evidence_refs": [
+    "raw:raw/gateway/fault-1791255127-e03a55/gateway-stdout.log",
+    "ledger:cid=fault-1791255127-e03a55"
+  ],
+  "actors": [
+    "ifabric_customer_agent",
+    "ifabric_it_agent",
+    "ifabric_network_agent"
+  ],
+  "gaps": [],
+  "finding": null,
+  "retest_of": "ifabric:C16:G-FM-v1:run:FM-B:finding",
+  "closes_finding": "ifabric:C16:G-FM-v1:run:FM-B:finding"
+}

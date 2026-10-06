@@ -1,0 +1,97 @@
+# Threshold register: team iFabric. Artefact 2 of 6 ("threshold document").
+#
+# HOW TO USE
+# 1. Copy to register.yaml. Fill every <...> placeholder from the EXPLORATORY baseline runs
+#    (label those runs "exploratory" and exclude them from assessed results).
+# 2. Arth sends it to Sree for approval (threshold-approval.md). Sree is the named owner (accountable
+#    management); the builder never approves their own thresholds.
+# 3. Set status: FROZEN + frozen_at, hash it, get Sree's approval, then copy it UNCHANGED to
+#    evidence/register/register.yaml BEFORE the first assessed run.
+# 4. NEVER edit a frozen version. To change a threshold: copy the entry, bump its version (G-FM-v1 -> G-FM-v2),
+#    set a new version_date, get a new approval. Old verdicts stay replayable under the rule in force.
+# 5. No threshold number may appear in control code: evaluators load this file (a frozen version) at start-up.
+
+register_version: "<e.g. R-2026-10-06-v1>"
+status: DRAFT                       # DRAFT -> FROZEN right before hashing for Sree's approval; never edit when FROZEN.
+                                    # The approval is recorded outside this file (evidence/register/approval.md), so the hash stays valid.
+frozen_at: "<YYYY-MM-DDTHH:MM:SSZ, set when frozen, before the first assessed run>"
+owner: annapurna@invences.com       # Sree Annapurna Rallabandi: accountable management, approves this register
+builder: "<teammate's name/email>"  # operations; builds the controls; does not approve them
+retention: "Evidence is kept for 7 years from the submission date (see evidence/README.md)."
+
+claim:
+  id: C-FM-01
+  text: >-
+    During customer fault resolution, the three collaborating agents meet our declared event-recording,
+    drift and performance, and token-spend requirements.
+
+controls:
+  - control_ref: C16
+    control_id: ACN-COST-001
+    name: Per-run token spend cap
+    mode: in-transaction
+    version: "<e.g. G-FM-v1>"
+    version_date: "<YYYY-MM-DD, before the first assessed run>"
+    owner: annapurna@invences.com
+    enforcement_point: "<e.g. modaas-agw shared model gateway (EP1); post-run evaluator if not inline>"
+    metric: Total input + output tokens per fault-resolution run, all three agents, every retry included
+    observation_limit: "<N tokens> per run (comparison: measured <= N is within limit)"
+    exception_tolerance: "<number of over-cap runs permitted, e.g. 0>"
+    measurement_basis: "<source records (gateway call records), join key run.id, formula sum(input+output), unit tokens>"
+    justification:
+      why_this_metric: "<harm: a loop or retry storm overspends; calls missed or charged to the wrong run>"
+      why_this_value: "<dataset/period of the exploratory runs; observed max/median; headroom rationale>"
+      how_measured: "<source, formula, unit, comparison operator, inclusive/exclusive>"
+      when_it_stops_holding: "<boundary conditions; missing-data rule: a run with missing call records is INDETERMINATE, never SATISFIED>"
+    governance:
+      objective: "<e.g. no fault-resolution run exceeds N tokens>"
+      risk: A loop overspends, or calls are missed or charged to the wrong run
+      control_test: "<e.g. controltest 16 --run <id>: reconcile every call, sum, compare with the cap>"
+      evidence: "<gateway call records bound to run/control/version; assessment JSON; incident on breach>"
+
+  - control_ref: C7
+    control_id: AIA-LOG-001
+    name: Automatic event recording
+    mode: event-driven
+    version: "<e.g. L-v1>"
+    version_date: "<YYYY-MM-DD>"
+    owner: annapurna@invences.com
+    enforcement_point: "<where events are captured, and the independent source of EXPECTED events>"
+    metric: Expected-event coverage per run, and the time gap between consecutive events
+    observation_limit: "coverage >= <C%>; each gap < <G ms>"
+    exception_tolerance: "violating gaps <= <B7%> of gaps"
+    measurement_basis: "<expected-event list source, observed-event source, join key run.id/trace id, gap formula>"
+    justification:
+      why_this_metric: "<harm: missing events, broken run links, excessive unexplained gaps (EU AI Act Art. 12)>"
+      why_this_value: "<from exploratory runs>"
+      how_measured: "<source, formula, unit, operator>"
+      when_it_stops_holding: "<missing-data rule; what counts as an in-scope event>"
+    governance:
+      objective: "<e.g. 100% of in-scope events recorded and joined to one run>"
+      risk: Missing events, broken run links, excessive unexplained gaps
+      control_test: "<e.g. reconcile expected vs observed events, compute gaps, count violations>"
+      evidence: "<expected list, observed records, per-run reconciliation, incident on breach>"
+
+  - control_ref: C9
+    control_id: AIA-ARC-006
+    name: Drift and performance
+    mode: continuous
+    version: "<e.g. D-v1>"
+    version_date: "<YYYY-MM-DD>"
+    owner: annapurna@invences.com
+    enforcement_point: "<where the live measure is read, e.g. AgentCore latency/errors per closed UTC hour>"
+    metric: "<e.g. p95 latency per closed hour>; relative change vs a frozen baseline = (observed - baseline) / baseline (higher is worse)"
+    baseline: "<baseline id, period, value; frozen, never silently replaced>"
+    observation_limit: "relative increase <= <D%> per window"
+    exception_tolerance: "violating windows <= <B9%>"
+    measurement_basis: "<source, window definition (closed UTC hours), comparability rule, unit>"
+    justification:
+      why_this_metric: "<harm: drift goes unnoticed, or measurements are missing>"
+      why_this_value: "<from exploratory baseline>"
+      how_measured: "<source, formula, unit, operator>"
+      when_it_stops_holding: "<a missing window is a monitoring-gap finding (UNKNOWN), never healthy>"
+    governance:
+      objective: "<e.g. drift <= D% vs baseline; violating windows <= B9%>"
+      risk: Drift goes unnoticed, or the measurements themselves are missing
+      control_test: "<e.g. recompute drift per window, count breaches, check monitoring coverage and the alert response>"
+      evidence: "<baseline, window values, crossings, one incident per crossing, owner response>"

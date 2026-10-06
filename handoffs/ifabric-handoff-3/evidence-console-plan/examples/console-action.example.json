@@ -1,0 +1,38 @@
+{
+  "schema": "ifabric.console-action/v1",
+  "action_id": "act-f55ff16f66f4",
+  "kind": "RUN_CONTROLTEST",
+  "state": "SUCCEEDED",
+  "requested_by": {
+    "operator": "operator-1",
+    "session": "s-e8bc163c"
+  },
+  "requested_at": "2026-10-06T12:40:01Z",
+  "reason": "Rehearsal: re-run the C16 control test on FM-B from the sealed pack",
+  "params": {
+    "control": "C16",
+    "run": "FM-B"
+  },
+  "confirmation": "FM-B",
+  "approved_by": null,
+  "executed_by": "prooflab.actuator@git:3f9a1c2",
+  "started_at": "2026-10-06T12:40:02Z",
+  "effective_at": "2026-10-06T12:40:02Z",
+  "finished_at": "2026-10-06T12:40:03Z",
+  "argv": [
+    "python3",
+    "-m",
+    "prooflab",
+    "controltest",
+    "16",
+    "--run",
+    "FM-B",
+    "--pack",
+    "evidence/"
+  ],
+  "exit_code": 1,
+  "outputs": [
+    "answer:C16|run|FM-B"
+  ],
+  "refusal_reason": null
+}

@@ -26,6 +26,9 @@ for K in CockpitUrl IdeUrl; do
   U=$(aws cloudformation describe-stacks --stack-name a-02-code-editor --query "Stacks[0].Outputs[?OutputKey==\`$K\`].OutputValue" --output text 2>/dev/null)
   check "$K" "$U"; check "$K token" "$(printf '%s' "$U" | sed -nE 's/.*[?&](tkn|token|folder|t)=([^&]+).*/\2/p')"
 done
+S="$HOME/.prooflab-snow.env"  # ServiceNow OAuth app: values loaded in a subshell, never printed
+if [ -e "$S" ]; then for k in SNOW_CLIENT_SECRET SNOW_CLIENT_ID; do check "ServiceNow $k" "$( { unset "$k"; source "$S" >/dev/null; printf '%s' "${!k:-}"; } 2>/dev/null )"; done
+else echo "   ServiceNow credentials: not on this machine, skipped"; fi
 echo "== large files (>5 MB) =="; big=$(find "$REPO" -path "$REPO/.git" -prune -o -type f -size +5M -print); [ -n "$big" ] && { echo "$big" | sed 's/^/   /'; fail=1; } || echo "   none"
 [ $fail = 0 ] && echo "RESULT: clean" || echo "RESULT: NOT CLEAN (a hit, or a value that could not be checked) — do not push"
 exit $fail

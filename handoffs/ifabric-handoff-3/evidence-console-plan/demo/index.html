@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en" data-theme="instrument">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProofLab Evidence Console</title>
+<meta name="description" content="Demo of the iFabric ProofLab Evidence Console: answers a sceptical judge can check, built on synthetic data.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--vault:#0a0d12;--docket:#0f131a;--folio:#131922;--stack:#19202b;--rule:rgba(255,255,255,.07);--rule-strong:rgba(255,255,255,.13);--rule-focus:#45c4d8;
+--ink:#e7ebf1;--ink-2:#a9b2c0;--ink-3:#7f8898;--ink-4:#525b69;--trace:#45c4d8;--trace-dim:rgba(69,196,216,.13);
+--held:#3fb68b;--held-dim:rgba(63,182,139,.14);--breach:#f0524f;--breach-dim:rgba(240,82,79,.14);--unknown:#e3a63b;--unknown-dim:rgba(227,166,59,.15);
+--hatch:repeating-linear-gradient(135deg,rgba(227,166,59,.28) 0 4px,transparent 4px 8px);
+--sans:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--ease:cubic-bezier(.23,1,.32,1)}
+:root[data-theme="paper"]{--vault:#eef0f3;--docket:#f7f8fa;--folio:#ffffff;--stack:#ffffff;--rule:rgba(16,24,40,.10);--rule-strong:rgba(16,24,40,.2);
+--ink:#0e1218;--ink-2:#394252;--ink-3:#5a6473;--ink-4:#8b94a2;--trace:#0b7489;--trace-dim:rgba(11,116,137,.10);--held:#13764c;--held-dim:rgba(19,118,76,.10);
+--breach:#c22c27;--breach-dim:rgba(194,44,39,.09);--unknown:#8f5d05;--unknown-dim:rgba(143,93,5,.10);--hatch:repeating-linear-gradient(135deg,rgba(143,93,5,.22) 0 4px,transparent 4px 8px)}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:var(--vault);color:var(--ink);font:13px/1.5 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}a{color:var(--trace);text-decoration:none}
+:focus-visible{outline:2px solid var(--rule-focus);outline-offset:2px;border-radius:3px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}.muted{color:var(--ink-3)}.dim{color:var(--ink-2)}
+.label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.app{display:grid;grid-template-rows:52px auto 1fr 28px;height:100vh}
+.top{display:grid;grid-template-columns:260px minmax(0,1fr) auto;align-items:center;gap:16px;padding:0 16px;border-bottom:1px solid var(--rule);background:var(--docket)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}.brand b{font-weight:600;letter-spacing:-.01em}.brand small{color:var(--ink-3);font-size:11px}
+.mark{width:26px;height:26px;border:1.5px solid var(--trace);border-radius:5px;display:grid;place-items:center;font:600 11px var(--mono);color:var(--trace)}
+.ask{display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;border:1px solid var(--rule-strong);border-radius:6px;background:var(--folio);color:var(--ink-3);max-width:640px;width:100%;justify-self:center;text-align:left}
+.ask:hover{border-color:var(--trace)}.ask kbd{margin-left:auto;font:11px var(--mono);color:var(--ink-3);border:1px solid var(--rule-strong);border-radius:4px;padding:0 5px}
+.topr{display:flex;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:4px;border:1px solid var(--rule-strong);font-size:11px;font-weight:500;white-space:nowrap;color:var(--ink-2)}
+.chip.good{color:var(--held);border-color:transparent;background:var(--held-dim)}.chip.bad{color:var(--breach);border-color:transparent;background:var(--breach-dim)}
+.chip.warn{color:var(--unknown);border-color:transparent;background:var(--unknown-dim)}.chip.trace{color:var(--trace);border-color:transparent;background:var(--trace-dim)}
+.chip.btn:hover{border-color:var(--trace);color:var(--ink)}
+.ribbon{background:repeating-linear-gradient(135deg,rgba(227,166,59,.10) 0 10px,transparent 10px 20px);border-bottom:1px solid var(--rule);color:var(--unknown);font:500 11px var(--mono);letter-spacing:.04em;text-align:center;padding:3px}
+.body{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:0}
+.rail{border-right:1px solid var(--rule);padding:14px 10px;overflow:auto;background:var(--docket);display:flex;flex-direction:column;gap:2px}
+.rail .grp{margin:12px 8px 4px}.rail a{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;color:var(--ink-2)}
+.rail a:hover{background:var(--folio);color:var(--ink)}.rail a.on{background:var(--folio);color:var(--ink);box-shadow:inset 2px 0 0 var(--trace)}
+.rail .ltr{font:600 11px var(--mono);color:var(--ink-3)}.rail .cnt{font:11px var(--mono);color:var(--ink-3)}
+.railnote{margin-top:auto;padding:10px 8px 0;border-top:1px solid var(--rule);font-size:11px;color:var(--ink-3)}
+.lv{display:flex;gap:4px;margin:6px 0 10px}.lv span{flex:1;text-align:center;padding:3px 0;border-radius:3px;font:600 10px var(--mono)}
+main{overflow:auto;padding:22px 28px 40px;min-width:0}.page{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.foot{display:flex;gap:18px;align-items:center;padding:0 16px;border-top:1px solid var(--rule);background:var(--docket);font:11px var(--mono);color:var(--ink-3);white-space:nowrap;overflow:hidden}
+.card{background:var(--folio);border:1px solid var(--rule);border-radius:6px;padding:16px 18px;min-width:0}
+.card h3{margin:0 0 10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.h1{font-size:22px;font-weight:600;letter-spacing:-.015em;margin:0}.sub{color:var(--ink-2);margin:2px 0 0}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px}
+.verdict{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}.vword{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.v-SATISFIED{color:var(--held)}.v-BREACHED{color:var(--breach)}.v-INDETERMINATE{color:var(--unknown)}.v-NOT_ASSESSED{color:var(--ink-3)}
+.tick{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;border:1px solid currentColor;font:600 9.5px var(--mono);color:var(--held);margin-right:3px}
+.tick.off{color:var(--ink-4)}
+dl.kv{display:grid;grid-template-columns:minmax(120px,max-content) minmax(0,1fr);gap:4px 14px;margin:0}dl.kv dt{color:var(--ink-3)}dl.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.aq{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.aq section{padding:12px 14px;border-right:1px solid var(--rule)}.aq section:last-child{border-right:0}
+.aq .q{padding:7px 0;border-top:1px solid var(--rule)}.aq .q:first-of-type{border-top:0}.aq .q .label{display:block;margin-bottom:2px}
+.aq .q.flag{box-shadow:inset 2px 0 0 var(--unknown);padding-left:8px}
+.pop{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--rule);border-radius:6px}
+.pop div{padding:9px 12px;border-right:1px solid var(--rule)}.pop div:last-child{border-right:0}.pop b{display:block;font:600 17px var(--mono)}
+table.t{width:100%;border-collapse:collapse;font-size:12px}table.t th{text-align:left;font-weight:500;color:var(--ink-3);font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--rule-strong);white-space:nowrap}
+table.t td{padding:6px 8px;border-bottom:1px solid var(--rule);vertical-align:top}table.t tr.click{cursor:pointer}table.t tr.click:hover td{background:var(--stack)}
+.ref{font:11px var(--mono);color:var(--trace);border-bottom:1px dotted var(--trace);cursor:pointer;overflow-wrap:anywhere}
+.idc{font:11px var(--mono);padding:0 4px;border-radius:3px;background:var(--stack);color:var(--ink-2);cursor:pointer}.idc.lit{outline:1px solid var(--trace);color:var(--trace)}
+.pill{font:600 10.5px var(--mono);padding:2px 7px;border-radius:3px;letter-spacing:.03em;white-space:nowrap}
+.p-good{background:var(--held-dim);color:var(--held)}.p-bad{background:var(--breach-dim);color:var(--breach)}.p-warn{background:var(--unknown-dim);color:var(--unknown)}.p-hatch{background:var(--hatch);color:var(--unknown)}.p-mute{background:var(--stack);color:var(--ink-3)}.p-trace{background:var(--trace-dim);color:var(--trace)}
+.drawer{position:fixed;top:0;right:0;width:460px;max-width:100vw;height:100vh;background:var(--stack);border-left:1px solid var(--rule-strong);transform:translateX(100%);transition:transform .22s var(--ease);z-index:30;display:flex;flex-direction:column}
+.drawer.open{transform:none}.drawer header{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--rule)}.drawer .in{overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+pre.raw{margin:0;padding:10px 12px;background:var(--vault);border:1px solid var(--rule);border-radius:5px;font:11.5px/1.55 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink-2)}
+.redact{color:var(--unknown)}
+.palette{position:fixed;inset:0;background:rgba(5,7,10,.55);display:none;z-index:40;align-items:flex-start;justify-content:center;padding-top:12vh}.palette.open{display:flex}
+.pbox{width:min(680px,92vw);background:var(--stack);border:1px solid var(--rule-strong);border-radius:8px;overflow:hidden}
+.pbox input{width:100%;height:52px;border:0;border-bottom:1px solid var(--rule);background:transparent;color:var(--ink);font:15px var(--sans);padding:0 18px;outline:none}
+.pbox .parse{padding:8px 18px;font:12px var(--mono);color:var(--ink-3);border-bottom:1px solid var(--rule)}.pbox ul{list-style:none;margin:0;padding:6px}
+.pbox li button{width:100%;text-align:left;padding:8px 12px;border-radius:5px;display:flex;justify-content:space-between;gap:12px}.pbox li button:hover,.pbox li button.sel{background:var(--folio)}
+.present{display:none;align-items:center;gap:6px;padding:6px 16px;border-bottom:1px solid var(--rule);background:var(--docket);overflow:auto}.present.on{display:flex}
+.present button{padding:4px 9px;border-radius:4px;font-size:11.5px;color:var(--ink-3);white-space:nowrap}.present button.on{background:var(--trace-dim);color:var(--trace)}
+.timer{margin-left:auto;font:600 14px var(--mono);color:var(--ink)}
+.ep{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:9px 0;border-top:1px solid var(--rule)}.ep:first-child{border-top:0}
+.fact{display:grid;grid-template-columns:minmax(110px,max-content) minmax(0,1fr);gap:2px 10px;padding:5px 0;border-top:1px solid var(--rule)}.fact.flag dd{color:var(--unknown)}.fact dt{color:var(--ink-3)}.fact dd{margin:0}
+.chain{list-style:none;margin:0;padding:0}.chain li{position:relative;padding:0 0 14px 30px}.chain li::before{content:"";position:absolute;left:10px;top:22px;bottom:2px;width:1px;background:var(--rule-strong)}.chain li:last-child::before{display:none}
+.chain .n{position:absolute;left:0;top:0;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;font:600 10.5px var(--mono);background:var(--stack);border:1px solid var(--rule-strong)}
+.dec{border:1px solid var(--rule);border-radius:6px;padding:12px 14px;background:var(--docket)}.dec+.dec{margin-top:10px}
+.pc{display:grid;grid-template-columns:22px 92px minmax(0,1fr);gap:8px;padding:4px 0;border-top:1px dashed var(--rule);font-size:12px}
+.svgwrap{width:100%;overflow:hidden}svg text{font-family:var(--mono)}
+.empty{color:var(--ink-3);padding:6px 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:980px){.grid3,.grid2,.split,.aq,.pop{grid-template-columns:minmax(0,1fr)}.body{grid-template-columns:minmax(0,1fr)}.rail{display:none}.top{grid-template-columns:auto minmax(0,1fr)}.topr{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="mark" aria-hidden="true">PL</div><div><b>ProofLab Evidence Console</b><br><small>team iFabric · claim C-FM-01</small></div></div>
+    <button class="ask" id="askBtn" aria-label="Ask the evidence"><span aria-hidden="true">⌕</span><span>Ask the evidence — “Show me control 16 for run FM-B”</span><kbd>⌘K</kbd></button>
+    <div class="topr"><span class="chip trace" title="Read-only: this console sees everything and can refuse nothing">PACK · read-only</span><button class="chip good btn" id="integrityBtn">MANIFEST ✓ 214/214</button><button class="chip btn" id="presentBtn">▶ Present</button><button class="chip btn" id="themeBtn" aria-label="Toggle theme">◐</button></div>
+  </header>
+  <div>
+    <div class="ribbon">SYNTHETIC DEMO DATA — illustrative values, not evidence · design reference for the real console</div>
+    <nav class="present" id="presentBar" aria-label="Presentation steps"></nav>
+  </div>
+  <div class="body">
+    <nav class="rail" id="rail" aria-label="Exhibits"></nav>
+    <main id="main" tabindex="-1"></main>
+  </div>
+  <footer class="foot" id="foot"></footer>
+</div>
+<aside class="drawer" id="drawer" aria-label="Record inspector"><header><b id="drTitle">Record</b><span class="muted" style="font-size:11px">Record inspector</span><button class="chip btn" style="margin-left:auto" id="drClose">Esc</button></header><div class="in" id="drBody"></div></aside>
+<div class="palette" id="palette" role="dialog" aria-label="Ask the evidence"><div class="pbox"><input id="pIn" placeholder="Show me control 16 for run FM-B" autocomplete="off" aria-label="Question"><div class="parse" id="pParse">deterministic grammar · no LLM in the answer path</div><ul id="pList"></ul></div></div>
+<link rel="stylesheet" href="assurance-panel/ifabric-case-panel.css">
+<script src="assurance-panel/ifabric-case-panel.js"></script>
+<script src="assurance-panel/cases.js"></script>
+<script src="demo-data.js"></script>
+<script>
+"use strict";
+window.addEventListener("error", e => document.body.setAttribute("data-error", String(e.message)));
+const D = window.PROOFLAB_DEMO, P = D.pack;
+const $ = id => document.getElementById(id);
+function h(tag, attrs, ...kids) { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs || {})) { if (v == null || v === false) continue; if (k === "class") n.className = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? "" : v); } for (const c of kids.flat(9)) { if (c == null || c === false) continue; n.append(c instanceof Node ? c : document.createTextNode(String(c))); } return n; }
+function s(tag, attrs, ...kids) { const n = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const [k, v] of Object.entries(attrs || {})) if (v != null) n.setAttribute(k, v); for (const c of kids.flat(9)) { if (c == null) continue; n.append(c instanceof Node ? c : document.createTextNode(String(c))); } return n; }
+const fmt = n => n == null ? "—" : Number(n).toLocaleString("en-US");
+const hms = iso => iso ? iso.slice(11, 19) + "Z" : "—";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const VL = { SATISFIED: "SATISFIED", BREACHED: "NOT SATISFIED", INDETERMINATE: "INDETERMINATE", NOT_ASSESSED: "NOT ASSESSED" };
+const GLYPH = { SATISFIED: "●", BREACHED: "▲", INDETERMINATE: "◐", NOT_ASSESSED: "○" };
+function vpill(v) { const cls = { SATISFIED: "p-good", BREACHED: "p-bad", INDETERMINATE: "p-hatch", NOT_ASSESSED: "p-mute", ESCALATED: "p-warn" }[v] || "p-mute"; return h("span", { class: "pill " + cls }, (GLYPH[v] || "") + " " + (VL[v] || v)); }
+function spill(text, tone) { return h("span", { class: "pill p-" + tone }, text); }
+const TONE = { DELIVERED: "good", RESPONDED: "good", WRITTEN: "good", present: "good", ALIGNED: "good", PASS: "good", VALIDATED: "good", DEFENDED: "good", ANSWERED: "good", ALLOW: "good", VERIFIED: "good", BUILT: "good", BUILT_WAITING: "good", EVIDENCED: "good", CLOSED_BY_RETEST: "good", OK: "good",
+  NO_RESPONSE_OBSERVED: "warn", AWAITING_RESPONSE: "warn", PARTIAL: "warn", DETECTED: "trace", ALERT: "warn", UNKNOWN: "hatch", NOT_APPLICABLE: "mute", PLANNED: "mute", OPEN: "warn", pending: "warn",
+  REFUSED: "bad", BLOCKED: "bad", FAILED: "bad", VIOLATION: "bad", FAIL: "bad", DENY: "bad", BROKE_OPEN: "bad", BROKE_FIXED: "warn", NOT_BUILT: "mute", GAP: "bad", MODIFIED: "bad" };
+const tp = t => spill(String(t).replace(/_/g, " "), TONE[t] || "mute");
+function ticks(list) { return h("span", { title: "Tickmarks: R recomputed · A agreed to source · T traced · V vouched" }, ["R", "A", "T", "V"].map(k => h("span", { class: "tick" + ((list || []).includes(k) ? "" : " off") }, k))); }
+function idc(id) { return h("span", { class: "idc", "data-thread": id, onmouseenter: () => thread(id, true), onmouseleave: () => thread(id, false) }, id); }
+function thread(id, on) { document.querySelectorAll(".idc").forEach(n => n.classList.toggle("lit", on && n.dataset.thread === id)); }
+function refEl(r) { return h("span", { class: "ref", tabindex: 0, role: "button", onclick: () => inspect(r), onkeydown: e => e.key === "Enter" && inspect(r) }, r); }
+function card(title, ...kids) { return h("section", { class: "card" }, title ? h("h3", {}, title) : null, ...kids); }
+function kv(pairs) { return h("dl", { class: "kv" }, pairs.filter(p => p[1] != null && p[1] !== "").map(([k, v]) => [h("dt", {}, k), h("dd", {}, v)])); }
+
+/* ---------------- record inspector (stranger test) ---------------- */
+function findRecord(ref) { const id = ref.startsWith("record:") ? ref.slice(7) : ref; for (const rs of Object.values(D.records)) { const r = rs.find(x => x.evidence_id === id); if (r) return r; } return null; }
+async function sha256(text) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
+function rawLine(line) { const pre = h("pre", { class: "raw" }); String(line).split(/(\[REDACTED:[^\]]+\])/).forEach(p => pre.append(/^\[REDACTED/.test(p) ? h("span", { class: "redact" }, p) : document.createTextNode(p))); return pre; }
+function inspect(ref) {
+  if (/^servicenow:INC\d+$/.test(ref)) { location.hash = "#/loop/" + ref.slice(11); return; }
+  const rec = findRecord(ref), body = $("drBody"); body.replaceChildren(); $("drTitle").textContent = rec ? rec["call.id"] || rec.evidence_id : ref;
+  if (!rec) { body.append(h("p", { class: "dim" }, "Reference "), h("pre", { class: "raw" }, ref), h("p", { class: "muted" }, "In the real console every ref resolves to a file listed in MANIFEST.json; unresolved refs are shown red, never hidden.")); return openDrawer(); }
+  const raw = D.raw[rec.source.raw_ref], cap = D.captures[rec.source.capture_ref] || {}, out = h("span", { class: "mono muted" }, "not yet recomputed");
+  body.append(
+    h("div", { class: "label" }, "Bound evidence record · ifabric.evidence/v1"),
+    kv([["run.id", h("span", { class: "mono" }, rec["run.id"])], ["call.id", rec["call.id"] || "—"], ["control.id", rec["control.id"] + " (" + rec["control.ref"] + ")"], ["threshold.version", rec["threshold.version"]], ["threshold.value", h("span", { class: "mono" }, fmt(rec["threshold.value"]))], ["measured.value", h("span", { class: "mono" }, fmt(rec["measured.value"]) + " " + rec["measured.unit"] + (rec["measured.call"] != null ? "  (this call " + fmt(rec["measured.call"]) + ")" : ""))], ["verdict", vpill(rec.verdict)], ["decision", rec.decision ? tp(rec.decision) : "—"], ["actor.id", rec["actor.id"]], ["emitted.at", h("span", { class: "mono" }, rec["emitted.at"] + " · " + rec.source.clock + " clock")], ["seal", h("span", { class: "muted" }, "out of scope (per the brief)")]]),
+    h("div", { class: "label" }, "Raw line as captured (redacted at capture)"), rawLine(raw || "(raw line)"),
+    kv([["raw_ref", h("span", { class: "mono" }, rec.source.raw_ref)], ["sha256", h("span", { class: "mono" }, rec.source.sha256)], ["recompute", h("span", {}, h("button", { class: "chip btn", onclick: async () => { const got = await sha256(raw); out.textContent = got === rec.source.sha256 ? "✓ matches — computed in your browser" : "✗ differs: " + got; out.style.color = got === rec.source.sha256 ? css("--held") : css("--breach"); } }, "Verify without us"), " ", out)], ["MANIFEST", h("span", { class: "pill p-good" }, "listed · unchanged")]]),
+    h("div", { class: "label" }, "Capture sidecar (re-run this to get the same bytes)"),
+    kv([["command", h("span", { class: "mono" }, cap.command || "—")], ["captured", cap.captured_at], ["scope", cap.scope ? cap.scope.cid : "—"], ["pagination", cap.pagination_complete ? "complete" : "?"], ["redactions", (cap.redactions || []).map(r => r.rule + " ×" + r.count).join(", ")]]),
+    h("div", { class: "label" }, "Corroboration — where they disagree, the gateway wins"),
+    h("div", {}, (rec.source.corroborated_by || []).length ? rec.source.corroborated_by.map(c => h("div", { class: "mono dim", style: "font-size:11.5px" }, "✓ " + c)) : h("span", { class: "muted" }, "single surface")),
+    h("div", { class: "label" }, "Joins"), kv(Object.entries(rec.joins || {}).filter(([, v]) => v).map(([k, v]) => [k, idc(v)])));
+  openDrawer();
+}
+function openDrawer() { $("drawer").classList.add("open"); $("drClose").focus(); }
+$("drClose").onclick = () => $("drawer").classList.remove("open");
+
+/* ---------------- charts ---------------- */
+function bullet(a) {
+  const W = 880, H = 70, cap = a.comparison.limit, val = a.measurement.value, max = Math.max(cap, val) * 1.08, x = v => 10 + (W - 20) * v / max, over = val > cap;
+  return h("div", { class: "svgwrap" }, s("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": `${fmt(val)} tokens against a cap of ${fmt(cap)}` },
+    s("rect", { x: 10, y: 22, width: W - 20, height: 20, fill: css("--stack"), rx: 3 }),
+    s("rect", { x: 10, y: 22, width: x(Math.min(val, cap)) - 10, height: 20, fill: over ? css("--ink-3") : css("--held"), rx: 3, opacity: over ? .55 : .85 }),
+    over ? s("rect", { x: x(cap), y: 22, width: x(val) - x(cap), height: 20, fill: css("--breach") }) : null,
+    s("line", { x1: x(cap), x2: x(cap), y1: 12, y2: 52, stroke: css("--ink"), "stroke-width": 2 }),
+    s("text", { x: x(cap), y: 9, "text-anchor": "middle", fill: css("--ink-2"), "font-size": 11 }, "cap ≤ " + fmt(cap)),
+    s("text", { x: x(val), y: 64, "text-anchor": over ? "end" : "middle", fill: over ? css("--breach") : css("--held"), "font-size": 12, "font-weight": 600 }, fmt(val) + (over ? "  (+" + fmt(val - cap) + ")" : "  (margin " + fmt(cap - val) + ")"))));
+}
+function bars(series, unit, limitLabel) {
+  const W = 880, H = 190, n = series.length, vals = series.map(x => x.value || 0), lim = series[0].limit, max = Math.max(lim, ...vals) * 1.15, bw = (W - 60) / n;
+  const y = v => 150 - 125 * v / max, g = s("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": "Observations against the limit" });
+  g.append(s("line", { x1: 40, x2: W - 10, y1: y(lim), y2: y(lim), stroke: css("--breach"), "stroke-dasharray": "5 4", "stroke-width": 1.5 }), s("text", { x: W - 10, y: y(lim) - 6, "text-anchor": "end", fill: css("--breach"), "font-size": 11 }, limitLabel));
+  series.forEach((it, i) => { const x0 = 44 + i * bw, bad = it.status === "VIOLATES", unk = it.value == null;
+    if (unk) { g.append(s("rect", { x: x0 + bw * .18, y: 112, width: bw * .64, height: 38, fill: "url(#hatch)", stroke: css("--unknown"), "stroke-dasharray": "3 3" }), s("text", { x: x0 + bw / 2, y: 106, "text-anchor": "middle", fill: css("--unknown"), "font-size": 11 }, "?")); }
+    else { g.append(s("rect", { x: x0 + bw * .18, y: y(it.value), width: bw * .64, height: 150 - y(it.value), fill: bad ? css("--breach") : css("--ink-3"), opacity: bad ? 1 : .55, rx: 2 }), s("text", { x: x0 + bw / 2, y: y(it.value) - 5, "text-anchor": "middle", fill: bad ? css("--breach") : css("--ink-2"), "font-size": 10.5, "font-weight": bad ? 600 : 400 }, unit === "ms" ? fmt(it.value) : (it.value > 0 ? "+" : "") + it.value + "%")); }
+    g.append(s("text", { x: x0 + bw / 2, y: 168, "text-anchor": "middle", fill: css("--ink-3"), "font-size": 10.5 }, it.id), s("title", {}, (it.label || it.id) + ": " + (unk ? it.status : it.value + " " + unit))); });
+  g.prepend(s("defs", {}, s("pattern", { id: "hatch", width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, s("rect", { width: 2.5, height: 6, fill: css("--unknown"), opacity: .5 }))));
+  return h("div", { class: "svgwrap" }, g);
+}
+function lane(run, upto) {
+  const L = run.lane, ev = L.events.filter((e, i) => upto == null || i < upto), t0 = Date.parse(L.t0), t1 = Date.parse(L.events[L.events.length - 1].t) || t0 + 1;
+  const zones = ["orchestrator", "customer", "it", "network", "governance", "servicenow"], W = 900, top = 16, rh = 34, H = top + zones.length * rh + 46, X = t => 150 + (W - 170) * (Date.parse(t) - t0) / Math.max(1, t1 - t0), Y = z => top + zones.indexOf(z) * rh;
+  const g = s("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": "Evidence lane of run " + run.run_alias });
+  zones.forEach((z, i) => g.append(s("rect", { x: 0, y: Y(z), width: W, height: rh, fill: i % 2 ? "transparent" : css("--docket") }), s("text", { x: 10, y: Y(z) + 21, fill: css("--ink-3"), "font-size": 11 }, (L.zones.find(q => q.id === z) || {}).label || z)));
+  const cap = L.cap.value, sy = v => top + zones.length * rh - 4 - (zones.length * rh - 14) * Math.min(1.12, v / cap) / 1.12;
+  g.append(s("line", { x1: 150, x2: W - 10, y1: sy(cap), y2: sy(cap), stroke: css("--breach"), "stroke-dasharray": "4 4", opacity: .7 }), s("text", { x: W - 12, y: sy(cap) - 5, "text-anchor": "end", fill: css("--breach"), "font-size": 10.5 }, "C16 cap " + fmt(cap)));
+  let pts = [], last = null;
+  ev.forEach(e => { const x = X(e.t), y = Y(e.zone) + rh / 2; const col = e.flag === "BREACH" ? css("--breach") : e.flag === "WARN" ? css("--unknown") : css("--trace");
+    if (e.kind === "model-call") { g.append(s("rect", { x: x - 3, y: y - 7, width: 7, height: 14, rx: 1.5, fill: e.cumulative > cap ? css("--breach") : css("--ink-2") }, s("title", {}, e.label + " · Σ " + fmt(e.cumulative)))); pts.push([x, sy(e.cumulative)]); last = e; }
+    else if (e.kind === "guardrail-block") g.append(s("circle", { cx: x, cy: y, r: 6, fill: "none", stroke: css("--unknown"), "stroke-width": 1.5 }, s("title", {}, e.label)), s("line", { x1: x - 4, y1: y + 4, x2: x + 4, y2: y - 4, stroke: css("--unknown"), "stroke-width": 1.5 }));
+    else if (e.kind === "admission" || e.kind === "handoff") g.append(s("path", { d: `M${x} ${y - 8} L${x + 8} ${y} L${x} ${y + 8} L${x - 8} ${y} Z`, fill: e.decision === "DENY" ? css("--breach") : e.decision === "ALERT" ? css("--unknown") : "none", stroke: col, "stroke-width": 1.5 }, s("title", {}, e.label)));
+    else if (e.kind === "stop") g.append(s("rect", { x: x - 6, y: y - 6, width: 12, height: 12, fill: css("--breach") }, s("title", {}, e.label)));
+    else g.append(s("circle", { cx: x, cy: y, r: 4, fill: col }, s("title", {}, e.label))); });
+  if (pts.length) g.append(s("polyline", { points: pts.map(p => p.join(",")).join(" "), fill: "none", stroke: css("--trace"), "stroke-width": 1.6, opacity: .9 }));
+  g.append(s("text", { x: 150, y: H - 12, fill: css("--ink-3"), "font-size": 10.5 }, hms(L.t0)), s("text", { x: W - 10, y: H - 12, "text-anchor": "end", fill: css("--ink-3"), "font-size": 10.5 }, hms(L.events[L.events.length - 1].t) + "  ·  Σ line = running C16 total" + (last ? " (" + fmt(last.cumulative) + ")" : "")));
+  return h("div", { class: "svgwrap" }, g);
+}
+function journey(run) {
+  const nodes = [["customer", "Customer zone"], ["gwA", "Gateway A"], ["it", "IT zone"], ["gwB", "Gateway B"], ["network", "Network zone"]], W = 900, H = 120, x = i => 70 + i * 190;
+  const hops = run.journey.hops, reached = new Set(hops.flatMap(o => [o.from, o.to])), g = s("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": "Agent movement" });
+  nodes.forEach(([id, label], i) => { const gw = id.startsWith("gw"), on = gw ? reached.has(i === 1 ? "it" : "network") : reached.has(id);
+    if (i) g.append(s("line", { x1: x(i - 1) + 34, x2: x(i) - 34, y1: 46, y2: 46, stroke: on ? css("--trace") : css("--ink-4"), "stroke-width": 1.6 }));
+    g.append(gw ? s("path", { d: `M${x(i)} 30 L${x(i) + 16} 46 L${x(i)} 62 L${x(i) - 16} 46 Z`, fill: "none", stroke: on ? css("--trace") : css("--ink-4"), "stroke-width": 1.6 }) : s("rect", { x: x(i) - 34, y: 30, width: 68, height: 32, rx: 5, fill: on ? css("--trace-dim") : "none", stroke: on ? css("--trace") : css("--ink-4") }),
+      s("text", { x: x(i), y: gw ? 82 : 50, "text-anchor": "middle", fill: css("--ink-2"), "font-size": gw ? 10 : 10.5 }, gw ? label + " · EP3" : label.split(" ")[0])); });
+  const back = hops.some(o => o.via === "return-path" && o.from === "network");
+  if (back) g.append(s("path", { d: `M${x(4)} 64 C ${x(4)} 108, ${x(0)} 108, ${x(0)} 64`, fill: "none", stroke: css("--trace"), "stroke-dasharray": "4 4", opacity: .7 }), s("text", { x: (x(0) + x(4)) / 2, y: 112, "text-anchor": "middle", fill: css("--ink-3"), "font-size": 10 }, "resolution returns via Gateway B → Gateway A (no direct route network → customer)"));
+  if (hops.some(o => o.via === "servicenow")) g.append(s("text", { x: x(4) + 40, y: 30, fill: css("--unknown"), "font-size": 10.5 }, "→ ServiceNow (held)"));
+  return h("div", { class: "svgwrap" }, g);
+}
+
+/* ---------------- views ---------------- */
+const ROUTES = [["A", "overview", "Overview"], ["B", "answer", "Ask · Answer"], ["C", "trail", "Agent Trail"], ["D", "ledger", "Evidence Ledger"], ["E", "auditor", "Six Questions"], ["F", "register", "Register"], ["G", "loop", "Human Loop"], ["H", "adversarial", "Adversarial"], ["I", "architecture", "Architecture"], ["J", "gaps", "Gaps"], ["K", "live", "Live · Replay"]];
+function rail(active) {
+  const counts = { gaps: P.gaps.length, adversarial: P.adversarial.length, loop: (window.PROOFLAB_SN_CASES || D.cases).length, trail: Object.keys(D.runs).length };
+  const lvl = P.levels.map(l => h("span", { class: "pill " + (l.status === "VERIFIED" ? "p-good" : "p-warn"), title: l.level }, l.level.slice(0, 2)));
+  $("rail").replaceChildren(h("div", { class: "label grp" }, "Exhibit index"), ...ROUTES.map(([l, r, n]) => h("a", { href: "#/" + r, class: active === r ? "on" : "" }, h("span", { class: "ltr" }, l), n, h("span", { class: "cnt" }, counts[r] ?? ""))),
+    h("div", { class: "railnote" }, h("div", { class: "label" }, "Judging levels"), h("div", { class: "lv" }, lvl), h("div", { class: "label" }, "Alert levels covered"), h("div", { class: "dim", style: "margin:4px 0 10px;font-size:11.5px" }, "0 Vanilla · 1 Hostile · 2 Rogue"), "This console sees everything and can refuse nothing. Operator actions are requests to an actuator, recorded as evidence."));
+}
+function overview() {
+  const c = P.claim, reg = P.register;
+  const branch = ctl => h("section", { class: "card" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "label" }, ctl.ref + " · " + ctl.id + " · " + ctl.mode), h("div", { style: "font-weight:600;font-size:15px" }, ctl.name)), vpill(ctl.verdict_overall)),
+    h("table", { class: "t", style: "margin:10px 0" }, h("tbody", {}, [["PASS run", ctl.pass], ["BREACH run", ctl.breach]].map(([k, r]) => h("tr", { class: "click", onclick: () => go(r.answer_ref) }, h("td", { class: "muted", style: "white-space:nowrap" }, k), h("td", { class: "mono", style: "white-space:nowrap" }, r.run.split(" ")[0]), h("td", { class: "mono" }, r.measured), h("td", {}, vpill(r.verdict)))))),
+    h("div", { class: "row", style: "gap:6px" }, Object.entries(ctl.completeness).map(([k, v]) => h("span", { class: "pill " + (v ? "p-good" : "p-bad"), title: k }, (v ? "✓ " : "✗ ") + k[0]))),
+    h("p", { class: "muted", style: "margin:8px 0 0" }, ctl.note), h("p", { style: "margin:4px 0 0;font-size:12px" }, "Built properly: ", h("b", {}, ctl.built_properly ? "yes" : "no"), " · Actually worked: ", h("b", { class: ctl.actually_worked ? "v-SATISFIED" : "v-BREACHED" }, ctl.actually_worked ? "yes" : "no — and it is shown")));
+  return h("div", { class: "page" },
+    h("div", {}, h("div", { class: "label" }, "Claim " + c.id + " · management owns it · Sree Annapurna Rallabandi"), h("h1", { class: "h1", style: "max-width:980px;margin-top:4px" }, "“" + c.text + "”"),
+      h("div", { class: "verdict", style: "margin-top:10px" }, h("span", { class: "vword v-BREACHED" }, "NOT SATISFIED"), h("span", { class: "dim", style: "max-width:760px" }, c.summary))),
+    h("div", { class: "grid3" }, c.controls.map(branch)),
+    h("div", { class: "split" },
+      card("Judging levels — sequential, each needs the one before", ...P.levels.map(l => h("div", { class: "ep", style: "grid-template-columns:84px 1fr" }, h("div", {}, tp(l.status === "VERIFIED" ? "VERIFIED" : l.status)), h("div", {}, h("b", {}, l.level.replace(/_/g, " ")), l.items.map(it => h("div", { class: it.flag === "GAP" ? "" : "dim", style: "font-size:12px" + (it.flag === "GAP" ? ";color:var(--unknown)" : "") }, (it.flag === "GAP" ? "◐ " : "✓ ") + it.text, " ", (it.refs || []).slice(0, 1).map(refEl))))))),
+      h("div", { style: "display:flex;flex-direction:column;gap:14px" },
+        card("Named runs — written " + P.named_runs.written_at + " (before judging ✓)", h("table", { class: "t" }, h("thead", {}, h("tr", {}, ["Control", "Expected", "Run / window", "Observed", "Incident"].map(x => h("th", {}, x)))),
+          h("tbody", {}, P.named_runs.entries.map(e => h("tr", { class: "click", onclick: () => go(e.answer_ref) }, h("td", { class: "mono" }, e.control), h("td", {}, e.expected), h("td", { class: "mono" }, e.scope.alias || e.scope.id), h("td", {}, vpill(e.observed)), h("td", {}, runIncidents(e).map(n => h("a", { href: "#/loop/" + n, onclick: ev => ev.stopPropagation() }, idc(n))))))))),
+        card("Six artefacts — all present", h("div", {}, P.artefacts.map(a => h("div", { class: "row", style: "justify-content:space-between;padding:3px 0" }, h("span", {}, a.id + ". " + a.name), h("span", { class: "mono muted" }, a.path))))),
+        card("Rule dated before the test", ribbon(true)))));
+}
+function ribbon(compact) {
+  const r = P.register, pts = [["exploratory runs (excluded)", "2026-10-05T04:47:00Z", "--ink-4"], ["register frozen", r.frozen_at, "--trace"], ["owner approved (" + r.approval.ref.split(":")[1] + ")", r.approval.at, "--held"], ["first assessed run", r.first_assessed_run_at, "--ink"], ["named runs written", P.named_runs.written_at, "--ink-2"], ["judging", P.pack.judging_starts_at, "--unknown"]];
+  const t0 = Date.parse(pts[0][1]), t1 = Date.parse(pts[pts.length - 1][1]), W = 860, x = t => 30 + (W - 60) * Math.sqrt((Date.parse(t) - t0) / (t1 - t0)), g = s("svg", { viewBox: `0 0 ${W} 86`, width: "100%", role: "img", "aria-label": "Register freeze and approval precede every assessed run" });
+  g.append(s("line", { x1: 30, x2: W - 30, y1: 34, y2: 34, stroke: css("--rule-strong"), "stroke-width": 2 }));
+  pts.forEach(([l, t, c], i) => g.append(s("circle", { cx: x(t), cy: 34, r: 6, fill: css(c) }), s("text", { x: x(t), y: i % 2 ? 62 : 18, "text-anchor": "middle", fill: css("--ink-2"), "font-size": 10.5 }, l), s("text", { x: x(t), y: i % 2 ? 76 : 4, "text-anchor": "middle", fill: css("--ink-3"), "font-size": 9.5 }, t.slice(5, 16).replace("T", " ") + "Z")));
+  return h("div", {}, h("div", { class: "svgwrap" }, g), h("p", { class: "dim", style: "margin:4px 0 0;font-size:12px" }, "✓ Every assessed run started after the owner's approval · same threshold version for PASS and BREACH runs · “its date is what makes it a test”"));
+}
+function runIncidents(e) { return (e.note || "").match(/INC\d{7}/g) || []; }
+function answerView(key) {
+  const a = D.answers[key || "C16|run|FM-B"]; if (!a) return h("div", { class: "page" }, card("No such answer", "Try ⌘K."));
+  const isC16 = a.control.ref === "C16", ser = a.measurement.series, r = a.rule, aq = a.audit_question;
+  const group = (title, keys) => h("section", {}, h("div", { class: "label", style: "margin-bottom:6px" }, title), keys.map(([k, label]) => h("div", { class: "q" + (aq[k].flag === "FLAG" ? " flag" : "") }, h("span", { class: "label" }, label), aq[k].text, " ", (aq[k].refs || []).slice(0, 2).map(r => [refEl(r), " "]))));
+  const loops = a.human_loops || [];
+  return h("div", { class: "page" },
+    h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "mono dim" }, "› " + a.query.text), h("div", { class: "mono muted", style: "font-size:11.5px" }, "parsed → " + a.query.normalized + " · answered in " + a.elapsed_ms + " ms from " + a.source.records_scanned + " records · PACK · MANIFEST " + a.source.manifest_status)),
+      h("div", { class: "row" }, h("span", { class: "chip" }, a.control.ref + " · " + a.control.id), h("span", { class: "chip" }, a.control.mode), h("span", { class: "chip mono" }, "answer_id " + a.answer_id.slice(0, 10) + "…"))),
+    h("section", { class: "card" }, h("div", { class: "verdict" }, h("span", { class: "vword v-" + a.verdict.value }, (GLYPH[a.verdict.value] || "") + " " + a.verdict.label), h("span", { style: "font-size:15px" }, a.verdict.reason), h("span", { style: "margin-left:auto" }, ticks(["R", "A", "T", "V"]))),
+      h("div", { class: "row muted", style: "margin:6px 0 12px;font-size:12px" }, "Rule " + r.threshold_version + " (" + r.register_version + ") · dated " + r.version_date + " · frozen " + hms(r.frozen_at) + " · approved by " + r.approval.approver.name + " " + hms(r.approval.at) + " ", r.date_before_scope ? spill("✓ dated before the scope", "good") : spill("RULE DATED AFTER TEST", "bad"), " · owner " + r.owner.name + " · evidence " + a.verdict.evidence_sufficiency),
+      isC16 ? bullet(a) : bars(ser, a.control.ref === "C7" ? "ms" : "%", a.control.ref === "C7" ? "gap limit < 30,000 ms" : "limit +" + r.observation_limit.value + "%"),
+      h("div", { class: "row", style: "margin-top:10px;gap:20px;font-size:12px" }, h("span", {}, h("span", { class: "label" }, "Observation limit "), r.observation_limit.operator + " " + fmt(r.observation_limit.value) + " " + r.observation_limit.unit), h("span", {}, h("span", { class: "label" }, "Exception tolerance "), r.exception_tolerance.operator + " " + r.exception_tolerance.value + " " + r.exception_tolerance.unit), a.comparison.exception_fraction != null ? h("span", {}, h("span", { class: "label" }, "Observed exceptions "), a.comparison.exceptions_count + " = " + a.comparison.exception_fraction + "%") : null)),
+    h("div", { class: "pop" }, [["expected", a.population.expected.count], ["observed", a.population.observed], ["matched", a.population.matched], ["missing", a.population.missing], ["dupes removed", a.population.duplicates_removed], ["blocked", a.population.blocked], ["unmeasurable", a.population.unmeasurable]].map(([k, v]) => h("div", {}, h("span", { class: "label" }, k), h("b", { class: (k === "missing" || k === "unmeasurable") && v ? "v-INDETERMINATE" : "" }, fmt(v))))),
+    h("div", { class: "aq" }, group("The action", [["what_was_done", "What was done"], ["by_which_agent", "By which agent"], ["where", "Where"], ["when", "When"]]), group("The decision", [["under_whose_authority", "Under whose authority"], ["rule_checked", "Which rule"], ["limit_in_force", "Limit in force at that moment"], ["decision", "Allowed, stopped or escalated"]]), group("The proof", [["who_was_told", "Who was told"], ["unchanged_since", "Unchanged since?"]])),
+    h("div", { class: "grid2" },
+      card("Control test (tester) — judges the control", kv([["tester", h("span", { class: "mono" }, a.enforcement.tester.name + " @ " + a.enforcement.tester.version)], ["formula", h("span", { class: "mono" }, a.measurement.formula)], ["mode", tp(a.enforcement.mode)], ["exceptions", a.exceptions.length ? a.exceptions.map(e => h("div", { class: "mono", style: "font-size:11.5px" }, "▲ " + e.why)) : "none"], ["threshold source", h("span", { class: "mono" }, r.source_ref)]])),
+      card("Inline decisions (evaluator) — judges each call, in the path", a.enforcement.inline_decisions && a.enforcement.inline_decisions.length ? h("div", {}, h("div", { class: "row", style: "gap:4px;margin-bottom:8px" }, a.enforcement.inline_decisions.map(d => h("span", { class: "pill " + (d.decision === "ALLOW" ? "p-good" : d.decision === "ALERT" ? "p-warn" : "p-bad"), title: d.call_id + ": committed " + fmt(d.committed) + " + reserved " + fmt(d.reserved) }, d.call_id.slice(2)))),
+        a.enforcement.inline_decisions.filter(d => d.decision !== "ALLOW").map(d => h("div", { class: "mono", style: "font-size:12px" }, d.decision + " before " + d.call_id + ": " + fmt(d.committed) + " committed + " + fmt(d.reserved) + " reserved > " + fmt(d.limit))), h("p", { class: "muted", style: "font-size:11.5px;margin:6px 0 0" }, "Reserve, then commit — two calls cannot both read 9,800 under 10,000 and pass.")) : h("p", { class: "muted" }, "POST-RUN control: no inline evaluator for this control (stated honestly)."))),
+    h("div", { class: "split" },
+      card("Records behind the number", h("table", { class: "t" }, h("tbody", {}, a.records.slice(0, 16).map(rc => h("tr", { class: "click", onclick: () => inspect(rc.ref) }, h("td", {}, ticks(rc.tickmarks)), h("td", { class: "mono", style: "font-size:11.5px" }, rc.summary), h("td", {}, h("span", { class: "pill p-good" }, "MANIFEST ✓"))))))),
+      h("div", { style: "display:flex;flex-direction:column;gap:14px" },
+        card("Who was told — human loop (" + loops.length + ")", loops.length ? loops.map(l => h("div", { class: "ep" }, h("a", { href: "#/loop/" + l.incident, title: "Open the ServiceNow case" }, idc(l.incident)), h("div", {}, h("div", { class: "row", style: "gap:5px" }, tp(l.delivery.state), tp(l.response.state), spill("Nemotron " + l.assurance_agent.state.toLowerCase(), TONE[l.assurance_agent.state] || "trace"), tp(l.closure.state)), h("div", { class: "muted", style: "font-size:11.5px;margin-top:3px" }, "owner " + l.owner.name + " · delivered " + hms(l.delivery.at) + " · cutoff " + hms(l.response.cutoff) + (l.closure.retest_ref ? " · closed by " + l.closure.retest_ref.split("/").pop() : ""))))) : h("p", { class: "muted" }, "Nothing needed telling: SATISFIED. Evidence is in the pack.")),
+        card("AI Control Tower", kv([["connection", a.aict.connection], ["discovered", a.aict.assets.join(", ")], ["last import", a.aict.last_import_at], ["monitor", h("span", { style: "color:var(--unknown)" }, "no AWS sessions (gap A3)")], ["proof", h("span", {}, (a.aict.refs || []).slice(0, 3).map(r => [refEl(r), " "]))]])),
+        card("Gaps for this scope", a.gaps.length ? a.gaps.map(gp => h("div", { class: "dim" }, h("b", { class: "mono" }, gp.id + " "), gp.text)) : h("span", { class: "muted" }, "none")))));
+}
+function trail(alias) {
+  const run = D.runs[alias || "FM-C"], o = run.outcome;
+  const pick = h("div", { class: "row" }, Object.values(D.runs).map(r => h("a", { class: "chip btn" + (r.run_alias === run.run_alias ? " trace" : ""), href: "#/trail/" + r.run_alias }, r.run_alias + " · " + r.scenario)));
+  const dec = d => h("div", { class: "dec" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("span", { class: "label" }, "Step " + d.step + " · " + d.zone + " zone"), h("div", { style: "font-weight:600" }, d.agent)), h("span", { class: "pill " + ({ "gather-evidence": "p-trace", escalate: "p-warn", "auto-resolve": "p-mute", "halted-by-budget": "p-bad", handoff: "p-mute" }[d.disposition] || "p-mute") }, d.disposition)),
+    h("div", { class: "grid2", style: "margin-top:8px" },
+      h("div", {}, h("div", { class: "label" }, "Decision trace"), h("div", { class: "dim" }, "Intent: " + d.intent), d.evidence_consulted.map(e => h("div", { style: "font-size:12px;margin-top:3px" }, tp(e.status === "OK" ? "OK" : e.status === "EMPTY" ? "UNKNOWN" : e.status), " ", h("span", { class: "mono" }, e.tool), e.declared_tool ? "" : h("span", { class: "pill p-bad", style: "margin-left:4px" }, "undeclared"), " — " + e.summary, " ", refEl(e.ref))),
+        h("blockquote", { style: "margin:8px 0 0;padding:6px 10px;border-left:2px solid var(--trace);color:var(--ink-2)" }, "“" + d.rationale + "”"),
+        d.named_evidence_needed ? h("div", { style: "margin-top:6px;font-size:12px" }, h("b", {}, "Deciding evidence: "), d.named_evidence_needed) : null, d.reversible_action ? h("div", { style: "font-size:12px" }, h("b", {}, "Reversible step: "), d.reversible_action) : null, d.proposed_action ? h("div", { style: "font-size:12px" }, h("b", {}, "Proposed: "), d.proposed_action) : null,
+        h("div", { class: "muted mono", style: "font-size:11px;margin-top:6px" }, "model calls: " + (d.model_calls.join(" ") || "—") + " · no reasoning text is stored")),
+      h("div", {}, h("div", { class: "label" }, "Policy alignment · AP-v1 (host-checked)"), d.policy_checks.map(pc => h("div", { class: "pc" }, h("span", { style: "color:" + (pc.result === "ALIGNED" ? "var(--held)" : pc.result === "VIOLATION" ? "var(--breach)" : "var(--ink-3)") }, pc.result === "ALIGNED" ? "✓" : pc.result === "VIOLATION" ? "▲" : "–"), h("span", { class: "mono", style: "font-size:11px" }, pc.policy_id), h("span", { class: "dim" }, pc.basis))))));
+  return h("div", { class: "page" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "label" }, "Agent Trail · movement · decision trace · evidence · policy alignment · outcome validation"), h("h1", { class: "h1" }, run.run_alias + " — " + run.scenario_name), h("p", { class: "sub" }, run.purpose + " · " + idc(run.cid).textContent + " · C16 mode " + run.enforcement.c16 + " · agents gen " + run.agents[0].generation + " (approved " + run.agents[0].approved_by + " " + hms(run.agents[0].approved_at) + ")")), pick),
+    card("Agent movement", journey(run), h("div", { class: "row", style: "gap:14px;font-size:11.5px;margin-top:4px" }, run.journey.hops.map(o => h("span", { class: "muted mono" }, hms(o.t) + " " + o.from + "→" + o.to + " (" + o.via + (o.admission ? ", EP3 " + o.admission : "") + ")")))),
+    h("div", { class: "split" }, h("div", {}, run.decisions.map(dec)),
+      card("Outcome validation — against the independent scenario spec", h("div", { class: "verdict" }, h("span", { class: "vword " + (o.result === "VALIDATED" ? "v-SATISFIED" : "v-BREACHED"), style: "font-size:24px" }, o.result)), kv([["expected", o.expected.disposition + " (" + o.expected.source.split(":")[1] + ")"], ["actual", o.actual.disposition + " by " + o.actual.by], ["claimed vs executed", o.claimed_vs_executed.claimed ? o.claimed_vs_executed.claimed + " → executed: " + (o.claimed_vs_executed.executed || "nothing") + (o.claimed_vs_executed.consistent === false ? "  ✗ inconsistent" : "") : "no action claimed · nothing executed ✓"], ["ground truth", o.ground_truth.statement + (o.ground_truth.agrees === null ? " (UNKNOWN)" : o.ground_truth.agrees ? " ✓" : " ✗")], ["diagnostic", o.diagnostic.score + " — score-run.py, a diagnostic, not the rubric"]]),
+        h("div", { style: "margin-top:8px" }, o.checks.map(c => h("div", { class: "pc" }, h("span", { style: "color:" + (c.result === "PASS" ? "var(--held)" : "var(--breach)") }, c.result === "PASS" ? "✓" : "▲"), h("span", { class: "mono", style: "font-size:11px" }, c.result), h("span", { class: "dim" }, c.check + " — " + c.detail)))))),
+    card("Evidence Lane — the run, reconstructed from records", lane(run)));
+}
+function ledger(alias) {
+  const run = alias || "FM-B", recs = D.records[run] || [], c16 = recs.filter(r => r["control.ref"] === "C16"), sample = c16[c16.length - 1];
+  return h("div", { class: "page" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "label" }, "Evidence Ledger · bound records (ifabric.evidence/v1)"), h("h1", { class: "h1" }, "A log is for an engineer. Evidence is for a stranger.")), h("div", { class: "row" }, ["FM-A", "FM-B", "FM-C", "FM-D"].map(a => h("a", { class: "chip btn" + (a === run ? " trace" : ""), href: "#/ledger/" + a }, a)))),
+    h("div", { class: "grid2" }, card("LOG — as captured (gateway stdout, " + sample["call.id"] + ")", rawLine(D.raw[sample.source.raw_ref]), h("p", { class: "muted", style: "font-size:11.5px" }, "Written for an engineer next week. It shows something happened, not that it was allowed.")),
+      card("EVIDENCE — the same call, bound", kv(["run.id", "call.id", "control.id", "threshold.version", "threshold.value", "measured.value", "verdict", "actor.id", "emitted.at"].map(k => [k, h("span", { class: "mono" }, k === "verdict" ? VL[sample[k]] : typeof sample[k] === "number" ? fmt(sample[k]) : sample[k])]).concat([["seal", h("span", { class: "muted" }, "out of scope")], ["verify", h("button", { class: "chip btn", onclick: () => inspect("record:" + sample.evidence_id) }, "Open in inspector · recompute sha256")]])))),
+    card(recs.length + " records for " + run, h("table", { class: "t" }, h("thead", {}, h("tr", {}, ["", "run.id", "call/event", "control", "version", "measured.value", "verdict", "decision", "actor.id", "emitted.at"].map(x => h("th", {}, x)))),
+      h("tbody", {}, recs.map(r => h("tr", { class: "click", onclick: () => inspect("record:" + r.evidence_id) }, h("td", {}, ticks(r.record_kind === "model-call" ? ["R", "A", "T"] : ["R", "A"])), h("td", { class: "mono" }, r["run.id"]), h("td", { class: "mono" }, r["call.id"] || r.facts.expected_event), h("td", { class: "mono" }, r["control.ref"]), h("td", { class: "mono" }, r["threshold.version"]), h("td", { class: "mono" }, fmt(r["measured.value"])), h("td", {}, vpill(r.verdict)), h("td", {}, r.decision ? tp(r.decision) : ""), h("td", { class: "mono", style: "font-size:11.5px" }, r["actor.id"]), h("td", { class: "mono", style: "font-size:11.5px" }, hms(r["emitted.at"]))))))));
+}
+function auditor(id) {
+  const a = D.auditor[id || "INC0090216"], picker = h("div", { class: "row" }, Object.keys(D.auditor).map(k => h("a", { class: "chip btn" + (k === a.scope.id ? " trace" : ""), href: "#/auditor/" + k }, k)));
+  const qn = [["who", "1 WHO acted"], ["what", "2 WHAT it touched"], ["authorized", "3 AUTHORIZED"], ["approved", "4 APPROVED"], ["integrity", "5 INTEGRITY"], ["reconstruct", "6 RECONSTRUCT"]];
+  return h("div", { class: "page" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "label" }, "Six auditor questions · answered from the Evidence Pack alone"), h("h1", { class: "h1" }, a.title), h("p", { class: "sub mono" }, "window " + a.window.start + " → " + a.window.end)), picker),
+    h("div", { class: "grid3" }, qn.map(([k, t]) => { const q = a.questions[k]; return h("section", { class: "card" }, h("div", { class: "row", style: "justify-content:space-between" }, h("b", {}, t), tp(q.status)), h("p", { style: "margin:6px 0 8px" }, q.answer), q.facts.map(f => h("dl", { class: "fact" + (f.flag === "FLAG" ? " flag" : "") }, h("dt", {}, f.label), h("dd", {}, f.value, " ", (f.refs || []).slice(0, 1).map(refEl)))), q.gaps.length ? h("div", { class: "muted", style: "font-size:11.5px;margin-top:6px" }, "gap " + q.gaps.join(", ") + " — stated, not hidden") : null); })));
+}
+function register() {
+  const r = P.register;
+  const ctl = c => h("section", { class: "card" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "label" }, c.id + " → child " + c.child_id + " · " + c.mode), h("div", { style: "font-weight:600;font-size:15px" }, c.ref + " " + c.name)), h("span", { class: "chip mono" }, c.version + " · " + c.version_date)),
+    h("p", { class: "dim" }, c.statement), kv([["metric", c.metric], ["observation limit", h("span", { class: "mono" }, c.observation_limit.operator + " " + fmt(c.observation_limit.value) + " " + c.observation_limit.unit)], ["second number", h("span", { class: "mono" }, c.exception_tolerance.operator + " " + c.exception_tolerance.value + " " + c.exception_tolerance.unit)], ["measurement basis", c.measurement_basis], ["enforcement point", c.enforcement_point], ["owner", c.owner.name], ["risk", c.risk_rating.inherent + " inherent → " + c.risk_rating.residual + " residual (" + c.risk_rating.basis + ")"]]),
+    h("details", { style: "margin-top:8px" }, h("summary", { class: "label", style: "cursor:pointer" }, "Four justifications + GRC chain"), kv(Object.entries(c.justification).map(([k, v]) => [k.replace(/_/g, " "), v]).concat(Object.entries(c.governance).map(([k, v]) => [k.replace(/_/g, " "), v])))));
+  return h("div", { class: "page" }, h("div", {}, h("div", { class: "label" }, "Threshold register " + r.version + " · sha256 " + r.sha256.slice(0, 16) + "…"), h("h1", { class: "h1" }, "Its date is what makes it a test")),
+    card("Date before test", ribbon()), h("div", { class: "grid3" }, [["Owner (approves)", r.owner], ["Builder (operations)", r.builder], ["Assurance (tests, explains)", r.assurance]].map(([t, p]) => card(t, h("b", {}, p.name), h("div", { class: "muted" }, p.role)))),
+    card("Approval proof", kv([["status", tp(r.approval.status)], ["requested", r.approval.requested_at], ["approved", r.approval.at + " by " + r.approval.approver.name], ["note", h("span", { class: "mono" }, r.approval.note)], ["record", refEl(r.approval.ref)], ["exploratory runs", r.exploratory_runs + " (excluded from every verdict)"]])),
+    h("div", { class: "grid3" }, r.controls.map(ctl)));
+}
+function caseLinks(c) {
+  const num = (c.servicenow || {}).number, ans = Object.entries(D.answers).find(([, a]) => (a.human_loops || []).some(l => l.incident === num));
+  return h("div", { class: "row", style: "gap:8px;margin:16px 0 6px;font-size:12px" }, idc(num), idc(c.finding_id),
+    ans ? h("a", { class: "chip btn", href: "#/answer/" + encodeURIComponent(ans[0]) }, "Answer →") : null,
+    D.auditor[num] ? h("a", { class: "chip btn", href: "#/auditor/" + num }, "Six questions →") : null);
+}
+function loop(arg) {
+  const all = window.PROOFLAB_SN_CASES || [], pick = arg ? all.filter(c => c.finding_id === arg || (c.servicenow || {}).number === arg) : [];
+  const shown = pick.length ? pick : all;
+  const box = h("div", { "data-ifab-theme": document.documentElement.dataset.theme === "paper" ? "light" : "dark" });
+  const page = h("div", { class: "page" },
+    h("div", {}, h("div", { class: "label" }, "G · Human loop · ServiceNow · embedded Assurance Agent panel (prooflab v3)"), h("h1", { class: "h1" }, "Every breach reached a named human, and Nemotron's analysis is checked"),
+      h("p", { class: "sub" }, "The real drop-in panel from prooflab/servicenow/panel. Its cases are built from this pack's story by the real prooflab checks (demo/assurance-panel/make_cases.py): same incidents, numbers and runs as every other screen. Each card shows the 5-step chain, then facts our code checked vs Nemotron's judgement, the provenance, and the five assurance sections. Unknown is never green; a note whose SHA-256 is not in our delivery log is never trusted."),
+      pick.length ? h("a", { class: "chip btn", href: "#/loop" }, "← all " + all.length + " cases") : null),
+    card(null, box));
+  if (!window.IFabricCasePanel || !all.length) { box.append(h("p", { class: "muted" }, "Assurance panel assets not found (demo/assurance-panel/).")); return page; }
+  window.IFabricCasePanel.render(box, shown);
+  box.querySelectorAll(":scope > .ifab-card").forEach((el, i) => {
+    const c = shown[i]; if (!c) return;
+    el.before(caseLinks(c));
+    el.querySelectorAll(".ifab-id").forEach(n => { n.classList.add("idc"); n.dataset.thread = c.finding_id; n.onmouseenter = () => thread(c.finding_id, true); n.onmouseleave = () => thread(c.finding_id, false); });
+  });
+  return page;
+}
+function adversarial() {
+  const lv = [["ALERT0_VANILLA", "Alert 0 · Vanilla — flow runs, safeguards active, evidence correlated"], ["ALERT1_HOSTILE", "Alert 1 · Hostile — detection, safe degradation, unsafe actions denied"], ["ALERT2_ROGUE", "Alert 2 · Rogue — containment, evidence preservation, reconstruction"]];
+  const cnt = o => P.adversarial.filter(x => x.outcome === o).length;
+  return h("div", { class: "page" }, h("div", {}, h("div", { class: "label" }, "Adversarial log · we attacked our own design"), h("h1", { class: "h1" }, "What we attacked, what broke, what we changed"), h("div", { class: "row", style: "margin-top:8px" }, ["DEFENDED", "DETECTED", "BROKE_FIXED", "BROKE_OPEN"].map(o => h("span", {}, tp(o), " " + cnt(o))))),
+    ...lv.map(([k, t]) => card(t, h("table", { class: "t" }, h("thead", {}, h("tr", {}, ["Case", "Attack", "Target", "Observed", "Outcome", "What broke → what changed"].map(x => h("th", {}, x)))), h("tbody", {}, P.adversarial.filter(x => x.alert_level === k).map(x => h("tr", {}, h("td", { class: "mono" }, x.case_id), h("td", {}, h("b", {}, x.title), h("div", { class: "muted", style: "font-size:11.5px" }, x.attack)), h("td", { class: "mono", style: "font-size:11.5px" }, [x.target.ep, x.target.control].filter(Boolean).join(" · ")), h("td", { class: "dim", style: "font-size:12px" }, x.observed), h("td", {}, tp(x.outcome)), h("td", { style: "font-size:12px" }, x.what_broke ? h("div", { style: "color:var(--breach)" }, "▲ " + x.what_broke) : h("span", { class: "muted" }, "—"), x.what_changed ? h("div", { style: "color:var(--held)" }, "→ " + x.what_changed) : null))))))));
+}
+function architecture() {
+  const box = (x, y, w, t, sub, kind) => [s("rect", { x, y, width: w, height: 44, rx: 5, fill: kind === "ep" ? css("--trace-dim") : kind === "off" ? css("--docket") : css("--folio"), stroke: kind === "ep" ? css("--trace") : css("--rule-strong"), "stroke-dasharray": kind === "off" ? "4 3" : null }), s("text", { x: x + w / 2, y: y + 19, "text-anchor": "middle", fill: css("--ink"), "font-size": 11.5, "font-weight": 600 }, t), s("text", { x: x + w / 2, y: y + 34, "text-anchor": "middle", fill: css("--ink-3"), "font-size": 9.5 }, sub)];
+  const g = s("svg", { viewBox: "0 0 900 300", width: "100%", role: "img", "aria-label": "Architecture: execution path and off-path governance" },
+    s("text", { x: 10, y: 16, fill: css("--trace"), "font-size": 10.5 }, "EXECUTION PATH — only enforcement points may make work wait"),
+    box(10, 28, 150, "ifabric-run", "EP3 handoff · evaluate()", "ep"), box(180, 28, 190, "customer → IT → network", "agents on AgentCore", ""), box(390, 28, 170, "EP2 model adapter", "c16.admit() reserve→commit", "ep"), box(580, 28, 150, "EP1 modaas-agw", "guardrail · Cedar · ceiling", "ep"), box(750, 28, 140, "Nemotron", "Bedrock (governed only)", ""),
+    s("text", { x: 10, y: 110, fill: css("--ink-3"), "font-size": 10.5 }, "OFF THE PATH, ALWAYS ASYNC — telemetry never judges · evaluator never remembers · register never in the path · ledger never interprets"),
+    box(10, 122, 140, "capture (pull)", "raw + sidecars, redacted", "off"), box(165, 122, 130, "facts → records", "bound to control·ver·run", "off"), box(310, 122, 150, "evaluators (pure)", "frozen register@ver", "off"), box(475, 122, 125, "assessments", "dated verdicts", "off"), box(615, 122, 135, "findings → EP4", "ServiceNow · callback()", "ep"), box(765, 122, 125, "Assurance Agent", "Nemotron via EP1", "off"),
+    box(10, 214, 210, "register.yaml (frozen, approved)", "loaded once · never queried in path", "off"), box(240, 214, 200, "Evidence Pack + MANIFEST → S3", "what the judges read", "off"), box(460, 214, 220, "Evidence Console (this)", "sees everything · refuses nothing", "off"), box(700, 214, 190, "EP5 kill switch", "out of band · requested vs effective", "ep"));
+  return h("div", { class: "page" }, h("div", {}, h("div", { class: "label" }, "One-page architecture · Artefact 5"), h("h1", { class: "h1" }, "Same evaluator, same Finding contract, moved — nothing rewritten")), card("Execution path vs governance", h("div", { class: "svgwrap" }, g)),
+    card("Enforcement points — status rendered exactly as recorded in the pack", h("table", { class: "t" }, h("thead", {}, h("tr", {}, ["EP", "Kind", "Transport", "Can refuse", "Status", "Changed adapter", "Unchanged core"].map(x => h("th", {}, x)))), h("tbody", {}, P.enforcement_points.map(e => h("tr", {}, h("td", {}, h("b", { class: "mono" }, e.id), h("div", { class: "muted", style: "font-size:11.5px" }, e.name)), h("td", { class: "mono" }, e.kind), h("td", { class: "mono" }, e.transport + "()"), h("td", {}, e.can_refuse ? "yes" : "no"), h("td", {}, tp(e.status)), h("td", { class: "mono", style: "font-size:11.5px" }, e.changed_adapter || "—"), h("td", { class: "mono", style: "font-size:11.5px" }, e.unchanged_core.join(", ") || "—")))))),
+    h("div", { class: "grid2" }, card("Five control modes, one record format", kv([["static", "the register itself, owner-approved"], ["scheduled", "AICT inventory every 15 min · MANIFEST check"], ["event-driven", "C7 event recording"], ["in-transaction", "C16 admission at EP2/EP3"], ["continuous", "C9 closed hours vs frozen baseline"]])),
+      card("Control Room — operator mode · P2", h("p", { class: "dim", style: "margin-top:0" }, "The console asks; it does not decide. A request file goes to a separate actuator (allow-listed argv, no shell, dual control for shared impact); every transition lands in evidence/console/actions.jsonl."), h("div", { class: "row" }, ["Run control test", "Check ServiceNow", "Seal pack", "Submit + read back", "Launch scenario"].map(t => h("button", { class: "chip", disabled: true, title: "Not rendered in PACK (judge) mode" }, t))), h("p", { class: "muted mono", style: "font-size:11px" }, "REQUESTED → ACCEPTED → STARTED → SUCCEEDED · requested_at / effective_at / finished_at"))));
+}
+function gaps() {
+  return h("div", { class: "page" }, h("div", {}, h("div", { class: "label" }, "Gap list · Artefact 6 · scored, and it scores well"), h("h1", { class: "h1" }, "“Built properly: yes. Actually worked: no.”"), h("p", { class: "sub" }, "One honest failure scores better than everything green. Every gap names what, why, what it affects, its impact, and what we would do next.")),
+    h("div", { class: "grid2" }, P.gaps.map(g => card(h("span", {}, h("span", { class: "mono", style: "color:var(--unknown)" }, g.gap_id), " " + g.title), kv([["what", g.what], ["why", g.why], ["affects", [g.affects.controls.join(", "), g.affects.levels.join(", "), g.affects.auditor_questions.join(", ")].filter(Boolean).join(" · ") || "—"], ["impact", g.impact], ["next", g.next], ["status", tp(g.status)]])))));
+}
+let replayTimer = null;
+function live(alias) {
+  const run = D.runs[alias || "FM-D"], n = run.lane.events.length, holder = h("div"), meter = h("div"), feed = h("div", { style: "max-height:260px;overflow:auto" }), hdr = h("div", { class: "row mono", style: "font-size:12px" });
+  let i = 0; clearInterval(replayTimer);
+  const draw = () => { const ev = run.lane.events.slice(0, i), calls = ev.filter(e => e.kind === "model-call"), sum = calls.length ? calls[calls.length - 1].cumulative : 0, cap = run.lane.cap.value, pct = Math.min(100, 100 * sum / cap);
+    holder.replaceChildren(lane(run, i));
+    meter.replaceChildren(h("div", { class: "row", style: "justify-content:space-between" }, h("span", { class: "label" }, "Σ C16 budget (live)"), h("span", { class: "mono", style: "font-size:15px;font-weight:600" }, fmt(sum) + " / " + fmt(cap))), h("div", { style: "height:14px;background:var(--stack);border-radius:3px;margin-top:6px;overflow:hidden" }, h("div", { style: `width:${pct}%;height:100%;background:${sum > cap ? "var(--breach)" : pct > 90 ? "var(--unknown)" : "var(--held)"};transition:width .25s var(--ease)` })));
+    feed.replaceChildren(...ev.slice().reverse().slice(0, 14).map(e => h("div", { class: "mono", style: "font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--rule);color:" + (e.decision === "DENY" || e.kind === "stop" ? "var(--breach)" : e.decision === "ALERT" ? "var(--unknown)" : "var(--ink-2)") }, hms(e.t) + "  " + e.zone.padEnd(12) + " " + e.label)));
+    hdr.replaceChildren(h("span", { class: "pill p-warn" }, i < n ? "REPLAY ▶ " + i + "/" + n : "REPLAY ■ complete"), "  streams: gateway 2s · ledger 3s · cloudwatch 4m ", h("span", { style: "color:var(--held)" }, "✓ fresh"), "  · run verdict: " + (i < n ? "PROVISIONAL (run open)" : "C16 SATISFIED — prevented in the path")); };
+  const play = () => { clearInterval(replayTimer); i = 0; replayTimer = setInterval(() => { i = Math.min(n, i + 1); draw(); if (i >= n) clearInterval(replayTimer); }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 10 : 420); };
+  i = n; draw();
+  return h("div", { class: "page" }, h("div", { class: "row", style: "justify-content:space-between" }, h("div", {}, h("div", { class: "label" }, "K · Live monitor (LIVE mode) · Replay of a recorded run (PACK mode)"), h("h1", { class: "h1" }, "A verdict formed in the path — not replayed afterwards"), h("p", { class: "sub" }, "In LIVE mode this view tails the real-time pipeline (prooflab watch). Here it replays synthetic run " + run.run_alias + ", labelled REPLAY: watch EP2 refuse the call that would cross the cap.")), h("div", { class: "row" }, h("button", { class: "chip btn trace", onclick: play }, "▶ Replay " + run.run_alias), ["FM-D", "FM-B", "FM-A"].map(a => h("a", { class: "chip btn", href: "#/live/" + a }, a)))),
+    hdr, h("div", { class: "split" }, card("Budget and ceiling", meter, h("div", { class: "mono muted", style: "font-size:11.5px;margin-top:10px" }, "account ceiling · requests 41/100 per min · tokens 312,400 / 2,500,000 per h"), h("div", { class: "mono muted", style: "font-size:11.5px" }, "C9 open hour " + hms(run.started_at).slice(0, 2) + ":00Z · +8.0% · PROVISIONAL (not a verdict until the hour closes)")), card("Event feed (newest first)", feed)), card("Live Evidence Lane", holder));
+}
+
+/* ---------------- router, palette, present mode ---------------- */
+const VIEWS = { overview, answer: answerView, trail, ledger, auditor, register, loop, adversarial, architecture, gaps, live };
+function go(ref) { if (!ref) return; if (ref.startsWith("#")) { location.hash = ref; return; } if (ref.startsWith("answer:")) location.hash = "#/answer/" + encodeURIComponent(ref.slice(7)); else inspect(ref); }
+function route() { clearInterval(replayTimer); const [, v = "overview", arg] = location.hash.split("/"); const view = VIEWS[v] ? v : "overview"; rail(view); $("main").replaceChildren(VIEWS[view](arg ? decodeURIComponent(arg) : undefined)); $("main").scrollTop = 0; }
+const SUGG = [["Show me control 16 for run FM-B", "#/answer/" + encodeURIComponent("C16|run|FM-B")], ["Show me control 16 for run FM-A", "#/answer/" + encodeURIComponent("C16|run|FM-A")], ["Was control 7 satisfied for run FM-B?", "#/answer/" + encodeURIComponent("C7|run|FM-B")], ["Was control 9 satisfied between 23:00Z and 09:00Z?", "#/answer/" + encodeURIComponent("C9|interval|W")], ["Six questions for INC0090216", "#/auditor/INC0090216"], ["Six questions for INC0090219", "#/auditor/INC0090219"], ["Reconstruct run FM-B", "#/trail/FM-B"], ["Replay run FM-D live", "#/live/FM-D"]];
+function parse(q) { const t = q.toLowerCase(); let m = t.match(/control\s*c?(7|9|16)\b.*?\brun\s+(fm-[a-z0-9]+)/); if (m) { const k = "C" + m[1] + "|run|" + m[2].toUpperCase(); return D.answers[k] ? ["controltest " + m[1] + " --run " + m[2].toUpperCase(), "#/answer/" + encodeURIComponent(k)] : ["controltest " + m[1] + " --run " + m[2].toUpperCase() + "  (not in this demo pack)", null]; }
+  if ((m = t.match(/control\s*c?9\b.*\b(between|from)\b/))) return ["controltest 9 --from … --to …", "#/answer/" + encodeURIComponent("C9|interval|W")];
+  if ((m = t.match(/(six questions|auditor).*?(inc\d+)/))) return ["auditor " + m[2].toUpperCase(), D.auditor[m[2].toUpperCase()] ? "#/auditor/" + m[2].toUpperCase() : null];
+  if ((m = t.match(/(reconstruct|trail)\s+run\s+(fm-[a-z0-9]+)/))) return ["trail " + m[2].toUpperCase(), D.runs[m[2].toUpperCase()] ? "#/trail/" + m[2].toUpperCase() : null];
+  if ((m = t.match(/replay.*(fm-[a-z0-9]+)/))) return ["replay " + m[1].toUpperCase(), "#/live/" + m[1].toUpperCase()];
+  return ["I can't parse that — try one of the questions below (no guessing, no LLM).", null]; }
+let sel = 0;
+function renderPalette() { const q = $("pIn").value, [norm, target] = q ? parse(q) : ["deterministic grammar · no LLM in the answer path", null]; $("pParse").textContent = q ? "→ " + norm : norm;
+  const items = SUGG.filter(([t]) => !q || t.toLowerCase().includes(q.toLowerCase().slice(0, 12))); if (q && target) items.unshift([q, target]);
+  sel = Math.min(sel, Math.max(0, items.length - 1)); $("pList").replaceChildren(...items.slice(0, 8).map(([t, href], i) => h("li", {}, h("button", { class: i === sel ? "sel" : "", onclick: () => { closePalette(); location.hash = href; } }, h("span", {}, t), h("span", { class: "mono muted", style: "font-size:11px" }, href.split("/")[1]))))); $("pList").dataset.items = JSON.stringify(items.slice(0, 8)); }
+function openPalette() { $("palette").classList.add("open"); $("pIn").value = ""; sel = 0; renderPalette(); $("pIn").focus(); }
+function closePalette() { $("palette").classList.remove("open"); }
+$("askBtn").onclick = openPalette; $("pIn").oninput = () => { sel = 0; renderPalette(); };
+$("pIn").onkeydown = e => { const items = JSON.parse($("pList").dataset.items || "[]"); if (e.key === "ArrowDown") { sel = Math.min(items.length - 1, sel + 1); renderPalette(); e.preventDefault(); } else if (e.key === "ArrowUp") { sel = Math.max(0, sel - 1); renderPalette(); e.preventDefault(); } else if (e.key === "Enter" && items[sel]) { closePalette(); location.hash = items[sel][1]; } else if (e.key === "Escape") closePalette(); };
+$("palette").onclick = e => { if (e.target.id === "palette") closePalette(); };
+const STEPS = [["1 The promise", "#/overview", 60], ["2 Runs safely · L1", "#/overview", 120], ["3 Recorded · L2", "#/ledger", 90], ["4 Humans told · L3", "#/loop", 150], ["5 Judges ask", "#/answer/" + encodeURIComponent("C16|run|FM-B"), 210], ["6 Good decisions", "#/trail/FM-C", 90], ["7 We attacked it", "#/adversarial", 60], ["8 What's missing", "#/gaps", 60]];
+let stepI = 0, clock = 900, tick = null;
+function renderPresent() { $("presentBar").replaceChildren(...STEPS.map(([t, href], i) => h("button", { class: i === stepI ? "on" : "", onclick: () => { stepI = i; location.hash = href; renderPresent(); } }, t)), h("span", { class: "timer", id: "timer" }, Math.floor(clock / 60) + ":" + String(clock % 60).padStart(2, "0"))); }
+$("presentBtn").onclick = () => { const bar = $("presentBar"), on = bar.classList.toggle("on"); clearInterval(tick); if (on) { clock = 900; stepI = 0; location.hash = STEPS[0][1]; renderPresent(); tick = setInterval(() => { clock = Math.max(0, clock - 1); const t = $("timer"); if (t) t.textContent = Math.floor(clock / 60) + ":" + String(clock % 60).padStart(2, "0"); }, 1000); } };
+$("themeBtn").onclick = () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "paper" ? "instrument" : "paper"; route(); };
+$("integrityBtn").onclick = () => { const i = P.integrity, b = $("drBody"); $("drTitle").textContent = "Pack integrity"; b.replaceChildren(kv([["status", tp(i.status)], ["files", i.files + " listed · 0 changed · 0 missing · 0 unlisted"], ["MANIFEST sha256", h("span", { class: "mono" }, i.manifest_sha256)], ["corroboration", i.corroboration.calls_two_plus_surfaces + "/" + i.corroboration.calls_total + " calls on ≥ 2 independent surfaces"], ["S3", h("span", { class: "mono" }, i.submission.bucket + "/" + i.submission.key)], ["ETag", h("span", { class: "mono" }, i.submission.etag)], ["uploaded", i.submission.uploaded_at], ["readback", (i.submission.readback_verified ? "✓ verified " : "✗ ") + i.submission.readback_at]]), h("p", { class: "muted" }, "Checksums, not signatures or hash chains (out of scope). A stranger runs: python3 tools/manifest.py verify .")); openDrawer(); };
+document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; } if (e.target.tagName === "INPUT") return;
+  if (e.key === "Escape") { $("drawer").classList.remove("open"); closePalette(); } else if (e.key === "/") { e.preventDefault(); openPalette(); } else if (e.key === "t") $("themeBtn").click();
+  else if ($("presentBar").classList.contains("on") && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { stepI = Math.max(0, Math.min(STEPS.length - 1, stepI + (e.key === "ArrowRight" ? 1 : -1))); location.hash = STEPS[stepI][1]; renderPresent(); } });
+$("foot").replaceChildren(h("span", {}, "pack sealed " + P.generated_at), h("span", {}, "MANIFEST " + P.integrity.manifest_sha256.slice(0, 12) + "…"), h("span", {}, "S3 readback ✓ " + hms(P.integrity.submission.readback_at)), h("span", {}, "all times UTC"), h("span", {}, "tickmarks: Ⓡ recomputed · Ⓐ agreed to source · Ⓣ traced · Ⓥ vouched"), h("span", {}, "seal: out of scope"));
+window.addEventListener("hashchange", route); route();
+</script>
+</body>
+</html>

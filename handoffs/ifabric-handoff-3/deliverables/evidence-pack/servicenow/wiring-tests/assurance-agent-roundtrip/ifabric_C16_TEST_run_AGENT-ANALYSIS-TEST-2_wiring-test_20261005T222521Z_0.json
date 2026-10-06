@@ -1,0 +1,181 @@
+{
+  "attempts": [
+    {
+      "action_id": null,
+      "attempt": 1,
+      "error": null,
+      "finish_reason": null,
+      "latency_ms": 0,
+      "model_id": "none",
+      "problems": [],
+      "prompt_sha256": "5d4c06b7e8a7a4e6b1ea636f9f8214307ee8558d8c193d2907dc3c9f91dcfa9c",
+      "response_sha256": "26276c517fa96a5e1fecbe15552b178cefacafa99b99a85531d2eb600dbd21cf",
+      "think_stripped": false,
+      "usage": {}
+    }
+  ],
+  "backend": "test:stand-in",
+  "facts": {
+    "Control": "C16 ACN-COST-001",
+    "Finding ID": "ifabric:C16:TEST:run:AGENT-ANALYSIS-TEST-2:wiring-test",
+    "Next step": "Restore monitoring and re-run the assessment.",
+    "Owner": "Sree Annapurna Rallabandi",
+    "Owner response": "No",
+    "Scope": "run AGENT-ANALYSIS-TEST-2",
+    "State": "In Progress",
+    "Threshold version": "TEST",
+    "Verdict": "INDETERMINATE"
+  },
+  "finding_id": "ifabric:C16:TEST:run:AGENT-ANALYSIS-TEST-2:wiring-test",
+  "finished_at": "2026-10-05T22:25:21Z",
+  "incident_number": "INC0010232",
+  "model_alias": "none",
+  "movement": {
+    "agents": [
+      "test-customer-agent",
+      "test-network-agent"
+    ],
+    "checks": [
+      {
+        "detail": "every network \u2192 customer movement crossed a gateway",
+        "id": "M1",
+        "label": "No direct network \u2192 customer hop (every return passes a gateway)",
+        "status": "pass"
+      },
+      {
+        "detail": "all 5 steps carry run AGENT-ANALYSIS-TEST-2",
+        "id": "M2",
+        "label": "Every step belongs to this run",
+        "status": "pass"
+      },
+      {
+        "detail": "5/5 valid",
+        "id": "M3",
+        "label": "Every step has a valid UTC timestamp",
+        "status": "pass"
+      }
+    ],
+    "gateway_crossings": 2,
+    "path": [
+      "test-customer-agent",
+      "modaas-agw",
+      "test-network-agent",
+      "modaas-agw",
+      "test-customer-agent"
+    ],
+    "steps": [
+      {
+        "action": "receive request",
+        "actor": "test-customer-agent",
+        "at": "2026-10-05T07:58:00Z",
+        "decision": "accepted",
+        "ref": "test:span-1",
+        "run_id": "AGENT-ANALYSIS-TEST-2",
+        "zone": "customer"
+      },
+      {
+        "action": "model_call",
+        "actor": "modaas-agw",
+        "at": "2026-10-05T07:58:02Z",
+        "decision": "allowed",
+        "ref": "test:gateway-action-none",
+        "run_id": "AGENT-ANALYSIS-TEST-2",
+        "zone": "gateway"
+      },
+      {
+        "action": "run diagnostics",
+        "actor": "test-network-agent",
+        "at": "2026-10-05T07:58:05Z",
+        "decision": "done",
+        "ref": "test:span-2",
+        "run_id": "AGENT-ANALYSIS-TEST-2",
+        "zone": "network"
+      },
+      {
+        "action": "return path",
+        "actor": "modaas-agw",
+        "at": "2026-10-05T07:58:07Z",
+        "decision": "allowed",
+        "ref": "test:gateway-action-none",
+        "run_id": "AGENT-ANALYSIS-TEST-2",
+        "zone": "gateway"
+      },
+      {
+        "action": "reply",
+        "actor": "test-customer-agent",
+        "at": "2026-10-05T07:58:09Z",
+        "decision": "sent",
+        "ref": "test:span-3",
+        "run_id": "AGENT-ANALYSIS-TEST-2",
+        "zone": "customer"
+      }
+    ],
+    "zones": [
+      "customer",
+      "gateway",
+      "network",
+      "gateway",
+      "customer"
+    ]
+  },
+  "note_sha256": "b44ea3c5a85fb4555821b69917b5bb36ad6ddb86726729281ffa787e9205980d",
+  "note_written": "[iFabric Assurance Agent analysis]\nFinding ID: ifabric:C16:TEST:run:AGENT-ANALYSIS-TEST-2:wiring-test\nControl: C16 ACN-COST-001\nThreshold version: TEST\nScope: run AGENT-ANALYSIS-TEST-2\nVerdict: INDETERMINATE\nMeasured vs limit: missing\nEvidence refs: test:gateway-action-none; test:ledger-cid-none\nOwner: Sree Annapurna Rallabandi\nState: In Progress\nOwner response: No\nMissing evidence: measured value\nNext step: Restore monitoring and re-run the assessment.\nAgent path: test-customer-agent \u2192 test-network-agent (2 agents, 2 gateway crossings)\nPolicy alignment: 6/8 pass; unknown: P1, P5\nValidation: facts echoed exactly; evidence refs within the finding; model reasoning removed and not stored; call via test:stand-in\nModel: TEST stand-in (no model) via test:stand-in (alias none; model none; action unreported)",
+  "outcome": "WRITTEN",
+  "policy_alignment": {
+    "checks": [
+      {
+        "detail": "measured value or limit not provided",
+        "id": "P1",
+        "label": "Verdict follows from measured value vs limit",
+        "status": "unknown"
+      },
+      {
+        "detail": "TEST dated 2026-10-01; detected 2026-10-05T08:00:00Z",
+        "id": "P2",
+        "label": "Threshold version dated before the test",
+        "status": "pass"
+      },
+      {
+        "detail": "register owner annapurna@invences.com; incident owner annapurna@invences.com",
+        "id": "P3",
+        "label": "Named owner matches the register",
+        "status": "pass"
+      },
+      {
+        "detail": "DELIVERED",
+        "id": "P4",
+        "label": "Named owner was notified (incident read back)",
+        "status": "pass"
+      },
+      {
+        "detail": "pending until the cutoff",
+        "id": "P5",
+        "label": "Owner response or silence recorded",
+        "status": "unknown"
+      },
+      {
+        "detail": "incident In Progress; closes only after a linked passing re-test",
+        "id": "P6",
+        "label": "Not closed without a linked passing re-test",
+        "status": "pass"
+      },
+      {
+        "detail": "2 reference(s)",
+        "id": "P7",
+        "label": "Evidence records attached",
+        "status": "pass"
+      },
+      {
+        "detail": "every network \u2192 customer movement crossed a gateway",
+        "id": "P8",
+        "label": "No direct network \u2192 customer hop (every return passes a gateway)",
+        "status": "pass"
+      }
+    ],
+    "passed": 6,
+    "total": 8
+  },
+  "reason": null,
+  "schema": "ifabric.assurance-agent.run/v1",
+  "started_at": "2026-10-05T22:25:18Z"
+}

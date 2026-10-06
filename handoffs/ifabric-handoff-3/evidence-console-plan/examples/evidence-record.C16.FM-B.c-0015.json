@@ -1,0 +1,57 @@
+{
+  "schema": "ifabric.evidence/v1",
+  "evidence_id": "ev:C16:G-FM-v1:FM-B:c-0015",
+  "provenance": "SYNTHETIC",
+  "record_kind": "model-call",
+  "run.id": "FM-B",
+  "call.id": "c-0015",
+  "control.id": "ACN-COST-001",
+  "control.ref": "C16",
+  "threshold.version": "G-FM-v1",
+  "threshold.value": 60000,
+  "measured.value": 63420,
+  "measured.call": 5604,
+  "measured.unit": "tokens",
+  "verdict": "BREACHED",
+  "decision": "ALERT",
+  "actor.id": "ifabric_network_agent",
+  "emitted.at": "2026-10-06T00:04:57.800Z",
+  "emitted.by": "prooflab.bind.records@git:3f9a1c2",
+  "scope": {
+    "kind": "run",
+    "id": "FM-B",
+    "alias": "FM-B",
+    "cid": "fault-1791244802-b7d20f"
+  },
+  "joins": {
+    "cid": "fault-1791244802-b7d20f",
+    "trace_id": "c15727ab6733fc1615fade1f49e3e72d",
+    "action_id": "agw-68ba9efe",
+    "span_id": null,
+    "finding_id": null
+  },
+  "facts": {
+    "model_alias": "nemotron-super-120b",
+    "model_id": "nvidia.nemotron-super-3-120b",
+    "input_tokens": 5290,
+    "output_tokens": 314,
+    "finish_reason": "stop",
+    "reserved": 5790,
+    "cost_usd": 0.000902,
+    "sent": true
+  },
+  "source": {
+    "surface": "gateway-stdout",
+    "raw_ref": "raw:raw/gateway/fault-1791244802-b7d20f/gateway-stdout.log#L15",
+    "sha256": "2905910155813d5d58cbf58c7157a7806c960dab9af39bf7ae89efce36969cb0",
+    "capture_ref": "capture:raw/gateway/fault-1791244802-b7d20f/gateway-stdout.capture.json",
+    "captured_at": "2026-10-06T00:06:32Z",
+    "clock": "gateway",
+    "corroborated_by": [
+      "pdp:action_id=agw-68ba9efe",
+      "gateway:durable;trace_id=c15727ab6733fc1615fade1f49e3e72d",
+      "xray:trace_id=c15727ab6733fc1615fade1f49e3e72d"
+    ]
+  },
+  "seal": "out-of-scope"
+}
