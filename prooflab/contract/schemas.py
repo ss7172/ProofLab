@@ -55,6 +55,8 @@ def register_schema() -> dict:
     control_props = dict((name, {"type": "string"}) for name in _reg.CONTROL_KNOWN)
     control_props["mode"] = {"enum": list(_reg.CONTROL_MODES)}
     control_props["threshold_version"] = {"type": "string", "pattern": _reg.THRESHOLD_VERSION_RE.pattern}
+    one = _reg.NAMED_RUN_TREATMENT_RE.pattern[1:-1].replace("(", "").replace(")", "")
+    control_props["named_run_treatments"] = {"type": "string", "pattern": "^%s(,\\s*%s)*$" % (one, one)}
     top_props = dict((name, {"type": "string"}) for name in _reg.TOP_KNOWN)
     top_props["pre_run_gate"] = {"enum": list(_reg.PRE_RUN_GATES)}
     top_props["version"] = {"type": "string", "pattern": _reg.REGISTER_VERSION_RE.pattern}

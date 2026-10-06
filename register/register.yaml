@@ -149,3 +149,4 @@ controls:
     limit_direction: two-sided
     comparability: "Identical session policy for baseline and named runs; one unassessed warm-up invocation per updated runtime precedes the next baseline or assessed run"
     declared_treatments: "model-swap:ifabric-it:nemotron-nano-9b"
+    named_run_treatments: "N8:model-swap:ifabric-it:nemotron-super-120b:nemotron-nano-9b"

@@ -41,6 +41,7 @@ CONTROL_KNOWN = CONTROL_REQUIRED + (
     # C9
     "metric_namespace", "statistic", "window_rule", "baseline_procedure", "limit_direction", "comparability",
     "declared_treatments",
+    "named_run_treatments",   # optional (PR-41): the C9 named run(s) a declared model swap is for (EP-0 reads it)
 )
 CONTROL_KEY_PREFIXES = ("cap_tier_", "handoff_class_", "baseline_value_")
 
@@ -49,6 +50,9 @@ PRE_RUN_GATES = ("block-assessed", "record-only")
 THRESHOLD_VERSION_RE = re.compile(r"^(C16|C7|C9|INV|APPROVAL|ESC)-v[0-9]+(\.[0-9]+)*$")
 REGISTER_VERSION_RE = re.compile(r"^v[0-9]+(\.[0-9]+)*(-[a-z0-9-]+)?$")
 INT_RE = re.compile(r"^-?[0-9]+$")
+# `<label>:model-swap:<agent>:<from model>:<to model>`, comma-joined (PR-41; e.g. N8:model-swap:ifabric-it:a:b)
+NAMED_RUN_TREATMENT_RE = re.compile(
+    r"^(N[0-9]+):(model-swap):(ifabric-[a-z0-9-]+):([A-Za-z0-9][A-Za-z0-9._-]*):([A-Za-z0-9][A-Za-z0-9._-]*)$")
 NUM_RE = re.compile(r"^-?[0-9]+(\.[0-9]+)?$")
 
 
@@ -78,6 +82,24 @@ def as_bool(value: str) -> bool:
     if value not in ("true", "false"):
         raise ValueError("not true|false: %r" % (value,))
     return value == "true"
+
+
+def named_run_treatments(control: dict) -> list:
+    """[{label, kind, agent, from_model, to_model}] from an entry's optional `named_run_treatments` (PR-41).
+    Raises ValueError on a malformed item (validate_register reports the same)."""
+    out = []
+    for item in as_list((control or {}).get("named_run_treatments", "")):
+        m = NAMED_RUN_TREATMENT_RE.match(item)
+        if not m:
+            raise ValueError("named_run_treatments: %r is not <N#>:model-swap:<ifabric agent>:<from>:<to>" % item)
+        if m.group(4) == m.group(5):
+            raise ValueError("named_run_treatments: %r swaps a model to itself" % item)
+        out.append({"label": m.group(1), "kind": m.group(2), "agent": m.group(3), "from_model": m.group(4),
+                    "to_model": m.group(5)})
+    labels = [(t["label"], t["agent"]) for t in out]
+    if len(set(labels)) != len(labels):
+        raise ValueError("named_run_treatments: one run label declares two swaps for the same agent")
+    return out
 
 
 def tier_caps(control: dict) -> dict:
@@ -168,6 +190,13 @@ def validate_register(doc: dict) -> list:
                     errors.append("%s.%s: must be an integer" % (where, k))
             if k == "inline_bound_margin_pct" and not NUM_RE.match(v):
                 errors.append("%s.%s: must be a number" % (where, k))
+        if entry.get("named_run_treatments"):
+            if entry.get("control_ref") != "C9":
+                errors.append("%s.named_run_treatments: only the C9 entry declares named-run treatments" % where)
+            try:
+                named_run_treatments(entry)
+            except ValueError as exc:
+                errors.append("%s.%s" % (where, exc))
         if entry.get("control_ref") == "C16":
             for k in ("default_tier", "inline_modes", "safety_ceiling", "inline_bound_margin_pct",
                       "inline_bound_fallback_tokens", "max_tokens"):

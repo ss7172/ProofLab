@@ -261,6 +261,10 @@
      },
      "declared_treatments": {
       "type": "string"
+     },
+     "named_run_treatments": {
+      "type": "string",
+      "pattern": "^N[0-9]+:model-swap:ifabric-[a-z0-9-]+:[A-Za-z0-9][A-Za-z0-9._-]*:[A-Za-z0-9][A-Za-z0-9._-]*(,\\s*N[0-9]+:model-swap:ifabric-[a-z0-9-]+:[A-Za-z0-9][A-Za-z0-9._-]*:[A-Za-z0-9][A-Za-z0-9._-]*)*$"
      }
     },
     "patternProperties": {

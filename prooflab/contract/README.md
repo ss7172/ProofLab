@@ -73,3 +73,13 @@ required sub-keys, text <= 200 chars without newlines, trace <= 200 steps with a
 **Known gaps (PR-01 v1).** The rails §5.2 printed example omits table-A fields; the golden `rail_decision_block.json` is
 that example with the null rule applied (`rail_decision_sec52_shape.json` is the verbatim shape, valid only with
 `require_table_a=False`). `outcome.real` is a closed enum (add values by PR). Register per-control unknown keys are errors.
+
+**C9 named-run treatments (PR-41; optional register key).** The C9 entry may carry `named_run_treatments`, comma-joined
+items `<label>:model-swap:<ifabric agent>:<from model>:<to model>` (e.g. `N8:model-swap:ifabric-it:nemotron-super-120b:nemotron-nano-9b`).
+`register.named_run_treatments(entry)` parses it; `validate_register` refuses a malformed item, a swap to the same model, a
+duplicate (label, agent) and the key on any entry other than C9. It is NOT a threshold: it declares, before the run, which
+named run may run on which changed model. EP-0 (`preflight.ep0`) passes a model change only when the PINNED register (the
+`--register-file` whose sha256 equals the pin's `register_sha256`) declares it for the run being started (`--named-run`),
+the approved model is `from` and the live model is `to`; it records a declared treatment with both models. Any other model
+change still blocks. `registry derive` never writes it and `registry freeze` copies the file bytes, so the key survives
+derive -> v1 draft -> freeze unchanged; the lane adds it to the v1 draft's C9 entry by hand (the template already carries it).
