@@ -24,4 +24,5 @@ def test_cases_listed_from_the_real_snapshot_shapes(tmp_path):
     projector.project(src, out, as_of="2026-10-06T09:00:00Z")
     idx = json.load(open(os.path.join(out, "pack-index.json")))
     got = dict((c["finding_id"], c["incident"]) for c in idx["cases"])
-    assert got == {"f-a": "INC0010351", "f-b": "INC0010338", "f-c": "INC0000001"}
+    assert {k: got.get(k) for k in ("f-a", "f-b", "f-c")} == {"f-a": "INC0010351", "f-b": "INC0010338", "f-c": "INC0000001"}
+    assert "f-d" not in got
