@@ -1,12 +1,16 @@
 """Evidence Pack builder (PR-21): stage the ARCH 9.1 tree, redact, scan, write MANIFEST.json.
 
   python3 -m prooflab pack build --out <dir> [--src <tree>] [--workdir <dir>] ...
-  python3 -m prooflab pack scan <dir>          # exact-value scan only (exit 1 on any hit)
+  python3 -m prooflab pack scan <dir>          # exact-value scan only (exit 1 on any hit); with no injected values
+                                               #   it runs the pre-push scan script (RESULT: clean required)
+  python3 -m prooflab pack index <dir>         # (re)project pack-index.json into an UNSEALED pack dir
   python3 -m prooflab pack verify <dir>        # manifest.py verify
   python3 -m prooflab pack root ...            # root published (unsigned): MANIFEST sha256 to ServiceNow (PR-32)
 
 Exact-value scan values are injected by the caller: PROOFLAB_SCAN_VALUES (one value per
-line) or --scan-values-stdin. This module never reads a secret file. A scan hit reports the
+line) or --scan-values-stdin. This module never reads a secret file. With none injected, `pack scan` delegates to
+`bash $PROOFLAB_PREPUSH_SCAN <dir>` (default ~/firstmate-homes/TrustworthyAI/workshop-local/scripts/pre-push-secret-scan.sh,
+which loads the exact values itself) and needs its `RESULT: clean` line. A scan hit reports the
 file and a count, never the value. Standard library only; Python 3.9.
 """
 import argparse
@@ -426,15 +430,43 @@ def cmd_build(argv):
     return 0
 
 
+PREPUSH_SCAN_DEFAULT = os.path.join("~", "firstmate-homes", "TrustworthyAI", "workshop-local", "scripts",
+                                    "pre-push-secret-scan.sh")
+
+
+def prepush_scan_script():
+    return os.path.expanduser(os.environ.get("PROOFLAB_PREPUSH_SCAN") or PREPUSH_SCAN_DEFAULT)
+
+
+def run_prepush_scan(directory):
+    """The delegated scan: `bash <script> <dir>`; clean = exit 0 AND a `RESULT: clean` line. -> (clean?, tail text)."""
+    script = prepush_scan_script()
+    if not os.path.isfile(script):
+        return False, "scan script not found: %s" % script
+    p = subprocess.run(["bash", script, directory], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                       universal_newlines=True)
+    lines = p.stdout.splitlines()
+    clean = p.returncode == 0 and any(l.startswith("RESULT: clean") for l in lines)
+    return clean, "\n".join(lines[-8:])
+
+
 def cmd_scan(argv):
     allow = "--allow-empty-scan" in argv or os.environ.get("PROOFLAB_ALLOW_EMPTY_SCAN") == "1"
     argv = [x for x in argv if x != "--allow-empty-scan"]
-    if len(argv) != 1:
-        print("usage: pack scan [--allow-empty-scan] <dir> (values in PROOFLAB_SCAN_VALUES)", file=sys.stderr)
-        return 2
+    if len(argv) != 1 or argv[0] in ("-h", "--help"):
+        print("usage: pack scan [--allow-empty-scan] <dir>\n"
+              "  values in PROOFLAB_SCAN_VALUES: the exact-value scan runs here.\n"
+              "  none injected: delegates to bash $PROOFLAB_PREPUSH_SCAN <dir> (default %s), RESULT: clean required."
+              % PREPUSH_SCAN_DEFAULT, file=sys.stderr if argv[:1] not in (["-h"], ["--help"]) else sys.stdout)
+        return 0 if argv[:1] in (["-h"], ["--help"]) else 2
     values = read_scan_values()
     if not values and not allow:
-        print("REFUSED: no scan values injected", file=sys.stderr)
+        clean, tail = run_prepush_scan(argv[0])
+        if clean:
+            print("pre-push scan: RESULT: clean (%s)" % argv[0])
+            return 0
+        print("REFUSED: no scan values injected and the pre-push scan is not clean on %s" % argv[0], file=sys.stderr)
+        print(tail, file=sys.stderr)
         return 1
     hits = scan_tree(argv[0], values)
     for rel, c in hits:
@@ -443,7 +475,35 @@ def cmd_scan(argv):
     return 1 if hits else 0
 
 
+def cmd_index(argv):
+    if len(argv) != 1 or argv[0] in ("-h", "--help"):
+        text = ("usage: pack index <dir>\n  (re)compose answers/ and project pack-index.json + records/ into a staged pack "
+                "dir that has no MANIFEST.json yet (`pack build` already does this; a sealed pack is rebuilt, not edited)")
+        print(text, file=sys.stdout if argv[:1] in (["-h"], ["--help"]) else sys.stderr)
+        return 0 if argv[:1] in (["-h"], ["--help"]) else 2
+    if not os.path.isdir(argv[0]):
+        print("pack: not a directory: %s" % argv[0], file=sys.stderr)
+        return 2
+    if os.path.exists(os.path.join(argv[0], "MANIFEST.json")):
+        print("pack: %s is sealed (MANIFEST.json); an index change would break it. Rebuild with pack build." % argv[0],
+              file=sys.stderr)
+        return 2
+    warnings = []
+    try:
+        _project_console(os.path.abspath(argv[0]), warnings)
+    except Exception as exc:   # noqa: BLE001
+        print("pack: index FAILED (%s: %s)" % (type(exc).__name__, exc), file=sys.stderr)
+        return 1
+    for w in warnings:
+        print("warning: " + w)
+    print("OK: pack-index.json projected in %s" % argv[0])
+    return 0
+
+
 def cmd_verify(argv):
+    if argv[:1] in (["-h"], ["--help"]):
+        print("usage: pack verify <dir>\n  tools/manifest.py verify: every file matches MANIFEST.json, none unlisted")
+        return 0
     if len(argv) != 1:
         print("usage: pack verify <dir>", file=sys.stderr)
         return 2
@@ -465,11 +525,15 @@ def main(argv=None):
     if argv and argv[0] == "root":
         from prooflab.pack import root_publish
         return root_publish.main(argv[1:])
-    if argv and argv[0] in ("build", "scan", "verify"):
+    if argv[:1] in (["-h"], ["--help"]):
+        print(__doc__.split("\n\n")[1] if "\n\n" in __doc__ else __doc__)
+        print("python3 -m prooflab pack <verb> --help  for a verb's options")
+        return 0
+    if argv and argv[0] in ("build", "scan", "verify", "index"):
         verb, rest = argv[0], argv[1:]
     else:
         verb, rest = "build", argv
-    return {"build": cmd_build, "scan": cmd_scan, "verify": cmd_verify}[verb](rest)
+    return {"build": cmd_build, "scan": cmd_scan, "verify": cmd_verify, "index": cmd_index}[verb](rest)
 
 
 if __name__ == "__main__":

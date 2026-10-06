@@ -1,11 +1,14 @@
 """`prooflab humanloop findings` (D4): Finding files from the BREACHED assessments of a snapshot. Stdlib, Python 3.9.
 
     prooflab humanloop findings --snapshot DIR [--register FILE] [--out DIR] [--verdict BREACHED ...] [--force]
+    prooflab humanloop findings --kind escalation --snapshot DIR [--register FILE] [--out DIR] [--cid CID]
+                                [--all-families] [--threshold-version V] [--force]
 
 For each assessments/<C>/<cid>.json whose requirement_verdict is one of --verdict (default: breached), the register
 entry bound to the assessment (control_ref + threshold_version) supplies the version_date and the limit
 (`human_loop.build_finding`); the owner is SNOW_OWNER_USER (never a default). Files go to <out> (default
 <snapshot>/findings/<C>-<cid>.json); an existing file is kept unless --force, so the finding id stays stable.
+--kind escalation (N6) builds one ESC finding per run from the run's escalation records (humanloop/escalation.py).
 Exit: 0 ok, 2 bad input or configuration.
 """
 from __future__ import annotations
@@ -78,13 +81,25 @@ def main(argv=None, env=None):
     ap.add_argument("--out", help="default: <snapshot>/findings")
     ap.add_argument("--verdict", action="append", help="verdict to build a finding for (default: breached)")
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--kind", choices=("breach", "escalation"), default="breach",
+                    help="breach: BREACHED assessments (default); escalation: ESC findings from the ledger records")
+    ap.add_argument("--cid", help="--kind escalation: only this run")
+    ap.add_argument("--all-families", action="store_true",
+                    help="--kind escalation: also non-assessed CID families (default: ifabric-run- only)")
+    ap.add_argument("--threshold-version", help="--kind escalation: override the register's version")
     args = ap.parse_args(argv)
     try:
         from prooflab.query import assess_snapshot as S
         owner = cfg.owner_from_env(env)
         reg = S.find_register(args.snapshot, args.register)
-        made = build_all(args.snapshot, reg, args.out or os.path.join(args.snapshot, "findings"), owner,
-                         force=args.force, verdicts=tuple(args.verdict or (V.BREACHED,)))
+        out_dir = args.out or os.path.join(args.snapshot, "findings")
+        if args.kind == "escalation":
+            from prooflab.humanloop import escalation
+            made = escalation.build_all(args.snapshot, reg, out_dir, owner, force=args.force, cid=args.cid,
+                                        all_families=args.all_families, threshold_version=args.threshold_version)
+        else:
+            made = build_all(args.snapshot, reg, out_dir, owner, force=args.force,
+                             verdicts=tuple(args.verdict or (V.BREACHED,)))
     except (ValueError, OSError, KeyError) as exc:     # ConfigError and AssessError are ValueErrors
         print("error: %s" % exc, file=sys.stderr)
         return 2

@@ -113,7 +113,12 @@ def _ph2(args, config, findings, client_factory, analyzer_factory) -> int:
         print(json.dumps(rows, indent=2, sort_keys=True))
         return EXIT_SERVICENOW if any(r["servicenow"] == "unreachable" for r in rows) else EXIT_OK
     if args.command == "export":
-        result = snapshots.export_all(findings, client, config, args.out)
+        retests = {}
+        for path in sorted(glob.glob(os.path.join(args.closures, "*-closure.json"))) if args.closures else ():
+            with open(path, encoding="utf-8") as handle:       # written by `humanloop retest`
+                doc = json.load(handle)
+            retests[doc["finding_id"]] = doc["retest"]
+        result = snapshots.export_all(findings, client, config, args.out, retests=retests or None)
         print(json.dumps(result, indent=2, sort_keys=True))
         return EXIT_OK
     if args.command == "analyze":
@@ -134,8 +139,16 @@ def main(argv: Optional[List[str]] = None, env: Optional[Mapping[str, str]] = No
     if argv and argv[0] == "findings":          # D4: build Finding files from the snapshot's BREACHED assessments
         from prooflab.humanloop import findings as _findings
         return _findings.main(argv[1:], env)
-    parser = argparse.ArgumentParser(prog="prooflab humanloop", description="human loop: notify")
+    if argv and argv[0] == "retest":            # M1: link a passing re-test to its incident and record the closure
+        from prooflab.humanloop import retest as _retest
+        return _retest.main(argv[1:], env, client_factory)
+    parser = argparse.ArgumentParser(prog="prooflab humanloop", description="human loop: notify",
+                                     epilog="also: `findings` (build Finding files from a snapshot: --kind breach|"
+                                            "escalation) and `retest` (close a finding with a passing re-test run); "
+                                            "each has its own --help")
     sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("findings", help="build Finding files from a snapshot (--kind breach|escalation)")
+    sub.add_parser("retest", help="link a passing re-test run to the finding's incident and record the closure")
     notify_p = sub.add_parser("notify", help="selftest, then notify new notify-due findings")
     notify_p.add_argument("--finding", action="append", default=[], help="finding JSON file (repeatable)")
     notify_p.add_argument("--findings-dir", help="directory of finding *.json files")
@@ -156,6 +169,9 @@ def main(argv: Optional[List[str]] = None, env: Optional[Mapping[str, str]] = No
             p.add_argument("--once", action="store_true", help="one pass, then the cutoff rule")
         if name in ("snapshot", "export", "analyze", "mirror"):
             p.add_argument("--out", required=True, help="output directory (file for mirror)")
+        if name == "export":
+            p.add_argument("--closures", help="directory of `humanloop retest` closure files: a closed incident "
+                                              "with a passing re-test is then not a 'closed without re-test' gap")
         if name == "analyze":
             p.add_argument("--run-active", action="store_true", help="a subject run is active: defer")
     args = parser.parse_args(argv)
