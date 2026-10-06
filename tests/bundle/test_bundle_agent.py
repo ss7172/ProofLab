@@ -179,7 +179,10 @@ def test_strip_keeps_core_byte_identical_and_prune_drops_unreached(tmp_path):
     report, text = BA.bundle(BA.default_manifest("customer"), src_root=STUBS, agents_root=root,
                              out_dir=str(tmp_path / "out"), do_prune=True, do_strip=True)
     assert report["ok"]
-    assert "adapters.runtime.tally" in report["pruned"]           # nothing imports the stub tally
+    # tally is reached by nothing statically, but it is a required entry and a SURFACE module: never pruned
+    assert "adapters.runtime.tally" not in report["pruned"]
+    for rel in BA.DEFAULT_REQUIRED:
+        assert BA.module_name(rel) in report["modules"]
     assert BA.CORE_MODULE not in report["stripped_not_byte_identical"]
     core_bytes = open(os.path.join(STUBS, BA.CORE_PATH), "rb").read()
     with _Isolated():

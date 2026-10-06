@@ -168,7 +168,9 @@ def test_main_offline_writes_file_and_prints_ops_commands(tmp_path, capsys):
     assert text.count("kind: \"AgentConfig\"") == 3
     assert "<ledger-write-token-from-discovery>" in text
     printed = capsys.readouterr().out
-    assert "IMAGE_TAG=ifabric-customer-abc123def456" in printed
+    assert "imageTag=ifabric-base-abc123def456" in printed
+    assert "imageTag=ifabric-customer-abc123def456" in printed
+    assert "--privileged-mode-override" in printed and "start-build" in printed
     assert "kubectl apply --dry-run=server" in printed
     assert "HOLD for the captain" in printed
     assert " " + REF_FILE not in printed

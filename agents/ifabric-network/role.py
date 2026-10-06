@@ -1,6 +1,6 @@
 """ifabric-network: the role source of one ifabric- agent (ARCH 7.1). tools/bundle_agent.py appends it,
-as the __main__ part, to agents/ifabric-network/ifabric-network.py after the embedded modules (the c16 core,
-the runtime adapters and the shared ifabric_app; never prooflab/contract). Tool: network-twin (dependsOn.tools).
+as the __main__ part, to agents/ifabric-network/ifabric-network.py (two-stage, D-B: after the role loader, which
+loads the ifabric-base file holding the c16 core; then the remaining adapters and ifabric_app; never prooflab/contract). Tool: network-twin (dependsOn.tools).
 Judgment targets (handoff 3b Q8): S1 auto-resolve; S2 gather-evidence with a reversible step; S3 escalate.
 """
 import ifabric_app

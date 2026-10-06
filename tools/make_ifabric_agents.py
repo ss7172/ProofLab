@@ -14,6 +14,11 @@ startup, PR-02 PinnedC16.from_env): IFABRIC_PIN_JSON = the CANONICAL dump of the
 spaces, ASCII), IFABRIC_PIN_SHA256 = sha256 of THAT string (never of the file bytes), and
 IFABRIC_REGISTER_VERSION/_SHA256 = the pin's own register block (an explicit flag must agree with it).
 
+--buildspecs DIR (two-stage images, decision D-B): writes buildspec-ifabric-base.json (the base file decoded to
+/app/ifabric_base.py on the kit's base image + SDK layer, tag ifabric-base-<git sha>) and one
+buildspec-ifabric-<role>.json per role (FROM <repo>@<base digest>, the role file at the kit's ENTRYPOINT path),
+each <= 25,600 chars; it prints the aws codebuild start-build commands for the ops lane and never runs them.
+
 Default (offline): placeholders for the discovered values (subnets, security group, AUDIT_URL and the
 ledger token), so the CR shape is reviewable with no cluster read. --discover (OPS LANE ONLY, the
 captain's OK): the kit's Discovery reads them (read-only aws/kubectl gets); the file then holds the
@@ -237,6 +242,116 @@ def build_crs(kit, d, roles, images, model, env):
     return docs
 
 
+# ---- the two-stage image build (D-B; work/05 AR-03/AR-05): two --buildspec-override files, mirroring
+# build-agent-image.sh TARGET=agentcore (same base, SDK pins, ADOT env line, ENTRYPOINT, arm64 assertion,
+# ECR login, push to the CFT repo the CodeBuild role may push to). Written as files; never started here.
+BUILDSPEC_CAP = 25600                        # CodeBuild's buildspecOverride limit
+KIT_BASE_IMAGE = "public.ecr.aws/docker/library/python:3.12-slim"
+KIT_SDK_PIP = ("strands-agents[openai]==1.57.2 bedrock-agentcore==1.24.0 mcp==1.30.0 boto3==1.43.103 "
+               "aws-opentelemetry-distro==0.21.0")
+KIT_SDK_ENV = "ENV OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=urllib,urllib3,botocore,boto3\n"
+KIT_ENTRY_PATH = "/app/" + REFERENCE_FILE    # the in-image path the kit's ENTRYPOINT runs; our files keep their names
+BASE_FILE = "agents/ifabric-base/ifabric-base.py"
+BASE_IN_IMAGE = "ifabric_base.py"            # /app/ifabric_base.py, where the role loader looks
+CODEBUILD_ARM = ["--environment-type-override", "ARM_CONTAINER",
+                 "--image-override", "aws/codebuild/amazonlinux-aarch64-standard:3.0",
+                 "--compute-type-override", "BUILD_GENERAL1_LARGE", "--privileged-mode-override"]
+DIGEST_RE = re.compile(r"^[a-z0-9][a-z0-9.-]*(/[A-Za-z0-9._-]+)+@sha256:[0-9a-f]{64}$")
+
+
+def base_dockerfile(extra_pip=DEFAULT_EXTRA_PIP):
+    words = KIT_SDK_PIP + "".join(" '%s'" % r for r in extra_pip.split())
+    return ("FROM %s\nWORKDIR /app\nRUN pip install --no-cache-dir %s\n%sCOPY %s /app/%s\nEXPOSE 8080\n"
+            % (KIT_BASE_IMAGE, words, KIT_SDK_ENV, BASE_IN_IMAGE, BASE_IN_IMAGE))
+
+
+def role_dockerfile(base_ref, role):
+    src = "ifabric-%s.py" % role
+    return ('FROM %s\nWORKDIR /app\nCOPY %s %s\nEXPOSE 8080\n'
+            'ENTRYPOINT ["opentelemetry-instrument", "python3", "%s"]\n' % (base_ref, src, KIT_ENTRY_PATH,
+                                                                          KIT_ENTRY_PATH))
+
+
+def gz_b64(data):
+    import base64
+    import gzip
+    try:
+        gz = subprocess.run(["gzip", "-9nc"], input=data, stdout=subprocess.PIPE, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        gz = gzip.compress(data, 9, mtime=0)
+    return base64.b64encode(gz).decode("ascii")
+
+
+def buildspec(src_b64, ctx_name, dockerfile, ecr_host, repo, tag, arch="arm64"):
+    """The --buildspec-override JSON (compact), the kit's phases plus one digest line after the push."""
+    import base64
+    img = "%s/%s:%s" % (ecr_host, repo, tag)
+    d64 = base64.b64encode(dockerfile.encode("utf-8")).decode("ascii")
+    assert_arch = ('ARCH=$(docker image inspect ' + img + ' --format "{{.Architecture}}")'
+                   ' && echo "built architecture: $ARCH (want ' + arch + ')"'
+                   ' && [ "$ARCH" = "' + arch + '" ]'
+                   ' || { echo "FATAL: built $ARCH, this target requires ' + arch + '"; exit 1; }')
+    digest = ('echo "IFABRIC_IMAGE_DIGEST=$(docker image inspect ' + img +
+              ' --format "{{index .RepoDigests 0}}")"')
+    return json.dumps({"version": "0.2", "phases": {
+        "pre_build": {"commands": [
+            "uname -m",
+            "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin %s"
+            % ecr_host]},
+        "build": {"commands": [
+            "mkdir -p /tmp/ifb && cd /tmp/ifb",
+            "echo %s | base64 -d | gunzip > %s" % (src_b64, ctx_name),
+            "echo %s | base64 -d > Dockerfile" % d64,
+            "docker build -t %s ." % img,
+            assert_arch,
+            "docker push %s" % img,
+            digest]}}}, separators=(",", ":"))
+
+
+# Worst-case fixed text for the budget: a 12-digit account, a 14-char region, a 40-char stack name.
+_WC_HOST = "0" * 12 + ".dkr.ecr." + "x" * 14 + ".amazonaws.com"
+_WC_REPO = "s" * 40 + "-aws-agent-operator"
+_WC_TAG = "ifabric-network-" + "f" * 12
+BUILDSPEC_MARGIN = 64
+
+
+def buildspec_overheads(extra_pip=DEFAULT_EXTRA_PIP):
+    """(base, role) fixed buildspec chars around the gzip+base64 source, worst case + a margin: the bundler
+    lowers each file's budget to BUILDSPEC_CAP minus this."""
+    b = buildspec("", BASE_IN_IMAGE, base_dockerfile(extra_pip), _WC_HOST, _WC_REPO, _WC_TAG)
+    r = buildspec("", "ifabric-network.py", role_dockerfile(_WC_HOST + "/" + _WC_REPO + "@sha256:" + "0" * 64,
+                                                            "network"), _WC_HOST, _WC_REPO, _WC_TAG)
+    return len(b) + BUILDSPEC_MARGIN, len(r) + BUILDSPEC_MARGIN
+
+
+def write_buildspecs(out_dir, roles, bundles_root, git_sha, ecr_host, repo, base_ref, extra_pip=DEFAULT_EXTRA_PIP):
+    """Write buildspec-ifabric-base.json and buildspec-ifabric-<role>.json; returns {name: (path, chars)}.
+    Refuses a missing bundle file, a non-ifabric tag and a buildspec over CodeBuild's cap."""
+    os.makedirs(out_dir, exist_ok=True)
+    jobs = [("ifabric-base", os.path.join(bundles_root, BASE_FILE), BASE_IN_IMAGE, base_dockerfile(extra_pip),
+             "ifabric-base-%s" % git_sha)]
+    for role in roles:
+        src = os.path.join(bundles_root, "agents", "ifabric-%s" % role, "ifabric-%s.py" % role)
+        check_source(src)
+        jobs.append(("ifabric-" + role, src, os.path.basename(src), role_dockerfile(base_ref, role),
+                     image_tag(role, git_sha)))
+    written = {}
+    for name, src, ctx_name, dockerfile, tag in jobs:
+        check_tag(tag)
+        if not os.path.isfile(src):
+            raise Refused("bundle file missing: %s (run tools/bundle_agent.py first)" % src)
+        with open(src, "rb") as f:
+            spec = buildspec(gz_b64(f.read()), ctx_name, dockerfile, ecr_host, repo, tag)
+        if len(spec) > BUILDSPEC_CAP:
+            raise Refused("buildspec for %s is %d chars; CodeBuild accepts at most %d" % (name, len(spec),
+                                                                                        BUILDSPEC_CAP))
+        path = os.path.join(out_dir, "buildspec-%s.json" % name)
+        with open(path, "w") as f:
+            f.write(spec)
+        written[name] = (path, len(spec), tag)
+    return written
+
+
 def _git_sha():
     try:
         return subprocess.run(["git", "-C", REPO, "rev-parse", "--short=12", "HEAD"], stdout=subprocess.PIPE,
@@ -253,19 +368,39 @@ def _read_uri(path):
         return ""
 
 
-def ops_commands(roles, git_sha, out, kit_dir, extra_pip):
-    lines = ["# ---- ops lane (NOT run by this tool; one action at a time, each with the captain's OK) ----"]
+def ops_commands(roles, git_sha, out, region, buildspec_dir):
+    """The ops-lane sequence for the two-stage build (D-B). Printed only; this tool never runs any of it."""
+    bs = buildspec_dir or "<--buildspecs DIR>"
+    arm = " ".join(CODEBUILD_ARM)
+    start = ('aws codebuild start-build --project-name "${STACK}-modaas-image-build" %s '
+             '--buildspec-override file://%s/buildspec-%%s.json --query build.id --output text' % (arm, bs))
+    digest = ('echo "${ECR_HOST}/${STACK}-aws-agent-operator@$(aws ecr describe-images --region %s '
+              '--repository-name "${STACK}-aws-agent-operator" --image-ids imageTag=%%s '
+              '--query \'imageDetails[0].imageDigest\' --output text)" | tee %%s' % region)
+    roles_arg = ",".join(roles)
+    lines = ["# ---- ops lane (NOT run by this tool; one action at a time, each with the captain's OK) ----",
+             "# 0. the kit's own lookups (build-agent-image.sh): STACK, ACCT, ECR_HOST",
+             "#    STACK=<eks cluster tag aws:cloudformation:stack-name>; ACCT=$(aws sts get-caller-identity "
+             "--query Account --output text); ECR_HOST=${ACCT}.dkr.ecr.%s.amazonaws.com" % region,
+             "# 1. bundle (two-stage) with Python 3.12, then write the buildspecs with the real host/repo:",
+             "python3.12 tools/bundle_agent.py --layout two-stage",
+             "python3 tools/make_ifabric_agents.py --roles %s --pin <pin> --buildspecs %s --account $ACCT "
+             "--stack $STACK --git-sha %s" % (roles_arg, bs, git_sha),
+             "# 2. the base image (once), then its digest:",
+             start % "ifabric-base",
+             "aws codebuild batch-get-builds --ids <build id> --query 'builds[0].buildStatus' --output text",
+             digest % ("ifabric-base-" + git_sha, "/tmp/ifabric-base-image-uri"),
+             "# 3. role buildspecs FROM <repo>@<base digest> (read from /tmp/ifabric-base-image-uri):",
+             "python3 tools/make_ifabric_agents.py --roles %s --pin <pin> --buildspecs %s --account $ACCT "
+             "--stack $STACK --git-sha %s" % (roles_arg, bs, git_sha),
+             "# 4. each role image, then its digest (the AgentConfig containerUri):"]
     for role in roles:
-        name = "ifabric-" + role
-        lines += [
-            "python3 tools/bundle_agent.py --role %s" % role,
-            "TARGET=agentcore AGENT_SRC=agents/%s/%s.py IMAGE_TAG=%s URI_FILE=/tmp/ifabric-image-uri-%s "
-            "EXTRA_PIP='%s' bash %s/build-agent-image.sh" % (name, name, image_tag(role, git_sha), role,
-                                                            extra_pip, kit_dir),
-        ]
+        lines += [start % ("ifabric-" + role),
+                  digest % (image_tag(role, git_sha), "/tmp/ifabric-image-uri-%s" % role)]
     lines += [
+        "# 5. the AgentConfigs",
         "python3 tools/make_ifabric_agents.py --discover --roles %s --out %s --pin <the same pin file>"
-        % (",".join(roles), out),
+        % (roles_arg, out),
         "kubectl apply --dry-run=server -f %s" % out,
         "kubectl apply -f %s" % out,
         "# HOLD for the captain (approval is hers; record the words and the time, EP-10):",
@@ -286,10 +421,18 @@ def main(argv=None):
     p.add_argument("--pin", help="the in-path pin JSON file (register/pins/<v>-<mode>.json)")
     p.add_argument("--register-version", default=None, help="optional: must equal the pin's register.version")
     p.add_argument("--register-sha256", default=None, help="optional: must equal the pin's register.sha256")
-    p.add_argument("--rails-mode", default="enforce", choices=("enforce", "observe", "off"))
+    p.add_argument("--rails-mode", default="enforce", choices=("enforce", "observe"))  # D-C: no "off"
     p.add_argument("--extra-pip", default=DEFAULT_EXTRA_PIP)
     p.add_argument("--out", default=DEFAULT_OUT)
     p.add_argument("--discover", action="store_true", help="OPS LANE ONLY: the kit's Discovery reads the cluster")
+    p.add_argument("--buildspecs", metavar="DIR",
+                   help="write buildspec-ifabric-base.json and buildspec-ifabric-<role>.json (two-stage, D-B)")
+    p.add_argument("--bundles-root", default=REPO, help="where agents/ifabric-*/ifabric-*.py are (default: repo)")
+    p.add_argument("--account", default="DRYRUN-ACCOUNT", help="ECR account (default: the kit's dry-run placeholder)")
+    p.add_argument("--stack", default="eks-cluster", help="CFT stack name (repo <stack>-aws-agent-operator)")
+    p.add_argument("--region", default=os.environ.get("AWS_REGION") or "us-east-1")
+    p.add_argument("--base-image", default=None,
+                   help="<repo>@sha256:<digest> of the ifabric-base build (default: /tmp/ifabric-base-image-uri)")
     a = p.parse_args(argv)
     try:
         roles = [r.strip() for r in a.roles.split(",") if r.strip()]
@@ -330,7 +473,27 @@ def main(argv=None):
     with open(a.out, "w") as f:
         f.write(header + kit.to_yaml(docs))
     print("wrote %d AgentConfig(s) to %s" % (len(docs), a.out))
-    print(ops_commands(roles, git_sha, a.out, os.path.dirname(a.kit), a.extra_pip))
+    if a.buildspecs:
+        ecr_host = "%s.dkr.ecr.%s.amazonaws.com" % (a.account, a.region)
+        repo = "%s-aws-agent-operator" % a.stack
+        base_ref = a.base_image or _read_uri("/tmp/ifabric-base-image-uri")
+        if base_ref and not DIGEST_RE.match(base_ref):
+            print("make_ifabric_agents: refused: --base-image %r is not <repo>@sha256:<64 hex>" % base_ref,
+                  file=sys.stderr)
+            return 2
+        base_ref = base_ref or "%s/%s@sha256:<digest-of-ifabric-base-%s>" % (ecr_host, repo, git_sha)
+        try:
+            written = write_buildspecs(a.buildspecs, roles, a.bundles_root, git_sha, ecr_host, repo, base_ref,
+                                       a.extra_pip)
+        except Refused as e:
+            print("make_ifabric_agents: refused: %s" % e, file=sys.stderr)
+            return 2
+        for name, (path, n, tag) in sorted(written.items()):
+            print("wrote %s (%d chars <= %d; IMAGE_TAG %s)" % (path, n, BUILDSPEC_CAP, tag))
+        if "<" in base_ref or a.account == "DRYRUN-ACCOUNT":
+            print("NOTE: the buildspecs hold placeholders (account and/or base digest): review only; rerun with "
+                  "--account/--stack and the base digest before any start-build")
+    print(ops_commands(roles, git_sha, a.out, a.region, a.buildspecs))
     return 0
 
 

@@ -8,6 +8,13 @@ stub env and the stub gateway (stub_gateway.py) on the host: GET /ping, POST /in
 
   python3 tools/docker_smoke/run_smoke.py --bundle agents/ifabric-customer/ifabric-customer.py \\
       --workdir <scratch dir> [--build-only] [--keep]
+  # two-stage (D-B): the base image from ifabric-base.py, then the role image FROM it
+  python3 tools/docker_smoke/run_smoke.py --base agents/ifabric-base/ifabric-base.py \\
+      --bundle agents/ifabric-customer/ifabric-customer.py --workdir <scratch dir>
+
+Two-stage uses make_ifabric_agents.base_dockerfile / role_dockerfile, the exact Dockerfiles the buildspecs
+carry, with ONE substitution: the role's FROM names the local base tag instead of <repo>@<base digest>
+(no registry here).
 
 Local only: no AWS, no cluster. The smoke-only OTEL_*_EXPORTER=none env keeps ADOT from exporting.
 """
@@ -24,6 +31,9 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import stub_gateway  # noqa: E402
+
+sys.path.insert(0, os.path.dirname(HERE))
+import make_ifabric_agents as mk  # noqa: E402  (the two-stage Dockerfiles, byte for byte)
 
 # As build-agent-image.sh, TARGET=agentcore (workshop-assets/reference-impl, read 2026-10-06).
 BASE = "public.ecr.aws/docker/library/python:3.12-slim"
@@ -62,6 +72,7 @@ def _http(method, url, body=None, timeout=120):
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--bundle", required=True)
+    p.add_argument("--base", help="two-stage: the ifabric-base.py file (build the base image first)")
     p.add_argument("--workdir", required=True, help="a scratch dir for the build context")
     p.add_argument("--extra-pip", default=DEFAULT_EXTRA_PIP)
     p.add_argument("--tag", default=None)
@@ -78,10 +89,28 @@ def main(argv=None):
     tag = a.tag or "ifabric-smoke-%s:local" % role
     ctx = os.path.join(a.workdir, "ctx-" + role)
     os.makedirs(ctx, exist_ok=True)
-    shutil.copyfile(a.bundle, os.path.join(ctx, IN_IMAGE_NAME))
-    with open(os.path.join(ctx, "Dockerfile"), "w") as f:
-        f.write(dockerfile(a.extra_pip))
     t0 = time.time()
+    if a.base:
+        bctx = os.path.join(a.workdir, "ctx-base")
+        os.makedirs(bctx, exist_ok=True)
+        shutil.copyfile(a.base, os.path.join(bctx, mk.BASE_IN_IMAGE))
+        with open(os.path.join(bctx, "Dockerfile"), "w") as f:
+            f.write(mk.base_dockerfile(a.extra_pip))
+        base_tag = "ifabric-smoke-base:local"
+        b = _run(["docker", "build", "--platform", "linux/arm64", "-t", base_tag, bctx])
+        print(json.dumps({"smoke": "build base", "rc": b.returncode, "seconds": round(time.time() - t0, 1)}),
+              flush=True)
+        if b.returncode != 0:
+            return 1
+        for f in os.listdir(ctx):
+            os.remove(os.path.join(ctx, f))
+        shutil.copyfile(a.bundle, os.path.join(ctx, base))
+        with open(os.path.join(ctx, "Dockerfile"), "w") as f:
+            f.write(mk.role_dockerfile(base_tag, role))
+    else:
+        shutil.copyfile(a.bundle, os.path.join(ctx, IN_IMAGE_NAME))
+        with open(os.path.join(ctx, "Dockerfile"), "w") as f:
+            f.write(dockerfile(a.extra_pip))
     b = _run(["docker", "build", "--platform", "linux/arm64", "-t", tag, ctx])
     print(json.dumps({"smoke": "build", "rc": b.returncode, "seconds": round(time.time() - t0, 1)}), flush=True)
     if b.returncode != 0:
