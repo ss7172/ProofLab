@@ -6,6 +6,7 @@ import os
 import pytest
 
 from prooflab.contract import record as R
+from prooflab.contract import verdicts as V
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GOLDEN = os.path.join(HERE, "golden")
@@ -262,3 +263,108 @@ def test_startup_echo_rt01():
 def test_null_reasons_allowed_on_optional_judgment_fields():
     j = load("judgment.json")
     assert j["judgment.reversible_step"] is None and j["null_reasons"]["judgment.reversible_step"]
+
+
+# --- fix round 2: D-D optional fields (EP-3 before/after, J2, lifecycle duplicate guard, rail intent) -------
+
+def test_ep3_before_and_after_goldens_are_pr04_shaped():
+    before, after = load("action_tool_before.json"), load("action_tool_after.json")
+    assert before["tool.phase"] == "before" and after["tool.phase"] == "after"
+    assert before["ep.id"] == after["ep.id"] == "EP-3" and before["record_kind"] == "action"
+    assert R.SHA256_RE.match(after["tool.result_sha256"])
+    assert "tool.result_sha256" not in before or before["tool.result_sha256"] is None
+    assert R.validate_record(before) == [] and R.validate_record(after) == []
+
+
+@pytest.mark.parametrize("field,bad", [
+    ("tool.phase", "during"), ("tool.result_sha256", "ABC"), ("tool.result_sha256", "a" * 63),
+    ("lifecycle.duplicate_state", "twice"), ("judgment.model_disposition", "resolve"),
+    ("judgment.valid", "yes"), ("judgment.reasked", 1), ("judgment.evidence_needed", "twin"),
+    ("rail.intended_action", "allow"),
+])
+def test_new_optional_fields_are_validated(field, bad):
+    name = {"tool": "action_tool_after.json", "lifecycle": "lifecycle_duplicate.json",
+            "judgment": "judgment_j2.json", "rail": "rail_decision_observe_intended.json"}[field.split(".")[0]]
+    rec = load(name)
+    rec[field] = bad
+    assert any(e.startswith(field + ":") for e in R.validate_record(rec)), R.validate_record(rec)
+
+
+def test_new_optional_fields_accept_null():
+    for name, field in (("action_tool_after.json", "tool.result_sha256"), ("action_tool_before.json", "tool.phase"),
+                        ("judgment_j2.json", "judgment.model_disposition"),
+                        ("rail_decision_observe_intended.json", "rail.intended_action")):
+        rec = load(name)
+        rec[field] = None
+        assert R.validate_record(rec) == [], (name, field)
+
+
+def test_kind_scoped_new_fields():
+    rec = load("action_tool_after.json")
+    rec["rail.intended_action"] = "block"
+    assert any(e.startswith("rail.*") for e in R.validate_record(rec))
+    rec = load("action_tool_after.json")
+    rec["judgment.valid"] = True
+    assert any(e.startswith("judgment.*") for e in R.validate_record(rec))
+
+
+def test_observe_rail_records_intended_action_but_proceeds():
+    rec = load("rail_decision_observe_intended.json")
+    assert rec["inline.mode"] == "observe" and rec["inline.action"] == "proceed"
+    assert rec["rail.intended_action"] == "block"
+    rec["inline.action"] = "block"
+    assert "inline.action: in observe a rail always proceeds" in R.validate_record(rec)
+
+
+def test_new_fields_are_in_the_json_schema():
+    props = R.json_schema()["properties"]
+    assert props["tool.phase"]["enum"] == ["before", "after", None]
+    assert props["tool.result_sha256"]["pattern"] == R.SHA256_RE.pattern
+    assert props["lifecycle.duplicate_state"]["enum"][:-1] == list(R.DUPLICATE_STATES)
+    assert props["rail.intended_action"]["enum"] == list(V.RAIL_ACTIONS) + [None]
+    for name in ("judgment.valid", "judgment.reasked"):
+        assert props[name] == {"type": ["boolean", "null"]}
+    assert props["judgment.evidence_needed"]["items"] == {"type": "string"}
+
+
+# --- the null rule when a caller sets a value (no stale null_reasons) ----------------------------------------
+
+def _base_fields():
+    return {"run.id": "ifabric-run-1791260000-ab12cd", "record_id": "20261006T043205000Z-ifabric-it-0a0b0c0d",
+            "detail": "x", "verdict": "RECORDED", "provenance": "SYNTHETIC", "authorship": "TESTIMONY",
+            "emitter": "test", "emitted.at": "2026-10-06T04:32:05.000Z", "emitted.clock": "agent-runtime"}
+
+
+def test_new_record_extra_sets_a_value_without_a_stale_reason():
+    rec = R.new_record("action", "not applicable: tool call",
+                       extra={"call.id": "act-1", "tool.phase": "after", "null_reasons": {"call.id": "header absent"}},
+                       **_base_fields())
+    assert rec["call.id"] == "act-1" and "call.id" not in rec["null_reasons"]
+    assert R.validate_record(rec) == []
+
+
+def test_new_record_keeps_a_caller_reason_for_a_null_field():
+    rec = R.new_record("action", extra={"null_reasons": {"call.id": "header absent"}}, **_base_fields())
+    assert rec["call.id"] is None and rec["null_reasons"]["call.id"] == "header absent"
+    assert R.validate_record(rec) == []
+
+
+def test_prune_and_set_field_after_construction():
+    rec = R.new_record("action", **_base_fields())
+    rec["call.id"] = "act-1"          # PR-04's pattern: set after the constructor filled the reason
+    assert "null_reasons.call.id: field is not null" in R.validate_record(rec)
+    assert R.validate_record(R.prune_null_reasons(rec)) == []
+    R.set_field(rec, "call.id", None, "header absent")
+    assert R.validate_record(rec) == [] and rec["null_reasons"]["call.id"] == "header absent"
+    R.set_field(rec, "outcome.real", "SERVED")
+    assert "outcome.real" not in rec["null_reasons"] and R.validate_record(rec) == []
+    rec["null_reasons"].pop("reason")
+    with pytest.raises(ValueError):
+        R.set_field(rec, "reason", None)
+
+
+def test_complete_nulls_drops_stale_reasons():
+    rec = dict(load("action_tool_after.json"))
+    rec["null_reasons"] = dict(rec["null_reasons"], **{"tool.name": "stale"})
+    out = R.complete_nulls(rec, "n/a")
+    assert "tool.name" not in out["null_reasons"] and R.validate_record(out) == []

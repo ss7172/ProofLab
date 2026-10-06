@@ -47,6 +47,7 @@ RAIL_FIELDS = (
     "rail.id", "rail.version", "rail.stage", "rail.hook", "rail.mechanism", "rail.policy_sha256",
     "rail.subject", "rail.subject_sha256_in", "rail.subject_sha256_out", "rail.matches", "rail.values",
     "rail.evidence_id", "rail.llm_call_id", "rail.llm_outcome", "rail.latency_ms", "rail.error",
+    "rail.intended_action",   # what the rail would have done; in observe mode inline.action stays `proceed`
 )
 RAILS_COMPACT_FIELDS = ("rails.allow", "rails.policy_sha256", "rails.counts", "rails.mode")
 
@@ -55,10 +56,14 @@ RAILS_COMPACT_FIELDS = ("rails.allow", "rails.policy_sha256", "rails.counts", "r
 JUDGMENT_FIELDS = (
     "judgment.disposition", "judgment.evidence_ids", "judgment.result_digests", "judgment.reversible_step",
     "judgment.precedence_rule",
+    # J2 (ARCH §7.1): what the model said before the precedence rules, whether its JSON validated, whether
+    # the one re-ask was used, and the evidence named as needed (gather-evidence). Never free-text content.
+    "judgment.model_disposition", "judgment.valid", "judgment.reasked", "judgment.evidence_needed",
 )
-TOOL_CONTENT_FIELDS = ("tool.use_id", "suspicious_tool_output")
+# EP-3 (ARCH §3.1): one action record before the call and one after it (tool.phase); the result as a digest.
+TOOL_CONTENT_FIELDS = ("tool.use_id", "tool.phase", "tool.result_sha256", "suspicious_tool_output")
 HANDOFF_RESULT_FIELDS = ("handoff.status", "handoff.halted", "handoff.duration_ms", "tally.tokens", "tally.calls")
-STARTUP_FIELDS = ("prompt.sha256", "lifecycle.event")
+STARTUP_FIELDS = ("prompt.sha256", "lifecycle.event", "lifecycle.duplicate_state")
 
 OPTIONAL = (
     "supersedes", "span.id", "seq.in_stream", "seq", "runtime.arn", "runtime.session_id", "aws.request_id",
@@ -110,6 +115,8 @@ RAIL_HOOKS = (
 RAIL_MECHANISMS = ("code", "llm-self-check", "platform-guardrail-observed")
 JUDGMENT_DISPOSITIONS = ("auto-resolve", "gather-evidence", "escalate", "halted")   # = PR-04 DISPOSITIONS
 HANDOFF_STATUSES = ("OK", "ERROR", "TIMEOUT", "HALTED", "REFUSED")   # handoff.received status (EP-5)
+TOOL_PHASES = ("before", "after")                                    # EP-3: written before and after the call
+DUPLICATE_STATES = ("new", "in-flight", "completed", "seen")         # = PR-04 InvocationGuard.state (AR-18)
 
 # The workflow event vocabulary (ARCH §5.2): C7 matches expected events by (agent, phase, seq.in_stream).
 # The register's `workflow_events` / `workflow_events_after_stop` use these exact names. A record whose
@@ -129,6 +136,11 @@ WORKFLOW_PHASES = {
 EMITTED_RECORD_ID_RE = re.compile(r"^[0-9]{8}T[0-9]{9}Z-[a-z0-9][a-z0-9.\-]{0,31}-[0-9a-f]{8}$")
 OBS_RECORD_ID_RE = re.compile(r"^obs-[0-9a-f]{32}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+SHA256_FIELDS = (   # lowercase 64-hex or null
+    "handoff.payload_sha256", "evaluator.sha256", "pin.sha256", "threshold.sha256", "tool.args_sha256",
+    "tool.result_sha256", "rail.policy_sha256", "rails.policy_sha256", "prompt.sha256",
+    "rail.subject_sha256_in", "rail.subject_sha256_out",
+)
 RAIL_TAG_RE = re.compile(r"^[A-Z]{1,3}-[0-9]{2}@[0-9]+$")
 SOURCE_REF_RE = re.compile(r"^[a-z][a-z0-9-]*:\S.*$")
 
@@ -203,15 +215,19 @@ def empty_rail_counts(rail_ids) -> dict:
 
 # --- constructor --------------------------------------------------------------------------------
 
-def new_record(record_kind: str, null_reason: str = "not applicable", **fields) -> dict:
-    """Build a record. Pass dotted keys through a dict: new_record("decision", **{"run.id": cid, ...}).
+def new_record(record_kind: str, null_reason: str = "not applicable", extra=None, **fields) -> dict:
+    """Build a record. Pass dotted keys through a dict: new_record("decision", **{"run.id": cid, ...}),
+    or through `extra` (a dict merged over `fields`).
 
     `schema`, `phase` (`ifabric.<kind>`), `correlation_id` (= run.id), `ts` (= emitted.at or observed.at),
     `source.refs` ([]) and `null_reasons` ({}) are defaulted. Every table-A field left unset becomes null
-    with `null_reason` (an explicit `null_reasons` entry from the caller wins). It does not validate:
-    call validate_record() on the result.
+    with `null_reason` (an explicit `null_reasons` entry from the caller wins for a null field). A
+    `null_reasons` entry for a field that ends up with a value is dropped (no stale reasons). It does not
+    validate: call validate_record() on the result.
     """
     rec = dict(fields)
+    if extra:
+        rec.update(extra)
     rec["schema"] = SCHEMA_ID
     rec["record_kind"] = record_kind
     rec.setdefault("phase", "ifabric." + record_kind)
@@ -226,7 +242,7 @@ def new_record(record_kind: str, null_reason: str = "not applicable", **fields) 
         if rec[name] is None and name not in reasons:
             reasons[name] = null_reason
     rec["null_reasons"] = reasons
-    return rec
+    return prune_null_reasons(rec)
 
 
 def complete_nulls(rec: dict, null_reason: str) -> dict:
@@ -239,7 +255,31 @@ def complete_nulls(rec: dict, null_reason: str) -> dict:
         if out[name] is None and name not in reasons:
             reasons[name] = null_reason
     out["null_reasons"] = reasons
-    return out
+    return prune_null_reasons(out)
+
+
+def prune_null_reasons(rec: dict) -> dict:
+    """Drop every `null_reasons` entry whose field now holds a value (in place; returns `rec`).
+    Call it after setting a field on a record built earlier, e.g. rec["call.id"] = header value."""
+    reasons = rec.get("null_reasons")
+    if isinstance(reasons, dict):
+        for name in [n for n in reasons if rec.get(n) is not None]:
+            del reasons[name]
+    return rec
+
+
+def set_field(rec: dict, name: str, value, null_reason: str = None) -> dict:
+    """Set one field and keep the null rule: a value drops its null reason; None needs `null_reason`
+    for a table-A field (else ValueError). Returns `rec`."""
+    reasons = rec.setdefault("null_reasons", {})
+    rec[name] = value
+    if value is not None:
+        reasons.pop(name, None)
+    elif null_reason:
+        reasons[name] = null_reason
+    elif name in TABLE_A and not reasons.get(name):
+        raise ValueError("%s: null needs a null_reason" % name)
+    return rec
 
 
 def canonical_json(rec: dict) -> str:
@@ -343,6 +383,10 @@ def _validate(rec, require_table_a):
     _enum(errors, rec, "rails.mode", _v.C16_MODES)
     _enum(errors, rec, "judgment.disposition", JUDGMENT_DISPOSITIONS)
     _enum(errors, rec, "handoff.status", HANDOFF_STATUSES)
+    _enum(errors, rec, "tool.phase", TOOL_PHASES)
+    _enum(errors, rec, "lifecycle.duplicate_state", DUPLICATE_STATES)
+    _enum(errors, rec, "judgment.model_disposition", JUDGMENT_DISPOSITIONS)
+    _enum(errors, rec, "rail.intended_action", _v.RAIL_ACTIONS)
     phase = rec.get("phase")
     if isinstance(phase, str) and phase in WORKFLOW_PHASES and kind != WORKFLOW_PHASES[phase]:
         errors.append("phase: %r is a workflow event of record_kind %r, not %r" % (phase, WORKFLOW_PHASES[phase], kind))
@@ -350,10 +394,10 @@ def _validate(rec, require_table_a):
         value = rec.get(name)
         if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
             errors.append("%s: must be an int >= 0" % name)
-    for name in ("suspicious_tool_output", "handoff.halted"):
+    for name in ("suspicious_tool_output", "handoff.halted", "judgment.valid", "judgment.reasked"):
         if rec.get(name) is not None and not isinstance(rec[name], bool):
             errors.append("%s: must be a boolean" % name)
-    for name in ("judgment.evidence_ids", "judgment.result_digests"):
+    for name in ("judgment.evidence_ids", "judgment.result_digests", "judgment.evidence_needed"):
         value = rec.get(name)
         if value is not None and (not isinstance(value, list) or not all(isinstance(x, str) for x in value)):
             errors.append("%s: must be a list of strings" % name)
@@ -386,9 +430,7 @@ def _validate(rec, require_table_a):
     if kind in ("observation", "platform_decision", "metric") and rec.get("authorship") == "PLATFORM":
         if isinstance(rid, str) and not OBS_RECORD_ID_RE.match(rid):
             errors.append("record_id: a pulled platform record needs the deterministic obs- id")
-    for name in ("handoff.payload_sha256", "evaluator.sha256", "pin.sha256", "threshold.sha256",
-                 "tool.args_sha256", "rail.policy_sha256", "rails.policy_sha256", "prompt.sha256",
-                 "rail.subject_sha256_in", "rail.subject_sha256_out"):
+    for name in SHA256_FIELDS:
         _sha(errors, rec, name)
     refs = rec.get("source.refs")
     if refs is not None:
@@ -504,9 +546,15 @@ def json_schema() -> dict:
     props["rails.mode"] = {"enum": list(_v.C16_MODES) + [None]}
     props["judgment.disposition"] = {"enum": list(JUDGMENT_DISPOSITIONS) + [None]}
     props["handoff.status"] = {"enum": list(HANDOFF_STATUSES) + [None]}
-    for name in ("judgment.evidence_ids", "judgment.result_digests"):
+    props["tool.phase"] = {"enum": list(TOOL_PHASES) + [None]}
+    props["lifecycle.duplicate_state"] = {"enum": list(DUPLICATE_STATES) + [None]}
+    props["judgment.model_disposition"] = {"enum": list(JUDGMENT_DISPOSITIONS) + [None]}
+    props["rail.intended_action"] = {"enum": list(_v.RAIL_ACTIONS) + [None]}
+    for name in SHA256_FIELDS:
+        props[name] = {"type": ["string", "null"], "pattern": SHA256_RE.pattern}
+    for name in ("judgment.evidence_ids", "judgment.result_digests", "judgment.evidence_needed"):
         props[name] = {"type": ["array", "null"], "items": {"type": "string"}}
-    for name in ("suspicious_tool_output", "handoff.halted"):
+    for name in ("suspicious_tool_output", "handoff.halted", "judgment.valid", "judgment.reasked"):
         props[name] = nullable("boolean")
     for name in ("seq.in_stream", "seq", "tokens.in", "tokens.out", "outcome.http_status", "rail.latency_ms",
                  "tally.tokens", "tally.calls", "handoff.duration_ms"):

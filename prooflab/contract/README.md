@@ -29,11 +29,15 @@ here is a PR to the contract owner that bumps a version (R-D-06). Tests: `tests/
 
 **The dispatcher.** `python3 -m prooflab <verb>` (`prooflab/cli.py`): verbs map to `module:function`, imported lazily; the
 function takes `argv` and returns an exit code. Unbuilt verbs print "not built yet" (exit 3). To add or retarget a verb,
-ask the contract owner for a one-line change to `VERBS`. Routes (FEATURE-MAP R1: every target is `prooflab.*`): run -> `prooflab.adapters.orchestrator.run` (PR-08a),
-registry (alias register) -> `prooflab.registry.cli` (PR-11; cli.py to be added to its owns), query / assess ->
-`prooflab.query.cli:main` / `:assess_main` (PR-15a), refresh -> `prooflab.store.snapshot` (PR-13a), pack -> `prooflab.pack.build`,
-humanloop -> `prooflab.humanloop.runner` (PR-20a), console, watch, tail, recheck, collect -> `prooflab.adapters.collectors.cli`
-(PR-12a; cli.py to be added to its owns), postrun -> `prooflab.adapters.postrun.cli` (PR-23), servicenow (Arth).
+ask the contract owner for a one-line change to `VERBS`. Routes (FEATURE-MAP R1: every target is `prooflab.*`; each is the
+module path the owner's branch ships, checked fix round 2): run -> `prooflab.adapters.orchestrator.run` (PR-08a);
+registry (alias register) -> `prooflab.registry:main`, a lazy sub-dispatcher (freeze, pin, derive, inventory,
+approval-finding, run-ids -> PR-11's `freeze`, `pinned`, `derive`, `inventory`, `approval_finding`, `named_runs`);
+query / assess -> `prooflab.query.cli:main` / `:assess_main` (PR-15a; assess_main pending); refresh ->
+`prooflab.store.snapshot` (PR-13a); pack -> `prooflab.pack.build` (PR-21); humanloop -> `prooflab.humanloop.runner` (PR-20a);
+console -> `prooflab.console.server` (PR-17); watch / tail -> `prooflab.watch.cli` / `.tail` (PR-14); recheck ->
+`prooflab.recheck.rechecker:main` (PR-10; main pending); collect -> `prooflab.adapters.collectors:main` (PR-12a); postrun ->
+`prooflab.adapters.postrun.c16_replay:main` (PR-23); servicenow (Arth). A built module without the function exits 3.
 
 **Tests.** `pytest.ini` runs `tests` and `prooflab/tests` in pytest's default (prepend) import mode, so a PR's tests may import
 a helper from their own directory; test basenames must therefore be unique: `tests/<dir>/test_<dir>_*.py` (FEATURE-MAP R4).
@@ -52,6 +56,15 @@ is a free sub-label for other lifecycle records (record-rejected, monitoring-gap
 `handoff.status` (OK|ERROR|TIMEOUT|HALTED|REFUSED), `handoff.halted`, `handoff.duration_ms`, `tally.tokens`, `tally.calls`
 (in on handoff.sent, out on handoff.received); RT-01 echo on the start-up lifecycle record: `prompt.sha256` +
 `rails.policy_sha256` (+ `rails.mode`). `rail.*` stays rail_decision-only.
+
+**Content fields (fix round 2, orchestrator D-D; all optional).** EP-3 is written before and after the call:
+`tool.phase` (before|after) and `tool.result_sha256` (64-hex, the after record's result digest). J2 (ARCH §7.1) on judgment
+records: `judgment.model_disposition` (what the model said before the precedence rules), `judgment.valid`,
+`judgment.reasked` (bools), `judgment.evidence_needed` (list of names). Duplicate guard (AR-18): `lifecycle.duplicate_state`
+(new|in-flight|completed|seen). Rails: `rail.intended_action` (proceed|block|modify|halt), what the rail would have done; in
+observe `inline.action` stays `proceed`. The null rule when a value is set: `new_record(kind, reason, extra={...}, **fields)`
+drops a `null_reasons` entry whose field holds a value; after construction use `set_field(rec, name, value[, reason])` or
+`prune_null_reasons(rec)`. The validator still refuses a stale reason (`null_reasons.<f>: field is not null`).
 
 **Findings.** `finding.validate_finding` applies every handoff-3 `finding_context.parse_context` refusal (numbers not bool,
 required sub-keys, text <= 200 chars without newlines, trace <= 200 steps with at/actor/zone/action, retest.verdict).

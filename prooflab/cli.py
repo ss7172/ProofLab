@@ -10,12 +10,13 @@ import importlib
 import importlib.util
 import sys
 
-# verb -> (target "module:function", one-line help, owning PR). Every target lives under prooflab.* (FEATURE-MAP R1).
+# verb -> (target "module:function", one-line help, owning PR). Every target lives under prooflab.* (FEATURE-MAP R1)
+# and is the module path the owning PR's branch actually ships (checked against the sibling worktrees, fix round 2).
 VERBS = {
     "run": ("prooflab.adapters.orchestrator.run:main", "drive one run of the ifabric- trio (EP-5; EP-0 preflight)",
             "PR-08a"),
-    "registry": ("prooflab.registry.cli:main", "registry tooling: freeze, pin, check (needs cli.py in PR-11's owns)",
-                 "PR-11"),
+    "registry": ("prooflab.registry:main",
+                 "registry tooling: freeze, pin, derive, inventory, approval-finding, run-ids", "PR-11"),
     "query": ("prooflab.query.cli:main", "the control test: query a control for a run or window", "PR-15a"),
     "assess": ("prooflab.query.cli:assess_main", "run the control tests and write assessments", "PR-15a"),
     "refresh": ("prooflab.store.snapshot:main", "snapshot the one store (with the check poller)", "PR-13a"),
@@ -24,10 +25,9 @@ VERBS = {
     "console": ("prooflab.console.server:main", "the Evidence Console (loopback; PACK and LIVE)", "PR-17"),
     "watch": ("prooflab.watch.cli:main", "live feed + the response poller (check --cutoff)", "PR-14"),
     "tail": ("prooflab.watch.tail:main", "tail the live index", "PR-14"),
-    "recheck": ("prooflab.recheck.cli:main", "independent arithmetic recheck of assessments", "PR-10"),
-    "collect": ("prooflab.adapters.collectors.cli:main",
-                "pull platform evidence by run id and window (needs cli.py in PR-12a's owns)", "PR-12a"),
-    "postrun": ("prooflab.adapters.postrun.cli:main", "EP-2 post-run replay of the C16 decisions", "PR-23"),
+    "recheck": ("prooflab.recheck.rechecker:main", "independent arithmetic recheck of assessments", "PR-10"),
+    "collect": ("prooflab.adapters.collectors:main", "pull platform evidence by run id and window", "PR-12a"),
+    "postrun": ("prooflab.adapters.postrun.c16_replay:main", "EP-2 post-run replay of the C16 decisions", "PR-23"),
     "servicenow": ("prooflab.servicenow.cli:main", "Arth's ServiceNow adapter CLI (handoff-3, unchanged)", "Arth"),
 }
 # Aliases: an old spelling -> its verb.

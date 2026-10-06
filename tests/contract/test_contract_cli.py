@@ -63,14 +63,42 @@ def test_every_target_lives_under_prooflab():
 
 
 def test_routes_match_the_owners_modules():
+    """The module paths the owning PRs' branches actually ship (fix round 2)."""
     expected = {
-        "run": "prooflab.adapters.orchestrator.run:main", "refresh": "prooflab.store.snapshot:main",
-        "postrun": "prooflab.adapters.postrun.cli:main", "humanloop": "prooflab.humanloop.runner:main",
-        "collect": "prooflab.adapters.collectors.cli:main", "registry": "prooflab.registry.cli:main",
-        "assess": "prooflab.query.cli:assess_main", "query": "prooflab.query.cli:main",
+        "run": "prooflab.adapters.orchestrator.run:main", "registry": "prooflab.registry:main",
+        "query": "prooflab.query.cli:main", "assess": "prooflab.query.cli:assess_main",
+        "refresh": "prooflab.store.snapshot:main", "pack": "prooflab.pack.build:main",
+        "humanloop": "prooflab.humanloop.runner:main", "console": "prooflab.console.server:main",
+        "watch": "prooflab.watch.cli:main", "tail": "prooflab.watch.tail:main",
+        "recheck": "prooflab.recheck.rechecker:main", "collect": "prooflab.adapters.collectors:main",
+        "postrun": "prooflab.adapters.postrun.c16_replay:main", "servicenow": "prooflab.servicenow.cli:main",
     }
-    for verb, target in expected.items():
-        assert cli.VERBS[verb][0] == target
+    assert {v: t for v, (t, _x, _o) in cli.VERBS.items()} == expected
+
+
+def test_registry_subdispatcher(capsys, monkeypatch):
+    import types
+    import prooflab.registry as reg
+    assert cli.is_built("registry")
+    assert reg.main(["--help"]) == 0 and "freeze" in capsys.readouterr().out
+    assert reg.main(["nope"]) == reg.EXIT_USAGE
+    monkeypatch.setitem(reg.SUBVERBS, "ghost", ("prooflab.registry.no_such_xyz", "x"))
+    assert reg.main(["ghost"]) == reg.EXIT_NOT_BUILT
+    mod = types.ModuleType("prooflab_fake_freeze")
+    seen = []
+    mod.main = lambda argv: seen.append(argv) or 0
+    monkeypatch.setitem(sys.modules, "prooflab_fake_freeze", mod)
+    monkeypatch.setitem(reg.SUBVERBS, "freeze", ("prooflab_fake_freeze", "x"))
+    import importlib.util
+    real = importlib.util.find_spec
+    monkeypatch.setattr(importlib.util, "find_spec", lambda n, *a: object() if n == "prooflab_fake_freeze" else real(n, *a))
+    assert cli.main(["registry", "freeze", "v1"]) == 0 and seen == [["v1"]]
+
+
+def test_missing_function_in_a_built_module_exits_not_built(capsys, monkeypatch):
+    monkeypatch.setitem(cli.VERBS, "ghost", ("prooflab.contract.ids:no_such_main", "x", "PR-99"))
+    assert cli.main(["ghost"]) == cli.EXIT_NOT_BUILT
+    assert "has no no_such_main()" in capsys.readouterr().err
 
 
 def test_register_is_an_alias_of_registry(monkeypatch):
