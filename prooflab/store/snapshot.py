@@ -77,15 +77,29 @@ def known_action_ids(rows) -> set:
     return out
 
 
+def _capture_order(path):
+    """(cid dir, captured_at from the sidecar .capture.json, capture round, path): oldest capture first."""
+    at = ""
+    try:
+        with open(path + ".capture.json", "r", encoding="utf-8") as fh:
+            at = str((json.load(fh) or {}).get("captured_at") or "")
+    except (OSError, ValueError, AttributeError):
+        at = ""
+    m = re.search(r"\.r(\d+)$", path)
+    return (os.path.dirname(path), at, int(m.group(1)) if m else 1, path)
+
+
 def normalize_all(root, provenance=None, action_ids=None) -> dict:
     records, sightings, rejects, background = [], [], [], 0
     jobs = [("gateway", "*.log", _obs.normalize_gateway_text), ("spans", "*.jsonl", _obs.normalize_gateway_text),
             ("aws-invocations", "*.jsonl", _obs.normalize_invocation_text)]
     work = [(sub, path, fn, False) for sub, pattern, fn in jobs for path in _files(root, sub, pattern)]
     # D3: the aws/spans collector's capture, raw/aws-spans/<cid>/spans.jsonl (Logs Insights @timestamp/@message rows)
+    # A CID may hold several captures (spans.jsonl, spans.jsonl.r2, ...): they are read oldest first, so a later
+    # capture's sighting of the same action id wins in the run catalogue (A2: N1's r1 + r2 were summed twice).
     work += [("aws-spans", path, _obs.normalize_gateway_text, True)
-             for path in sorted(glob.glob(os.path.join(root, "raw", "aws-spans", "*", "spans.jsonl*"))
-                                ) if not path.endswith(".capture.json")]
+             for path in sorted((p for p in glob.glob(os.path.join(root, "raw", "aws-spans", "*", "spans.jsonl*"))
+                                 if not p.endswith(".capture.json")), key=_capture_order)]
     for sub, path, fn, insights in work:
         ref = os.path.relpath(path, root).replace(os.sep, "/") if sub == "aws-spans" else \
             "raw/%s/%s" % (sub, os.path.basename(path))
