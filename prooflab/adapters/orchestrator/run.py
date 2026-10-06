@@ -150,7 +150,9 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
     exp = common.parse_utc(args.creds_expiry) if args.creds_expiry else preflight.credential_expiry(runner)
     tokens = args.tokens_last_hour if args.tokens_last_hour is not None else preflight.tokens_in_window(
         runner, when, budget, **({"sleep": sleep} if sleep else {}))
-    ep0_steps, _ = preflight.ep0(versions, provenance == "LIVE_SUBJECT", agents)
+    ep0_steps, _ = preflight.ep0(
+        versions, provenance == "LIVE_SUBJECT", agents,
+        meta={"register_version": pin.get("register_version"), "pin_sha256": pin.get("pin_sha256")})
     base = {"cid": cid, "scenario": args.scenario, "mode": args.mode, "only": args.only, "condition": cond["name"],
             "condition_sha256": cond["sha256"], "fault": args.fault, "provenance": provenance,
             "register_version": pin.get("register_version"), "register_sha256": pin.get("register_sha256"),

@@ -160,26 +160,54 @@ def _field(decision, name):
     return decision.get(name) if isinstance(decision, dict) else getattr(decision, name, None)
 
 
-def ep0(versions, assessed, agents, check_versions=None):
-    """`versions` = {"running": {agent: {...filtered fields...}}, "approved": {agent: [...]}, "policy": str}
-    captured by the ops lane through filtered reads (never env values). Returns (steps, decisions)."""
+def _agent_of(decision, agents):
+    """Decision has no actor_id; approval.check_versions puts '<agent>: <why>' in `reason`. Fall back to a field."""
+    named = _field(decision, "actor_id") or _field(decision, "agent")
+    if named:
+        return named
+    reason = _field(decision, "reason") or ""
+    for a in agents:
+        if reason.startswith(a + ":"):
+            return a
+    return "agent"
+
+
+def _normalise_running(rv):
+    """Accept the legacy key `digest` as `image_digest`; everything else passes through unchanged."""
+    rv = dict(rv)
+    if "image_digest" not in rv and "digest" in rv:
+        rv["image_digest"] = rv.pop("digest")
+    return rv
+
+
+def ep0(versions, assessed, agents, check_versions=None, meta=None):
+    """EP-0 input contract (matches PR-09a approval.check_versions(running, approved, policy, assessed, meta)):
+
+        versions = {"running":  {agent: {"image_digest": str, "model": str, "paused": bool,
+                                         "generation": int, "approved_generation": int}},
+                    "approved": {agent: ["<image_digest>|<model>", ...]},
+                    "policy":   "block-assessed" | "record-only"}
+
+    captured by the ops lane through filtered reads (never env values). `meta` (e.g. register_version, pin_sha256)
+    is stamped on each Decision. Returns (steps, decisions); one step per agent, named ep0.<agent>."""
     try:
         fn = check_versions or load_check_versions()
     except RuntimeError as exc:
         return [step("ep0", False, str(exc))], []
     if not versions:
         return [step("ep0", False, "no versions document supplied (--versions-file); EP-0 cannot run")], []
-    running = {a: versions["running"][a] for a in agents if a in versions.get("running", {})}
+    running = {a: _normalise_running(versions["running"][a]) for a in agents if a in versions.get("running", {})}
     missing = [a for a in agents if a not in running]
     if missing:
         return [step("ep0", False, "no running-version read for %s" % ", ".join(missing))], []
-    approved = {a: set(versions.get("approved", {}).get(a, [])) for a in agents}
-    decisions = list(fn(running, approved, versions.get("policy"), assessed))
+    approved = {a: list(versions.get("approved", {}).get(a, [])) for a in agents}
+    decisions = list(fn(running, approved, versions.get("policy"), assessed, meta) if meta is not None
+                     else fn(running, approved, versions.get("policy"), assessed))
     steps = []
     for d in decisions:
         action = _field(d, "action")
-        steps.append(step("ep0.%s" % (_field(d, "actor_id") or _field(d, "agent") or "agent"),
-                          action == "proceed", "action=%s verdict=%s" % (action, _field(d, "verdict"))))
+        steps.append(step("ep0.%s" % _agent_of(d, agents), action == "proceed",
+                          "action=%s verdict=%s reason=%s" % (action, _field(d, "verdict"), _field(d, "reason"))))
     if not steps:
         steps.append(step("ep0", False, "check_versions returned no decision (fail closed)"))
     return steps, decisions

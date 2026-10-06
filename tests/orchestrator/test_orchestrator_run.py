@@ -64,7 +64,7 @@ def env(tmp_path):
     runtimes = jfile(tmp_path, "rt.json", {a: "arn:aws:bedrock-agentcore:us-east-1:000000000000:runtime/" + a for a in AGENTS})
     versions = jfile(tmp_path, "v.json", json.load(open(os.path.join(FIX, "versions-synthetic.json"))))
     approval = types.ModuleType("prooflab.evaluators.approval")
-    approval.check_versions = lambda running, approved, policy, assessed: [
+    approval.check_versions = lambda running, approved, policy, assessed, meta=None: [
         {"actor_id": a, "verdict": "ALLOW", "action": "proceed"} for a in running]
     sys.modules["prooflab.evaluators.approval"] = approval
     yield types.SimpleNamespace(tmp=tmp_path, rt=runtimes, versions=versions, approval=approval,
@@ -181,7 +181,7 @@ def test_guard_pure_over_and_under():
 
 
 def test_ep0_declines_paused_and_stale(env):
-    def check(running, approved, policy, assessed):
+    def check(running, approved, policy, assessed, meta=None):
         return [{"actor_id": a, "verdict": "DENY", "action": "decline-start"} if running[a].get("paused")
                 else {"actor_id": a, "verdict": "ALLOW", "action": "proceed"} for a in running]
     env.approval.check_versions = check
@@ -318,3 +318,44 @@ def test_run_records_are_valid_and_index_written(env):
     idx = [json.loads(l) for l in open(env.rundir + "/run-index.jsonl")]
     assert [e["event"] for e in idx] == ["run.started", "run.finished"]
     assert idx[1]["status"] == "FINISHED"
+
+
+def _real_check_versions():
+    """The real PR-09a function (skip if absent). Needs PR-09a + PR-02 on PYTHONPATH until they merge."""
+    saved = sys.modules.pop("prooflab.evaluators.approval", None)
+    import prooflab
+    for root in filter(None, os.environ.get("PROOFLAB_SIBLING_ROOTS", "").split(os.pathsep)):   # pre-merge borrowing
+        if os.path.join(root, "prooflab") not in prooflab.__path__:
+            prooflab.__path__.append(os.path.join(root, "prooflab"))
+    try:
+        import prooflab.evaluators as ev
+        for root in filter(None, os.environ.get("PROOFLAB_SIBLING_ROOTS", "").split(os.pathsep)):
+            ev.__path__.append(os.path.join(root, "prooflab", "evaluators"))   # c16_core lives in a sibling
+    except ImportError:
+        pass
+    try:
+        import importlib
+        return importlib.import_module("prooflab.evaluators.approval").check_versions
+    except ImportError:
+        pytest.skip("prooflab.evaluators.approval (PR-09a) not importable")
+    finally:
+        if saved is not None:
+            sys.modules["prooflab.evaluators.approval"] = saved
+
+
+def test_ep0_real_check_versions_integration(env):
+    real = _real_check_versions()
+    doc = json.load(open(env.versions))
+    steps, _ = preflight.ep0(doc, True, AGENTS, real, meta={"register_version": "v1", "pin_sha256": "b" * 64})
+    assert [s["ok"] for s in steps] == [True, True, True]
+    doc["running"]["ifabric-it"]["paused"] = True
+    doc["running"]["ifabric-network"]["generation"] = 3          # stale: approved_generation 2
+    steps, ds = preflight.ep0(doc, True, AGENTS, real)
+    by = {s["name"]: s for s in steps}
+    assert by["ep0.ifabric-customer"]["ok"]
+    assert not by["ep0.ifabric-it"]["ok"] and "paused" in by["ep0.ifabric-it"]["detail"]
+    assert not by["ep0.ifabric-network"]["ok"] and "stale" in by["ep0.ifabric-network"]["detail"]
+    doc["running"]["ifabric-it"]["paused"] = False
+    doc["approved"]["ifabric-it"] = ["sha256:other|synthetic-model-1"]
+    steps, _ = preflight.ep0(doc, True, AGENTS, real)
+    assert not [s for s in steps if s["name"] == "ep0.ifabric-it"][0]["ok"]
