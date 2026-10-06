@@ -230,14 +230,14 @@ def _spec_view(spec):
             "mode": env.get("IFABRIC_RAILS_MODE"), "has_env": "env" in spec}
 
 
-def pin_treatment(agent, live, approved, generation, approved_generation, approved_keys=None, extra_pin_keys=()):
+def pin_treatment(agent, live, approved, generation, approved_generation, approved_keys=None):
     """Compare the LIVE spec with the spec at the APPROVED generation.
 
     Returns (verdict, record): verdict "pin-only" (PASS, a declared treatment), "unchanged", or "block" with the
     reasons; `record` holds only digests, key names and the pin sha values (never other env values).
     live/approved = {"image_digest", "models", "tools", "env"}; `approved` None = the approved spec cannot be
     reconstructed: fall back to the attestation (same image digest + model as an approved key; tools if known)."""
-    keys = set(PIN_ENV_KEYS) | set(extra_pin_keys)
+    keys = set(PIN_ENV_KEYS)      # fixed by ARCH; never extended from runtime input
     lv = _spec_view(live)
     rec = {"agent": agent, "generation": generation, "approved_generation": approved_generation}
     reasons = []
@@ -297,8 +297,7 @@ def _apply_pin_rule(versions, running, agents, treatments):
         if not sp.get("live"):
             blocks[a] = "stale approval: approved at generation %d, running generation %d (no live spec to compare)" % (agen, gen)
             continue
-        verdict, rec = pin_treatment(a, sp["live"], sp.get("approved"), gen, agen, approved_keys.get(a),
-                                     versions.get("extra_pin_keys") or ())
+        verdict, rec = pin_treatment(a, sp["live"], sp.get("approved"), gen, agen, approved_keys.get(a))
         if verdict == "block":
             blocks[a] = "stale approval and not a pin-only change: " + "; ".join(rec["reasons"])
         else:

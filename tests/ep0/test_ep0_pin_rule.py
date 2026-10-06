@@ -163,3 +163,10 @@ def test_pin_join_tolerates_missing_model_call_fields():
     assert preflight.pin_of(recs[2], by) is None
     assert preflight.pin_of({"record_kind": "model_call", "run.id": "c3"}, by) == "q" * 64
     assert preflight.pin_of({}, by) is None
+
+
+def test_runtime_extra_pin_keys_cannot_widen_the_declared_set():
+    d = doc(spec(extra={"OTHER": "changed"}), approved=spec(extra={"OTHER": "orig"}))
+    d["extra_pin_keys"] = ["OTHER"]
+    steps, t = run(d)
+    assert not steps[0]["ok"] and t == []
