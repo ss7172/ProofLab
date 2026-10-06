@@ -163,8 +163,9 @@ read-back result, MANIFEST verify result>` Filled after upload; the readback is 
 
 ## 8. ServiceNow: the human loop and the Assurance Agent
 
-`<Filled from servicenow/ at submit.>` Every breach became an incident assigned to the named owner,
-read back after writing. The delivery log is append-only. A reply is not required; silence is
+`<Filled from servicenow/ at submit.>` Every NOTIFIED breach became an incident assigned to the named owner,
+read back after writing; a breach that was not notified is listed in named-runs.md and the gap list with its reason
+(N2c's C7 result: gap-list B38). Re-test closures are in closures/. The delivery log is append-only. A reply is not required; silence is
 recorded only after the stated cutoff `<CUTOFF_UTC>`. `DELIVERED` means read back with the right
 correlation id; it does not prove the owner read it. The Assurance Agent's analysis counts only if its
 SHA-256 is in the delivery log; a look-alike note is flagged, never trusted. Section A of

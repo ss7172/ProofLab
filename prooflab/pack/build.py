@@ -24,7 +24,7 @@ import sys
 PACK_TOP = ("store", "raw", "derived", "assessments", "findings", "register", "kit-crosscheck",
             "reviews", "servicenow", "adversarial", "answers", "architecture", "records", "runs", "auditor", "gaps",
             "window.json", "live-lane-log.jsonl", "security-matrix.md", "pack-index.json", "t1",
-            "named-runs.md", "decisions-log.md")
+            "named-runs.md", "decisions-log.md", "closures")
 WORKDIR_FILES = ("register.yaml", "gap-list.md", "run-ids.txt", "sketch.png")
 STAGED_FROM_WORKDIR = ("gap-list.md", "run-ids.txt", "sketch.png")
 # Files the README names: from --src or --workdir when there, else the checked-in copy (said so in a warning).
