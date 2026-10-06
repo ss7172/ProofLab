@@ -271,7 +271,8 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
             break    # never re-invoke; there is no output to forward
         carried = output.get("ifabric") or output
         tally = (int(carried.get("tally_tokens", tally[0]) or 0), int(carried.get("tally_calls", tally[1]) or 0))
-        prev_text = output.get("text") or output.get("response") or json.dumps(output, sort_keys=True)
+        prev_text = (output.get("answer") or output.get("text") or output.get("response")   # our app: `answer`
+                     or json.dumps(output, sort_keys=True))
         prev_agent = agent
         if agent == GATEWAY_C_FROM:   # what Gateway C relays: the network's structured proposal (or its answer)
             proposal = output.get("proposal") or {"resolution": str(output.get("answer") or prev_text)[:3000]}

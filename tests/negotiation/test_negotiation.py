@@ -161,6 +161,10 @@ def test_dynamic_trio_gateway_c_and_records(scenario, tmpdir_mod):
         assert x["result"]["register_version"]
     nrec = [r for r in recs if r["phase"] == "negotiation"]
     assert len(nrec) == 1 and nrec[0]["handoff.id"] == cid + ":h3" and nrec[0]["actor.id"] == "ifabric-it"
+    net = [x["result"] for x in d["results"] if x["agent"] == "ifabric-network"][0]
+    assert net["ifabric"]["tally_tokens"] > 0                          # the tally travels in the pin echo block
+    assert neg[0]["result"]["ifabric"]["tally_tokens"] > net["ifabric"]["tally_tokens"]   # carried into Gateway C
+    assert "Output of the previous agent" not in json.dumps(net.get("judgment"))
     proposal = [x["result"]["proposal"] for x in d["results"] if x["agent"] == "ifabric-network"][0]
     assert proposal["resolution"] and proposal["change_risk"]
 

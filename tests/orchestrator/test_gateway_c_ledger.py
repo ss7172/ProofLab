@@ -29,6 +29,7 @@ class _NetworkProposes(FakeAws):
         if "invoke-agent-runtime" in argv and self.invokes[-1]["agent"] == "ifabric-network":
             out = json.load(open(argv[-1]))
             out["output"]["proposal"] = {"resolution": "switch to the protection path", "change_risk": "low"}
+            out["output"]["answer"] = "network answer text"
             json.dump(out, open(argv[-1], "w"))
         if "invoke-agent-runtime" in argv and "negotiate" in self.payloads[-1]:
             out = json.load(open(argv[-1]))
@@ -49,6 +50,7 @@ def test_gateway_c_invokes_it_once_with_the_network_proposal(env):
     assert neg["negotiate"]["proposal"] == {"resolution": "switch to the protection path", "change_risk": "low"}
     assert neg["negotiate"]["traceparent"] and neg["ifabric"]["from"] == "ifabric-network"
     assert all("context" in p and "prompt" not in p for p in fake.payloads[:3])
+    assert fake.payloads[1]["context"]["question"].endswith("answer from ifabric-customer")   # the answer, not JSON
     recs = spool_records(env)
     for r in recs:
         assert R.validate_record(r) == [], r
