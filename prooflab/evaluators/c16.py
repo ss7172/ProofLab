@@ -297,7 +297,7 @@ def assess_run(run_id, calls, scenario_attrs, decisions, pin, completeness, as_o
     completeness_out = {"expected": len(expected_ids), "captured": len(expected_ids) - len(missing_spans),
                         "missing": missing_spans, "missing_usage": missing, "spans_ingested": ingested}
     summary = ("%d tokens over cap %d (tier %s) by %d" % (total, cap, tier, overshoot) if over else
-               "%d tokens, cap %d (tier %s), headroom %d; %s" % (total, cap, tier, total - cap,
+               "%d tokens, cap %d (tier %s), under cap by %d; %s" % (total, cap, tier, cap - total,
                                                                  "; ".join(gaps) or "complete"))
     return _claim.make_assessment(
         CONTROL_REF, pin.control_id, pin.threshold_version, pin.register_sha256, pin.register_version, "run",

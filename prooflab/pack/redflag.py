@@ -409,7 +409,8 @@ def r3(pack):
         if str(c.get("verdict_overall") or "") not in UNDECIDED:
             continue
         hits = [(rid, v, arel) for (cr, rid), (v, arel) in done.items() if cr == c.get("ref") and rid in pack.run_ids]
-        if hits:
+        decided = set(rid for rid, _v, _a in hits)
+        if hits and all(rid in decided for rid in pack.run_ids):
             rid, v, arel = sorted(hits)[0]
             out.append(Finding("R3", "pack-index.json @claim.controls[%d]" % i, "%s %s" % (
                 c.get("ref"), c.get("verdict_overall")), "%s (named run %s) says %s: the claim must carry it"
@@ -423,7 +424,7 @@ def r4(pack):
     if not regs:
         return out
     superseded = set(r["top"].get("supersedes") for r in regs.values() if r["top"].get("supersedes"))
-    heads = [v for v in regs if v not in superseded]
+    heads = [v for v in regs if v not in superseded and str(regs[v]["top"].get("status") or "FROZEN") != "EXPLORATORY"]
     if len(heads) != 1:
         out.append(Finding("R4", "register/", "chain heads: %s" % (", ".join(sorted(heads)) or "none"),
                            "the frozen chain must have exactly one head (fix supersedes)"))

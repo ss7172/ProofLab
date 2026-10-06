@@ -334,7 +334,8 @@ def _audit_question(control, a, rule, ctx):
     recs, cid = ctx["recs"], ctx["cid"]
     actors = E._actors(recs)
     stopped = any(r.get("verdict") == "DENY" for r in recs
-                  if r.get("record_kind") in ("decision", "platform_decision") and r.get("control.ref") in (None, control))
+                  if r.get("record_kind") in ("decision", "platform_decision") and r.get("control.ref") == control
+                  and str(r.get("inline.mode") or "enforce") == "enforce" and str(r.get("ep.id") or "") != "EP-2")
     told = [r for r in recs if r.get("record_kind") in ("finding", "notification")]
     staged = [f for f in ctx.get("findings") or [] if f.get("control_ref") == control]
     rid = lambda rows: ["record:%s" % r["record_id"] for r in rows[:3] if r.get("record_id")]
