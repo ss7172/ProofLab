@@ -71,45 +71,72 @@ check_evaluate_import() {
   if [ -n "$hits" ]; then echo "$hits" | sed 's/^/      /'; fail "evaluate imported only by adapters/runtime/model_call.py"; else pass "evaluate imported only by adapters/runtime/model_call.py"; fi
 }
 
-check_agents_py() {  # sha256 of the c16 core in each bundle, bundle size
-  local bundles
+check_agents_py() {  # two-stage layout (D-B): c16 sha marker on every bundle that embeds the core; size per file; buildspec size
+  local bundles specs
   bundles="$(find "$ROOT/agents" -type f -name 'ifabric-*.py' 2>/dev/null | sort)"
-  if [ -z "$bundles" ]; then na "embedded c16 core sha256 (no agents/*/ifabric-*.py)"; na "bundle size <= 24000 (no bundles)"; return; fi
-  local out rc
-  out="$(ROOT="$ROOT" python3 - <<'PY'
+  specs="$( { find "$ROOT/tools" -maxdepth 1 -type f -name '*buildspec*' 2>/dev/null; find "$ROOT/agents" -type f -name 'buildspec*.yml' 2>/dev/null; } | sort)"
+  if [ -z "$bundles" ]; then na "embedded c16 core sha256 (no agents/*/ifabric-*.py)"; na "bundle size <= 24000 (no bundles)"; fi
+  if [ -z "$specs" ]; then na "buildspec size <= 25600 (no buildspec files)"; fi
+  if [ -z "$bundles" ] && [ -z "$specs" ]; then return; fi
+  local py="${PY39:-$HOME/firstmate-homes/TrustworthyAI/workshop-local/.venv-py39/bin/python}"
+  [ -x "$py" ] || py="$(command -v python3)"
+  local out code
+  IFS= read -r -d '' code <<'PY'
 import base64, gzip, hashlib, os, re, sys
 root = os.environ["ROOT"]
 core = os.path.join(root, "prooflab", "evaluators", "c16_core.py")
-bundles = []
+bundles, specs = [], []
 for dp, _, fns in os.walk(os.path.join(root, "agents")):
     for fn in fns:
+        full = os.path.join(dp, fn)
         if fn.startswith("ifabric-") and fn.endswith(".py"):
-            bundles.append(os.path.join(dp, fn))
-bundles.sort()
-rc = 0
+            bundles.append(full)
+        elif fn.startswith("buildspec") and fn.endswith(".yml"):
+            specs.append(full)
+tools = os.path.join(root, "tools")
+if os.path.isdir(tools):
+    for fn in os.listdir(tools):
+        if "buildspec" in fn and os.path.isfile(os.path.join(tools, fn)):
+            specs.append(os.path.join(tools, fn))
+bundles.sort(); specs.sort()
 want = hashlib.sha256(open(core, "rb").read()).hexdigest() if os.path.exists(core) else None
 pat = re.compile(r"(?:evaluator[_.]sha256|c16_core[_a-z]*sha256|C16_CORE_SHA256)\W{0,8}([0-9a-f]{64})", re.I)
+# the embedded module key: a quoted dotted name used as a dict key (an import line is not an embed)
+key = re.compile(r"""["']prooflab\.evaluators\.c16_core["']\s*:""")
 for b in bundles:
     rel = os.path.relpath(b, root)
     data = open(b, "rb").read()
-    found = pat.findall(data.decode("utf-8", "replace"))
-    if want is None:
-        print("SHA FAIL %s: prooflab/evaluators/c16_core.py is missing" % rel); rc = 1
-    elif not found:
-        print("SHA FAIL %s: no embedded c16 core sha256 marker found" % rel); rc = 1
-    elif any(f.lower() != want for f in found):
-        print("SHA FAIL %s: embedded %s != repo %s" % (rel, sorted(set(found))[0][:12], want[:12])); rc = 1
+    text = data.decode("utf-8", "replace")
+    found = pat.findall(text)
+    is_base = os.path.basename(os.path.dirname(b)) == "ifabric-base"
+    embeds = bool(found) or bool(key.search(text))
+    if is_base or embeds:
+        if want is None:
+            print("SHA FAIL %s: prooflab/evaluators/c16_core.py is missing" % rel)
+        elif not found:
+            print("SHA FAIL %s: embeds the c16 core but has no sha256 marker" % rel)
+        elif any(f.lower() != want for f in found):
+            print("SHA FAIL %s: embedded %s != repo %s" % (rel, sorted(set(found))[0][:12], want[:12]))
+        else:
+            print("SHA OK %s" % rel)
     else:
-        print("SHA OK %s" % rel)
+        print("SHA NA %s: no c16 core embedded (role/assurance bundle)" % rel)
     size = len(base64.b64encode(gzip.compress(data, 9, mtime=0)))
     print("SIZE %s %s %d" % ("OK" if size <= 24000 else "FAIL", rel, size))
-    if size > 24000: rc = 1
-sys.exit(rc)
+for sp in specs:
+    rel = os.path.relpath(sp, root)
+    n = len(open(sp, "rb").read().decode("utf-8", "replace"))
+    print("SPEC %s %s %d" % ("OK" if n <= 25600 else "FAIL", rel, n))
 PY
-)"; rc=$?
+  out="$(ROOT="$ROOT" "$py" -c "$code")"
   echo "$out" | sed 's/^/      /'
-  if echo "$out" | grep -q '^SHA FAIL'; then fail "embedded c16 core sha256 equals prooflab/evaluators/c16_core.py"; else pass "embedded c16 core sha256 equals prooflab/evaluators/c16_core.py"; fi
-  if echo "$out" | grep -q '^SIZE FAIL'; then fail "every agents/ifabric-*/ bundle gzip+base64 <= 24000 chars"; else pass "every agents/ifabric-*/ bundle gzip+base64 <= 24000 chars"; fi
+  if [ -n "$bundles" ]; then
+    if echo "$out" | grep -q '^SHA FAIL'; then fail "embedded c16 core sha256 equals prooflab/evaluators/c16_core.py"; else pass "embedded c16 core sha256 equals prooflab/evaluators/c16_core.py (N/A for bundles without the core)"; fi
+    if echo "$out" | grep -q '^SIZE FAIL'; then fail "every agents/ifabric-*/ bundle gzip+base64 <= 24000 chars"; else pass "every agents/ifabric-*/ bundle gzip+base64 <= 24000 chars"; fi
+  fi
+  if [ -n "$specs" ]; then
+    if echo "$out" | grep -q '^SPEC FAIL'; then fail "every buildspec <= 25600 chars"; else pass "every buildspec <= 25600 chars"; fi
+  fi
 }
 
 check_forbidden() {
