@@ -152,6 +152,34 @@ def flag_closures(obj):
     return obj
 
 
+def named_run_labels(root):
+    """PR-56: the named-run label (N1, N2b, N4 ...) and the planned roles of each CID, read from the pack's
+    named-runs.md table (written before judging). Labels only: no verdict is derived here."""
+    out = {}
+    try:
+        with open(os.path.join(root, "named-runs.md"), encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except (OSError, TypeError):
+        return out
+    for line in lines:
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 12 or not cells[0] or cells[0] in ("control", "---"):
+            continue
+        cids = re.findall(r"`(ifabric-run-[0-9]+-[0-9a-f]+)`", cells[3])
+        note = cells[-1]
+        m = re.search(r"\b(N[0-9]+[a-z]?)\b", note)
+        if not cids or not m or "NOT COUNTED" in note:
+            continue
+        e = out.setdefault(cids[0], {"label": m.group(1), "roles": [], "unplanned": []})
+        role = "%s %s" % (cells[0], cells[1]) if cells[1] != cells[0] else cells[1]
+        if role not in e["roles"]:
+            e["roles"].append(role)
+        for c, g in re.findall(r"[Uu]nplanned (C[0-9]+)\b.*?gap-list (B[0-9]+)", note):
+            if not any(u["control"] == c for u in e["unplanned"]):
+                e["unplanned"].append({"control": c, "gap": g})
+    return out
+
+
 class Session(object):
     def __init__(self):
         self.csrf = secrets.token_hex(16)
@@ -461,6 +489,7 @@ class Handler(BaseHTTPRequestHandler):
                 for art in data.get("artefacts", []):
                     if art.get("path") == "MANIFEST.json" and live["status"] != "NO_MANIFEST":
                         art["present"], art["sha256"] = True, live.get("manifest_sha256")
+            data["named_labels"] = named_run_labels(getattr(src, "root", None))
             meta = self._meta({"vocab": VOCAB})
             return self._json(200, data, None, meta)
         if path == "/api/v1/boot":
