@@ -2,7 +2,7 @@
 
 Format: date (UTC) · decision · why · who · evidence/reference. Section 1 is Arth's ServiceNow and platform rows as handed over (handoffs/ifabric-handoff-3, unchanged). Section 2 holds the build decisions D1-D23, DG-1-DG-7 (decided by the captain) and DC-1-DC-11 (open; the default the build uses is stated), in the same columns.
 
-Status of this file: a template. The two rows marked `<...>` in section 3 are filled at the freeze from the pilots; nothing in them is claimed yet. Dates for D1-D16 are the architecture's (2026-10-05); the architecture's later updates and the captain's answers are dated in the row.
+Status of this file: filled. Section 3 was filled from the freeze records (register/versions, t1 heads, ServiceNow exports) on 2026-10-06. Dates for D1-D16 are the architecture's (2026-10-05); the architecture's later updates and the captain's answers are dated in the row.
 
 ## 1. ServiceNow and platform decisions (Arth)
 
@@ -108,5 +108,5 @@ Status of this file: a template. The two rows marked `<...>` in section 3 are fi
 
 | Date | Decision | Why | Who | Reference |
 |---|---|---|---|---|
-| `<date>` | `<threshold values per control, from the pilots>` | `<the four justifications>` | `<builder>` | `register.yaml` |
-| `<date>` | `<register approved by the owner: INC...>` | Owner approval before assessed runs (T2 corroborates T1) | Sree | `register/approval.md` |
+| 2026-10-06 12:39:29Z (v1); 13:36:43Z (v1.1) | v1: C16 cap 20,000 tokens/run, C7 coverage 100% with max gap 29,000 ms, C9 two-sided ±75% latency change with 0 errors. v1.1 (declared post-hoc, rule C16-cap/2): C16 cap 25,000; C7/C9 unchanged | From the eligible pilots P1c 15,248 / P3 16,052 / P5 24,430 tokens and their latency baselines (derivation rules in register/experiments/rules.json); v1.1 because v1's cap ignored the enforce reservation and halted N1b (rules-v1.1.json) | the build (orchestrator), decided by the captain | `register/versions/v1.yaml`, `v1.1.yaml`, `*.head.json` (S3 T1 12:40:22Z, 13:38:05Z) |
+| 2026-10-06 13:02:37Z (v1); 15:09:49Z (v1.1) | v1 approved by the owner on INC0010321; v1.1 approved on INC0010338 (first posted on INC0010321 at 13:44:39Z by mistake, then on INC0010338). The v1.1 approval came AFTER N1 (13:56Z); its S3 date proof (13:38:05Z) is before N1 | Owner approval (T2 corroborates T1); the late v1.1 note is stated, not hidden | Sree (account annapurna@invences.com; B37) | `register/approval*/`, `servicenow/export/` |
