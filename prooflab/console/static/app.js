@@ -1,5 +1,5 @@
 window.addEventListener("error", e => document.body.setAttribute("data-error", String(e.message)));
-let D = { answers: {}, auditor: {}, runs: {}, records: {}, cases: [] }, P = {}, META = {}, VOCAB = {};
+let D = { answers: {}, auditor: {}, runs: {}, records: {}, cases: [], rwin: {} }, P = {}, META = {}, VOCAB = {};
 const $ = id => document.getElementById(id);
 function h(tag, attrs, ...kids) { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs || {})) { if (v == null || v === false) continue; if (k === "class") n.className = v; else if (k === "style") n.style.cssText = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? "" : v); } for (const c of kids.flat(9)) { if (c == null || c === false) continue; n.append(c instanceof Node ? c : document.createTextNode(String(c))); } return n; }
 function s(tag, attrs, ...kids) { const n = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const [k, v] of Object.entries(attrs || {})) if (v != null) { if (k === "style") n.style.cssText = v; else n.setAttribute(k, v); } for (const c of kids.flat(9)) { if (c == null) continue; n.append(c instanceof Node ? c : document.createTextNode(String(c))); } return n; }
@@ -104,12 +104,16 @@ function ribbon(compact) {
   return h("div", {}, h("div", { class: "svgwrap" }, g), h("ol", { class: "evlist small" }, pts.map(([l, t]) => h("li", {}, h("span", { class: "mono" }, t), " · " + l))), h("p", { class: "callout " + (okOrder ? "good" : "bad") }, (!ap(r).at ? "✗ no owner approval record in the pack (MISSING): the order frozen, approved, first assessed run cannot be shown" : Date.parse(r.frozen_at) < Date.parse(ap(r).at) && Date.parse(ap(r).at) < Date.parse(r.first_assessed_run_at) ? "✓ frozen, then approved, then the first assessed run" : "✗ the order frozen, approved, first assessed run does NOT hold") + " · same threshold version for the named runs is shown on each answer"));
 }
 function runOf(id) { return (P.runs || []).find(r => r.cid === id || r.alias === id) || null; }
+/* PR-56: the named-run label and planned roles from named-runs.md (server-parsed; labels only, no verdicts) */
+function NL(id) { const r = runOf(id); return (P.named_labels || {})[id] || (r && (P.named_labels || {})[r.cid]) || null; }
+function nlTag(id) { const n = NL(id); if (!n) return null; return h("span", { class: "nlt" }, h("b", { class: "chip nl" }, n.label), (n.roles || []).length ? h("span", { class: "small muted" }, " " + n.roles.join(" · ") + " (planned)") : null); }
+function unplanned(id, c) { const u = ((NL(id) || {}).unplanned || []).find(x => x.control === c); return u ? spill("unplanned · gap " + u.gap, "warn") : null; }
 function answerIndex() {
   const keys = (P.answers || []).map(a => a.key), runs = [], wins = [];
   keys.forEach(k => { const [c, kind, sc] = k.split("|"); if (kind === "run" && !runs.includes(sc)) runs.push(sc); if (kind === "interval" && !wins.includes(sc)) wins.push(sc); });
-  const cell = (c, kind, sc) => { const k = c + "|" + kind + "|" + sc, a = D.answers[k]; return h("td", {}, a ? h("a", { href: "#/answer/" + encodeURIComponent(k), title: k }, vpill(a.verdict.value)) : h("span", { class: "muted" }, "not stored")); };
+  const cell = (c, kind, sc) => { const k = c + "|" + kind + "|" + sc, a = D.answers[k]; return h("td", {}, a ? h("a", { href: "#/answer/" + encodeURIComponent(k), title: k }, vpill(a.verdict.value)) : h("span", { class: "muted" }, "not stored"), a && kind === "run" ? unplanned(sc, c) : null); };
   return card("Answer index · every stored answer in this pack (click a verdict to open it)", h("div", { class: "tscroll" }, h("table", { class: "t idx" }, h("thead", {}, h("tr", {}, ["Scope", "Label"].concat(["C16", "C7", "C9"].map(c => { const k = ((P.register || {}).controls || []).find(x => x.ref === c); return c + (k && k.id ? " · " + k.id : ""); })).map(x => h("th", {}, x)))),
-    h("tbody", {}, runs.map(sc => { const r = runOf(sc) || {}; return h("tr", {}, h("td", {}, idv(sc, 30)), h("td", {}, r.label ? tp(r.label) : h("span", { class: "muted" }, "not recorded")), cell("C16", "run", sc), cell("C7", "run", sc), cell("C9", "run", sc)); }),
+    h("tbody", {}, runs.map(sc => { const r = runOf(sc) || {}; return h("tr", {}, h("td", {}, idv(sc, 30), h("div", {}, nlTag(sc))), h("td", {}, r.label ? tp(r.label) : h("span", { class: "muted" }, "not recorded")), cell("C16", "run", sc), cell("C7", "run", sc), cell("C9", "run", sc)); }),
       wins.map(sc => h("tr", {}, h("td", { class: "mono" }, "window " + sc.replace(/:00Z/g, "Z").replace("..", " → ")), h("td", {}, tp("WINDOW")), cell("C16", "interval", sc), cell("C7", "interval", sc), cell("C9", "interval", sc)))))));
 }
 let ASKED = null;   // set by the palette: what the judge typed, so the answer page can say when it differs from what is stored
@@ -132,7 +136,7 @@ function answerView(key) {
     h("div", { class: "crumb" }, h("div", { class: "mono echo", title: a.query.text }, "› " + a.query.text), h("div", { class: "mono muted small", title: a.query.normalized }, "parsed → " + a.query.normalized + " · answered in " + a.elapsed_ms + " ms from " + a.source.records_scanned + " records · PACK · MANIFEST " + a.source.manifest_status)),
     h("section", { class: "card answer" },
       h("div", { class: "ahead" }, h("span", { class: "pill xl p-" + ((VOCAB[a.verdict.value] || {}).pill || "mute") }, (GLYPH[a.verdict.value] || "") + " " + a.verdict.label), h("span", { class: "ctl" }, a.control.ref + " · " + a.control.id), h("span", { class: "chip" }, a.control.mode), h("span", { class: "mla" }, ticks(["R", "A", "T", "V"]))),
-      h("div", { class: "row ascope" }, h("span", { class: "label" }, sc.kind === "run" ? "run" : "window"), idv(sc.id, 34), run && run.label ? tp(run.label) : sc.kind === "run" ? spill("run label not recorded", "mute") : null, asked ? spill("asked: " + asked, "warn") : null, /NOT applied/.test(a.query.normalized || "") ? spill("window not applied — whole run", "warn") : null),
+      h("div", { class: "row ascope" }, h("span", { class: "label" }, sc.kind === "run" ? "run" : "window"), idv(sc.id, 34), sc.kind === "run" ? nlTag(sc.cid || sc.id) : null, sc.kind === "run" ? unplanned(sc.cid || sc.id, a.control.ref) : null, run && run.label ? tp(run.label) : sc.kind === "run" ? spill("run label not recorded", "mute") : null, asked ? spill("asked: " + asked, "warn") : null, /NOT applied/.test(a.query.normalized || "") ? spill("window not applied — whole run", "warn") : null),
       h("p", { class: "reason" }, a.verdict.reason),
       h("div", { class: "mvl" }, h("div", {}, h("div", { class: "label" }, "measured"), h("div", { class: "big mono v-" + vtone(a.verdict.value) }, fmt(val), h("span", { class: "unit" }, " " + unit))), h("div", { class: "vs" }, "vs"),
         h("div", {}, h("div", { class: "label" }, "limit"), h("div", { class: "big mono" }, (cmp.limit != null ? cmp.operator || ol.operator || "" : ol.operator || "") + " " + fmt(lim), h("span", { class: "unit" }, " " + (cmp.limit != null ? unit : ol.unit || unit)))),
@@ -141,10 +145,10 @@ function answerView(key) {
       isC16 && lim != null && val != null ? bullet(a) : null,
       !isC16 && ser.length ? seriesView(ser, a, ol) : null,
       h("div", { class: "facts4" },
-        h("div", {}, h("div", { class: "label" }, "Rule"), h("div", { class: "mono" }, r.threshold_version + " (" + r.register_version + ")"), h("div", { class: "small muted" }, "dated " + r.version_date + " · frozen " + hms(r.frozen_at)), h("div", { class: "small" }, refEl(r.source_ref || ""))),
+        h("div", {}, h("div", { class: "label" }, "Rule"), h("div", { class: "mono" }, r.threshold_version + " (" + r.register_version + ")"), h("div", { class: "small muted" }, "dated " + r.version_date + " · frozen " + hms((r.date_proof || {}).register_frozen_at || r.frozen_at) + ((r.date_proof || {}).t1_at ? " · S3-dated " + hms(r.date_proof.t1_at) : "")), h("div", { class: "small" }, refEl(r.source_ref || ""))),
         h("div", {}, h("div", { class: "label" }, "Date proof"), spill(...dateProof(r))),
         h("div", {}, h("div", { class: "label" }, "Approval"), h("div", {}, ap(r).status === "MISSING" ? "not recorded" : apName(r) + " " + hms(ap(r).at)), approvalRel(r, a), ap(r).ref ? h("div", { class: "small" }, refEl(ap(r).ref)) : null),
-        h("div", {}, h("div", { class: "label" }, "Evidence"), tp(a.verdict.evidence_sufficiency || "UNKNOWN"), h("div", { class: "small muted" }, fmt(a.source.records_scanned) + " records · owner " + nm(r.owner)))),
+        h("div", {}, h("div", { class: "label" }, "Evidence"), tp(a.verdict.evidence_sufficiency || "UNKNOWN"), h("div", { class: "small muted" }, (sc.kind === "run" && run && run.records_in_store != null ? fmt(run.records_in_store) + " records for this run · store: " + fmt(a.source.records_scanned) : "store: " + fmt(a.source.records_scanned) + " records") + " · owner " + nm(r.owner)))),
       h("div", { class: "afoot small muted" }, h("span", {}, "answer_id "), idv(a.answer_id, 14), h("span", {}, " · " + a.elapsed_ms + " ms · MANIFEST " + a.source.manifest_status))),
     h("div", { class: "pop" }, popKeys.map(([k, v]) => h("div", {}, h("span", { class: "label" }, k), h("b", { class: (k === "missing" || k === "unmeasurable" || k === "blocked") && v ? "v-breach" : "" }, v == null ? "not recorded" : fmt(v))))), (pop.missing_events || []).length ? h("div", { class: "mono v-unknown small" }, "expected but not captured: " + pop.missing_events.join(", ")) : null,
     h("div", { class: "aq" }, group("The action", [["what_was_done", "What was done"], ["by_which_agent", "By which agent"], ["where", "Where"], ["when", "When"]]), group("The decision", [["under_whose_authority", "Under whose authority"], ["rule_checked", "Which rule"], ["limit_in_force", "Limit in force at that moment"], ["decision", "Allowed, stopped or escalated"]]), group("The proof", [["who_was_told", "Who was told"], ["unchanged_since", "Unchanged since?"]])),
@@ -166,6 +170,43 @@ function seriesView(ser, a, ol) {
   const lim = ser[0].limit != null ? ser[0].limit : ol.value, hasVals = ser.some(x => x.value != null);
   return h("div", {}, hasVals && lim != null ? bars(ser.map(x => Object.assign({}, x, { limit: lim })), a.measurement.unit || "", "limit " + (ol.operator || "") + " " + fmt(ol.value)) : null,
     h("table", { class: "t series" }, h("thead", {}, h("tr", {}, ["Counted", "Status", "Value", "Stored assessment"].map(x => h("th", {}, x)))), h("tbody", {}, ser.map(x => h("tr", {}, h("td", {}, idv(x.id, 34)), h("td", {}, tp(x.status || "UNKNOWN")), h("td", { class: "mono" }, x.value == null ? "not recorded" : fmt(x.value)), h("td", {}, x.ref ? refEl(x.ref) : "—"))))));
+}
+/* PR-56: a run + window question (PR-53 kind control-run-window) as a card; every number is the server's */
+function rwinView(q) {
+  const d = D.rwin[q];
+  if (!d) { const page = h("div", { class: "page" }, card("Asking the evidence…", h("p", { class: "mono muted" }, "› " + q)));
+    api("/api/v1/ask?q=" + encodeURIComponent(q)).then(j => { if (j.meta.kind !== "control-run-window") throw new Error("not a run + window question: " + (j.meta.normalized || q)); D.rwin[q] = j.data; if (location.hash.startsWith("#/rwin/")) route(); })
+      .catch(e => page.replaceChildren(card("This question could not be answered", h("p", { class: "mono" }, "› " + q), h("p", { class: "v-breach" }, String(e.message)))));
+    return page; }
+  const sl = d.slice || {}, cap = d.cap, unit = d.unit || "", decs = sl.decisions || [], byCall = Object.fromEntries(decs.filter(x => x.call_id).map(x => [x.call_id, x]));
+  const W = 880, H = 64, mx = Math.max(cap || 0, sl.committed_at_t2 || 0, d.run_measured || 0) * 1.06 || 1, x = v => 10 + (W - 20) * v / mx;
+  const bar = cap != null && sl.committed_at_t2 != null ? h("div", { class: "svgwrap" }, s("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": `committed ${fmt(sl.committed_at_t1)} at T1 and ${fmt(sl.committed_at_t2)} at T2 of a cap of ${fmt(cap)}` },
+    s("rect", { x: 10, y: 20, width: W - 20, height: 18, fill: css("--stack"), rx: 3 }),
+    s("rect", { x: 10, y: 20, width: Math.max(0, x(sl.committed_at_t2) - 10), height: 18, fill: css("--held"), rx: 3, opacity: .85 }),
+    s("rect", { x: 10, y: 20, width: Math.max(0, x(sl.committed_at_t1 || 0) - 10), height: 18, fill: css("--ink-3"), rx: 3, opacity: .6 }),
+    s("line", { x1: x(cap), x2: x(cap), y1: 10, y2: 48, stroke: css("--ink"), "stroke-width": 2 }),
+    s("text", { x: x(cap) - 6, y: 60, "text-anchor": "end", "font-size": 12, fill: css("--ink-2") }, "cap " + fmt(cap)),
+    s("text", { x: 10, y: 60, "font-size": 12, fill: css("--ink-2") }, "T1 " + fmt(sl.committed_at_t1) + " → T2 " + fmt(sl.committed_at_t2) + " " + unit + " committed"))) : null;
+  const rawEl = ref => { const p = String(ref || "").split(" "), short = (p[0] || "").split("/").slice(-2).join("/") + (p[1] ? " " + p[1] : ""); return ref ? h("span", { class: "ref", tabindex: 0, role: "button", title: ref, onclick: () => inspect(ref), onkeydown: e => e.key === "Enter" && inspect(ref) }, short) : h("span", { class: "muted" }, "not recorded"); };
+  const deny = decs.filter(x => x.verdict === "DENY");
+  return h("div", { class: "page" },
+    h("div", { class: "crumb" }, h("div", { class: "mono echo", title: q }, "› " + q), h("div", { class: "mono muted small" }, "parsed → " + ((d.query || {}).normalized || d.kind) + " · composed from the pack · " + (d.window_rule || ""))),
+    h("section", { class: "card answer" },
+      h("div", { class: "ahead" }, h("span", { class: "pill xl p-" + ((VOCAB[d.run_verdict] || {}).pill || "mute") }, (GLYPH[d.run_verdict] || "") + " " + (VL[d.run_verdict] || d.run_verdict)), h("span", { class: "ctl" }, d.control + " · " + (d.threshold_version || "")), h("span", { class: "chip" }, "per-run control"), h("span", { class: "chip" }, "window " + hms(d.window[0]) + " → " + hms(d.window[1]))),
+      h("div", { class: "row ascope" }, h("span", { class: "label" }, "run"), idv(d.run, 34), nlTag(d.run), spill("window " + String(d.overlap || "").replace(/-/g, " "), "mute")),
+      h("p", { class: "reason" }, d.verdict_note),
+      h("div", { class: "mvl" }, h("div", {}, h("div", { class: "label" }, "committed at T1"), h("div", { class: "big mono" }, fmt(sl.committed_at_t1), h("span", { class: "unit" }, " " + unit))), h("div", { class: "vs" }, "→"),
+        h("div", {}, h("div", { class: "label" }, "committed at T2"), h("div", { class: "big mono" }, fmt(sl.committed_at_t2), h("span", { class: "unit" }, " " + unit))), h("div", { class: "vs" }, "of"),
+        h("div", {}, h("div", { class: "label" }, "cap"), h("div", { class: "big mono" }, "<= " + fmt(cap), h("span", { class: "unit" }, " " + unit))),
+        sl.headroom_at_t2 != null ? h("div", { class: "margin v-held" }, "headroom " + fmt(sl.headroom_at_t2)) : null,
+        h("div", { class: "mla small muted" }, "whole run: " + fmt(d.run_measured) + " " + unit + " · " + fmt(d.run_calls) + " calls · " + hms(d.run_start) + " → " + hms(d.run_end))),
+      bar,
+      deny.map(x => h("div", { class: "denyl mono" }, h("b", { class: "v-breach" }, "DENY (" + x.action + ")"), " at " + hms(x.at) + " by " + x.actor + ": committed " + fmt(x.committed) + (x.reserved ? " + reserved " + fmt(x.reserved) : "") + " + bound " + fmt(x.bound) + " = " + fmt(x.projected) + " > cap " + fmt(x.cap) + " · ", refEl("record:" + x.record_id)))),
+    card("Calls inside the window (" + fmt(sl.call_count) + " model calls, " + fmt(sl.tokens) + " " + unit + ") · inline decisions " + fmt(sl.allow) + " ALLOW, " + fmt(sl.deny) + " DENY",
+      h("div", { class: "tscroll" }, h("table", { class: "t" }, h("thead", {}, h("tr", {}, ["Time (gateway span)", "Call", "In", "Out", "Tokens", "HTTP", "Inline decision", "Raw"].map(t => h("th", {}, t)))),
+        h("tbody", {}, (sl.calls || []).map(c => { const dc = byCall[c.action_id]; return h("tr", {}, h("td", { class: "mono" }, String(c.at || "").slice(11, 23) + "Z"), h("td", { class: "mono", title: c.action_id }, String(c.action_id).slice(0, 8)), h("td", { class: "mono" }, fmt(c.tokens_in)), h("td", { class: "mono" }, fmt(c.tokens_out)), h("td", { class: "mono" }, fmt(c.tokens)), h("td", { class: "mono" }, c.http_status == null ? "not recorded" : String(c.http_status)),
+          h("td", {}, dc ? h("span", { class: "pill " + (dc.verdict === "ALLOW" ? "p-good" : "p-bad"), title: dc.reason }, dc.verdict + " " + hms(dc.at)) : h("span", { class: "muted small" }, "no pre-call decision in window")), h("td", {}, rawEl(c.raw_ref))); }))))),
+    (d.gaps || []).length ? card("Gaps for this question", d.gaps.map(g => h("div", { class: "dim" }, typeof g === "string" ? g : stripMd(String(g.text || g.note || JSON.stringify(g)))))) : null);
 }
 function ledger(alias) {
   const hasC16 = r => (D.records[r.alias] || []).some(x => x["control.ref"] === "C16");
@@ -246,7 +287,7 @@ async function api(path, tries = 4) { const r = await fetch(path, { credentials:
   if (r.status === 429 && tries > 0) { await new Promise(ok => setTimeout(ok, 1100)); return api(path, tries - 1); }   // the console's per-second limit: wait, then retry
   const j = await r.json(); if (!r.ok || !j.ok) throw new Error((j.error && j.error.message) || r.status); return j; }
 const ROUTES = [["B", "answer", "Ask · Answer"], ["D", "ledger", "Evidence Ledger"], ["E", "auditor", "Six Questions"], ["F", "register", "Register"], ["G", "loop", "Human Loop"], ["I", "architecture", "Enforcement points"], ["J", "gaps", "Gaps"], ["R", "runs", "Runs"]];
-const VIEWS = Object.assign({ answer: answerView, ledger, auditor, register, loop, architecture, enforcement: architecture, gaps, runs: runsView }, window.PROOFLAB_P1_VIEWS || {});
+const VIEWS = Object.assign({ answer: answerView, rwin: rwinView, ledger, auditor, register, loop, architecture, enforcement: architecture, gaps, runs: runsView }, window.PROOFLAB_P1_VIEWS || {});
 function rail(active) {
   const counts = { gaps: (P.gaps || []).length, loop: D.cases.length, runs: (D.runList || []).length, auditor: (P.auditor || []).length, answer: (P.answers || []).length };
   const lv = P.levels || [], none = lv.length && lv.every(l => l.status === "NOT_SHOWN" && !(l.items || []).length);
@@ -264,13 +305,17 @@ function route() { const [, v = "answer", arg] = location.hash.split("/"); const
   $("main").replaceChildren(page); $("main").scrollTop = 0; }
 const firstKey = () => ((P.answers || [])[0] || {}).key;
 const SUGG = () => (P.answers || []).map(a => [/\|run\|/.test(a.key) ? "Show me control " + a.control_ref.slice(1) + " for run " + a.scope : "Control " + a.control_ref.slice(1) + " over " + a.scope, "#/answer/" + encodeURIComponent(a.key)])
+  .concat(rwExample() ? [[rwExample(), "#/rwin/" + encodeURIComponent(rwExample())]] : [])
   .concat((P.auditor || []).map(a => ["Six questions for " + a.id, "#/auditor/" + a.id]));
+/* PR-56: one run + window example (control 16, the first named C16 run, start +15 s to +45 s) */
+function rwExample() { const fa = (P.answers || []).find(x => /^C16\|run\|/.test(x.key)), r = fa && runOf(fa.scope); if (!r || !r.started_at) return null;
+  const t = Date.parse(r.started_at), f = ms => new Date(Math.floor((t + ms) / 1000) * 1000).toISOString().slice(11, 19) + "Z"; return "show me control 16 for run " + r.cid + " between " + f(15000) + " and " + f(45000); }
 let sel = 0, lastAsk = null, askTimer = null;
 function renderPalette() { const q = $("pIn").value, a = lastAsk && lastAsk.q === q ? lastAsk : null; $("pParse").textContent = q ? (a ? "→ " + a.norm : "…") : "deterministic grammar · no LLM in the answer path";
   const items = SUGG().filter(([t]) => !q || t.toLowerCase().includes(q.toLowerCase().slice(0, 12))); if (q && a && a.route) items.unshift([q, a.route]);
   $("pParse").className = "parse" + (q && a && !a.route ? " err" : "");
   sel = Math.min(sel, Math.max(0, items.length - 1)); $("pList").replaceChildren(...items.slice(0, 8).map(([t, href], i) => h("li", {}, h("button", { class: i === sel ? "sel" : "", onclick: () => { follow(t, href); } }, h("span", {}, t), h("span", { class: "mono muted", style: "font-size:11px" }, href.split("/")[1]))))); $("pList").dataset.items = JSON.stringify(items.slice(0, 8)); }
-function askServer() { const q = $("pIn").value; if (!q) return; api("/api/v1/ask?q=" + encodeURIComponent(q)).then(j => { lastAsk = { q, norm: j.meta.normalized, route: j.meta.route }; }).catch(e => { lastAsk = { q, norm: String(e.message), route: null }; }).then(renderPalette); }
+function askServer() { const q = $("pIn").value; if (!q) return; api("/api/v1/ask?q=" + encodeURIComponent(q)).then(j => { const rw = j.meta.kind === "control-run-window"; if (rw) D.rwin[q] = j.data; lastAsk = { q, norm: j.meta.normalized, route: j.meta.route || (rw ? "#/rwin/" + encodeURIComponent(q) : null) }; }).catch(e => { lastAsk = { q, norm: String(e.message), route: null }; }).then(renderPalette); }
 function follow(text, href) { closePalette(); const a = lastAsk && lastAsk.q === text && lastAsk.route === href ? lastAsk : null; ASKED = a ? { key: decodeURIComponent(href.split("/")[2] || ""), norm: a.norm } : null; location.hash = href; }
 function openPalette() { $("palette").classList.add("open"); $("pIn").value = ""; sel = 0; renderPalette(); $("pIn").focus(); }
 function closePalette() { $("palette").classList.remove("open"); }
