@@ -56,7 +56,7 @@ def bound_for(projected, last_input, last_output, tool_result_tokens, pin):
     return (base + pin.max_tokens) * (100 + pin.margin_pct) // 100, basis
 
 
-def decide_inline(q, pin):
+def decide_inline(q, pin, evaluator_sha256=None):
     if pin.boom:
         raise RuntimeError("double: evaluator exploded")
     total = q.committed_tokens + q.reserved_tokens + q.bound_tokens
@@ -68,4 +68,4 @@ def decide_inline(q, pin):
                     total, pin.cap, q.tier, pin.mode,
                     "cap" if pin.mode == "enforce" else "safety-ceiling", limit,
                     "halt" if halt else "proceed", q.bound_basis, "C16-v1", "v1",
-                    "b" * 64, "a" * 64, "prooflab.evaluators.c16_core", "c" * 64)
+                    "b" * 64, "a" * 64, "prooflab.evaluators.c16_core", evaluator_sha256 or "c" * 64)

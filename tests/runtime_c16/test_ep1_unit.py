@@ -62,7 +62,11 @@ def test_observe_mode_records_deny_and_serves():
         ev = FakeEvent()
         ad.on_before_model_call(ev)
         assert ev.cancel is False and ad.tally.reserved == 250 and not ad.tally.halted
+        assert not rec.of("decision")                       # held until the call returns (D6)
+        ad.capture.observe_headers({"x-modaas-action-id": "act-o"}, 200)
+        ad.on_after_model_call(FakeEvent(usage={"inputTokens": 1, "outputTokens": 1}))
         d = rec.of("decision")[0]
+        assert d["call.id"] == "act-o"
         assert d["verdict"] == "DENY" and d["inline.action"] == "proceed" and d["outcome.real"] == "SERVED"
         assert d["inline.mode"] == "observe" and d["inline.limit_applied"] == "safety-ceiling"
 
