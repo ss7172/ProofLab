@@ -2,6 +2,7 @@
 as the __main__ part, to agents/ifabric-it/ifabric-it.py (two-stage, D-B: after the role loader, which
 loads the ifabric-base file holding the c16 core; then the remaining adapters and ifabric_app; never prooflab/contract). Tool: runbook-lookup (dependsOn.tools).
 Judgment targets (handoff 3b Q8): S1 auto-resolve; S2 gather-evidence with a reversible step; S3 escalate.
+Gateway C (negotiation) positions: S1 agree (runbook-approved); S2 gather-evidence; S3 disagree/escalate.
 """
 import ifabric_app
 

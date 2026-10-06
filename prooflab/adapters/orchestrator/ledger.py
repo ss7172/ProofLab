@@ -33,8 +33,14 @@ class LedgerSink:
         return "LedgerSink(%s, token=<withheld>)" % self._base
 
     def post(self, records) -> int:
-        body = json.dumps(list(records)).encode("utf-8")
-        req = urllib.request.Request(self._base + "/records", data=body, method="POST",
-                                     headers={"Content-Type": "application/json", "X-Audit-Token": self._token})
-        with urllib.request.urlopen(req, timeout=self._timeout) as resp:
-            return resp.status
+        """ONE JSON object per POST: the audit store appends one object per request and answers 400 to an array
+        (live S-2 smoke). Returns the number posted; the first failure raises (the caller keeps the spool)."""
+        n = 0
+        for rec in records:
+            body = json.dumps(rec, sort_keys=True).encode("utf-8")
+            req = urllib.request.Request(self._base + "/records", data=body, method="POST",
+                                         headers={"Content-Type": "application/json", "X-Audit-Token": self._token})
+            with urllib.request.urlopen(req, timeout=self._timeout) as resp:
+                resp.read()
+            n += 1
+        return n

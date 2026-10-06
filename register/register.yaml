@@ -101,8 +101,8 @@ controls:
     alert_recipient: annapurna@invences.com
     alert_volume_bound: "one finding per control per run"
     expected_sources: "gateway spans,/modaas/evidence refusals,frozen workflow spec"
-    workflow_events: "run.started,handoff.sent,invocation.received,intent,judgment,handoff.received,escalation,run.finished,decision"
-    workflow_events_after_stop: "decision,lifecycle.stop,judgment,handoff.received"
+    workflow_events: "run.started,handoff.sent,invocation.received,intent,judgment,handoff.received,escalation,negotiation,run.finished,decision"
+    workflow_events_after_stop: "decision,stop,judgment"
     gap_clock: agent-runtime
     declared_faults: "suppress-record:ifabric-it:tool.call:1,inject-tool-output:ifabric-it:lookup:tool-directive"
   - control_id: "9"

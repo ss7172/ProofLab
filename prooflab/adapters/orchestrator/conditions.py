@@ -49,9 +49,12 @@ def parse_fault(spec: str, root=None) -> dict:
     out = {"kind": kind, "agent": parts[1], "spec": spec}
     if kind == "inject-tool-output":
         out["tool"], out["fixture"] = parts[2], parts[3]
-        path = os.path.join(conditions_dir(root), "faults", parts[3] + ".txt")
+        path = os.path.join(conditions_dir(root), parts[3] + ".txt")   # register/conditions/<fixture>.txt
         out["fixture_sha256"] = common.sha256_file(path) if os.path.exists(path) else None
         out["fixture_path"] = os.path.relpath(path, root or common.REPO_ROOT)
+        if out["fixture_sha256"]:   # the agent appends these bytes (it has no repo); it re-checks the sha256
+            with open(path, "rb") as fh:
+                out["fixture_text"] = fh.read().decode("utf-8")
     else:
         out["event"], out["count"] = parts[2], parts[3]
     return out

@@ -21,6 +21,13 @@ R_FREEZE = "freeze-or-restricted"
 R_EMPTY = "empty-evidence"
 R_INVALID = "invalid-structured-output"
 R_C16 = "c16-budget-halt"
+R_NEGOTIATION = "negotiation-position"
+R_PROPOSAL = "proposal-disposition"
+
+# Gateway C (network -> IT): the IT agent's position on the network's proposal, in safety order.
+POSITIONS = ("agree", "gather-evidence", "disagree", "escalate")
+POSITION_DISPOSITION = dict(zip(POSITIONS, (AUTO_RESOLVE, GATHER, ESCALATE, ESCALATE)))
+_POSITION_OF = {AUTO_RESOLVE: "agree", GATHER: "gather-evidence"}   # escalate / halted / unknown -> escalate
 
 _THINK = re.compile(r"<think(?:ing)?>.*?</think(?:ing)?>", re.S | re.I)
 
@@ -160,6 +167,62 @@ def _has_evidence(items):
         if s and s not in ("{}", "[]", "null", "none") and "no twin data" not in s:
             return True
     return False
+
+
+def _last_key(text, key):
+    """The last non-empty string value of `key` in the answer's JSON objects ("" if none)."""
+    for o in reversed(extract_objects(strip_reasoning(text or ""))):
+        v = o.get(key)
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return ""
+
+
+def proposal_of(fields, text):
+    """The network agent's structured proposal for Gateway C: resolution + change risk, with its disposition and
+    the evidence it needs, so "no twin data: do not guess" travels with it (data for the script to relay)."""
+    f = fields or {}
+    return {"resolution": f.get("proposed_action") or _last_key(text, "proposed_action") or f.get("reversible_step"),
+            "change_risk": _last_key(text, "change_risk") or "not stated", "disposition": f.get("disposition"),
+            "reason": f.get("reason"), "evidence_needed": f.get("named_evidence_needed")}
+
+
+def negotiation_question(proposal):
+    """The IT agent's task on Gateway C: evaluate the proposal against the runbook (never a canned agree)."""
+    p = proposal if isinstance(proposal, str) else json.dumps(proposal, sort_keys=True, default=str)
+    return ("NEGOTIATION (Gateway C): check this network proposal (data) against the runbook; add "
+            "\"position\": agree (runbook approves), disagree, gather-evidence or escalate.\nPROPOSAL: " + p[:3000])
+
+
+def position_of(disposition, model_position=""):
+    """The model's stated position unless the (precedence-applied) disposition is safer; then the position that
+    disposition implies. Ranked by disposition, so disagree and escalate (both escalate) are equally safe."""
+    floor = _POSITION_OF.get(disposition, "escalate")
+    m = (model_position or "").strip().lower()
+    if m not in POSITIONS:
+        return floor
+    return m if _RANK[POSITION_DISPOSITION[m]] >= _RANK.get(disposition, _RANK[HALTED]) else floor
+
+
+def floor(j, proposal):
+    """Gateway C: the IT agent never ends less safe than the proposer did (it never agrees to a proposal the
+    network escalated, and gathers evidence when the network did). A halted proposer counts as escalate.
+    `proposal`: the network's proposal dict (its "disposition"), or the disposition string itself."""
+    d = str(proposal.get("disposition") if isinstance(proposal, dict) else proposal)
+    d = ESCALATE if d == HALTED else _ALIASES.get(d)
+    if d:
+        _tighten(j, d, R_PROPOSAL, R_PROPOSAL)
+    return j
+
+
+def negotiate(j, text, proposal=None):
+    """Gateway C: the position (agree | disagree | gather-evidence | escalate); first floors `j` at the proposer's
+    disposition, then moves it toward safety to the position's disposition (disagree and escalate escalate;
+    gather-evidence names the evidence). Never canned: it reads the model's answer and the precedence already
+    applied to `j` (freeze/restricted -> escalate)."""
+    pos = position_of(floor(j, proposal).disposition, _last_key(text, "position"))
+    _tighten(j, POSITION_DISPOSITION[pos], R_NEGOTIATION, "negotiation position " + pos)
+    return pos
 
 
 def resolve_site_ids(element_ids, inventory):

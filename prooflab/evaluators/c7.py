@@ -20,6 +20,9 @@ Matching (set semantics, so extras and duplicates cannot inflate coverage):
   EP-1 decision   -> key "decision:<call_id>" observed: decision record with that call.id
   refusal         -> key "refusal:<id>"       observed: a record with outcome.real in the refusal set and that call.id
   workflow event  -> key "<agent>|<event>"    observed: the record's actor.id + its event name
+                  -> key "<agent>|<event>@<hN>" when the expected event names its invocation/handoff (`at`, PR-28:
+                     IT is invoked twice, h1 and h3): observed under BOTH keys, hN = the record's handoff.id after
+                     its last ":" (h0 when it has none), so a caller that does not pass `at` sees no change
                      (event name = `phase` minus the "ifabric." prefix when it has a dot or is a contract WORKFLOW_PHASES
                      name such as intent / judgment / escalation / stop, else record_kind)
 Pulled records (platform_decision, observation, metric, EP-2 replays: authorship PLATFORM, or ep.id EP-2) never count.
@@ -77,6 +80,15 @@ def observed_key(rec):
     return "%s|%s" % (_g(rec, "actor.id"), event_name(rec))
 
 
+def _at(handoff_id):
+    """The invocation/handoff qualifier of a workflow record: handoff.id after its last ":" (h0 when absent)."""
+    return str(handoff_id).rsplit(":", 1)[-1] if handoff_id else "h0"
+
+
+def workflow_key(agent, event, at=None):
+    return "%s|%s@%s" % (agent, event, at) if at else "%s|%s" % (agent, event)
+
+
 def expected_events(run_id, gateway_actions, refusals, workflow_events, stops, pin):
     """The expected set E, from sources outside the graded agents. gateway_actions: dicts with action_id, kind
     ("model.call" | "tool.call"), agent (optional), end. refusals: dicts with call_id or trace_id. workflow_events:
@@ -103,7 +115,7 @@ def expected_events(run_id, gateway_actions, refusals, workflow_events, stops, p
     for w in workflow_events or ():
         ag, ev = _g(w, "agent"), _g(w, "event")
         if ag and ev:
-            add("%s|%s" % (ag, ev), ev, ag, _g(w, "stream"), _g(w, "order"), None, "workflow")
+            add(workflow_key(ag, ev, _g(w, "at")), ev, ag, _g(w, "stream"), _g(w, "order"), None, "workflow")
     names = list(pin.get("workflow_events_after_stop") or ())
     for s in stops or ():
         ag = _g(s, "agent")
@@ -121,8 +133,10 @@ def observed_events(records):
         if _g(r, "ep.id") == "EP-2":
             continue
         k = observed_key(r)
-        if k not in obs or str(_g(r, "emitted.at") or "") < str(_g(obs[k], "emitted.at") or ""):
-            obs[k] = r
+        keys = [k] if "|" not in k else [k, "%s@%s" % (k, _at(_g(r, "handoff.id")))]
+        for k in keys:
+            if k not in obs or str(_g(r, "emitted.at") or "") < str(_g(obs[k], "emitted.at") or ""):
+                obs[k] = r
     return obs
 
 

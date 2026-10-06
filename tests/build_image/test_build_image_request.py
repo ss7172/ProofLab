@@ -46,7 +46,8 @@ def test_request_shape_and_sizes(br, requests_by_role, bundles, role):
     assert env["IFABRIC_REPO"] == "a-01-eks-cluster-aws-agent-operator"
     assert len(req["buildspecOverride"]) <= 25600 and len(req["buildspecOverride"]) < 2500
     assert all(len(v) <= 44000 for v in env.values())
-    assert sum(len(k) + len(v) for k, v in env.items()) <= 44000
+    assert sum(len(k) + len(v) for k, v in env.items()) <= 46000   # D-B'': 46000 in all, 44000 per value
+    assert br.ENV_TOTAL_CAP == 46000 and br.ENV_VALUE_CAP == 44000
     s = meta["sizes"]
     assert s["env_total_chars_with_names"] == sum(len(k) + len(v) for k, v in env.items())
     assert s["role_gzip_base64_chars"] == len(env["IFABRIC_ROLE_B64"])

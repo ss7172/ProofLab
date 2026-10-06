@@ -251,7 +251,7 @@ def new_record(ctx, record_kind, ep_id, ep_kind, ep_transport, detail, verdict,
         "runtime.session_id": ctx.session_id,
         "control.ref": control_ref, "control.id": control_id,
         "register.version": ctx.register_version, "pin.sha256": ctx.pin_sha256,
-        "actor.id": ctx.actor_id, "actor.runtime_id": ctx.actor_runtime_id,
+        "actor.id": ctx.actor_id, "actor": ctx.actor_id, "actor.runtime_id": ctx.actor_runtime_id,
         "actor.version": ctx.actor_version, "on_behalf_of": ctx.on_behalf_of,
         "handoff.id": ctx.handoff_id, "handoff.from": ctx.handoff_from,
         "handoff.to": ctx.handoff_to,
@@ -273,6 +273,24 @@ def new_record(ctx, record_kind, ep_id, ep_kind, ep_transport, detail, verdict,
             del reasons[k]
     rec["null_reasons"] = reasons
     return rec
+
+
+_GUARDRAIL = {"SERVED": "not-triggered", "BLOCKED_GUARDRAIL": "blocked"}
+
+
+def kit_shape(rec):
+    """The reference agents' record shape, added so the kit's score-run.py grades our chain (ARCH 3.5), on a
+    copy: top-level `actor` (= actor.id); the EP-1 model-call action record gets phase `invocation` and the
+    gateway guardrail outcome in detail (from outcome.real / finish_reason); EP-1's C16 stop record gets the
+    C7 workflow phase `stop` (ARCH 5.2). model_call.py is untouched: this is the emit path's one mapping."""
+    out = dict(rec, actor=rec.get("actor", rec.get("actor.id")))
+    if out.get("ep.id") == "EP-1":
+        if out.get("record_kind") == "action":
+            out["phase"] = "invocation"
+            out["detail"] = "%s; guardrail=%s" % (out.get("detail"), _GUARDRAIL.get(out.get("outcome.real"), "unknown"))
+        elif str(out.get("detail")).startswith("c16-stop:"):
+            out["phase"] = out["lifecycle.event"] = "stop"
+    return out
 
 
 def set_field(rec, name, value, null_reason=None):
@@ -328,7 +346,7 @@ class EmitClient(object):
     def emit(self, record):
         """Never raises, never waits.  Returns ENQUEUED | SPOOLED | REJECTED_SCHEMA."""
         try:
-            rec = self.scrubber.value(record) if isinstance(record, dict) else record
+            rec = kit_shape(self.scrubber.value(record)) if isinstance(record, dict) else record
             bad = validate(rec)
             if bad:
                 self.stats["rejected"] += 1

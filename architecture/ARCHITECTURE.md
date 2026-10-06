@@ -160,9 +160,10 @@ And **five habits** keep it honest.
  │   C16 tally, register version + sha256; emit(handoff.sent / .received): never blocks     │
  │ EP-0 preflight (D13): each agent's running version = an approved one? It may decline     │
  │   to START an assessed run. Nothing inside a run waits on it                             │
- │ Gateway A / Gateway B of the brief = its two handoffs (h1, h2): record only              │
+ │ Gateway A/B of the brief + our Gateway C = its three handoffs (h1, h2, h3): record only  │
  └───────┬──────────────────────────────────────────────────────────────────────────────────┘
-         │ InvokeAgentRuntime x3, in sequence: customer -> it -> network (CID + session id)
+         │ InvokeAgentRuntime x4, in sequence: customer -> it -> network -> it (Gateway C: ONE IT
+         │   invocation that negotiates; each model call in it passes C16 (EP-1) and the rails) (CID + session id)
          │ (EP-16, observed: the cockpit's ask API can invoke any agent with no envelope)
          v
  ┌─ AgentCore Runtime: ifabric-customer | ifabric-it | ifabric-network (OURS) ──────────────┐
@@ -398,7 +399,7 @@ Adapter ids are EP ids. "In path" means our code can make the work wait. Only EP
   - `handoff.received`: status, disposition, halted, duration, tally out;
   - the run lifecycle: `run.started` with the `ifabric-run-…` CID, agent versions, register version and sha256, `run.condition`, provenance and tier decision; then `run.finished`.
 - **Where it runs:** the laptop (§7.2).
-- **Gateway A and Gateway B** of the brief (customer → Gateway A → IT → Gateway B → network) **are these two handoffs**, h1 (customer → IT) and h2 (IT → network): record-only events, never a block or a strip (decided by the captain). PII is masked at the receiving agent's input (EP-14; DG-2), and `handoff.sent` keeps the raw payload's sha256.
+- **Gateway A and Gateway B** of the brief (customer → Gateway A → IT → Gateway B → network) **are two of its three handoffs**, h1 (customer → IT) and h2 (IT → network); **Gateway C** (PR-28) is h3 (network → IT, the negotiation): record-only events, never a block or a strip (decided by the captain). A full run is four invocations: customer → IT → network → IT (negotiate). PII is masked at the receiving agent's input (EP-14; DG-2), and `handoff.sent` keeps the raw payload's sha256.
 - **Status:** build.
 
 #### EP-6 · Gateway authorization: `modaas-authz` + PDP/Cedar
@@ -1338,10 +1339,11 @@ Coverage and gap are separate verdicts, and both must hold.
 - **From the gateway (EP-2):** one `model.call` per model span (`listener = "llm"`) and one `tool.call` per MCP span with `mcp.method.name = "tools/call"` (MCP spans sit on listener `http`), with run id = CID, keyed by action id. MCP session set-up (`initialize`, `notifications/initialized`, `tools/list`) is excluded by that attribute (OC-4, closed [06 G1]).
 - **From `/modaas/evidence` and EP-7:** refusals (DENY records with the CID; the pause 404 joined by trace id). Each needs a `refusal` record from the acting agent, with the real status.
 - **From the frozen workflow spec in the register (`workflow_events`):**
-  - `run.started`;
-  - per agent: `handoff.sent`, `invocation.received`, `intent`, `judgment`, `handoff.received`;
+  - where each name is expected is set in one place, `prooflab/query/workflow_map.py` (PR-28), from the script's own EP-5 records (a full run: h0 customer, h1 IT (Gateway A), h2 network (Gateway B), h3 IT (Gateway C), four invocations):
+  - the orchestrator: `run.started` and `run.finished` once per run; `handoff.sent` once per handoff (h1, h2, h3); `handoff.received` once per invocation (h0 included);
+  - per agent invocation (C7 key `<agent>|<event>@<hN>`, so IT's two invocations are expected separately): `invocation.received`, `intent`, `judgment`;
   - `escalation` when the disposition is escalate;
-  - `run.finished`;
+  - `negotiation` from the IT agent on its Gateway C invocation only (network → IT, h3, after the network answers): ONE IT invocation, and each model call inside it passes C16 (EP-1) and the rails;
   - one C16 `decision` per model call when EP-1 is deployed: one per span, **plus one per cancelled call** (`outcome.real: CANCELLED_C16`), because only a halted call has no span. In `observe` a DENY is still served, so it has a span and is counted once (I-02, B6);
   - one EP-0 `decision` per agent when D13's gate is on (G-08).
 - **After a C16 stop (`workflow_events_after_stop`):**
@@ -1556,7 +1558,7 @@ Exactly one row uses `evaluate()` [02 R-P-10]. Every row has a test or a gap-lis
 | Our runtime, invocation | A second invocation with a `handoff.id` already in flight is refused (an idempotency precondition, not a control question) [05 AR-18] | Us (the duplicate does no work) | `emit` (`lifecycle` record) | `duplicate-invocation`, with the session id | T-DUP-01 (the same `handoff.id` twice → the second refused and recorded) | Build |
 | EP-3: our runtime, tool call | Declared-tool scope (X-01, X-02); arguments (X-03); repetition (X-04, FLAG); quarantine (X-05); tool output screened and enveloped (T-01–T-06; instructions never obeyed) | **Our rails** (DG-1); Cedar at the PDP | `emit` | Action records (declared or not, real status); `suspicious_tool_output`; a `rail_decision` per BLOCK / MODIFY / FLAG | ADV-H-02; ADV-R-01 (leg 1: our rails refuse; leg 2: the PDP refuses) | Build (in-agent prevention for our agents through the rails, DG-1; for every other caller only through a Cedar rule on the called tool, D15, so gap 3 stays for the platform) |
 | EP-4: judgment | J2: JSON-in-text validated by code (§7.1); precedence rules; the output rails O-01–O-07 (a disposition only moves toward safety; no secret leaves) | **Our rails** (DG-1), recorded | `emit` | Judgment record with deciding evidence and reason | ADV-H-04; the S1/S2/S3 dispositions | Build |
-| EP-5: orchestrating script | Handoff records (from → to, payload digest, classification, `runtime.session_id`); tally carriage; exactly one invocation per handoff (§7.2) | Nobody (records) | `emit` / `pull` | Handoff records, TIMEOUT included (the staleness test moved to EP-0's `approval.check_versions`, §3.4) | T-HO-01 handoff completeness; ADV-R-06; ADV-R-10 (fallback) | Build |
+| EP-5: orchestrating script | Handoff records (from → to, payload digest, classification, `runtime.session_id`) for the three handoffs (Gateway A h1, B h2, C h3: four invocations, customer → IT → network → IT); tally carriage; exactly one invocation per handoff (§7.2) | Nobody (records) | `emit` / `pull` | Handoff records, TIMEOUT included (the staleness test moved to EP-0's `approval.check_versions`, §3.4) | T-HO-01 handoff completeness; ADV-R-06; ADV-R-10 (fallback) | Build |
 | EP-6: gateway authz + PDP/Cedar | API key (fail-closed); Cedar tool policy | Platform | `pull`; **configure** a forbid rule in an existing ToolConfig's `spec.access.cedarPolicy` (D15 and DG-4, decided by the captain: `customer-records`; it applies to every caller) | DENY / ALLOW, policy id and version, principal | SP-1 (one allowed and one forbidden call; both PDP replicas + `/modaas/evidence`) [07 SP-1]; ADV-R-01 Cedar DENY end to end; ADV-R-07 no-key call → 403 (optional) | Observe + configure (D15 and DG-4 decided) |
 | EP-7: Bedrock guardrails | One guardrail per model alias, fixed: PROMPT_ATTACK on input (HIGH); no output, topic, word or grounding filter, and PII only on the `-helper` alias; no guardrail on tool routes at all [guardrails/02 GR-06, GR-09]. Not editable by us, not chosen per call [07 GS-15, GS-16] | Platform | `pull`: the span shows HTTP 200, 0/0 tokens and cost 0. No span carries a finish reason, so BLOCKED is an **inference**, labelled so, and corroborated by EP-1's own `content_filter` record through the action id [06 A5], and by the AWS-written `ConverseStream` record's `guardrailTrace.actionReason = "Guardrail blocked."` (joined by time, role and model) [10-f11 §4.4] | BLOCKED next to the platform's ALLOW; the guardrail id and version per run | ADV-H-01 prompt attack in the ticket: **P0, straight after N1** (the L1 gate's "one guardrail block on record") [04 E-09] | Observe (gap 4 answered in our store) |
 | EP-8: kill switch | Pause a model or tool: the route is withdrawn. **An AgentConfig pause is a record, not a stop**: the runtime stays READY and direct invokes still work [07 GS-14] | Platform (route withdrawn), for models and tools | `emit` (requested) + `pull` (effective; the 404 joined by trace id) | Requested vs effective time; real outcome | ADV-R-08 **model pause mid-run** (Rogue containment, P2, a declared Rogue window, the user's explicit OK) [04 E-09]; T-PRE-02 (EP-0 declines a run on a paused AgentConfig) | Observe |
@@ -1741,7 +1743,7 @@ It also records Hostile/Rogue events we **observe** in the window, since who inj
 - So before every assessed run: the runtime's `lastUpdatedAt` is later than the last patch, the status is READY, and the agent echoes its pinned version and sha256 in its response (§3.3 H1). EP-0 reads the CR phase only between patches, never during one.
 
 ### 7.2 The orchestrating script (`prooflab run`, EP-5)
-It runs on the laptop as WSParticipantRole. It invokes each runtime through `InvokeAgentRuntime`, in sequence (customer → IT → network). It passes the CID in the body and as baggage, plus one run `traceparent`, as `ask_agent.py` does today [01 row A6].
+It runs on the laptop as WSParticipantRole. It invokes each runtime through `InvokeAgentRuntime`, in sequence (customer → IT → network → IT: four invocations on a full run, the last one Gateway C's negotiation). It passes the CID in the body and as baggage, plus one run `traceparent`, as `ask_agent.py` does today [01 row A6].
 
 **Exactly one invocation per handoff (must-fix)** [05 AR-18]. `ask_agent.py`'s settings are not copied: its 180 s read timeout plus the AWS CLI's default retries re-sent S2's IT invocation. The AWS-written records show two IT invocations of one session, and two ledger `intent` records 180 s apart; S2's 1,999,001 tokens span both (gap 8). So:
 - `AWS_MAX_ATTEMPTS=1` and `AWS_RETRY_MODE=standard`: no CLI retry;
@@ -1771,7 +1773,8 @@ It runs on the laptop as WSParticipantRole. It invokes each runtime through `Inv
 2. **Mint the CID:** `ifabric-run-<epoch>-<hex>` for every run of our trio (subject, pilot, baseline), so no assessed run looks like a reference run (§4.2). Test traffic uses `ifabric-test-…`; adversarial runs use `ifabric-adv-…`.
 3. **Tier decision** (if tiers) → a `decision` record.
 4. **`run.started`.**
-5. **Per agent:** `handoff.sent` → invoke → `handoff.received` (status, disposition, halted, duration, tally out) → forward the tally. The two handoffs are the brief's Gateway A (h1, customer → IT) and Gateway B (h2, IT → network): record-only (EP-5).
+5. **Per agent:** `handoff.sent` → invoke → `handoff.received` (status, disposition, halted, duration, tally out) → forward the tally. The handoffs are the brief's Gateway A (h1, customer → IT) and Gateway B (h2, IT → network), then our Gateway C (h3, below): record-only (EP-5).
+   **Gateway C (PR-28):** after the network answers, `handoff.sent` h3 (network → IT, the raw payload's sha256) → ONE more IT invocation with `{"negotiate": {correlation_id, proposal, traceparent, handoff_id}}` plus the envelope (the proposal = the network's structured resolution and change risk) → `handoff.received`. The IT agent evaluates it through rails → C16 → model → J2 and records its position (agree | disagree | gather-evidence | escalate) as a `negotiation` judgment record; never a canned agree. The run's bound adds one IT call (`budget.json` `gateway_c_extra`).
 6. **`run.finished`.**
 7. **Append the run index line:** CID, agent versions, register version and sha256, mode, condition, provenance, times.
 

@@ -105,7 +105,7 @@ def test_cli_read_timeout_text_is_timeout_not_retried(env):
 
 def test_env_argv_cid_session_baggage(env):
     rc, fake, out = go(env, [])
-    assert rc == 0 and len(fake.invokes) == 3
+    assert rc == 0 and len(fake.invokes) == 4      # the trio + Gateway C (network -> IT)
     cid = json.loads(out)["cid"]
     assert re.match(r"^ifabric-(run|test|adv)-\d+-[0-9a-f]+$", cid)
     for inv in fake.invokes:
@@ -117,8 +117,9 @@ def test_env_argv_cid_session_baggage(env):
         assert re.match(r"^" + re.escape(cid) + r"-[0-9a-f]{32}$", sid) and ids.session_cid(sid) == cid
         assert "--trace-parent" in a
     sent = [r for r in spool_records(env) if r["record_kind"] == "handoff" and "sent" in r["detail"]]
-    assert [r["handoff.id"] for r in sent] == [cid + ":h1", cid + ":h2"]
+    assert [r["handoff.id"] for r in sent] == [cid + ":h1", cid + ":h2", cid + ":h3"]
     assert sent[0]["handoff.from"] == "ifabric-customer" and sent[0]["handoff.to"] == "ifabric-it"
+    assert (sent[2]["handoff.from"], sent[2]["handoff.to"]) == ("ifabric-network", "ifabric-it")
     for r in sent:
         assert re.match(r"^" + re.escape(cid) + r"-[0-9a-f]{32}$", r["runtime.session_id"])
         assert R.validate_record(r) == []

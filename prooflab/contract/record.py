@@ -64,6 +64,9 @@ JUDGMENT_FIELDS = (
 TOOL_CONTENT_FIELDS = ("tool.use_id", "tool.phase", "tool.result_sha256", "suspicious_tool_output")
 HANDOFF_RESULT_FIELDS = ("handoff.status", "handoff.halted", "handoff.duration_ms", "tally.tokens", "tally.calls")
 STARTUP_FIELDS = ("prompt.sha256", "lifecycle.event", "lifecycle.duplicate_state")
+# The reference agents' record shape, mirrored so the kit's score-run.py can grade our chain (ARCH §3.5 "our agents
+# also write the reference agents' record shape"; §4.2 `phase`): `actor` = the same value as `actor.id`.
+REFERENCE_SHAPE_FIELDS = ("actor",)
 
 OPTIONAL = (
     "supersedes", "span.id", "seq.in_stream", "seq", "runtime.arn", "runtime.session_id", "aws.request_id",
@@ -71,7 +74,8 @@ OPTIONAL = (
     "emitted.at", "emitted.clock", "observed.at", "observed.clock",
     "model.id", "tokens.in", "tokens.out", "outcome.http_status", "outcome.finish_reason",
     "tool.name", "tool.declared", "tool.args_sha256", "data_classification",
-) + RAIL_FIELDS + RAILS_COMPACT_FIELDS + JUDGMENT_FIELDS + TOOL_CONTENT_FIELDS + HANDOFF_RESULT_FIELDS + STARTUP_FIELDS
+) + RAIL_FIELDS + RAILS_COMPACT_FIELDS + JUDGMENT_FIELDS + TOOL_CONTENT_FIELDS + HANDOFF_RESULT_FIELDS + STARTUP_FIELDS \
+    + REFERENCE_SHAPE_FIELDS
 
 DERIVED = (
     "system.id", "system.risk_tier", "component.id", "component.owner", "component.approved_version",
@@ -129,6 +133,7 @@ WORKFLOW_PHASES = {
     "judgment": "judgment",
     "handoff.received": "handoff",
     "escalation": "judgment",
+    "negotiation": "judgment",   # Gateway C (network -> IT): the IT agent's position; the kit's reference phase
     "run.finished": "lifecycle",
     "stop": "lifecycle",
 }
