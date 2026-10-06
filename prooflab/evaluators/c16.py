@@ -273,15 +273,17 @@ def assess_run(run_id, calls, scenario_attrs, decisions, pin, completeness, as_o
     first = _clocks.format_utc(times[0]) if times else ""
     last = _clocks.format_utc(times[-1]) if times else ""
     # the second EP: with EP-1 decisions but no EP-2 replay the measurement stands, the corroboration does not
+    # (a note in `measured`, not an exception: it qualifies the evidence, never the requirement)
     ep2_missing = bool(ep1) and not ep2
-    if ep2_missing:
-        exceptions.append({"kind": "ep2-replay-missing", "record": "reconciliation",
-                           "detail": comp.get("ep2_note") or "no EP-2 decision for the run"})
     pins1 = sorted(set(_g(d, "pin.sha256") for d in ep1 if _g(d, "pin.sha256")))
     pins2 = sorted(set(_g(d, "pin.sha256") for d in ep2 if _g(d, "pin.sha256")))
     pin_differs = bool(pins1 and pins2 and pins1 != pins2)
-    if pin_differs:
-        exceptions.append({"kind": "ep1-ep2-pin-differs", "record": "reconciliation", "ep1": pins1, "ep2": pins2})
+    corroboration = None
+    if ep2_missing:
+        corroboration = "EP-2 replay missing: %s" % (comp.get("ep2_note") or "no EP-2 decision for the run")
+    elif pin_differs:
+        corroboration = "EP-1 pin %s differs from EP-2 pin %s" % (",".join(p[:8] for p in pins1),
+                                                                  ",".join(p[:8] for p in pins2))
     suff = "MISSING" if not by_id else ("PARTIAL" if (gaps or ep2_missing or pin_differs) else "COMPLETE")
     measured = {
         "total_tokens": total, "calls": len(by_id), "missing_usage_calls": len(missing), "cap": cap, "tier": tier,
@@ -289,7 +291,8 @@ def assess_run(run_id, calls, scenario_attrs, decisions, pin, completeness, as_o
         "mode": pin.mode, "envelope_tier": envelope, "provenance": sa.get("provenance"),
         "condition": sa.get("condition"), "first_span_at": first, "non_model_spans_ignored": other,
         "ep1_decisions": len(ep1), "ep2_decisions": len(ep2), "ep1_denied_earlier": earlier,
-        "operation_note": op_note}
+        "operation_note": op_note, "ep2_corroboration": corroboration or (
+            "EP-1 and EP-2 reconciled call by call" if ep1 and ep2 else None)}
     denominators = {"model_calls": len(by_id), "usage_records": len(expected_ids)}
     completeness_out = {"expected": len(expected_ids), "captured": len(expected_ids) - len(missing_spans),
                         "missing": missing_spans, "missing_usage": missing, "spans_ingested": ingested}

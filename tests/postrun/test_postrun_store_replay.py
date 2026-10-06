@@ -93,4 +93,5 @@ def test_ep1_and_ep2_reconciled_complete_and_missing_ep2_is_partial():
     b = _assess(ep1)
     assert b.evidence_sufficiency == "PARTIAL"
     assert b.requirement_verdict == a.requirement_verdict
-    assert any(e["kind"] == "ep2-replay-missing" for e in b.exceptions)
+    assert b.exceptions == a.exceptions
+    assert b.measured["ep2_corroboration"].startswith("EP-2 replay missing")
