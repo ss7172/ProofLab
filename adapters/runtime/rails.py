@@ -79,6 +79,7 @@ class Rails:
   "null_reasons":{"register.version":"not a register control: rail"}}
   d.update(("rail."+x if x[:4]in("subj","valu","evid")else x.replace("_",".",1)if x[:4]in("tool","outc")else x,y)for x,y in k.items());s.records.append(d)
  def ingress(s,p):
+  if isinstance(p,dict)and isinstance(p.get("input"),dict):p=p["input"]
   e=p.get("ifabric")if isinstance(p,dict)else None
   if not isinstance(p,dict)or isinstance(e,dict)and not all(type(e.get(x,0))is int and e.get(x,0)>=0 for x in("tally_tokens","tally_calls")):
    s._d("I-01","BLOCK","input","entrypoint",{"fmt.type":1},s.e,subject="input",subject_sha256_in=sha(repr(p)));return p,s.e

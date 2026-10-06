@@ -6,14 +6,19 @@ import _railpath  # noqa: F401,E402
 from adapters.runtime import egress  # noqa: E402
 
 SINK = []
-os.environ.setdefault("AUDIT_URL", "http://audit-store.components.svc:8080/records")
+URL = "http://audit-store.components.svc:8080/records"
+_had = "AUDIT_URL" in os.environ
+os.environ.setdefault("AUDIT_URL", URL)
 STATE = egress.install(agent="ifabric-it", sink=SINK.append, extra=("localhost",))
+AUDIT_HOST = egress.urlsplit(os.environ["AUDIT_URL"]).hostname.lower()
+if not _had:
+    os.environ.pop("AUDIT_URL")   # do not leak into other PRs' tests in a combined run
 
 
 def test_install_once_and_allowlist_from_env():
     assert egress.install(agent="other", sink=None) is STATE and STATE["agent"] == "ifabric-it"
     assert "localhost" in STATE["allow"]
-    assert egress.urlsplit(os.environ["AUDIT_URL"]).hostname.lower() in STATE["allow"]
+    assert AUDIT_HOST in STATE["allow"]
 
 
 def test_one_flag_per_unlisted_host_dedup():

@@ -36,6 +36,12 @@ def test_i01_forged_tally_still_passes_types_only():
     assert blocked is False and r.counts["I-01"]["ALLOW"] == 1
 
 
+def test_ingress_unwraps_the_input_wrapper():
+    r = R.Rails("ifabric-it", mode="enforce")
+    out, blocked = r.ingress({"input": P("benign")})
+    assert blocked is False and out["ifabric"]["run_id"] == ENV["run_id"] and r.records == []
+
+
 def test_i01_flags_unknown_field_and_missing_envelope():
     r = R.Rails("ifabric-it", mode="enforce")
     r.ingress({"context": {}, "rails_mode": "observe"})   # ADV-R-11
