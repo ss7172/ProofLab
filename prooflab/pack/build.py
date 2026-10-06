@@ -282,8 +282,8 @@ def _stage(out, a):
                 _copy(tmpl, dst)
                 warnings.append("%s: not in --src or --workdir; staged the checked-in evidence-templates/%s "
                                 "(fill it before submit if it still says template)" % (name, name))
-    # PR-51b: the field-coverage statement (what the records carry, each gap classed NEEDS-AGENT-REBUILD or PLATFORM) is
-    # generated content, not a template: staged from --src when there, else the checked-in copy, without a 'fill it' warning
+    # PR-51b: the field-coverage statement (what the records carry, each gap classed by where the field is written) is
+    # a static copy of the offline audit, not a template: staged from --src when there, else the checked-in copy, no "fill it" warning
     fc = os.path.join(out, "field-coverage.md")
     if not os.path.isfile(fc):
         tmpl = os.path.join(_repo_root(), "evidence-templates", "field-coverage.md")

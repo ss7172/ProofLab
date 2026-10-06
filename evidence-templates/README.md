@@ -131,7 +131,7 @@ README.md            this file                 MANIFEST.json   SHA-256 of every 
 run-ids.txt          named runs, written before judging
 named-runs.md        the same runs with role, window, versions, mode, condition, incident
 gap-list.md          what we could not close, why, impact, next step (section A: Arth; B: ours)
-field-coverage.md    which fields the records carry and which they do not; each gap classed NEEDS-AGENT-REBUILD or PLATFORM
+field-coverage.md    which fields the records carry and which they do not; each gap classed by where the field is written
 decisions-log.md     dated decisions
 register/            the frozen registers, the date proofs, the approval
 raw/                 captures as pulled (redacted by our collector)
@@ -183,9 +183,10 @@ SHA-256 is in the delivery log; a look-alike note is flagged, never trusted. Sec
   gaps G-1 to G-3); our own in-agent rails are self-enforced and their misses are published.
 - **Fields the records do not carry:** `field-coverage.md` lists every missing or wrong field (actor.version,
   model.id, run.condition on agent records, ep.id on EP-0 records, writer identity, ...), its substitute witness, and
-  why it cannot be fixed before the deadline: the agent images are frozen and approved, and raw records are never
-  edited (NEEDS-AGENT-REBUILD), or the platform does not write it (PLATFORM). Every value the console shows carries a
-  source tag (recorded, witnessed-by, joined-from, not-recorded).
+  why it cannot be fixed before the deadline: written inside the frozen, approved agent images (NEEDS-AGENT-REBUILD),
+  written by our recorder or collector when the run was recorded, raw records never edited (NEEDS-RE-RECORD), not
+  written by the platform (PLATFORM), or a view not changed in PR-51b (VIEW). The substitute column names only a tag or
+  join the built pack really has; the audit's proposed fixes are listed as not done.
 - **Items listed as open in `gap-list.md`:** anything marked `<update before each submit>` there
   had no result at the time of this submit.
 - `<anything cut during the build, with the reason>`
