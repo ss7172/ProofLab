@@ -9,12 +9,14 @@ import pytest
 from prooflab.servicenow.client import ServiceNowClient, ServiceNowError
 from prooflab.servicenow.delivery_log import DeliveryLog
 from prooflab.servicenow.finding import Finding, build_incident_payload, finding_from_dict
+from prooflab.servicenow.analysis import ANALYSIS_MARKER
 from prooflab.servicenow.notifier import check_response, export_incident, notify
 from prooflab.tests.fake_servicenow import (CLIENT_ID, CLIENT_SECRET, INTEGRATION_SYS_ID,
                                             INTEGRATION_USER, OWNER_SYS_ID, OWNER_USER,
                                             FakeServiceNow)
 
 CUTOFF = "2026-10-05T12:00:00Z"
+AGENT_USER = "ifabric.assurance.agent"
 
 
 # ---------------------------------------------------------------- fixtures
@@ -96,6 +98,28 @@ def test_incident_payload_carries_tag_control_version_owner_and_correlation():
     assert payload["correlation_id"] == f.finding_id
     assert "ledger:cid=fault-1" in payload["work_notes"]
     assert payload["short_description"] and len(payload["short_description"]) <= 160
+
+
+def test_description_carries_full_finding_for_readers_without_journal_access():
+    # Record-operation tools and itil readers cannot see work notes, so the
+    # description must hold every audit field, evidence references included.
+    description = build_incident_payload(breach(), "abc", "[iFabric]")["description"]
+    for expected in ("C16 ACN-COST-001", "threshold version G-FM-v1", "run FM-B",
+                     "BREACHED - 10,800 tokens > cap 10,000", "2026-10-05T10:00:00Z",
+                     "gateway:action-123", "ledger:cid=fault-1", breach().finding_id):
+        assert expected in description
+
+
+def test_description_stays_within_servicenow_field_limit():
+    many = breach(evidence=tuple(f"gateway:action-{i:04d}-" + "x" * 80 for i in range(200)))
+    description = build_incident_payload(many, "abc", "[iFabric]")["description"]
+    assert len(description) <= 4000
+    assert "more in the Evidence Pack" in description
+
+
+def test_oversized_summary_is_truncated_to_field_limit():
+    description = build_incident_payload(breach(summary="s" * 5000), "abc", "[iFabric]")["description"]
+    assert len(description) == 4000 and "C16 ACN-COST-001" in description
 
 
 # ---------------------------------------------------------------- client
@@ -197,6 +221,19 @@ def test_export_includes_notes_text_from_incident(client, fake, log, tmp_path):
     fake.incidents[result.sys_id]["work_notes"] = "2026-10-05 06:59:29 - Sree (Work notes)\nAcknowledged"
     data = json.loads(export_incident(breach(), client, INTEGRATION_USER, tmp_path).read_text())
     assert "Acknowledged" in data["notes_display"]["work_notes"]
+    assert data["agent_analysis"] == {"status": "pending"}
+
+
+def test_export_includes_parsed_agent_analysis(client, fake, log, tmp_path):
+    result = send(client, log)
+    note = "\n".join([ANALYSIS_MARKER, f"Finding ID: {breach().finding_id}", "Verdict: BREACHED"])
+    fake.incidents[result.sys_id]["work_notes"] = (
+        f"2026-10-05 10:02:00 - iFabric Assurance Agent (Work notes)\n{note}\n\n"
+        "2026-10-05 10:00:00 - iFabric Integration (Work notes)\nProofLab finding x")
+    data = json.loads(export_incident(breach(), client, INTEGRATION_USER, tmp_path).read_text())
+    analysis = data["agent_analysis"]
+    assert analysis["status"] == "present" and analysis["fields"]["Verdict"] == "BREACHED"
+    assert analysis["finding_matches"] and not analysis["complete"]
 
 
 def test_export_without_incident_raises(client, tmp_path):
@@ -315,6 +352,25 @@ def test_system_or_other_actor_activity_is_not_a_response(client, fake, log):
     outcome = check(client, log, now="2026-10-05T12:30:00Z")
     assert outcome.state == "NO_RESPONSE_OBSERVED"
     assert set(log.history(breach().finding_id)[-1]["non_owner_actors"]) == {"system", "other.admin"}
+
+
+def test_agent_analysis_note_is_never_an_owner_response(client, fake, log):
+    # Even if the agent ran with the owner's identity, its note is not a human reply.
+    res = send(client, log)
+    fake.add_journal_entry(res.sys_id, OWNER_USER, ANALYSIS_MARKER + "\nVerdict: BREACHED",
+                           "2026-10-05 10:01:00")
+    assert check(client, log, now="2026-10-05T11:00:00Z").state == "AWAITING_RESPONSE"
+
+
+def test_agent_identity_activity_is_neither_response_nor_other_actor(client, fake, log):
+    res = send(client, log)
+    fake.add_journal_entry(res.sys_id, AGENT_USER, ANALYSIS_MARKER, "2026-10-05 10:01:00")
+    fake.human_update(res.sys_id, AGENT_USER, "2026-10-05 10:01:00")
+    outcome = check_response(breach(), client, log, owner_user=OWNER_USER,
+                             integration_user=INTEGRATION_USER, agent_user=AGENT_USER,
+                             cutoff=CUTOFF, now="2026-10-05T11:00:00Z")
+    assert outcome.state == "AWAITING_RESPONSE"
+    assert log.history(breach().finding_id)[-1]["non_owner_actors"] == []
 
 
 def test_silence_after_cutoff_is_recorded_as_no_response(client, fake, log):

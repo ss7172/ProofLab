@@ -8,12 +8,18 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from typing import Mapping, Optional, Tuple
+from typing import List, Mapping, Optional, Tuple
+
+from prooflab.servicenow.finding_context import (Limit, Measurement, RegisterRef, RetestRef, TraceStep,
+                                                  format_number, parse_context)
 
 TEAM_PREFIX = "ifabric"
 CORRELATION_ID_MAX = 100  # ServiceNow incident.correlation_id length
 SHORT_DESCRIPTION_MAX = 160
+DESCRIPTION_MAX = 4000  # ServiceNow incident.description length
 WORK_NOTES_EVIDENCE_MAX = 50
+_REPLY_NOTE = ("A reply is not required; any note or status change by the owner "
+               "is recorded as the response.")
 
 VERDICTS = frozenset({"BREACHED", "ESCALATED", "INDETERMINATE", "SATISFIED"})
 SCOPE_KINDS = frozenset({"run", "window", "interval", "escalation"})
@@ -39,6 +45,12 @@ class Finding:
     detected_at: str        # ISO-8601 UTC
     evidence: Tuple[str, ...] = ()  # record references (gateway action ids, ledger cid, ...)
     kind: str = "finding"
+    # Optional context (finding_context.py); never part of the finding id.
+    measured: Optional[Measurement] = None
+    limit: Optional[Limit] = None
+    register: Optional[RegisterRef] = None
+    trace: Tuple[TraceStep, ...] = ()
+    retest: Optional[RetestRef] = None  # set by the evaluator when a passing re-test closes it
 
     @property
     def finding_id(self) -> str:
@@ -67,7 +79,42 @@ def finding_from_dict(data: Mapping) -> Finding:
     if isinstance(evidence, str) or not all(isinstance(item, str) for item in evidence):
         raise ValueError("evidence must be a list of strings")
     return Finding(**{name: str(data[name]).strip() for name in REQUIRED_FIELDS},
-                   evidence=tuple(evidence), kind=str(data.get("kind") or "finding"))
+                   evidence=tuple(evidence), kind=str(data.get("kind") or "finding"),
+                   **parse_context(data))
+
+
+def _finding_lines(finding: Finding, evidence_max: int) -> List[str]:
+    """The audit block: every field an auditor needs, with at most evidence_max references."""
+    shown = finding.evidence[:evidence_max]
+    evidence_lines = [f"  - {ref}" for ref in shown]
+    hidden = len(finding.evidence) - len(shown)
+    if hidden:
+        evidence_lines.append(f"  ... {hidden} more in the Evidence Pack")
+    return [
+        f"ProofLab finding {finding.finding_id}",
+        f"Control: {finding.control_ref} {finding.control_id} (threshold version {finding.threshold_version})",
+        f"Scope: {finding.scope_kind} {finding.scope_id}",
+        f"Verdict: {finding.verdict} - {finding.summary}",
+        *([f"Measured: {format_number(finding.measured.value)} {finding.measured.unit}"] if finding.measured else []),
+        *([f"Limit: {finding.limit.operator} {format_number(finding.limit.value)} {finding.limit.unit}"]
+          if finding.limit else []),
+        f"Detected at: {finding.detected_at}",
+        "Evidence records:",
+        *(evidence_lines or ["  (none attached)"]),
+    ]
+
+
+def _description(finding: Finding) -> str:
+    """Full audit block in the description, so readers without journal access
+    (itil via the Table API, AI agent record-operation tools) see the evidence.
+    Evidence lines are dropped whole, never cut mid-reference, to fit the field."""
+    intro = "Automated control finding from team iFabric's assurance tool."
+    text = ""
+    for shown in range(min(len(finding.evidence), WORK_NOTES_EVIDENCE_MAX), -1, -1):
+        text = "\n".join([intro, *_finding_lines(finding, shown), _REPLY_NOTE])
+        if len(text) <= DESCRIPTION_MAX:
+            return text
+    return text[:DESCRIPTION_MAX]
 
 
 def build_incident_payload(finding: Finding, assignee_sys_id: str, team_tag: str,
@@ -79,27 +126,13 @@ def build_incident_payload(finding: Finding, assignee_sys_id: str, team_tag: str
     """
     head = f"{team_tag}[{finding.control_ref} {finding.control_id} v={finding.threshold_version}]"
     short = f"{head} {finding.scope_kind} {finding.scope_id} {finding.verdict}: {finding.summary}"
-    evidence_lines = [f"  - {ref}" for ref in finding.evidence[:WORK_NOTES_EVIDENCE_MAX]]
-    if len(finding.evidence) > WORK_NOTES_EVIDENCE_MAX:
-        evidence_lines.append(f"  ... {len(finding.evidence) - WORK_NOTES_EVIDENCE_MAX} more in the Evidence Pack")
-    work_notes = "\n".join([
-        f"ProofLab finding {finding.finding_id}",
-        f"Control: {finding.control_ref} {finding.control_id} (threshold version {finding.threshold_version})",
-        f"Scope: {finding.scope_kind} {finding.scope_id}",
-        f"Verdict: {finding.verdict} - {finding.summary}",
-        f"Detected at: {finding.detected_at}",
-        "Evidence records:",
-        *(evidence_lines or ["  (none attached)"]),
-        "A reply is not required; any note or status change by the owner is recorded as the response.",
-    ])
+    work_notes = "\n".join([*_finding_lines(finding, WORK_NOTES_EVIDENCE_MAX), _REPLY_NOTE])
     priority = _PRIORITY_BY_VERDICT[finding.verdict]
     caller = {"caller_id": caller_sys_id} if caller_sys_id else {}
     return {
         **caller,
         "short_description": short[:SHORT_DESCRIPTION_MAX],
-        "description": (f"Automated control finding from team iFabric's assurance tool. "
-                        f"{finding.control_ref} {finding.control_id} returned {finding.verdict} "
-                        f"for {finding.scope_kind} {finding.scope_id}. Evidence references are in the work notes."),
+        "description": _description(finding),
         "work_notes": work_notes,
         "assigned_to": assignee_sys_id,
         "urgency": priority,

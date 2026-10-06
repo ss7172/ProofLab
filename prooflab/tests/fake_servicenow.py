@@ -8,6 +8,7 @@ other teams' incidents with the same correlation id, and system actors.
 """
 from __future__ import annotations
 
+import html
 import json
 import threading
 import uuid
@@ -48,6 +49,11 @@ class FakeServiceNow:
         self.drop_next_post_response = False                   # created, then connection closed
         self.override_assignee: Optional[str] = None
         self.journal_forbidden = False
+        self.fail_next_patch_status: Optional[int] = None
+        self.html_escape_notes = False   # display text with HTML entities, as some instances return it
+        self.mangle_notes = False        # display text that differs from what was written
+        self.patch_count = 0
+        self._note_minute = 0
         self._server: Optional[ThreadingHTTPServer] = None
 
     # ---- helpers used by tests -------------------------------------------
@@ -79,6 +85,19 @@ class FakeServiceNow:
                                   "sys_updated_on": "2026-10-05 09:00:00", "state": "1"}
         return sys_id
 
+    def append_work_note(self, sys_id: str, author_display: str, author_user: str, text: str) -> None:
+        """Mimic ServiceNow: newest journal entry first in the display text."""
+        self._note_minute += 1
+        at = f"2026-10-05 11:{self._note_minute:02d}:00"
+        inc = self.incidents[sys_id]
+        shown = html.escape(text, quote=True) if self.html_escape_notes else text
+        shown = shown + " (edited)" if self.mangle_notes else shown
+        entry = f"{at} - {author_display} (Work notes)\n{shown}"
+        previous = inc.get("work_notes") or ""
+        self.incidents[sys_id] = {**inc, "work_notes": entry + ("\n\n" + previous if previous else ""),
+                                  "sys_updated_by": author_user, "sys_updated_on": at}
+        self.add_journal_entry(sys_id, author_user, text, at)
+
     # ---- lifecycle ----------------------------------------------------------
     def _create(self, body: dict, created_on: str = "2026-10-05 10:00:00") -> dict:
         sys_id = uuid.uuid4().hex
@@ -89,6 +108,8 @@ class FakeServiceNow:
                   "sys_created_on": created_on, "sys_updated_on": created_on}
         if self.override_assignee is not None:
             record["assigned_to"] = self.override_assignee
+        if body.get("work_notes"):  # like ServiceNow: every journal entry gets its own header
+            record["work_notes"] = f"{created_on} - iFabric Integration (Work notes)\n{body['work_notes']}"
         self.incidents[sys_id] = record
         return record
 
@@ -145,6 +166,24 @@ class FakeServiceNow:
                         return  # created, but the client never hears back
                     return self._send(201, {"result": record})
                 return self._send(404, {"error": {"message": "not found"}})
+
+            def do_PATCH(self):
+                if not self._authorized():
+                    return self._send(401, {"error": {"message": "User is not authenticated"}})
+                length = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(length).decode())
+                path = urlparse(self.path).path
+                sys_id = path.rsplit("/", 1)[-1]
+                if not path.startswith("/api/now/table/incident/") or sys_id not in fake.incidents:
+                    return self._send(404, {"error": {"message": "No Record found"}})
+                fake.patch_count += 1
+                if fake.fail_next_patch_status is not None:
+                    status, fake.fail_next_patch_status = fake.fail_next_patch_status, None
+                    return self._send(status, {"error": {"message": "rejected"}})
+                if "work_notes" in body:
+                    fake.append_work_note(sys_id, "iFabric Integration", INTEGRATION_USER,
+                                          body["work_notes"])
+                return self._send(200, {"result": fake.incidents[sys_id]})
 
             def do_GET(self):
                 if not self._authorized():

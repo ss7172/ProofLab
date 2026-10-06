@@ -21,12 +21,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Set, Tuple, Union
 
+from prooflab.servicenow.analysis import is_analysis_note, latest_agent_analysis, trusted_digests
 from prooflab.servicenow.client import ServiceNowClient, ServiceNowError, check_query_value
 from prooflab.servicenow.delivery_log import DeliveryLog, utc_now_iso
 from prooflab.servicenow.finding import Finding, build_incident_payload
 
 DEFAULT_TEAM_TAG = "[iFabric]"
 DEFAULT_INTEGRATION_USER = "ifabric.integration"
+DEFAULT_AGENT_USER = "ifabric.assurance.agent"  # the ServiceNow agent's AI user identity
 
 
 @dataclass(frozen=True)
@@ -148,7 +150,7 @@ def notify(finding: Finding, client: ServiceNowClient, log: DeliveryLog, owner_u
 
 
 def export_incident(finding: Finding, client: ServiceNowClient, integration_user: str,
-                    out_dir: Union[str, Path]) -> Path:
+                    out_dir: Union[str, Path], log: Optional[DeliveryLog] = None) -> Path:
     """Write the incident as ServiceNow stores it, plus its notes, as an evidence file."""
     rows = client.find_incidents(finding.finding_id, integration_user)
     if not rows:
@@ -162,8 +164,12 @@ def export_incident(finding: Finding, client: ServiceNowClient, integration_user
         notes_text = client.get_incident_notes_text(incident["sys_id"])
         notes_display = {"work_notes": notes_text.get("work_notes", ""),
                          "comments": notes_text.get("comments", "")}
+        trusted = trusted_digests(log.history(finding.finding_id)) if log else None
+        analysis = latest_agent_analysis(notes_display["work_notes"], finding.finding_id, trusted)
+        agent_analysis = analysis.to_dict() if analysis else {"status": "pending"}
     except ServiceNowError as err:
         notes_display = {"error": str(err)}
+        agent_analysis = {"status": "unknown", "error": str(err)}
     record = {
         "finding_id": finding.finding_id,
         "exported_at": utc_now_iso(),
@@ -172,6 +178,7 @@ def export_incident(finding: Finding, client: ServiceNowClient, integration_user
         "journal": journal,
         "journal_error": journal_error,
         "notes_display": notes_display,
+        "agent_analysis": agent_analysis,
     }
     target = Path(out_dir)
     target.mkdir(parents=True, exist_ok=True)
@@ -180,16 +187,21 @@ def export_incident(finding: Finding, client: ServiceNowClient, integration_user
     return path
 
 
-def _actions(client: ServiceNowClient, incident: dict, owner_user: str,
-             integration_user: str) -> Tuple[List[Tuple[str, str]], Set[str], bool]:
-    """Owner actions as (at, basis); other human/system actors; whether history was readable."""
+def _actions(client: ServiceNowClient, incident: dict, owner_user: str, integration_user: str,
+             agent_user: str) -> Tuple[List[Tuple[str, str]], Set[str], bool]:
+    """Owner actions as (at, basis); other human/system actors; whether history was readable.
+
+    Our own writers (integration user, the ServiceNow agent's AI user) are not actors, and
+    an agent analysis note is never a human reply, whoever it is attributed to."""
     owner_actions: List[Tuple[str, str]] = []
     others: Set[str] = set()
-    ignored = {"", None, integration_user}
+    ignored = {"", None, integration_user, agent_user}
     readable = True
     try:
         for note in client.list_work_notes(incident["sys_id"]):
             author, at = note.get("sys_created_by"), note.get("sys_created_on")
+            if is_analysis_note(note.get("value")):
+                continue
             if author == owner_user and at:
                 owner_actions.append((at, "work_note"))
             elif author not in ignored:
@@ -206,7 +218,8 @@ def _actions(client: ServiceNowClient, incident: dict, owner_user: str,
 
 def check_response(finding: Finding, client: ServiceNowClient, log: DeliveryLog, owner_user: str,
                    cutoff: str, integration_user: str = DEFAULT_INTEGRATION_USER,
-                   now: Optional[str] = None) -> ResponseOutcome:
+                   now: Optional[str] = None,
+                   agent_user: str = DEFAULT_AGENT_USER) -> ResponseOutcome:
     """Classify the owner's reaction; silence only counts once the cutoff has passed."""
     fid = finding.finding_id
     now = now or utc_now_iso()
@@ -221,7 +234,8 @@ def check_response(finding: Finding, client: ServiceNowClient, log: DeliveryLog,
         return ResponseOutcome(fid, "NOT_DELIVERED")
 
     number = incident.get("number")
-    owner_actions, others, readable = _actions(client, incident, owner_user, integration_user)
+    owner_actions, others, readable = _actions(client, incident, owner_user, integration_user,
+                                               agent_user)
     context = {"number": number, "checked_at": now, "non_owner_actors": sorted(others)}
     if owner_actions:
         at, basis = min(owner_actions)
