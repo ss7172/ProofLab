@@ -108,7 +108,7 @@ function answerIndex() {
   const keys = (P.answers || []).map(a => a.key), runs = [], wins = [];
   keys.forEach(k => { const [c, kind, sc] = k.split("|"); if (kind === "run" && !runs.includes(sc)) runs.push(sc); if (kind === "interval" && !wins.includes(sc)) wins.push(sc); });
   const cell = (c, kind, sc) => { const k = c + "|" + kind + "|" + sc, a = D.answers[k]; return h("td", {}, a ? h("a", { href: "#/answer/" + encodeURIComponent(k), title: k }, vpill(a.verdict.value)) : h("span", { class: "muted" }, "not stored")); };
-  return card("Answer index · every stored answer in this pack (click a verdict to open it)", h("div", { class: "tscroll" }, h("table", { class: "t idx" }, h("thead", {}, h("tr", {}, ["Scope", "Label", "C16 token cap", "C7 audit log", "C9 latency"].map(x => h("th", {}, x)))),
+  return card("Answer index · every stored answer in this pack (click a verdict to open it)", h("div", { class: "tscroll" }, h("table", { class: "t idx" }, h("thead", {}, h("tr", {}, ["Scope", "Label"].concat(["C16", "C7", "C9"].map(c => { const k = ((P.register || {}).controls || []).find(x => x.ref === c); return c + (k && k.id ? " · " + k.id : ""); })).map(x => h("th", {}, x)))),
     h("tbody", {}, runs.map(sc => { const r = runOf(sc) || {}; return h("tr", {}, h("td", {}, idv(sc, 30)), h("td", {}, r.label ? tp(r.label) : h("span", { class: "muted" }, "not recorded")), cell("C16", "run", sc), cell("C7", "run", sc), cell("C9", "run", sc)); }),
       wins.map(sc => h("tr", {}, h("td", { class: "mono" }, "window " + sc.replace(/:00Z/g, "Z").replace("..", " → ")), h("td", {}, tp("WINDOW")), cell("C16", "interval", sc), cell("C7", "interval", sc), cell("C9", "interval", sc)))))));
 }
