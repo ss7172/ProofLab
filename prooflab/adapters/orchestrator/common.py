@@ -11,9 +11,25 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 EMITTER = "adapters.orchestrator.run@1.0+0000000"
 
 
+READ_TIMEOUT_ENV = "PROOFLAB_CLI_READ_TIMEOUT"
+
+
 def load_budget(path=None) -> dict:
+    """budget.json, with one ops-lane override: PROOFLAB_CLI_READ_TIMEOUT (whole seconds, 30..900).
+
+    Live finding (B3c, 11:31Z): AWS recorded an invocation as completed in 25 s while the CLI read hung until
+    the 900 s timeout. A shorter read timeout makes such a hang cost minutes, not 15; it never re-invokes
+    (a TIMEOUT is still recorded and the run stops, as before). An invalid value is refused, never ignored.
+    """
     with open(path or os.path.join(HERE, "budget.json"), "r", encoding="utf-8") as fh:
-        return json.load(fh)
+        budget = json.load(fh)
+    raw = os.environ.get(READ_TIMEOUT_ENV)
+    if raw is not None:
+        if not raw.isdigit() or not 30 <= int(raw) <= 900:
+            raise ValueError("%s must be whole seconds in 30..900, got %r" % (READ_TIMEOUT_ENV, raw))
+        budget["invoke"]["cli_read_timeout"] = str(int(raw))
+        budget["invoke"]["cli_read_timeout_source"] = READ_TIMEOUT_ENV
+    return budget
 
 
 def utc_now() -> str:
