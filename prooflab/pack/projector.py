@@ -695,7 +695,7 @@ def project(src, out, as_of=None, generated_at=None, answers=None, assessments_d
         row["verdicts"] = dict((p["control_ref"], p["verdict"]) for p in docs if p["scope"].get("cid") == cid)
         runs.append(row)
     runs = not_counted_rows(runs, nmd)
-    named = {"written_at": cx["as_of"], "entries": [named_entry(p, nmd) for p in docs if p["scope"].get("cid") in cx["run_ids"]]}
+    named = {"written_at": nmd.get("written_at") if _utc(nmd.get("written_at")) else cx["as_of"], "entries": [named_entry(p, nmd) for p in docs if p["scope"].get("cid") in cx["run_ids"]]}
     artefacts = []
     for i, (name, path) in enumerate((("Threshold document", cx["register"] and cx["register"]["path"] or "register/register.yaml"),
                                       ("Gap list", "gap-list.md"), ("Run ids", "run-ids.txt"), ("Manifest", "MANIFEST.json"))):

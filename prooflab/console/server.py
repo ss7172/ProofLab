@@ -168,10 +168,13 @@ def named_run_labels(root):
         cids = re.findall(r"`(ifabric-run-[0-9]+-[0-9a-f]+)`", cells[3])
         note = cells[-1]
         m = re.search(r"\b(N[0-9]+[a-z]?)\b", note)
-        if not cids or not m or "NOT COUNTED" in note:
+        if not cids or not m:
             continue
         e = out.setdefault(cids[0], {"label": m.group(1), "roles": [], "unplanned": []})
         role = "%s %s" % (cells[0], cells[1]) if cells[1] != cells[0] else cells[1]
+        if "NOT COUNTED" in note:      # a named attempt that does not count (N1b, N2a): labelled, never hidden
+            e["not_counted"] = True
+            role += " attempt %s, NOT COUNTED" % cells[2]
         if role not in e["roles"]:
             e["roles"].append(role)
         for c, g in re.findall(r"[Uu]nplanned (C[0-9]+)\b.*?gap-list (B[0-9]+)", note):
