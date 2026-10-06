@@ -26,8 +26,9 @@ def step(name, ok, detail):
 
 # --- bounds and the guard ------------------------------------------------------------------------------------
 
-def bound_for(budget, scenario, mode, only=None, adversarial=False, override=None):
-    """(bound tokens, class name) for this run. `override` is an explicit --bound (e.g. the pilots' CAP)."""
+def bound_for(budget, scenario, mode, only=None, adversarial=False, override=None, gateway_c=False):
+    """(bound tokens, class name) for this run. `override` is an explicit --bound (e.g. the pilots' CAP).
+    gateway_c: a trio run that also makes Gateway C's one extra IT call adds bounds.gateway_c_extra."""
     bounds = budget["bounds"]
     if only:
         cls = "adversarial_single" if adversarial else "smoke_single"
@@ -37,7 +38,11 @@ def bound_for(budget, scenario, mode, only=None, adversarial=False, override=Non
             raise ValueError("unknown scenario %r" % (scenario,))
         if cls == "s2":
             cls = "observe_s2" if mode == "observe" else "enforce_s2"
-    return (int(override) if override is not None else int(bounds[cls])), cls
+    if override is not None:
+        return int(override), cls
+    if gateway_c and not only:
+        return int(bounds[cls]) + int(bounds["gateway_c_extra"]), cls + "+gateway_c"
+    return int(bounds[cls]), cls
 
 
 def is_observe_s2(scenario, mode, only=None):

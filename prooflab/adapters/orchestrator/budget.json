@@ -9,16 +9,26 @@
     "trio_s": 60000,
     "observe_s2": 300000,
     "enforce_s2": 150000,
-    "adversarial_single": 5000
+    "adversarial_single": 5000,
+    "gateway_c_extra": 10000
   },
-  "scenario_class": {"S1": "trio_s", "S3": "trio_s", "S2": "s2"},
+  "scenario_class": {
+    "S1": "trio_s",
+    "S3": "trio_s",
+    "S2": "s2"
+  },
   "invoke": {
     "aws_max_attempts": "1",
     "aws_retry_mode": "standard",
     "cli_read_timeout": "900",
     "subprocess_grace_seconds": 30
   },
-  "agents": ["ifabric-customer", "ifabric-it", "ifabric-network"],
+  "agents": [
+    "ifabric-customer",
+    "ifabric-it",
+    "ifabric-network"
+  ],
   "credential_min_remaining_minutes": 20,
-  "required_role": "WSParticipantRole"
+  "required_role": "WSParticipantRole",
+  "_comment_gateway_c": "gateway_c_extra: the +1 IT call of Gateway C (network -> IT negotiation), added to a trio run's bound; --only gateway-c is a smoke_single run."
 }

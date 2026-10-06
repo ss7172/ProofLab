@@ -22,7 +22,7 @@ def make(record_kind: str, run_id: str, detail: str, null_reason: str, emitter_s
         "detail": detail, "run.id": run_id, "verdict": "RECORDED",
         "emitted.at": at, "emitted.clock": "script-host",
         "provenance": provenance, "authorship": "TESTIMONY", "emitter": emitter,
-        "ep.transport": "emit", "actor.id": "orchestrator",
+        "ep.transport": "emit", "actor.id": "orchestrator", "actor": "orchestrator",   # actor: the kit's shape
     }
     base.update(fields)
     rec = R.new_record(record_kind, null_reason, **base)
