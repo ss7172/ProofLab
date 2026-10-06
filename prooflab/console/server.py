@@ -80,27 +80,61 @@ def check_clean_env(environ):
                              "clean shell (env -i ...)." % ", ".join(bad))
 
 
+_TIME = r"(\d{4}-\d{2}-\d{2}(?:[t ]\d{1,2}(?::\d{2}(?::\d{2}(?:\.\d+)?)?)?)?z?|\d{1,2}:\d{2}(?::\d{2})?z?|\d{1,2}z)"
+
+
+def _norm_time(tok):
+    """'2026-10-06t13' -> '2026-10-06T13:00:00Z'; '13:50z' -> '13:50:00Z' (time of day only); None when not a time."""
+    tok = (tok or "").strip().lower().rstrip("z").replace(" ", "t")
+    m = re.match(r"^(\d{4}-\d{2}-\d{2})(?:t(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?(?:\.\d+)?)?$", tok)
+    if m:
+        return "%sT%02d:%s:%sZ" % (m.group(1), int(m.group(2) or 0), m.group(3) or "00", m.group(4) or "00")
+    m = re.match(r"^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?$", tok)
+    if m and int(m.group(1)) < 24:
+        return "%02d:%s:%sZ" % (int(m.group(1)), m.group(2) or "00", m.group(3) or "00")
+    return None
+
+
+def parse_window_text(t):
+    """(t1, t2) from 'between A and B' / 'from A to B' / 'over A..B' / 'window A' (one hour from A); None if no time."""
+    m = re.search(r"\b(?:between|from|window|interval|over|during)\b\s*" + _TIME + r"(?:\s*(?:\.\.|and|to|-|–)\s*" + _TIME + r")?", t)
+    if not m:
+        return None
+    t1, t2 = _norm_time(m.group(1)), _norm_time(m.group(2)) if m.group(2) else None
+    if not t1:
+        return None
+    if t2 is None:      # one time: the hour that starts there ('window 2026-10-06T13' = 13:00..14:00)
+        hh = int(t1[-9:-7]) if "T" in t1 else int(t1[:2])
+        end = "%02d:%sZ" % ((hh + 1) % 24, t1[-6:-1])
+        t2 = (t1[:11] + end) if "T" in t1 and hh < 23 else end
+    return t1, t2
+
+
 def parse_question(text):
     """A tiny deterministic phrase -> (kind, params) map. No LLM. The full grammar is prooflab/query/grammar.py (PR-15b);
-    this is the console's fallback for the P0 phrases, and only LOCATES a stored answer."""
-    t = (text or "").lower().strip()
+    this is the console's fallback for the P0 phrases, and only LOCATES a stored answer. Run ids keep their case (they
+    are lower case in the pack); parsed times are echoed in 'normalized' so the judge sees what was asked."""
+    t = (text or "").lower().strip().rstrip("?")
+    win = parse_window_text(t)
     m = re.search(r"control\s*c?(7|9|16)\b.*?\brun\s+([a-z0-9][a-z0-9_.-]*)", t)
     if m:
-        return {"kind": "answer", "control": "C" + m.group(1), "scope_kind": "run", "scope": m.group(2).upper(),
-                "normalized": "controltest %s --run %s" % (m.group(1), m.group(2).upper())}
-    m = re.search(r"control\s*c?(7|9|16)\b.*\b(between|from|window|interval)\b", t)
-    if m:
-        return {"kind": "answer", "control": "C" + m.group(1), "scope_kind": "interval", "scope": None,
-                "normalized": "controltest %s --from … --to …" % m.group(1)}
+        norm = "controltest %s --run %s" % (m.group(1), m.group(2))
+        if win:
+            norm += " (window %s..%s asked, NOT applied: this is the whole-run answer)" % win
+        return {"kind": "answer", "control": "C" + m.group(1), "scope_kind": "run", "scope": m.group(2), "normalized": norm}
+    m = re.search(r"control\s*c?(7|9|16)\b.*\b(between|from|window|interval|over|during)\b", t)
+    if m and win:
+        return {"kind": "answer", "control": "C" + m.group(1), "scope_kind": "interval", "scope": "%s..%s" % win,
+                "normalized": "controltest %s --from %s --to %s" % (m.group(1), win[0], win[1])}
     m = re.search(r"(six questions|auditor).*?(inc\d+)", t)
     if m:
         return {"kind": "auditor", "id": m.group(2).upper(), "normalized": "auditor " + m.group(2).upper()}
     m = re.search(r"(?:six questions|auditor)(?:\s+for)?\s+([a-z0-9][a-z0-9_.-]*)$", t)
     if m:       # a run id (the pack stores auditor/<cid>.json); run ids are lower case
         return {"kind": "auditor", "id": m.group(1), "normalized": "auditor " + m.group(1)}
-    m = re.search(r"(reconstruct|trail|ledger)\s+run\s+([a-z0-9][a-z0-9_.-]*)", t)
+    m = re.search(r"(reconstruct|trail|ledger)\s+(?:for\s+)?run\s+([a-z0-9][a-z0-9_.-]*)", t)
     if m:
-        return {"kind": "run", "id": m.group(2).upper(), "normalized": "ledger --run " + m.group(2).upper()}
+        return {"kind": "run", "id": m.group(2), "normalized": "ledger --run " + m.group(2)}
     return None
 
 

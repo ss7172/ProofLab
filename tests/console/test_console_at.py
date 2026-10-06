@@ -227,3 +227,18 @@ def test_at14_determinism_pack_mode(pack_client):
     first = pack_client.json("/api/v1/ask?q=Show%20me%20control%2016%20for%20run%20FM-B")[1]["data"]["answer_id"]
     again = pack_client.json("/api/v1/answer?control=16&run=FM-B")[1]["data"]["answer_id"]
     assert first == again
+
+
+def test_pr54_ask_parses_and_echoes_times_never_another_window():
+    p = srv.parse_question("control 9 for window 2026-10-06T15")
+    assert p["scope"] == "2026-10-06T15:00:00Z..2026-10-06T16:00:00Z" and "--from 2026-10-06T15:00:00Z" in p["normalized"]
+    p = srv.parse_question("was control 16 satisfied between 13:50Z and 14:00Z")
+    assert p["scope_kind"] == "interval" and "13:50:00Z" in p["normalized"] and "…" not in p["normalized"]
+    p = srv.parse_question("Control 9 over 2026-10-06T13:00:00Z..2026-10-06T14:00:00Z")
+    assert p and p["scope"] == "2026-10-06T13:00:00Z..2026-10-06T14:00:00Z"
+    p = srv.parse_question("show me control 16 for run abc-1 between 13:00 and 14:00")
+    assert p["scope"] == "abc-1" and "NOT applied" in p["normalized"]
+    assert srv.parse_question("ledger run ifabric-run-1-aa")["id"] == "ifabric-run-1-aa"     # case kept
+    assert S._covers("2026-10-06T13:00:00Z", "2026-10-06T14:00:00Z", "13:50:00Z..14:00:00Z")
+    assert not S._covers("2026-10-06T13:00:00Z", "2026-10-06T14:00:00Z", "2026-10-06T15:00:00Z..2026-10-06T16:00:00Z")
+    assert S._covers("2026-10-05T23:00:00Z", "2026-10-06T09:00:00Z", "23:00:00Z..09:00:00Z")

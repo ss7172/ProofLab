@@ -172,6 +172,14 @@ class _Base(object):
     def answers_index(self):
         return list(self.pack_index().get("answers", []))
 
+    def _interval_covers(self, key, asked):
+        a = self.answer(key) or {}
+        sc = (a.get("query") or {}).get("scope") or a.get("scope") or {}
+        start, end = sc.get("start"), sc.get("end")
+        if not (start and end) and ".." in key.split("|")[-1]:
+            start, end = key.split("|")[-1].split("..", 1)
+        return _covers(start, end, asked)
+
     def find_answer(self, control_ref, kind, scope_id=None, params=None):
         """Locate a stored answer by control + scope (no computation)."""
         params = params or {}
@@ -181,6 +189,10 @@ class _Base(object):
             parts = k.split("|")
             if len(parts) != 3 or parts[0] != control_ref or parts[1] != kind:
                 continue
+            if kind == "interval" and scope_id is not None and ".." in str(scope_id):
+                if parts[2].upper() == str(scope_id).upper() or self._interval_covers(entry["key"], str(scope_id)):
+                    hits.append(entry["key"])
+                continue        # PR-54: an interval question never falls back to another window
             if scope_id is not None and parts[2].upper() != str(scope_id).upper():
                 continue
             hits.append(entry["key"])
@@ -193,6 +205,39 @@ class _Base(object):
                     narrowed.append(key)
             hits = narrowed or hits
         return hits[0] if hits else None
+
+
+def _ts(text):
+    import datetime as _dt
+    try:
+        return _dt.datetime.strptime(str(text)[:19], "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        return None
+
+
+def _covers(start, end, asked):
+    """True when the stored window [start, end] contains the asked one. Asked times may be time of day only
+    ('13:50:00Z'): they are placed on the stored window's dates (an end before its start means the next day)."""
+    import datetime as _dt
+    s, e = _ts(start), _ts(end)
+    if s is None or e is None:
+        return False
+    a1, a2 = [x.strip() for x in asked.split("..", 1)]
+    if "T" in a1 and "T" in a2:
+        t1, t2 = _ts(a1), _ts(a2)
+    else:
+        try:
+            h1 = _dt.datetime.strptime(a1.split("T")[-1][:8], "%H:%M:%S").time()
+            h2 = _dt.datetime.strptime(a2.split("T")[-1][:8], "%H:%M:%S").time()
+        except ValueError:
+            return False
+        t1 = _dt.datetime.combine(s.date(), h1)
+        if t1 < s:
+            t1 += _dt.timedelta(days=1)
+        t2 = _dt.datetime.combine(t1.date(), h2)
+        if t2 <= t1:
+            t2 += _dt.timedelta(days=1)
+    return t1 is not None and t2 is not None and s <= t1 < t2 <= e
 
 
 class FixturesSource(_Base):
@@ -370,9 +415,13 @@ class PackSource(_Base):
         return self._auditors.get(ident)
 
     def run(self, ident):
+        low = str(ident or "").lower()
         for alias, run in self._runs.items():
-            if ident in (alias, run.get("cid")):
+            if low in (str(alias).lower(), str(run.get("cid") or "").lower()):
                 return run
+        for entry in self.index.get("runs", []):      # PR-54: no runs/*/run.json in the pack -> the pack-index entry
+            if low in (str(entry.get("alias") or "").lower(), str(entry.get("cid") or "").lower()):
+                return dict(entry, source="pack-index runs[]")
         return None
 
     def declared_window(self):
@@ -385,6 +434,9 @@ class PackSource(_Base):
                 return None
             w = w.get("event_window") if isinstance(w.get("event_window"), dict) else w
             return {"start": w.get("start"), "end": w.get("end"), "note": w.get("note")}
+        ew = (self.index.get("pack") or {}).get("event_window")   # PR-54: the pack's own event window (pack-index)
+        if isinstance(ew, dict) and ew.get("start") and ew.get("end"):
+            return {"start": ew.get("start"), "end": ew.get("end"), "note": "pack-index pack.event_window"}
         return None
 
     def run_catalogue(self):
@@ -393,13 +445,15 @@ class PackSource(_Base):
         res = E.runs_list(E.Pack(self.root))
         win = self.declared_window() or {}
         aliases = dict((e.get("cid"), e.get("alias")) for e in self.index.get("runs", []))
+        ientry = dict((e.get("cid"), e) for e in self.index.get("runs", []))
         rows = []
         for r in res["rows"]:
-            start = r.get("start")
+            start = r.get("start") or (ientry.get(r["cid"]) or {}).get("started_at")
             inside = None
             if start and win.get("start") and win.get("end"):
                 inside = E._utc_key(win["start"]) <= E._utc_key(start) <= E._utc_key(win["end"])
-            rows.append({"alias": aliases.get(r["cid"]), "cid": r["cid"], "provenance": r.get("provenance"),
+            rows.append({"alias": aliases.get(r["cid"]), "cid": r["cid"],
+                         "provenance": (ientry.get(r["cid"]) or {}).get("provenance") or r.get("provenance"),
                          "source": res["source"], "assessed": r.get("assessed"), "in_window": inside,
                          "label": r.get("label"), "first_seen": start})
         if rows:
