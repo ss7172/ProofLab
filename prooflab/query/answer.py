@@ -348,8 +348,26 @@ def _record_rows(recs, ok, manifest_status, rc_matches):
     return rows
 
 
-def _human_loops(recs):
+def _human_loops(recs, pack=None, cid=None, control=None):
     out = []
+    items = E.pack_human_loop(pack, cid, control) if pack is not None and cid else []
+    if items:
+        by = dict((x["kind"], x) for x in items)
+        fnd, dl, an, cl = by.get("finding"), by.get("notification"), by.get("assurance"), by.get("closure")
+        inc = None
+        if dl:
+            m = re.search(r"\b(INC\d+)\b", dl["text"])
+            inc = m.group(1) if m else None
+        if cl and not inc:
+            m = re.search(r"\b(INC\d+)\b", cl["text"])
+            inc = m.group(1) if m else None
+        out.append({"finding_id": fnd["ref"] if fnd else (cl or {}).get("ref"), "incident": inc,
+                    "delivery": {"state": "DELIVERED" if dl else "NOT_RECORDED", "at": _utc_or(dl["text"].split(" DELIVERED ")[-1].split(" ")[0]) if dl else None},
+                    "response": {"state": "UNKNOWN", "actor": None, "at": None},
+                    "assurance_agent": {"state": "ANALYSIS_WRITTEN" if an else "UNKNOWN", "at": None},
+                    "closure": {"state": cl["state"] if cl else "OPEN"},
+                    "lines": [x["text"] for x in items], "source": "joined-from: findings/, servicenow/delivery-log.jsonl, closures/"})
+        return out
     notes = [r for r in recs if r.get("record_kind") == "notification"]
     for f in [r for r in recs if r.get("record_kind") == "finding"]:
         out.append({"finding_id": str(f.get("record_id")), "incident": f.get("incident") or None,
@@ -613,7 +631,7 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
                     "evidence_sufficiency": a.get("evidence_sufficiency") if a.get("evidence_sufficiency") in ("COMPLETE", "PARTIAL", "UNKNOWN") else "UNKNOWN"},
         "enforcement": _enforcement(control, recs, a),
         "audit_question": _audit_question(control, a, rule, ctx),
-        "human_loops": _human_loops(recs), "aict": _aict(pack),
+        "human_loops": _human_loops(recs, pack, cid, control), "aict": _aict(pack),
         "records": _record_rows(recs + ([{"record_id": a["record_id"], "record_kind": "assessment", "detail": "stored assessment"}] if a.get("record_id") else []),
                                 ok, src["manifest_status"], rc_match),
         "gaps": gaps, "tickmarks": tick,
@@ -725,7 +743,7 @@ _QMAP = (("who", ("WHO acted", "WHO owns it")), ("what", ("WHAT it touched",)), 
 
 _QSOURCE = {"WHO acted": "recorded (actor.id); version joined-from: register inventory",
             "WHO owns it": "joined-from: register inventory + register owner; recorded (control.owner)",
-            "WHAT it touched": "recorded (model.id, tool.name)",
+            "WHAT it touched": "recorded (model.id, tool.name); human loop joined-from: findings/, servicenow/delivery-log.jsonl, closures/",
             "AUTHORIZED": "recorded (platform_decision records)",
             "APPROVED": "joined-from: register/approval* (witnessed-by:ServiceNow); recorded (detail of ep0.declared_treatment)",
             "INTEGRITY": "joined-from: MANIFEST.json, derived/corroboration/",

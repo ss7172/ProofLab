@@ -471,7 +471,7 @@ def control_run(pack, control, cid, recompute_fn=None):
         if not x.get("version") and comps.get(x.get("actor")):
             x["version"] = "%s (inventory %s)" % (comps[x["actor"]], inv_name)
     out["eps"] = _eps(recs)
-    out["human_loop"] = _human_loop(pack, cid, recs)
+    out["human_loop"] = _human_loop(pack, cid, recs, control)
     fn = recompute_fn or recompute
     rc = fn(pack, control, cid)
     if rc is None:
@@ -505,10 +505,81 @@ def _eps(recs):
     return out
 
 
-def _human_loop(pack, cid, recs):
+def _human_loop(pack, cid, recs, control=None):
     hl = [r for r in recs if r.get("record_kind") in ("finding", "notification")]
     return [{"kind": r["record_kind"], "verdict": r.get("verdict"), "detail": r.get("detail"),
-             "record_id": r.get("record_id")} for r in hl]
+             "record_id": r.get("record_id")} for r in hl] + [
+        {"kind": re.sub(r" \([^()]*\)$", "", x["text"]), "verdict": "->", "detail": x["text"], "record_id": x["ref"]}
+        for x in pack_human_loop(pack, cid, control)]
+
+
+def _delivery_log(pack):
+    try:
+        with open(pack.p("servicenow", "delivery-log.jsonl"), "r", encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+    except (IOError, OSError):
+        return []
+    out = []
+    for line in lines:
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(d, dict):
+            out.append(d)
+    return out
+
+
+def pack_human_loop(pack, cid, control=None):
+    """The human loop for one run, read from the pack files (never from the store): the staged finding (findings/), its
+    ServiceNow delivery and the Assurance analysis (servicenow/delivery-log.jsonl), and its closure by a re-test
+    (closures/). Also the other side: a run that is the re-test closing an earlier finding. Each item says its file."""
+    import glob as _glob
+    items, log = [], _delivery_log(pack)
+    fids = []
+    for path in sorted(_glob.glob(pack.p("findings", "*.json"))):
+        f = read_json(path)
+        if not isinstance(f, dict) or f.get("scope_id") != cid or (control and f.get("control_ref") != control):
+            continue
+        fid = f.get("finding_id") or "ifabric:%s:%s:%s:%s:finding" % (f.get("control_ref"), f.get("threshold_version"),
+                                                                      f.get("scope_kind") or "run", cid)
+        fids.append(fid)
+        items.append({"kind": "finding", "state": f.get("verdict") or NOT_RECORDED, "ref": "findings/" + os.path.basename(path),
+                      "text": "finding %s %s %s on %s, detected %s (findings/%s)" % (
+                          f.get("control_ref"), f.get("threshold_version"), f.get("verdict"), cid, f.get("detected_at") or NOT_RECORDED,
+                          os.path.basename(path))})
+    for fid in fids:
+        rows = [d for d in log if d.get("finding_id") == fid]
+        dl = [d for d in rows if d.get("state") == "DELIVERED"]
+        an = [d for d in rows if d.get("state") == "ANALYSIS_WRITTEN"]
+        rl = [d for d in rows if d.get("state") == "RETEST_LINKED"]
+        if dl:
+            items.append({"kind": "notification", "state": "DELIVERED", "ref": "servicenow/delivery-log.jsonl",
+                          "text": "incident %s DELIVERED %s (servicenow/delivery-log.jsonl)" % (dl[0].get("number"), dl[0].get("ts"))})
+        if an:
+            items.append({"kind": "assurance", "state": "ANALYSIS_WRITTEN", "ref": "servicenow/delivery-log.jsonl",
+                          "text": "Assurance agent analysis written on %s %s (servicenow/delivery-log.jsonl%s)" % (
+                              an[0].get("number"), an[0].get("ts"), (", " + an[0]["evidence"]) if an[0].get("evidence") else "")})
+        if rl:
+            items.append({"kind": "retest-link", "state": "RETEST_LINKED", "ref": "servicenow/delivery-log.jsonl",
+                          "text": "re-test linked on %s %s (servicenow/delivery-log.jsonl)" % (rl[0].get("number"), rl[0].get("ts"))})
+    for path in sorted(_glob.glob(pack.p("closures", "*.json"))):
+        c = read_json(path)
+        if not isinstance(c, dict) or (control and c.get("control_ref") != control):
+            continue
+        rt = c.get("retest") or {}
+        if c.get("finding_id") in fids or c.get("scope_id") == cid:
+            items.append({"kind": "closure", "state": "CLOSED_BY_RETEST" if c.get("closed_by") == "retest" else str(c.get("closed_by") or NOT_RECORDED),
+                          "ref": "closures/" + os.path.basename(path),
+                          "text": "finding closed %s by the re-test run %s (%s %s); incident %s stays as ServiceNow shows it (the re-test closes the finding, not the incident) (closures/%s)" % (
+                              c.get("closed_at") or NOT_RECORDED, c.get("retest_cid") or NOT_RECORDED, rt.get("verdict") or NOT_RECORDED,
+                              rt.get("threshold_version") or "", c.get("incident") or "no incident", os.path.basename(path))})
+        elif c.get("retest_cid") == cid:
+            items.append({"kind": "closure", "state": "RETEST_CLOSED", "ref": "closures/" + os.path.basename(path),
+                          "text": "this run is the re-test that closed the finding behind %s (%s's finding; %s %s at %s; closures/%s)" % (
+                              c.get("incident") or "no incident", c.get("scope_id"), rt.get("verdict") or NOT_RECORDED,
+                              rt.get("threshold_version") or "", c.get("closed_at") or NOT_RECORDED, os.path.basename(path))})
+    return items
 
 
 # ---------------------------------------------------------------- control test: per window
@@ -718,6 +789,8 @@ def incident(pack, ident):
     integ = ["MANIFEST.json %s" % ("present" if manifest else "not yet written when this view was built (it is written last at pack build; verify: python3 tools/manifest.py verify .)"),
              ("corroboration report: %s mismatches" % len(corr.get("mismatches", []))) if isinstance(corr, dict)
              else "no corroboration report for this run (gap)"]
+    loop = ["what happened (human loop): " + x["text"] for x in pack_human_loop(pack, cid)]
+    what = loop + what
     timeline = ["%s %s %s %s" % (r.get("ts"), r.get("record_kind"), r.get("ep.id") or "-", r.get("record_id")) for r in recs]
     cap = 12
     if len(timeline) > cap:
@@ -727,7 +800,7 @@ def incident(pack, ident):
         _q("WHO acted", who, pick(lambda r: r.get("actor.id")), "One shared platform principal (gap 2); an AWS record names a role, not a person"),
         _q("WHO owns it", owns, pick(lambda r: r.get("control.owner") or r.get("component.owner")),
            "Platform components' owners are our declaration (inventory %s)" % (inv_name or UNKNOWN)),
-        _q("WHAT it touched", what, pick(lambda r: r.get("model.id") or r.get("tool.name")),
+        _q("WHAT it touched", what, pick(lambda r: r.get("model.id") or r.get("tool.name") or r.get("record_kind") in ("finding", "notification")),
            "Undeclared tools are allowed unless a Cedar rule forbids them (gap 3)"),
         _q("AUTHORIZED", authz, pick(lambda r: r.get("record_kind") == "platform_decision"),
            "The platform records blocks and pauses as ALLOW (gap 4)", None if authz else "no platform_decision records"),

@@ -48,6 +48,9 @@ def render_answer(d):
     for key, q in d["audit_question"].items():
         lines.append("  %-20s %s %s" % (key, q["text"], _flag(q.get("flag"))))
     for h in d["human_loops"]:
+        if h.get("lines"):
+            lines += ["human loop: %s" % x for x in h["lines"]]
+            continue
         lines.append("human loop: %s delivery %s, response %s, closure %s" % (
             h["finding_id"], h["delivery"]["state"], h["response"]["state"], h["closure"]["state"]))
     lines.append("AICT: %s, monitor %s" % (d["aict"]["status"], d["aict"].get("monitor", "UNKNOWN")))
