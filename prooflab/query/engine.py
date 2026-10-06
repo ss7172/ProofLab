@@ -583,6 +583,7 @@ def control_window(pack, control, window):
                else "INDETERMINATE" if indeterminate else "SATISFIED")
     if verdict == "NOT_ASSESSED":
         gaps.append("no run in scope: empty denominator, not 100%")
+    __import__("prooflab.query.run_window", fromlist=["annotate_window"]).annotate_window(pack, control, bounds, counted, listed, gaps)   # PR-53
     return {"kind": "control-window", "control": control, "window": [bounds[0], bounds[1]], "verdict": verdict,
             "counted": counted, "listed": listed, "per_version": per_version, "gaps": gaps,
             "window_rule": "E-06 (query engine; ARCH 3.4)"}

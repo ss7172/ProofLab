@@ -2,6 +2,7 @@
 
     query --control C16|C7|C9 --run <CID>
     query --control C16|C7|C9 --window <T1>..<T2>
+    query --control C16 --run <CID> --window <T1>..<T2>   the run's verdict + the evidence slice inside the window
     query --incident <CID or UTC time>      the six auditor questions
     query --runs | --risk [ID] | --inventory | --claim
     common: --pack <dir> (default: current directory), --json
@@ -143,7 +144,25 @@ def render_simple(a):
     return lines
 
 
-RENDER = {"control-run": render_control_run, "control-window": render_window, "incident": render_incident,
+def _run_window(pack, args, G, RW):
+    """--run with --window: T1/T2 resolved exactly as the grammar does (HH:MMZ inside the pack's event window)."""
+    if ".." not in args.window:
+        return {"kind": "error", "verdict": "NOT_ASSESSED", "message": "--window needs <T1>..<T2>"}
+    t1, t2, err = G.resolve_times(pack, *args.window.split("..", 1))
+    if err:
+        return {"kind": "error", "verdict": "NOT_ASSESSED", "message": err}
+    cid, cands = G.resolve_run(pack, args.run)
+    if cid is None and cands:
+        return {"kind": "error", "verdict": "NOT_ASSESSED", "message": "ambiguous run %r: %s" % (args.run, ", ".join(cands))}
+    return RW.compose(pack, args.control, cid or args.run, t1, t2)
+
+
+def _render_run_window(a):
+    from prooflab.query import run_window as RW
+    return RW.render(a)
+
+
+RENDER = {"control-run": render_control_run, "control-run-window": _render_run_window, "control-window": render_window, "incident": render_incident,
           "runs": render_runs, "risk": render_simple, "inventory": render_simple, "claim": render_simple}
 
 
@@ -187,8 +206,11 @@ def main(argv=None):
             ans = E.control_run(pack, args.control, args.run)
         elif args.window and not args.run:
             ans = E.control_window(pack, args.control, args.window)
+        elif args.run and args.window:          # PR-53: run + window = the run's verdict + the evidence slice
+            from prooflab.query import run_window as RW
+            ans = _run_window(pack, args, G, RW)
         else:
-            print("usage: --control <C> needs exactly one of --run <CID> or --window <T1>..<T2>", file=sys.stderr)
+            print("usage: --control <C> needs --run <CID>, --window <T1>..<T2>, or both", file=sys.stderr)
             return 2
     elif args.incident:
         ans = E.incident(pack, args.incident)
