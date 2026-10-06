@@ -89,11 +89,11 @@ def sidecar_for(raw_path):
 
 
 def parse_raw_ref(ref):
-    """raw:<path>#L<n> -> (path, n) or None."""
-    m = re.match(r"^raw:([^#]+)#L(\d+)$", ref or "")
-    if not m or int(m.group(2)) < 1:
+    """raw:<path>#L<n> -> (path, n); raw:<path> (no line) -> (path, 1); else None."""
+    m = re.match(r"^raw:([^#]+)(?:#L(\d+))?$", ref or "")
+    if not m or (m.group(2) is not None and int(m.group(2)) < 1):
         return None
-    return m.group(1), int(m.group(2))
+    return m.group(1), int(m.group(2) or 1)
 
 
 def manifest_paths_sha(root):
@@ -420,7 +420,31 @@ class PackSource(_Base):
             return rel in self._manifest
         return any((parse_raw_ref((r.get("source") or {}).get("raw_ref")) or ("",))[0] == rel for r in self._records)
 
+    def _store_line(self, rid):
+        """record:<record_id> -> the exact line in store/records.jsonl (only when MANIFEST lists that file)."""
+        rel = "store/records.jsonl"
+        if self._manifest is None or rel not in self._manifest:
+            return None
+        if getattr(self, "_store_index", None) is None:
+            self._store_index = {}
+            path = safe_join(self.root, rel)
+            if path and os.path.isfile(path) and os.path.getsize(path) <= RAW_CAP_BYTES * 8:
+                with open(path, "r", encoding="utf-8", errors="replace") as handle:
+                    for n, line in enumerate(handle.read().split("\n"), 1):
+                        try:
+                            key = json.loads(line).get("record_id")
+                        except (ValueError, AttributeError):
+                            continue
+                        if key and key not in self._store_index:
+                            self._store_index[key] = (n, line)
+        hit = self._store_index.get(rid)
+        if hit is None:
+            return None
+        return {"line": hit[1], "sha256": sha256_text(hit[1]), "capture": None, "path": rel, "line_no": hit[0]}
+
     def raw(self, ref):
+        if (ref or "").startswith("record:"):
+            return self._store_line(ref[len("record:"):])
         parsed = parse_raw_ref(ref)
         if not parsed:
             return None

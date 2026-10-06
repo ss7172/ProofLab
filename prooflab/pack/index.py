@@ -203,6 +203,15 @@ def limit_of(entry, key, default_unit):
             "unit": entry.get("metric_unit") or default_unit}
 
 
+def _c7_floor(ref, e):
+    """C7's coverage floor from its one-string limits (coverage_min_pct=..;gap_max_ms=..;...), else None."""
+    if ref != "C7":
+        return None
+    from prooflab.evaluators import claim as _claim
+    v = _num(_claim.parse_limits(e.get("observation_limit")).get("coverage_min_pct"))
+    return {"value": v, "operator": ">=", "unit": "% of expected events observed"} if v is not None else None
+
+
 def register_control(ref, e, owner):
     cid, name, mode = CONTROL_NAMES[ref]
     ns = NOT_SUPPLIED
@@ -213,7 +222,7 @@ def register_control(ref, e, owner):
         "version_date": e.get("version_date") or "1970-01-01",
         "owner": person(e.get("owner_name"), e.get("owner"), "control owner") if e.get("owner") else owner,
         "metric": e.get("metric") or ns,
-        "observation_limit": limit_of(e, "observation_limit", "unit") or {"value": 0, "operator": "<=", "unit": "unknown"},
+        "observation_limit": limit_of(e, "observation_limit", "unit") or _c7_floor(ref, e) or {"value": 0, "operator": "<=", "unit": "unknown"},
         "exception_tolerance": limit_of(dict(e, limit_direction="<=", metric_unit=e.get("exception_unit") or "exceptions"),
                                         "exception_tolerance", "exceptions") or {"value": 0, "operator": "<=", "unit": "exceptions"},
         "measurement_basis": e.get("measurement_basis") or ns,

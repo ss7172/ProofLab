@@ -130,9 +130,17 @@ def _rule(pack, control, a, gaps):
     frozen = _utc_or(t1) or _utc_or(vdate)
     if frozen is None:
         return None, None
-    lim = _num(a["limit"])
+    lim, op = _num(a["limit"]), "<="
     if lim is None:
         lim = _num(entry.get("observation_limit"))
+    extra = {}
+    if lim is None and control == "C7":
+        # C7's numbers live in one string (`coverage_min_pct=..;gap_max_ms=..;violating_gap_share_max_pct=..`, the form
+        # prooflab.evaluators.c7.limits_of reads): coverage is the judged floor, so the operator is >=
+        from prooflab.evaluators import claim as _claim
+        parts = _claim.parse_limits(entry.get("observation_limit"))
+        lim, op = _num(parts.get("coverage_min_pct")), ">="
+        extra = dict((k, _num(v)) for k, v in parts.items() if k != "coverage_min_pct" and _num(v) is not None)
     if lim is None:
         return None, None
     tol = _num(entry.get("exception_tolerance"))
@@ -152,11 +160,13 @@ def _rule(pack, control, a, gaps):
             "version_date": vdate[:10] if re.match(r"^\d{4}-\d\d-\d\d", vdate) else "1970-01-01",
             "frozen_at": frozen, "owner": _person(owner), "approval": approval, "date_before_scope": before,
             "statement": entry.get("metric") or entry.get("name") or E.UNKNOWN,
-            "observation_limit": _limit(lim, "<=", unit),
+            "observation_limit": _limit(lim, op, unit),
             "exception_tolerance": _limit(tol, "<=", "breached runs"),
             "measurement_basis": entry.get("measurement_basis") or E.UNKNOWN,
             "source_ref": "register:register/versions/%s.yaml#%s" % (rname, control),
             "register_sha256": _file_sha(pack.p("register", "versions", "%s.yaml" % rname))}
+    if extra:
+        rule["other_limits"] = extra      # e.g. C7 gap_max_ms, violating_gap_share_max_pct (judged by the evaluator)
     return rule, entry
 
 
@@ -229,14 +239,69 @@ def _txt(text, refs=None, flag=None):
     return d
 
 
+def _inventory_versions(pack):
+    """{component_id: (inventory name, approved_version)} from the frozen inventory in the pack (empty when none)."""
+    try:
+        name, inv = E._inventory(pack)
+    except Exception:       # an unreadable inventory is a gap, never a crash
+        return {}
+    out = {}
+    for c in (inv or {}).get("components") or (inv or {}).get("entries") or []:
+        if isinstance(c, dict) and c.get("component_id"):
+            out[c["component_id"]] = (name, c.get("approved_version"))
+    return out
+
+
+def stored_findings(pack, cid):
+    """The staged findings/*.json for one run, joined to the ServiceNow delivery log in the pack (incident + state)."""
+    import glob as _glob
+    deliv = {}
+    try:
+        with open(pack.p("servicenow", "delivery-log.jsonl"), "r", encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+    except (IOError, OSError):
+        lines = []
+    for line in lines:
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("finding_id"):
+            cur = deliv.setdefault(d["finding_id"], {})
+            if d.get("number"):
+                cur["incident"] = d["number"]
+            if d.get("state"):
+                cur["state"] = d["state"]
+                cur["at"] = d.get("ts")
+            if d.get("owner"):
+                cur["owner"] = d["owner"]
+    out = []
+    for path in sorted(_glob.glob(pack.p("findings", "*.json"))):
+        f = E.read_json(path)
+        if not isinstance(f, dict) or f.get("scope_id") != cid:
+            continue
+        fid = "ifabric:%s:%s:%s:%s:finding" % (f.get("control_ref"), f.get("threshold_version"), f.get("scope_kind") or "run", cid)
+        out.append(dict(f, finding_id=fid, path="findings/" + os.path.basename(path), delivery=deliv.get(fid) or {}))
+    return out
+
+
 def _audit_question(control, a, rule, ctx):
     recs, cid = ctx["recs"], ctx["cid"]
     actors = E._actors(recs)
     stopped = any(r.get("verdict") == "DENY" for r in recs if r.get("record_kind") in ("decision", "platform_decision"))
     told = [r for r in recs if r.get("record_kind") in ("finding", "notification")]
+    staged = [f for f in ctx.get("findings") or [] if f.get("control_ref") == control]
     rid = lambda rows: ["record:%s" % r["record_id"] for r in rows[:3] if r.get("record_id")]
-    agents = "; ".join("%s on %s v%s (principal %s)" % tuple(x or E.UNKNOWN for x in (
-        x["actor"], x["runtime"], x["version"], x["principal"])) for x in actors)
+    inv = ctx.get("inventory") or {}
+
+    def _agent(x):
+        ver = x["version"]
+        if not ver and x["actor"] in inv and inv[x["actor"]][1]:
+            ver = "%s (inventory %s)" % (inv[x["actor"]][1], inv[x["actor"]][0])
+        return "%s on runtime %s, version %s (principal %s)" % (
+            x["actor"] or E.UNKNOWN, x["runtime"] or "not recorded", ver or "not recorded",
+            x["principal"] or "not recorded in the records")
+    agents = "; ".join(_agent(x) for x in actors)
     meas = a.get("measured") or {}
     return {
         "what_was_done": _txt("%s over %s %s: %d records, measured %s %s." % (
@@ -250,15 +315,19 @@ def _audit_question(control, a, rule, ctx):
         "under_whose_authority": _txt("register owner %s; approval %s" % (rule["owner"]["name"], rule["approval"]["status"]),
                                       [rule["source_ref"]], "OK" if rule["approval"]["status"] == "APPROVED" else "FLAG"),
         "rule_checked": _txt("%s %s: %s" % (control, rule["threshold_version"], rule["statement"]), [rule["source_ref"]]),
-        "limit_in_force": _txt("%s %s per run, version %s, frozen %s (%s the scope)" % (
-            rule["observation_limit"]["value"], rule["observation_limit"]["unit"], rule["threshold_version"], rule["frozen_at"],
+        "limit_in_force": _txt("%s %s %s per run, version %s, frozen %s (%s the scope)" % (
+            rule["observation_limit"]["operator"], rule["observation_limit"]["value"], rule["observation_limit"]["unit"], rule["threshold_version"], rule["frozen_at"],
             "before" if rule["date_before_scope"] else "NOT proven before"), [rule["source_ref"]],
             "OK" if rule["date_before_scope"] else "FLAG"),
         "decision": {"text": "control test %s (%s)%s" % (a["verdict"], V.display(a["verdict"]), "; a call was DENIED inline" if stopped else ""),
                      "refs": ["assessment:%s" % a["assessment_id"]] if a.get("assessment_id") else [],
                      "outcome": "STOPPED" if stopped else "ALLOWED"},
-        "who_was_told": _txt("; ".join("%s %s" % (r["record_kind"], r.get("verdict")) for r in told) or "no finding or notification record for this scope (gap)",
-                             rid(told), None if told else "GAP"),
+        "who_was_told": _txt("; ".join(["%s %s" % (r["record_kind"], r.get("verdict")) for r in told] + [
+            "finding %s %s -> %s %s%s" % (f.get("control_ref"), f.get("verdict"), (f["delivery"].get("incident") or "no incident recorded"),
+                                         f["delivery"].get("state") or "not delivered", (" to " + f["delivery"]["owner"]) if f["delivery"].get("owner") else "")
+            for f in staged]) or "no finding or notification record for this scope (none needed when the control held)",
+                             rid(told) + ["finding:%s" % f["path"] for f in staged][:3],
+                             None if (told or staged) else ("GAP" if a.get("verdict") == V.BREACHED else None)),
         "unchanged_since": _txt("MANIFEST.json status %s" % ctx["manifest_status"], ["manifest:MANIFEST.json"] if ctx["manifest_status"] != "UNVERIFIED" else None,
                                 "OK" if ctx["manifest_status"] == "VERIFIED" else "FLAG"),
     }
@@ -283,11 +352,15 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
     ms = ans["measured"] or {}
     mval = _num(ms.get("value"))
     lim = _num(ans["limit"])
-    within = None if (mval is None or lim is None) else mval <= lim
+    op = "<="
+    if lim is None:
+        lim, op = rule["observation_limit"]["value"], rule["observation_limit"]["operator"]
+    within = None if (mval is None or lim is None) else (mval >= lim if op == ">=" else mval <= lim)
     exc = a["exceptions"] or []
     verdict = ans["verdict"]
-    reason = "measured %s vs limit %s %s%s" % (E.UNKNOWN if mval is None else ms.get("value"), E.UNKNOWN if lim is None else a["limit"],
-                                              ms.get("unit") or "", ("; over by %s" % ans["overshoot"]) if ans.get("overshoot") and ans["overshoot"] > 0 else "")
+    reason = "measured %s vs limit %s %s %s%s" % (E.UNKNOWN if mval is None else (round(mval, 2) if isinstance(mval, float) else mval),
+                                                 op, E.UNKNOWN if lim is None else lim, ms.get("unit") or "",
+                                                 ("; over by %s" % ans["overshoot"]) if ans.get("overshoot") and ans["overshoot"] > 0 else "")
     den = a["denominators"] or {}
     comp = a["completeness"] or {}
     exp = _num(comp.get("expected"))
@@ -301,7 +374,8 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
     rc_match = rc.startswith("matches")
     tick = _tick_text(ok, src["manifest_status"], a, rc, rule, E.read_json(pack.p("derived", "corroboration", cid + ".json")))
     ctx = {"recs": recs, "cid": cid, "scope_kind": "run", "scope_label": parse.get("alias") or cid, "start": ans.get("run_start"),
-           "end": E.run_end(pack, cid), "manifest_status": src["manifest_status"]}
+           "end": E.run_end(pack, cid), "manifest_status": src["manifest_status"], "findings": stored_findings(pack, cid),
+           "inventory": _inventory_versions(pack)}
     scope = {"kind": "run", "id": parse.get("alias") or cid, "cid": cid}
     if parse.get("alias"):
         scope["alias"] = parse["alias"]
@@ -319,7 +393,7 @@ def compose_run(pack, parse, ans=None, started=None, now=None):
         "rule": rule, "scope": scope, "population": population,
         "measurement": {"value": mval, "unit": ms.get("unit") or E.UNKNOWN,
                         "formula": str(a.get("formula") or rule["measurement_basis"])},
-        "comparison": {"limit": lim, "operator": "<=", "delta": (mval - lim) if (mval is not None and lim is not None) else None,
+        "comparison": {"limit": lim, "operator": op, "delta": (mval - lim) if (mval is not None and lim is not None) else None,
                        "within_limit": within, "exceptions_count": len(exc), "exceptions_allowed": rule["exception_tolerance"]["value"],
                        "exceptions_unit": rule["exception_tolerance"]["unit"]},
         "exceptions": [x if isinstance(x, dict) else {"note": str(x)} for x in exc],

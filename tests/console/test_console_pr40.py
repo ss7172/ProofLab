@@ -93,9 +93,10 @@ def test_native_measured_keys_reach_the_renderer():                  # D4
     assert kept["measured"]["value"] == 5 and kept["limit"] == 7
 
 
-def test_strict_readme_refuses_an_unfilled_template(tmp_path):       # D3
+def test_strict_readme_passes_once_the_build_fills_the_template(tmp_path):    # D3 (PR-40b: the build fills it)
     out = str(tmp_path / "p")
-    assert B.main(["build", "--out", out, "--src", SRC, "--strict-readme"]) == 2
+    assert B.main(["build", "--out", out, "--src", SRC, "--strict-readme"]) == 0
+    assert B.readme_placeholders(os.path.join(out, "README.md")) == []
     assert "Open the console" in open(os.path.join(REPO, "evidence-templates", "README.md")).read()
 
 

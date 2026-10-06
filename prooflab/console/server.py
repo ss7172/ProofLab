@@ -95,6 +95,9 @@ def parse_question(text):
     m = re.search(r"(six questions|auditor).*?(inc\d+)", t)
     if m:
         return {"kind": "auditor", "id": m.group(2).upper(), "normalized": "auditor " + m.group(2).upper()}
+    m = re.search(r"(?:six questions|auditor)(?:\s+for)?\s+([a-z0-9][a-z0-9_.-]*)$", t)
+    if m:       # a run id (the pack stores auditor/<cid>.json); run ids are lower case
+        return {"kind": "auditor", "id": m.group(1), "normalized": "auditor " + m.group(1)}
     m = re.search(r"(reconstruct|trail|ledger)\s+run\s+([a-z0-9][a-z0-9_.-]*)", t)
     if m:
         return {"kind": "run", "id": m.group(2).upper(), "normalized": "ledger --run " + m.group(2).upper()}
@@ -320,13 +323,50 @@ class Handler(BaseHTTPRequestHandler):
         return meta
 
     def _stamp(self, doc):
-        """When the pack is not VERIFIED, every answer says so (AT-05). The stored answer_id is untouched."""
+        """Integrity is stamped at serve time: a stored answer is composed before MANIFEST.json exists (the manifest
+        lists the answer), so its own manifest fields are stale by construction. In PACK mode the live check wins
+        (AT-05: when the pack is not VERIFIED every answer says so). Only integrity fields change; no verdict, and the
+        stored answer_id is untouched."""
         doc = flag_closures(json.loads(json.dumps(doc)))
-        status = self.server.source.integrity().get("status")
-        if status in ("VERIFIED", None) or not isinstance(doc, dict):
+        if not isinstance(doc, dict):
             return doc
+        src = self.server.source
+        live = src.integrity()
+        status = live.get("status")
+        if src.name != "pack" or status is None:
+            if status in ("VERIFIED", None):
+                return doc
+            out = dict(doc)
+            out["source"] = dict(doc.get("source") or {}, manifest_status="UNVERIFIED" if status != "MODIFIED" else "MODIFIED")
+            return out
+        shown = status if status in ("VERIFIED", "MODIFIED") else "UNVERIFIED"
         out = dict(doc)
-        out["source"] = dict(doc.get("source") or {}, manifest_status="UNVERIFIED" if status != "MODIFIED" else "MODIFIED")
+        if isinstance(doc.get("source"), dict) or doc.get("schema") == "ifabric.answer/v1":
+            out["source"] = dict(doc.get("source") or {}, manifest_status=shown,
+                                 manifest_sha256=live.get("manifest_sha256") or (doc.get("source") or {}).get("manifest_sha256"),
+                                 integrity_checked="at serve time (%s)" % time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+        aq = out.get("audit_question")
+        if isinstance(aq, dict) and isinstance(aq.get("unchanged_since"), dict):
+            aq["unchanged_since"] = {"text": "MANIFEST.json status %s (checked when served: %d files)" % (shown, live.get("files", 0)),
+                                     "refs": ["manifest:MANIFEST.json"], "flag": "OK" if shown == "VERIFIED" else "FLAG"}
+        tm = out.get("tickmarks")
+        if isinstance(tm, dict) and "A" in tm:
+            tm["A"] = "agreed to MANIFEST.json (%s, checked when served)" % shown
+        listed = getattr(src, "_manifest", None) or {}
+        changed = set(live.get("changed") or []) | set(live.get("missing") or [])
+        for row in out.get("records") or []:
+            if not isinstance(row, dict):
+                continue
+            ref = str(row.get("ref", ""))
+            if ref.startswith("record:"):
+                rel = "store/records.jsonl"
+                row["manifest"] = "MISSING" if rel not in listed else ("CHANGED" if rel in changed else "OK")
+            elif ref.startswith("assessment:"):
+                row["manifest"] = "OK" if shown == "VERIFIED" else shown
+            else:
+                continue
+            if row["manifest"] == "OK" and "A" not in (row.get("tickmarks") or []):
+                row["tickmarks"] = ["A"] + list(row.get("tickmarks") or [])
         return out
 
     def _api(self, path, params, method):

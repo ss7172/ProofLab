@@ -364,8 +364,29 @@ def control_run(pack, control, cid, recompute_fn=None):
     mv, lv = _num(ms.get("value")), _num(a["limit"])
     out["measured"], out["limit"] = ms, a["limit"]
     out["overshoot"] = (mv - lv) if (mv is not None and lv is not None) else None
+    if out["limit"] is None and entry.get("observation_limit") is not None:
+        lv2 = _num(entry["observation_limit"])
+        if lv2 is None and control == "C7":    # C7's numbers in one string (prooflab.evaluators.c7.limits_of reads it)
+            from prooflab.evaluators import claim as _claim
+            parts = _claim.parse_limits(entry["observation_limit"])
+            if parts.get("coverage_min_pct") is not None:
+                out["limit"] = ">= %s %% coverage (%s)" % (parts["coverage_min_pct"], ", ".join(
+                    "%s %s" % (k, v) for k, v in sorted(parts.items()) if k != "coverage_min_pct"))
+        elif lv2 is not None:
+            out["limit"] = lv2
+        if out["limit"] is not None:
+            out["limit_source"] = "register/versions/%s.yaml %s observation_limit" % (rname, control)
     out["records"] = _ids(recs + [{"record_id": x} for x in [a["record_id"]] if x])
     out["actors"] = _actors(recs)
+    try:
+        inv_name, inv = _inventory(pack)
+    except Exception:       # an unreadable inventory is a gap, never a crash
+        inv_name, inv = None, None
+    comps = dict((c.get("component_id"), c.get("approved_version")) for c in ((inv or {}).get("entries") or (inv or {}).get("components") or [])
+                 if isinstance(c, dict))
+    for x in out["actors"]:
+        if not x.get("version") and comps.get(x.get("actor")):
+            x["version"] = "%s (inventory %s)" % (comps[x["actor"]], inv_name)
     out["eps"] = _eps(recs)
     out["human_loop"] = _human_loop(pack, cid, recs)
     fn = recompute_fn or recompute

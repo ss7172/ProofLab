@@ -24,8 +24,8 @@ network.
   their own work (section 10).
 
 **The pillars, and where each is in this pack.** One row per pillar; no row is empty. A cell that
-names a file is a claim only if that file is in the pack; `<...>` is filled at submit from what
-the pack holds, and a pillar with nothing yet says so in the status column.
+names a file is a claim only if that file is in the pack; the status column is filled at build from
+what the pack holds, and a pillar with nothing yet says so.
 
 | Pillar | What we claim | Files that show it | Status at this submit |
 |---|---|---|---|
@@ -101,19 +101,26 @@ answers.
 ### Open the console (optional, read-only)
 
 The same stored answers, the six auditor questions, the run catalogue and the records in a browser, on
-your own machine, nothing leaves it. From the folder that holds `prooflab/`:
+your own machine, nothing leaves it. Start it from a **clean shell**: the console refuses to start while
+a credential variable (for example an AWS secret key or session token) is set in its environment, and
+says which one. From the folder that holds `prooflab/`:
 
 ```
-export PYTHONDONTWRITEBYTECODE=1
-python3 -m prooflab console --data pack --pack .
+env -i PATH=/usr/bin:/bin HOME="$HOME" PYTHONDONTWRITEBYTECODE=1 python3 -m prooflab console --data pack --pack .
 ```
 
-It prints a one-time URL on `127.0.0.1`; open it, then type a question (for example `control 16 for run <CID>`).
-It refuses to start on synthetic data, and its banner says whether `MANIFEST.json` still matches. The console
-only shows what the pack stores: `answers/` holds the answers composed at build by the same engine as the
-section 4 commands (C16 and C7 per run), `pack-index.json` is its table of contents, and `records/` its
-evidence records. Anything not stored there (for example a window or an auditor view not yet composed) is
-answered "nothing stored"; use the section 4 commands for it. The section 4 commands are the authority.
+It prints a one-time URL on `127.0.0.1` (`http://127.0.0.1:<port>/#k=...`). Open it once: the first page
+load trades the one-time key for a session cookie (8 hours), so a reload, or a new tab on
+`http://127.0.0.1:<port>/`, keeps working in the same browser; the printed URL itself cannot be used a
+second time (restart the console for a new one). Then type a question (for example
+`control 16 for run <CID>`, `control 7 for run <CID>` or `auditor <CID>`).
+It refuses to start on synthetic data, and its banner says whether `MANIFEST.json` still matches; every
+answer is stamped with that live check when it is served. The console only shows what the pack stores:
+`answers/` and `auditor/` hold <CONSOLE_STORED>, composed at build by the same engine as the section 4
+commands; `pack-index.json` is its table of contents and `records/` its evidence records (each record's
+raw reference opens the exact captured line, and the browser can recompute its SHA-256). Anything not
+stored is answered "nothing stored"; use the section 4 commands for it. The section 4 commands are the
+authority.
 
 ## 5. Layout
 
@@ -128,6 +135,7 @@ raw/                 captures as pulled (redacted by our collector)
 store/               the stitched evidence records
 assessments/         one JSON per control and scope
 answers/             stored answers the console shows (composed at build by the query engine)
+auditor/             the six auditor questions per assessed run (the same engine as query --incident)
 pack-index.json      the console's table of contents; records/ and projected-assessments/ are its projections
 adversarial/         pre-registered defence, observed outcome, what broke, what changed
 servicenow/          delivery log, incidents, Assurance Agent records
