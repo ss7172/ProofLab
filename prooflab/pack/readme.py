@@ -14,6 +14,8 @@ import json
 import os
 import re
 
+from prooflab.contract import verdicts as _V  # the one verdict vocabulary
+
 KEEP = ("<CID>", "<T1>", "<T2>", "<CID-or-time>", "<port>")
 NA = "not yet available in this pack"
 PH_RE = re.compile(r"`?<([A-Za-z_.][^<>`]{1,600}?)>`?", re.S)
@@ -182,7 +184,7 @@ def _has_observed_adversarial(root):
 def _has_breach(root):
     for p in glob.glob(os.path.join(root, "assessments", "*", "*.json")):
         d = _json(p) or {}
-        if (d.get("requirement_verdict") or d.get("verdict")) == "BREACHED":
+        if (d.get("requirement_verdict") or d.get("verdict")) == _V.BREACHED:
             return True
     return False
 
