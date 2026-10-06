@@ -82,8 +82,12 @@ def values(root, label=None):
     idx = _json(os.path.join(root, "pack-index.json")) or {}
     w = _json(os.path.join(root, "window.json")) or {}
     w = w.get("event_window") if isinstance(w.get("event_window"), dict) else w
+    from prooflab.pack import history as _h
+    nmd_win = _h.named_runs_md(root)["window"]
     if w.get("start") and w.get("end"):
         v["WINDOW_START"], v["WINDOW_END"] = w["start"], w["end"]
+    elif nmd_win:      # the window named-runs.md declares; pack-index pack.event_window carries the same one
+        v["WINDOW_START"], v["WINDOW_END"] = nmd_win["start"], nmd_win["end"]
     else:      # no declared window file: the first and last named (assessed) run, said so
         named = [r for r in idx.get("runs") or [] if r.get("provenance") == "ASSESSED" and r.get("started_at")]
         if named:
@@ -94,7 +98,7 @@ def values(root, label=None):
     m = re.search(r"kept for (.+?) from", ret, re.I)
     if ret:
         v["RETENTION_RULE"] = m.group(1) if m else ret
-    v["YYYY-MM-DD"] = datetime.datetime.utcnow().strftime("%Y-%m-%d") + " (the pack build date; section 7 holds the upload time)"
+    v["YYYY-MM-DD"] = datetime.datetime.utcnow().strftime("%Y-%m-%d")
     if top.get("owner") or top.get("owner_name"):
         v["owner name and contact"] = ("%s, %s" % (top.get("owner_name") or "", top.get("owner") or "")).strip(", ")
     if top.get("builder"):
@@ -108,6 +112,7 @@ def values(root, label=None):
             v["INCnnnnnnn"] = inc
     if root_doc.get("journal_time") or root_doc.get("note_journal_time"):
         v["NOTE_JOURNAL_TIME_UTC"] = str(root_doc.get("journal_time") or root_doc.get("note_journal_time"))
+    v["C16_CORE_SHA"] = c16_core_sha(root)
     if label or root_doc.get("label"):
         v["submit-1 / submit-2 / final"] = str(label or root_doc["label"])
     c7 = ctl.get("C7") or {}
@@ -145,12 +150,12 @@ def values(root, label=None):
     if aud:
         qs = {}
         for a in aud:
+            full = _auditor_full(root, a)
             for k, st in (a.get("questions") or {}).items():
-                qs.setdefault(k, set()).add(st)
+                qs.setdefault(k, []).append(st == "ANSWERED" and full.get(k, True))
         v["per question: FULL / PARTIAL, and what arrives later"] = "; ".join(
-            "%s %s" % (k.upper(), "FULL" if s == {"ANSWERED"} else "PARTIAL (%s)" % ", ".join(sorted(s))) for k, s in sorted(qs.items())) + \
-            " (over %d stored auditor view(s) in auditor/)" % len(aud)
-    from prooflab.pack import history as _h
+            "%s %s" % (k.upper(), "FULL" if all(s) else "PARTIAL (%d/%d views answered without a gap)" % (sum(s), len(s)))
+            for k, s in sorted(qs.items())) + " (over %d stored auditor view(s) in auditor/)" % len(aud)
     deliv = _h._delivery_rows(root)
     cutoffs = sorted(set(d.get("cutoff") for d in deliv if isinstance(d.get("cutoff"), str) and d.get("cutoff")))
     if cutoffs:
@@ -161,17 +166,119 @@ def values(root, label=None):
         appr = _h.approvals(root)
         a_txt = "; ".join("register %s approval %s%s" % (ver, a["status"], (" on %s" % a["incident"]) if a.get("incident") else "")
                           for ver, a in sorted(appr.items()))
-        nf = len(set(d.get("finding_id") for d in deliv if d.get("finding_id")))
-        v["Filled from servicenow/ at submit."] = (
-            "Register approvals (register/approval*/, servicenow/export/): %s. From the delivery logs (servicenow/, "
-            "register/approval/): %d finding(s) delivered as incident(s) %s; states recorded: %s." % (
-                a_txt or "none", nf, ", ".join(incs) or "none", ", ".join(states)))
+        v["Filled from servicenow/ at submit."] = servicenow_text(root, idx, appr, deliv, states)
     answers = idx.get("answers") or []
     runs_c = sorted(set(a.get("control_ref") for a in answers if "|run|" in str(a.get("key"))))
     win_c = sorted(set(a.get("control_ref") for a in answers if "|interval|" in str(a.get("key"))))
     v["CONSOLE_STORED"] = ("%d stored answers (per run: %s; over the declared window: %s) and %d six-questions view(s)" % (
         len(answers), ", ".join(runs_c) or "none", ", ".join(win_c) or "none", len(aud)))
     return v
+
+
+_GAP_RE = re.compile(r"\bgap\b|\bmissing\b|\bunknown\b", re.I)
+
+
+def _auditor_full(root, a):
+    """{question: True when the stored auditor view's answer states no gap}; the grade the README gives a question
+    is FULL only when every view answers it without a gap, missing or unknown part."""
+    out = {}
+    ref = str(a.get("path") or a.get("ref") or "")
+    doc = None
+    for cand in (ref, os.path.join("auditor", "%s.json" % (a.get("cid") or a.get("scope_id") or ""))):
+        if cand and os.path.isfile(os.path.join(root, cand)):
+            doc = _json(os.path.join(root, cand))
+            break
+    for k, q in ((doc or {}).get("questions") or {}).items():
+        if isinstance(q, dict):
+            out[k] = not _GAP_RE.search(str(q.get("answer") or ""))
+    return out
+
+
+def _hm(ts):
+    m = re.search(r"T(\d\d:\d\d:\d\d)", str(ts or ""))
+    return (m.group(1) + "Z") if m else "?"
+
+
+def servicenow_text(root, idx, appr, deliv, states):
+    """README section 8: each register approval with its incident and time stated against the named runs (an
+    approval after a run is said to be after it), then the control findings delivered, apart from approval requests."""
+    runs = sorted((r.get("started_at"), r.get("cid")) for r in idx.get("runs") or []
+                  if r.get("provenance") == "ASSESSED" and r.get("started_at"))
+    nmd = {}
+    try:
+        from prooflab.pack import history as _h
+        for r in _h.named_runs_md(root)["rows"]:
+            m = re.match(r"(N\d+[a-z]?)\b", r.get("note") or "")
+            if m and r.get("cid"):
+                nmd.setdefault(r["cid"], m.group(1))
+    except Exception:
+        pass
+    reg_hist = {}
+    try:
+        reg_hist = dict((x.get("version"), x) for x in (idx.get("register") or {}).get("versions") or [])
+    except Exception:
+        pass
+    parts = []
+    for ver, a in sorted(appr.items()):
+        at = a.get("at")
+        txt = "register %s approval %s on %s at %s" % (ver, a.get("status"), a.get("incident") or "?", _hm(at))
+        rv = reg_hist.get(ver) or {}
+        if rv.get("frozen_at"):
+            txt += " (frozen %s)" % _hm(rv["frozen_at"])
+        if at and runs:
+            before = [nmd.get(c) or c for s, c in runs if s < at]
+            if not before:
+                txt += ", before every named run"
+            else:
+                txt += ", AFTER named run(s) %s, which ran under it frozen but not yet approved" % ", ".join(before)
+        resp = a.get("responded") or {}
+        if resp.get("at") and resp.get("at") != at:
+            txt += "; the incident was last updated %s (a later note on it, not the approval of record)" % _hm(resp["at"])
+        parts.append(txt)
+    reqs = set(str(a.get("finding_id")) for a in appr.values() if a.get("finding_id"))
+    ctl = []
+    for f in idx.get("findings") or []:
+        if f.get("verdict") == _V.BREACHED and f.get("incident"):
+            cl = f.get("closure") or {}
+            ctl.append("%s on %s %s%s" % (f["incident"], f.get("control_ref"), nmd.get(f.get("scope_id")) or f.get("scope_id"),
+                                          (", finding closed by re-test %s at %s (the incident stays open for the owner)" % (
+                                              nmd.get(cl.get("retest_cid")) or cl.get("retest_cid"), _hm(cl.get("at"))))
+                                          if cl.get("state") == "CLOSED_BY_RETEST" else ""))
+    req_inc = sorted(set(a.get("incident") for a in appr.values() if a.get("incident")))
+    return ("Register approvals (register/approval*/, servicenow/export/): %s. Control findings delivered as incidents "
+            "(servicenow/delivery-log.jsonl): %d, %s. Register-approval requests (not findings): %s. Delivery states "
+            "recorded: %s." % ("; ".join(parts) or "none", len(ctl), "; ".join(ctl) or "none",
+                               ", ".join(req_inc) or "none", ", ".join(states)))
+
+
+def c16_core_sha(root):
+    """The sha256 of prooflab.evaluators.c16_core recorded at EP-1 and at EP-2 in the staged records."""
+    seen = {}
+    for base in ("store", "records"):
+        for dp, _, fns in os.walk(os.path.join(root, base)):
+            for fn in fns:
+                if not (fn.endswith(".jsonl") or fn.endswith(".json")):
+                    continue
+                try:
+                    with open(os.path.join(dp, fn), "r", encoding="utf-8") as fh:
+                        for line in fh:
+                            if "c16_core" not in line:
+                                continue
+                            try:
+                                r = json.loads(line)
+                            except ValueError:
+                                continue
+                            if isinstance(r, dict) and r.get("evaluator.name") == "prooflab.evaluators.c16_core" and r.get("evaluator.sha256"):
+                                seen.setdefault(str(r.get("ep.id")), set()).add(r["evaluator.sha256"])
+                except (IOError, OSError):
+                    continue
+    if not seen:
+        return "The C16 core's sha256 is not recorded in this pack's records (a stated gap)."
+    eps = ", ".join("%s: `%s`" % (ep, "`, `".join(sorted(s))) for ep, s in sorted(seen.items()))
+    same = len(set().union(*seen.values())) == 1 and {"EP-1", "EP-2"} <= set(seen)
+    return ("The C16 core's sha256 as recorded in the records (evaluator.sha256): %s; %s. The adapter-diff PR sha "
+            "and its diff --stat are not in this pack." % (eps, "the same hash at EP-1 and EP-2" if same else
+                                                           "NOT one hash at both points (see the records)"))
 
 
 def _has_observed_adversarial(root):
