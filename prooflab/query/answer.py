@@ -134,6 +134,13 @@ def _rule(pack, control, a, gaps):
     if lim is None:
         lim = _num(entry.get("observation_limit"))
     extra = {}
+    if lim is None and control == "C9":
+        # C9's numbers in one string (`max_relative_change_pct=..;violating_windows_max_pct=..;errors_max=..`, the form
+        # prooflab.evaluators.c9 reads): the judged limit is the relative change against the frozen baseline, inclusive
+        from prooflab.evaluators import claim as _claim
+        parts = _claim.parse_limits(entry.get("observation_limit"))
+        lim, op = _num(parts.get("max_relative_change_pct")), "<="
+        extra = dict((k, _num(v)) for k, v in parts.items() if k != "max_relative_change_pct" and _num(v) is not None)
     if lim is None and control == "C7":
         # C7's numbers live in one string (`coverage_min_pct=..;gap_max_ms=..;violating_gap_share_max_pct=..`, the form
         # prooflab.evaluators.c7.limits_of reads): coverage is the judged floor, so the operator is >=
@@ -147,10 +154,19 @@ def _rule(pack, control, a, gaps):
     if tol is None:
         gaps.append({"id": "G-TOL", "text": "exception_tolerance missing or not numeric in the register; shown as 0 allowed", "affects": "rule.exception_tolerance"})
         tol = 0
-    unit = (a.get("measured") or {}).get("unit") or E.UNKNOWN
+    unit = (a.get("measured") or {}).get("unit") or (("% relative change vs baseline") if control == "C9" else E.UNKNOWN)
     approval = top.get("approval")
     approval = ({"status": "APPROVED", "ref": approval} if isinstance(approval, str) and re.match(r"^[a-z][a-z0-9-]*:\S", approval)
                 else {"status": "MISSING"})
+    if approval["status"] == "MISSING":
+        # the T2 files: register/approval*/ (Finding + canonical note), the delivery log, the ServiceNow export
+        from prooflab.pack import history as _h
+        t2 = _h.approvals(pack.root).get(str(rname))
+        if t2:
+            approval = dict((k, t2[k]) for k in ("status", "ref", "at", "approver") if t2.get(k))
+            if approval["status"] != "APPROVED":
+                gaps.append({"id": "G-APPR", "text": "register %s approval is %s: %s" % (rname, t2["status"], t2.get("note") or ""),
+                             "affects": "rule.approval"})
     if approval["status"] == "MISSING":
         gaps.append({"id": "G-APPR", "text": "no register approval record in the pack (register/ carries none)", "affects": "rule.approval"})
     first_run = E._utc_key(a.get("scope_start"))

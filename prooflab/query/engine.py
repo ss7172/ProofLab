@@ -167,6 +167,14 @@ class Pack(object):
             head = read_json(self.p("register", name + ".head.json")) or read_json(
                 self.p("register", "versions", name + ".head.json"))
             regs[name] = {"doc": doc, "head": head}
+        if regs and any(r["head"] is None for r in regs.values()):
+            # T1 records kept as lists of {file, key, head_object} (register/t1/*.json, t1/*.json)
+            from prooflab.pack import history as _h
+            heads = _h.t1_heads(self.root)
+            for name, r in regs.items():
+                h = heads.get(name + ".yaml")
+                if r["head"] is None and h and h.get("last_modified"):
+                    r["head"] = {"LastModified": h["last_modified"], "VersionId": h.get("version_id"), "Key": h.get("key")}
         return regs
 
     def control_entry(self, control, threshold_version=None, register_version=None):
