@@ -1,0 +1,4 @@
+{"run_id": "ifabric-test-1790000001-aaaaaa", "scenario": "S1", "provenance": "PILOT", "condition": "none", "mode": "observe", "measured": {"c16_tokens": 21000, "c7_gap_ms_max": 9000, "c9_latency_max_ms": {"ifabric-it": 8400, "ifabric-network": 8300}}}
+{"run_id": "ifabric-test-1790000002-bbbbbb", "scenario": "S3", "provenance": "PILOT", "condition": "none", "mode": "observe", "measured": {"c16_tokens": 33000, "c7_gap_ms_max": 11000, "c9_latency_max_ms": {"ifabric-it": 8600, "ifabric-network": 8200}}}
+{"run_id": "ifabric-test-1790000003-cccccc", "scenario": "S2", "provenance": "PILOT", "condition": "none", "mode": "observe", "measured": {"c16_tokens": 1900000, "c7_gap_ms_max": 15000, "c9_latency_max_ms": {"ifabric-it": 278000}}}
+{"run_id": "ifabric-test-1790000004-dddddd", "scenario": "S2", "provenance": "PILOT", "condition": "conflicting-context", "mode": "observe", "measured": {"c16_tokens": 800000}}

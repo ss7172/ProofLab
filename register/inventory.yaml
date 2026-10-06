@@ -1,0 +1,115 @@
+# DRAFT AI inventory (ARCH 3.10). Off the path. Frozen as inv-N at the agents' freeze; owners and approvers are drafts for Sree.
+# Platform models and tools are the organisers' assets: listed with their owner, marked as our declaration where the platform gives no record.
+# The Assurance agent is a component (owner Arth, approver Sree) and sits outside every control's applies_to.
+version: inv-0
+version_date: "2026-10-06T03:00:00Z"
+owner: annapurna@invences.com
+system_id: customer-fault-resolution
+system_name: "customer fault resolution"
+purpose: "Resolve a customer home-internet fault with three collaborating agents (customer, IT, network), escalating to a human when the evidence does not settle it"
+system_owner: Sree
+risk_tier: "high (EU AI Act high-risk because of the network agent; UNVERIFIED against a primary source, playbook 1.0 l.35, OC-21)"
+claim: C-FM-01
+risks: "R-C16,R-C7,R-C9,R-OWN,R-JDG,R-GR-01,R-GR-02,R-GR-03,R-GR-04,R-GR-05"
+scope_rule: "In scope: CRs named ifabric-*, AgentCore and AICT assets named ifabric_*, and what their dependsOn names. Out of scope with their owners: the reference trio (the unassessed before system, the organisers) and every other team on the shared instance"
+components:
+  - component_id: ifabric-customer
+    kind: "Agent: AgentConfig plus AgentCore runtime"
+    system_id: customer-fault-resolution
+    owner: "Sree"
+    approved_version: "image digest plus model alias PENDING-DIGEST (CR generation recorded)"
+    approver_and_time: "AgentConfig approval annotation verbatim plus the digest our deploy wrapper recorded (EP-10)"
+    approval_source: "CR approval records and deploy records; AICT discovery confirms the runtime"
+    in_scope: true
+    declaration: "ours"
+  - component_id: ifabric-it
+    kind: "Agent: AgentConfig plus AgentCore runtime"
+    system_id: customer-fault-resolution
+    owner: "Sree"
+    approved_version: "image digest plus model alias PENDING-DIGEST (CR generation recorded)"
+    approver_and_time: "AgentConfig approval annotation verbatim plus the digest our deploy wrapper recorded (EP-10)"
+    approval_source: "CR approval records and deploy records; AICT discovery confirms the runtime"
+    in_scope: true
+    declaration: "ours"
+  - component_id: ifabric-network
+    kind: "Agent: AgentConfig plus AgentCore runtime"
+    system_id: customer-fault-resolution
+    owner: "Sree"
+    approved_version: "image digest plus model alias PENDING-DIGEST (CR generation recorded)"
+    approver_and_time: "AgentConfig approval annotation verbatim plus the digest our deploy wrapper recorded (EP-10)"
+    approval_source: "CR approval records and deploy records; AICT discovery confirms the runtime"
+    in_scope: true
+    declaration: "ours"
+  - component_id: ifabric-assurance-agent
+    kind: "Agent: AgentConfig plus AgentCore runtime"
+    system_id: customer-fault-resolution
+    owner: "Arth"
+    approved_version: "image digest plus model alias PENDING-DIGEST (CR generation recorded); approver Sree"
+    approver_and_time: "AgentConfig approval annotation (Sree's act)"
+    approval_source: "CR approval records and deploy records; AICT lists it; outside every control's applies_to"
+    in_scope: true
+    control_scope: none
+    declaration: "ours"
+  - component_id: nemotron-super-120b
+    kind: "Model: ModelConfig"
+    system_id: customer-fault-resolution
+    owner: "MoDaaS platform (organisers)"
+    approved_version: "model alias plus ModelConfig generation"
+    approver_and_time: "ModelConfig approval annotation (pulled)"
+    approval_source: "CR approval records"
+    in_scope: true
+    declaration: "platform asset, declared by us as part of the system"
+  - component_id: nemotron-nano-9b
+    kind: "Model: ModelConfig (declared swap treatment N8)"
+    system_id: customer-fault-resolution
+    owner: "MoDaaS platform (organisers)"
+    approved_version: "model alias plus ModelConfig generation"
+    approver_and_time: "ModelConfig approval annotation (pulled) plus the owner's approval record for the treatment"
+    approval_source: "CR approval records; our declaration for the treatment"
+    in_scope: true
+    declaration: "platform asset, declared by us as part of the system"
+  - component_id: customer-records
+    kind: "Tool: shared ToolConfig"
+    system_id: customer-fault-resolution
+    owner: "MoDaaS platform (organisers)"
+    approved_version: "ToolConfig generation (plus Lambda CodeSha256 if readable)"
+    approver_and_time: "ToolConfig approval annotation (pulled)"
+    approval_source: "CR approval records"
+    in_scope: true
+    declaration: "platform asset, declared by us as part of the system"
+  - component_id: runbook-lookup
+    kind: "Tool: shared ToolConfig"
+    system_id: customer-fault-resolution
+    owner: "MoDaaS platform (organisers)"
+    approved_version: "ToolConfig generation (plus Lambda CodeSha256 if readable)"
+    approver_and_time: "ToolConfig approval annotation (pulled)"
+    approval_source: "CR approval records"
+    in_scope: true
+    declaration: "platform asset, declared by us as part of the system"
+  - component_id: network-twin
+    kind: "Tool: shared ToolConfig"
+    system_id: customer-fault-resolution
+    owner: "MoDaaS platform (organisers)"
+    approved_version: "ToolConfig generation (plus Lambda CodeSha256 if readable)"
+    approver_and_time: "ToolConfig approval annotation (pulled)"
+    approval_source: "CR approval records"
+    in_scope: true
+    declaration: "platform asset, declared by us as part of the system"
+  - component_id: ifabric-rails-policy
+    kind: "Policy: the rails table and patterns inside each agent image"
+    system_id: customer-fault-resolution
+    owner: "Sree"
+    approved_version: "rail.policy_sha256 echoed at start-up (PENDING-BUILD)"
+    approver_and_time: "Covered by the agent's approval"
+    approval_source: "Our declaration: the build records the sha256"
+    in_scope: true
+    declaration: "ours"
+  - component_id: ifabric-adversarial-corpus
+    kind: "Test dataset (RTM-1)"
+    system_id: customer-fault-resolution
+    owner: "Sree"
+    approved_version: "sha256 manifest PENDING-BUILD"
+    approver_and_time: "The register approval that names it"
+    approval_source: "Our declaration"
+    in_scope: true
+    declaration: "ours"
