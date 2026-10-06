@@ -24,7 +24,7 @@ import sys
 PACK_TOP = ("store", "raw", "derived", "assessments", "findings", "register", "kit-crosscheck",
             "reviews", "servicenow", "adversarial", "answers", "architecture", "records", "runs", "auditor", "gaps",
             "window.json", "live-lane-log.jsonl", "security-matrix.md", "pack-index.json", "t1",
-            "named-runs.md", "decisions-log.md")
+            "named-runs.md", "decisions-log.md", "field-coverage.md")
 WORKDIR_FILES = ("register.yaml", "gap-list.md", "run-ids.txt", "sketch.png")
 STAGED_FROM_WORKDIR = ("gap-list.md", "run-ids.txt", "sketch.png")
 # Files the README names: from --src or --workdir when there, else the checked-in copy (said so in a warning).
@@ -281,6 +281,13 @@ def _stage(out, a):
                 _copy(tmpl, dst)
                 warnings.append("%s: not in --src or --workdir; staged the checked-in evidence-templates/%s "
                                 "(fill it before submit if it still says template)" % (name, name))
+    # PR-51b: the field-coverage statement (what the records carry, each gap classed NEEDS-AGENT-REBUILD or PLATFORM) is
+    # generated content, not a template: staged from --src when there, else the checked-in copy, without a 'fill it' warning
+    fc = os.path.join(out, "field-coverage.md")
+    if not os.path.isfile(fc):
+        tmpl = os.path.join(_repo_root(), "evidence-templates", "field-coverage.md")
+        if os.path.isfile(tmpl):
+            _copy(tmpl, fc)
     adv = os.path.join(out, "adversarial")
     if not os.path.isdir(adv):
         repo_adv = os.path.join(_repo_root(), "evidence", "adversarial")
