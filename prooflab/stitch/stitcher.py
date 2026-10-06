@@ -1,7 +1,9 @@
 """The stitcher: a pure join over one snapshot's records (ARCH §3.6, plan T4.4). Stdlib, 3.9.
 
 It never changes a record and never forms a verdict. Keys, in order:
-  1 correlation_id / run.id          2 call.id (gateway action id)       3 trace.id (resolves `unresolved:<trace>`)
+  1 correlation_id / run.id          2 call.id (gateway action id; also resolves `unresolved:<trace>`: the
+    ifabric-assure gateway calls join their incident's analysis line by action id only, b6b)
+                                                                         3 trace.id (resolves `unresolved:<trace>`)
   4 handoff.id (`prooflab.contract.ids.parse_handoff_id`)                5 AWS InvokeAgentRuntime record:
     CID + runtime.session_id exact against a `handoff.sent`; `eventTime` (the call's END) against
     `handoff.received` only when the caller passes `join_tolerance_s` (a register key: no literal here);
@@ -70,8 +72,9 @@ def stitch(records, join_tolerance_s=None) -> dict:
         for rec in group:
             if rec.get("trace.id"):
                 resolved_by_trace.setdefault(rec["trace.id"], set()).add(rid)
-            if rec.get("call.id"):
-                resolved_by_call.setdefault(rec["call.id"], set()).add(rid)
+            for call in str(rec.get("call.id") or "").split(","):      # a delivery-log line names several
+                if call.strip():
+                    resolved_by_call.setdefault(call.strip(), set()).add(rid)
     unjoined = []
     rows = {}
 
@@ -96,14 +99,26 @@ def stitch(records, join_tolerance_s=None) -> dict:
         # key 3 and 2 for unresolved groups: resolve through another run's trace / action id
         if rid.startswith("unresolved:"):
             trace = rid[len("unresolved:"):]
-            targets = set(resolved_by_trace.get(trace, ()))
+            by_trace = set(resolved_by_trace.get(trace, ()))
+            by_call = set()
             for rec in group:
-                targets |= resolved_by_call.get(rec.get("call.id"), set())
+                by_call |= resolved_by_call.get(rec.get("call.id"), set())
+            targets = by_trace | by_call
             if len(targets) == 1:
                 target = sorted(targets)[0]
                 row["resolved_to"] = target
                 row_for(target)["resolved_from"].append(rid)
-                link(target, "trace.id", trace, [_rid(r) for r in group])
+                if by_trace:
+                    link(target, "trace.id", trace, [_rid(r) for r in group])
+                else:
+                    # a gateway-minted root trace (the ifabric-assure runtime sends no baggage, b6b): joined by
+                    # ACTION ID to the record that named it (the Assurance analysis line of the incident's finding)
+                    row["resolved_by"] = "call.id"
+                    calls = sorted(set(r.get("call.id") for r in group if r.get("call.id")))
+                    namers = [r for r in runs.get(target, ()) if set(str(r.get("call.id") or "").split(",")) & set(calls)]
+                    row["attributed_to"] = sorted(set(r.get("finding.id") for r in namers if r.get("finding.id")))
+                    for call in calls:
+                        link(target, "call.id", call, [_rid(r) for r in group] + [_rid(r) for r in namers])
             else:
                 unjoined.append({"key": "trace.id", "value": trace, "present_in": ["records"],
                                  "missing_from": ["a run's records"] if not targets else ["unique run (ambiguous)"],

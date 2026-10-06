@@ -66,7 +66,18 @@ def _safe(cid: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]", "_", cid)
 
 
-def normalize_all(root, provenance=None) -> dict:
+def known_action_ids(rows) -> set:
+    """Action ids our own records name (a comma-joined call.id included): the Assurance agent's ANALYSIS_* lines
+    carry the gateway action ids of its model calls, whose spans have no CID (b6b)."""
+    out = set()
+    for r in rows:
+        for a in str(r.get("call.id") or "").split(","):
+            if a.strip():
+                out.add(a.strip())
+    return out
+
+
+def normalize_all(root, provenance=None, action_ids=None) -> dict:
     records, sightings, rejects, background = [], [], [], 0
     jobs = [("gateway", "*.log", _obs.normalize_gateway_text), ("spans", "*.jsonl", _obs.normalize_gateway_text),
             ("aws-invocations", "*.jsonl", _obs.normalize_invocation_text)]
@@ -78,7 +89,10 @@ def normalize_all(root, provenance=None) -> dict:
     for sub, path, fn, insights in work:
         ref = os.path.relpath(path, root).replace(os.sep, "/") if sub == "aws-spans" else \
             "raw/%s/%s" % (sub, os.path.basename(path))
-        out = fn(_read(path), ref, provenance, insights=True) if insights else fn(_read(path), ref, provenance)
+        if fn is _obs.normalize_gateway_text:
+            out = fn(_read(path), ref, provenance, insights=insights, known_action_ids=action_ids)
+        else:
+            out = fn(_read(path), ref, provenance)
         records += out["records"]
         sightings += out["sightings"]
         rejects += out["rejects"]
@@ -168,7 +182,7 @@ def refresh(root, as_of=None, run_ids=(), provenance=None, window=None, join_tol
         cids = set(s["run_id"] for s in first["sightings"] if _ids.is_ours(s["run_id"]))
         cids |= set(r.get("correlation_id") for r in read_ledger_rows(root) if _ids.is_ours(r.get("correlation_id") or ""))
         summary["pulled"] = pull_ledger(client, cids, root)
-    norm = normalize_all(root, provenance)
+    norm = normalize_all(root, provenance, known_action_ids(read_ledger_rows(root)))
     if do_ingest:
         store = _ingest.FileStore(fallback_store) if fallback_store else (
             _ingest.LedgerStore(client) if client is not None else None)

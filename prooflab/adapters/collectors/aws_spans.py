@@ -19,11 +19,25 @@ def build_query(cid: str, limit: int = INSIGHTS_MAX_ROWS) -> str:
             '| sort @timestamp asc | limit %d' % (cid, limit))
 
 
-def pull(ctx: capture.Ctx, cid: str, start: str, end: str, log_group: str = LOG_GROUP) -> "dict | None":
-    why = capture.skip_cid(cid, ctx)
+def build_action_query(action_id: str, limit: int = INSIGHTS_MAX_ROWS) -> str:
+    """The ifabric-assure runtime's model call has no CID on the gateway span (a gateway-minted trace is its run id,
+    b6b): it is pulled by the action id the delivery log names."""
+    return ('fields @timestamp, @message | filter attributes.modaas.action_id = "%s" '
+            '| sort @timestamp asc | limit %d' % (action_id, limit))
+
+
+def pull_by_action(ctx: capture.Ctx, action_id: str, start: str, end: str, log_group: str = LOG_GROUP) -> dict:
+    """raw/aws-spans/action-<id>/spans.jsonl: refresh reads it like a CID capture."""
+    if not action_id or not all(c.isalnum() or c == "-" for c in action_id):
+        raise capture.CaptureError("not an action id: %r" % (action_id,))
+    return pull(ctx, "action-" + action_id, start, end, log_group, query=build_action_query(action_id))
+
+
+def pull(ctx: capture.Ctx, cid: str, start: str, end: str, log_group: str = LOG_GROUP, query=None) -> "dict | None":
+    why = None if query else capture.skip_cid(cid, ctx)
     if why:
         return None
-    query = build_query(cid)
+    query = query or build_query(cid)
     started = capture.aws_argv(ctx, "logs", "start-query", "--log-group-name", log_group,
                                "--start-time", str(capture.to_epoch(start)), "--end-time", str(capture.to_epoch(end)),
                                "--query-string", query, "--output", "json")

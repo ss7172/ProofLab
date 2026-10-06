@@ -6,6 +6,9 @@ import os
 from prooflab.adapters.orchestrator import common
 
 CONDITIONS = ("prompt-attack", "encoded-attack", "tool-directive", "conflicting-context")
+# Text-free run conditions: nothing is appended to the prompt. `warm-up` (ARCH 5.3, B13): the one unassessed
+# invocation per updated runtime before N7/N8/N9 (provenance EXPLORATORY; C9 never assesses it).
+PLAIN_CONDITIONS = ("warm-up",)
 FAULT_KINDS = {"inject-tool-output": 3, "suppress-record": 3}   # number of ':' parts after the kind
 
 
@@ -17,6 +20,8 @@ def load_condition(name: str, root=None) -> dict:
     """{name, path, sha256, text}; the sha256 comes from the file bytes AND must equal SHA256SUMS."""
     if name in (None, "", "none"):
         return {"name": "none", "path": None, "sha256": None, "text": ""}
+    if name in PLAIN_CONDITIONS:
+        return {"name": name, "path": None, "sha256": None, "text": ""}
     if name not in CONDITIONS:
         raise ValueError("unknown condition %r (known: %s)" % (name, ", ".join(CONDITIONS)))
     directory = conditions_dir(root)

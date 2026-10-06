@@ -456,7 +456,7 @@ def control_window(pack, control, window):
     if not bounds:
         return {"kind": "error", "verdict": "NOT_ASSESSED", "message": "--window needs <T1>..<T2> in full UTC (…Z), T1 < T2"}
     lo, hi = _utc_key(bounds[0]), _utc_key(bounds[1])
-    kinds = ("run", "hour") if control == "C9" else ("run",)
+    kinds = ("run", "window", "hour") if control == "C9" else ("run",)     # C9's hourly roll-up: scope_kind window
     counted, listed, gaps = [], [], []
     seen_runs = set()
     for a in pack.assessments_for(control, kinds):
@@ -660,7 +660,7 @@ def claim_line(pack):
             worst = a["verdict"] if worst is None or ["SATISFIED", "INDETERMINATE", "NOT_ASSESSED", "BREACHED"].index(a["verdict"]) > \
                 ["SATISFIED", "INDETERMINATE", "NOT_ASSESSED", "BREACHED"].index(worst) else worst
         rows.append({"control": c, "runs": len(found), "worst": worst or "NOT_ASSESSED"})
-        counts += 1 if found else 0
+        counts += 1 if any(a["verdict"] != "NOT_ASSESSED" for a in found) else 0   # a NOT_ASSESSED file is not coverage
     top = (pack.registers[sorted(pack.registers)[-1]]["doc"]["top"] if pack.registers else {})
     return {"kind": "claim", "verdict": "RECORDED", "claim_id": top.get("claim_id") or "C-FM-01", "rows": rows,
             "coverage": "full coverage: %d of %d controls assessed" % (counts, len(CONTROLS)) if counts == len(CONTROLS)

@@ -39,7 +39,7 @@ def build_parser():
     p.add_argument("--only", choices=common.load_budget()["agents"] + [GATEWAY_C],
                    help="invoke just this agent, or `gateway-c`: the IT agent alone on --proposal-file")
     p.add_argument("--proposal-file", default=None, help="--only gateway-c: JSON proposal to negotiate")
-    p.add_argument("--condition", default="none", help="none | " + " | ".join(conditions.CONDITIONS))
+    p.add_argument("--condition", default="none", help="none | " + " | ".join(conditions.CONDITIONS + conditions.PLAIN_CONDITIONS))
     p.add_argument("--fault", default=None, help="inject-tool-output:<agent>:<tool>:<fixture> | suppress-record:<agent>:<event>:<n>")
     p.add_argument("--dry-run", action="store_true", help="print the envelope and plan; no call of any kind")
     p.add_argument("--mode", choices=("observe", "enforce"), default="observe", help="the pin mode this run expects")
@@ -52,6 +52,10 @@ def build_parser():
     p.add_argument("--versions-file", default=None, help="EP-0 input: filtered reads {running, approved, policy}")
     p.add_argument("--pin-file", default=None, help="JSON {register_version, register_sha256, pin_sha256}")
     p.add_argument("--echoed-pins", default=None, help='JSON {"ifabric-customer": "<sha256>"}')
+    p.add_argument("--named-run", default=None, help="the named run this is (e.g. N8): EP-0 passes a model change only "
+                   "when the pinned register's C9 named_run_treatments declares it for this label")
+    p.add_argument("--register-file", default=None, help="the PINNED frozen register (its sha256 must equal the "
+                   "--pin-file's register_sha256); needed with --named-run")
     p.add_argument("--tokens-last-hour", type=int, default=None, help="manual headroom reading (else Logs Insights)")
     p.add_argument("--creds-expiry", default=None, help="UTC ISO, else read from the AWS CLI")
     p.add_argument("--scenario-file", default=None)
@@ -67,9 +71,39 @@ def _json_file(path):
         return json.load(fh)
 
 
+def named_run_declarations(args, pin):
+    """(steps, declarations) for --named-run: the C9 entry's named_run_treatments from the PINNED register file.
+    The file must hash to the pin's register_sha256 (else the run is refused: an unpinned register declares nothing).
+    No --named-run: ([], []) and EP-0 lets no model change through."""
+    if not args.named_run:
+        return [], []
+    from prooflab.contract import register as _reg
+    from prooflab.registry import parse as _parse
+    if not args.register_file or not pin.get("register_sha256"):
+        return [preflight.step("ep0.named_run", False, "--named-run %s needs --register-file and a --pin-file with "
+                               "register_sha256" % args.named_run)], []
+    with open(args.register_file, "rb") as fh:
+        data = fh.read()
+    sha = _reg.register_sha256(data)
+    if sha != pin["register_sha256"]:
+        return [preflight.step("ep0.named_run", False, "register file sha256 %s is not the pinned %s" % (
+            sha[:12], pin["register_sha256"][:12]))], []
+    try:
+        entry = _reg.controls_by_ref(_parse.parse_register(data.decode("utf-8"))).get("C9") or {}
+        decl = _reg.named_run_treatments(entry)
+    except ValueError as exc:
+        return [preflight.step("ep0.named_run", False, "pinned register's named_run_treatments: %s" % exc)], []
+    mine = [d for d in decl if d["label"] == args.named_run]
+    return [preflight.step("ep0.named_run", True, "named run %s; pinned register %s declares %s" % (
+        args.named_run, pin.get("register_version"),
+        ", ".join("%s %s -> %s" % (d["agent"], d["from_model"], d["to_model"]) for d in mine) or "no model change"))], decl
+
+
 def _provenance(args, family, has_condition):
     if args.provenance:
         return args.provenance
+    if args.condition in conditions.PLAIN_CONDITIONS:
+        return "EXPLORATORY"            # a warm-up invocation is never assessed (ARCH 5.3, B13)
     if has_condition or family == "adv":
         return "FAULT_INJECTION"
     return "AUTHORIZED_TEST" if family == "test" else "LIVE_SUBJECT"
@@ -203,13 +237,17 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
     tokens = args.tokens_last_hour if args.tokens_last_hour is not None else preflight.tokens_in_window(
         runner, when, budget, **({"sleep": sleep} if sleep else {}))
     treatments = []
+    named_steps, declarations = named_run_declarations(args, pin)
     ep0_steps, _ = preflight.ep0(
         versions, provenance == "LIVE_SUBJECT", agents, treatments=treatments,
-        meta={"register_version": pin.get("register_version"), "pin_sha256": pin.get("pin_sha256")})
+        meta={"register_version": pin.get("register_version"), "pin_sha256": pin.get("pin_sha256")},
+        named_run=args.named_run if not any(not s["ok"] for s in named_steps) else None, declarations=declarations)
+    ep0_steps = named_steps + ep0_steps
     base = {"cid": cid, "scenario": args.scenario, "mode": args.mode, "only": args.only, "condition": cond["name"],
             "condition_sha256": cond["sha256"], "fault": args.fault, "provenance": provenance,
             "register_version": pin.get("register_version"), "register_sha256": pin.get("register_sha256"),
             "agent_versions": (versions or {}).get("running"), "ep0_treatments": treatments or None, "bound_tokens": bound,
+            "named_run": args.named_run,
             "started_at": when.strftime("%Y-%m-%dT%H:%M:%S.000Z")}
     try:
         steps = preflight.run_preflight(
@@ -238,6 +276,13 @@ def main(argv=None, runner=subprocess.run, now=None, out=None, sleep=None) -> in
           spool, sink)
 
     for t in treatments:
+        if t.get("model_swap"):
+            sw = t["model_swap"]
+            _emit(mk("lifecycle", "EP-0 declared treatment for %s: model-swap %s -> %s for named run %s, generation %s "
+                     "(declared in the pinned register %s)" % (t["agent"], sw["from_model"], sw["to_model"], sw["label"],
+                                                               t["generation"], pin.get("register_version")),
+                     phase="ep0.declared_treatment"), spool, sink)
+            continue
         _emit(mk("lifecycle", "EP-0 declared treatment for %s: pin %s -> %s, rails %s -> %s, generation %s (%s)" % (
             t["agent"], (t.get("from_pin_sha256") or "unknown")[:12], (t.get("to_pin_sha256") or "unknown")[:12],
             t.get("from_rails_mode"), t.get("to_rails_mode"), t["generation"], t["basis"].split(":")[0]),

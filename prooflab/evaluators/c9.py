@@ -89,7 +89,9 @@ def _roll(states, share_max):
 
 
 def assess_run(run_id, windows, pin, as_of, evaluator_sha256="", snapshot_id="",
-               provenance=None, condition=None, first_span_at=None):
+               provenance=None, condition=None, first_span_at=None, inputs=None):
+    """`inputs` (optional): how the windows were read (figure of record, captures, W2, diagnostics); its `gaps`
+    join the assessment's gaps and the rest is shown under measured.inputs. It never changes a verdict."""
     p = _values(pin)
     share_max = _claim.frac(p.get("violating_windows_max_pct"))
     rows, states = [], []
@@ -101,12 +103,15 @@ def assess_run(run_id, windows, pin, as_of, evaluator_sha256="", snapshot_id="",
     if share_max is None and verdict == "SATISFIED":
         verdict = "INDETERMINATE"
     gaps = ["%s: %s" % (r["runtime"], r["reason"]) for r in rows if r["state"] == "INDETERMINATE"]
+    gaps += [g for g in (inputs or {}).get("gaps") or () if g not in gaps]
     excluded = [r for r in rows if r["state"] in ("EXCLUDED", "NOT_ASSESSED")]
     assessed = [r for r in rows if r["state"] in ("OK", "VIOLATING", "INDETERMINATE")]
     vio = [r for r in rows if r["state"] == "VIOLATING"]
     suff = "MISSING" if not assessed else ("PARTIAL" if gaps else "COMPLETE")
     measured = {"windows": rows, "violating": len(vio), "assessed": len(assessed), "excluded": len(excluded),
                 "provenance": provenance, "condition": condition, "first_span_at": first_span_at or ""}
+    if inputs:
+        measured["inputs"] = dict((k, v) for k, v in inputs.items() if k != "gaps")
     return _claim.make_assessment(
         CONTROL_REF, p.get("control_id", "AIA-ARC-006"), p.get("threshold_version", ""),
         p.get("register_sha256", ""), p.get("register_version", ""), "run", run_id, first_span_at or "", "",
@@ -133,7 +138,7 @@ def assess_window(t1, t2, run_assessments, hourly_windows, pins_by_version, as_o
         if not inside:
             continue
         tv = _g(h, "threshold_version")
-        pin = (pins_by_version or {}).get(tv)
+        pin = _g(h, "pin") or (pins_by_version or {}).get(tv)     # a row may carry its run's own pin (its scenario's baseline)
         if pin is None:
             rows.append({"hour": hour, "runtime": _g(h, "runtime"), "state": "NOT_ASSESSED",
                          "reason": "no entry for %s" % tv, "version": tv})
