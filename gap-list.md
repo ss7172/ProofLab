@@ -759,7 +759,7 @@ AgentCore `Errors`, `SystemErrors`, `UserErrors` and `Throttles` stayed 0 on eve
 
 **Affects:** WHO and APPROVED; the human loop (L3); the roles table in B12 (separation of duties).
 
-**Impact:** a `RESPONDED` state proves the account `annapurna@invences.com` answered, not which person did. The review-before-approve rule (Arth reviews, Sree approves) cannot be shown from identities: a "reviewed" note and the approval come from the same account, and the AgentConfig approval annotations come from the same shared role. The section 1 decisions marked "Who: Arth" were made from that shared account.
+**Impact:** a `RESPONDED` state proves the account `annapurna@invences.com` answered, not which person did. The review-before-approve rule (Arth reviews, Sree approves) cannot be shown from identities: a "reviewed" note and the approval come from the same account, and the AgentConfig approval annotations come from the same shared role. Where the decisions log's section 1 rows marked "Who: Arth" were acts on the instance or in AWS, they were performed from that shared account or role.
 
 **Next:** state it everywhere (the inventory, the README's people section, this entry, the B12 row). Approvals remain the accountable owner's acts on her own account; we claim no more than that. With one more day: a separate ServiceNow user for Arth and per-person AWS roles, so a review and an approval carry different identities.
 
