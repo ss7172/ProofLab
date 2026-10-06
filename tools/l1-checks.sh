@@ -11,7 +11,8 @@
 #   L1-4  each agent's approval is shown            read-only `kubectl get` of the four ifabric AgentConfigs;
 #                                                   only name, generation, phase and approver/time are printed
 #
-# Usage (always under the team's hk wrapper, which supplies the profile; hk takes ONE argument):
+# Usage (under the team's hk wrapper on the Mac, which supplies the profile and takes ONE argument; or as-is in
+# the Workshop Studio IDE terminal, which has its own kubeconfig and role):
 #   bash tools/l1-checks.sh --dry-run                      print exactly what would be called; calls nothing
 #   hk 'bash <repo>/tools/l1-checks.sh --live --out ~/l1-results.json'
 # Options: --out FILE (default ./l1-results.json)  --model ALIAS (default nemotron-nano-9b)
@@ -89,8 +90,8 @@ fi
 for tool in kubectl aws python3; do
   command -v "$tool" >/dev/null 2>&1 || { echo "refused: $tool not on PATH (run under hk)" >&2; exit 2; }
 done
-if [ -z "${AWS_PROFILE:-}" ] && [ -z "${KUBECONFIG:-}" ]; then
-  echo "refused: no workshop profile in the environment; run it as hk 'bash $0 --live'" >&2
+if [ -z "${AWS_PROFILE:-}" ] && [ -z "${KUBECONFIG:-}" ] && [ ! -f "$HOME/.kube/config" ]; then
+  echo "refused: no workshop profile or kubeconfig; run it under hk on the Mac, or in the IDE terminal" >&2
   exit 2
 fi
 

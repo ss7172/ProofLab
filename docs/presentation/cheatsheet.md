@@ -9,9 +9,9 @@ console's own Ask parser. **If the screen differs from this page, the pack wins:
 | Run | CID | What it shows | C16 (token cap) | C7 (event recording) | C9 (drift) |
 |---|---|---|---|---|---|
 | **N1** | `ifabric-run-1791294968-36d929` | The normal run. The inline budget guard (EP-1) halted three calls before they could overspend | SATISFIED 22,271 / 25,000 (14 calls, 3 inline DENY) | SATISFIED 55/55 | SATISFIED, largest change 41.45% (IT) vs ±75% |
-| **N2b** | `ifabric-run-1791297942-c57210` | S2 "conflicting context" in observe mode: the guard *would* have halted twice, and the run still came in under the cap | SATISFIED 24,213 / 25,000 (headroom 787) | SATISFIED 47/47 | (not a C9 named run) |
-| **N2c** | `ifabric-run-1791301875-f821a3` | Third S2 attempt: no C16 breach; one network call blocked by the gateway guardrail | SATISFIED 14,063 | **BREACHED** 36/37 = 97.3% (gap-list B38, not notified) | (not a C9 named run) |
-| **N4** | `ifabric-run-1791299967-903ba1` | Declared fault: one IT tool-call record suppressed | SATISFIED 14,464 | **BREACHED** 43/44 = 97.73% → **INC0010351** | (not a C9 named run) |
+| **N2b** | `ifabric-run-1791297942-c57210` | S2 "conflicting context" in observe mode: the guard *would* have halted twice, and the run still came in under the cap | SATISFIED 24,213 / 25,000 (headroom 787) | SATISFIED 47/47 | NOT_ASSESSED (C9 not declared for this run; not green) |
+| **N2c** | `ifabric-run-1791301875-f821a3` | Third S2 attempt: no C16 breach; one network call blocked by the gateway guardrail | SATISFIED 14,063 | **BREACHED** 36/37 = 97.3% (gap-list B38, not notified) | NOT_ASSESSED (C9 not declared for this run; not green) |
+| **N4** | `ifabric-run-1791299967-903ba1` | Declared fault: one IT tool-call record suppressed | SATISFIED 14,464 | **BREACHED** 43/44 = 97.73% → **INC0010351** | INDETERMINATE (C9 not declared for this run; not green) |
 | **N5** | `ifabric-run-1791301189-1cc86f` | Re-test of N4 with the fault removed; closes the finding | SATISFIED | SATISFIED 45/45 (closes the N4 finding, 15:42:31Z) | INDETERMINATE (our slip: warm-up W5 used a stale versions file) |
 | **N8** | `ifabric-run-1791300807-0ffaa0` | Declared treatment: IT model swapped super-120b → nano-9b | SATISFIED | SATISFIED | SATISFIED, IT −62.3% (faster) vs ±75%: **no breach** |
 
@@ -84,7 +84,11 @@ prints `OK: every file matches MANIFEST.json`. Then any query above. In the brow
 
 ## 7. Level 1 live (step 2)
 
-30 minutes before: `hk 'bash <repo>/tools/l1-checks.sh --live --out ~/l1-results.json'`, then `clear`. Rehearse with
+30 minutes before, on the Mac: `hk 'bash <repo>/tools/l1-checks.sh --live --out ~/l1-results.json'`; in the
+Workshop Studio IDE terminal: `bash tools/l1-checks.sh --live --out ~/l1-results.json`. Either way the gateway key file
+`/tmp/modaas-token` must exist there. Then `clear`. Rehearse with
 `bash tools/l1-checks.sh --dry-run` (calls nothing). Four lines: L1-1 normal call through the gateway (CID +
-action id), L1-2 attack blocked (`content_filter`, 0 tokens), L1-3 direct Bedrock refused (AccessDenied), L1-4 four
+action id; it FAILs loudly if the gateway log does not carry the CID), L1-2 attack blocked (`content_filter`, 0 tokens), L1-3 direct Bedrock refused (AccessDenied), L1-4 four
 `ifabric-` AgentConfigs with approver and approval time. A FAIL line is information: read it out, don't hide it.
+If asked "did you just create evidence?": the L1 calls use `ifabric-test-*` CIDs, after the sealed window; they are not in
+the pack and change no verdict.
