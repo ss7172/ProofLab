@@ -1,11 +1,6 @@
-"""STUB adapters.runtime.hooks (tests/bundle/stubs)."""
+"""STUB adapters.runtime.hooks (tests/bundle/stubs): PR-03's Dispatcher name."""
 
 
-def providers(inv):
-    return []
-
-
-def http_event_hooks(inv):
-    async def _on_response(response):
-        inv.actions.append(response.headers.get("x-modaas-action-id"))
-    return {"response": [_on_response]}
+class Dispatcher(object):
+    def __init__(self, emit=None, rails=None, c16=None, stopped=None, on_error=None):
+        pass

@@ -105,13 +105,63 @@ def test_refuses_approval_annotation_non_string_env_and_model_alias():
         MK.validate_cr(cr)
 
 
+SYNTH_PIN = os.path.join(REPO, "tools", "docker_smoke", "synthetic_pin.json")
+
+
+def _yaml_env(text, key):
+    """The first value of `key` in the kit's YAML (to_yaml writes JSON-quoted scalars)."""
+    import json
+    for line in text.splitlines():
+        k, sep, v = line.strip().partition(": ")
+        if sep and k.strip('"') == key:
+            return json.loads(v)
+    raise AssertionError("no %s in the generated YAML" % key)
+
+
+def test_pin_env_hashes_the_env_string_not_the_file_bytes():
+    import hashlib
+    import json
+    raw = open(SYNTH_PIN, "rb").read()
+    assert b"\n  " in raw                                  # pretty-printed on disk
+    pin_json, pin_sha, rv, rs = MK.pin_env(raw)
+    assert pin_json == json.dumps(json.loads(raw), sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    assert pin_sha == hashlib.sha256(pin_json.encode("utf-8")).hexdigest()
+    assert pin_sha != hashlib.sha256(raw).hexdigest()
+    obj = json.loads(raw)
+    assert (rv, rs) == (obj["register"]["version"], obj["register"]["sha256"])
+    assert MK._HEX64.match(rs) and MK._HEX64.match(pin_sha)
+
+
+def test_pin_env_refuses_disagreeing_flags_and_a_pin_without_register():
+    raw = open(SYNTH_PIN, "rb").read()
+    with pytest.raises(MK.Refused):
+        MK.pin_env(raw, register_version="v-other")
+    with pytest.raises(MK.Refused):
+        MK.pin_env(raw, register_sha256="e" * 64)
+    with pytest.raises(MK.Refused):
+        MK.pin_env(b'{"c16": {"mode": "enforce"}}')
+    with pytest.raises(MK.Refused):
+        MK.pin_env(b"not json")
+
+
+def test_discover_refuses_placeholders_in_env_or_image():
+    kit = _kit()
+    pin_json, pin_sha, rv, rs = MK.pin_env(open(SYNTH_PIN, "rb").read())
+    env = MK.env_extra("enforce", pin_json, pin_sha, rv, rs)
+    docs = MK.build_crs(kit, MK.OfflineDiscovery(), ["it"], {"it": SHA_IMG}, MK.DEFAULT_MODEL, env)
+    with pytest.raises(MK.Refused):        # OfflineDiscovery's AUDIT_URL/token placeholders
+        MK.refuse_placeholders(docs)
+    ph_img = "<repo>@sha256:<digest-of-ifabric-it-x>"
+    docs[0]["spec"]["awsAgentCore"]["containerUri"] = ph_img
+    with pytest.raises(MK.Refused):
+        MK.refuse_placeholders(docs)
+
+
 def test_main_offline_writes_file_and_prints_ops_commands(tmp_path, capsys):
+    import hashlib
     _kit()
     out = tmp_path / "trio.yaml"
-    pin = tmp_path / "pin.json"
-    pin.write_text('{"c16": {"mode": "enforce"}, "faults": ["inject-tool-output"]}')
-    rc = MK.main(["--out", str(out), "--git-sha", "abc123def456", "--pin", str(pin),
-                  "--register-version", "v1", "--register-sha256", "e" * 64] +
+    rc = MK.main(["--out", str(out), "--git-sha", "abc123def456", "--pin", SYNTH_PIN] +
                  ["--image=%s=%s" % (r, SHA_IMG) for r in MK.TRIO])
     assert rc == 0
     text = out.read_text()
@@ -122,11 +172,13 @@ def test_main_offline_writes_file_and_prints_ops_commands(tmp_path, capsys):
     assert "kubectl apply --dry-run=server" in printed
     assert "HOLD for the captain" in printed
     assert " " + REF_FILE not in printed
+    pin_json = _yaml_env(text, "IFABRIC_PIN_JSON")
+    assert hashlib.sha256(pin_json.encode("utf-8")).hexdigest() == _yaml_env(text, "IFABRIC_PIN_SHA256")
+    assert MK._HEX64.match(_yaml_env(text, "IFABRIC_REGISTER_SHA256"))
+    assert _yaml_env(text, "IFABRIC_REGISTER_VERSION") == "synthetic-s0"
 
 
 def test_main_refuses_discover_without_pin_and_inside_repo(tmp_path):
     assert MK.main(["--discover", "--out", str(tmp_path / "x.yaml")]) == 2
-    pin = tmp_path / "pin.json"
-    pin.write_text("{}")
-    assert MK.main(["--discover", "--pin", str(pin), "--out", os.path.join(REPO, "x.yaml")]) == 2
+    assert MK.main(["--discover", "--pin", SYNTH_PIN, "--out", os.path.join(REPO, "x.yaml")]) == 2
     assert not os.path.exists(os.path.join(REPO, "x.yaml"))

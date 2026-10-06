@@ -7,7 +7,12 @@ exactly as the kit writes them. It WRITES files and PRINTS the ops-lane commands
 aws or a build, and never takes the generator's approval path (that stamps system-admin).
 
   python3 tools/make_ifabric_agents.py --roles customer,it,network --pin register/pins/v1-enforce.json \\
-      --register-version v1 --register-sha256 <sha> [--out /tmp/ifabric-agents.generated.yaml]
+      [--out /tmp/ifabric-agents.generated.yaml]
+
+The pin env block is exactly what the runtime verifies (PR-01 prooflab.contract.pin.env_block, PR-04
+startup, PR-02 PinnedC16.from_env): IFABRIC_PIN_JSON = the CANONICAL dump of the pin file (sorted keys, no
+spaces, ASCII), IFABRIC_PIN_SHA256 = sha256 of THAT string (never of the file bytes), and
+IFABRIC_REGISTER_VERSION/_SHA256 = the pin's own register block (an explicit flag must agree with it).
 
 Default (offline): placeholders for the discovered values (subnets, security group, AUDIT_URL and the
 ledger token), so the CR shape is reviewable with no cluster read. --discover (OPS LANE ONLY, the
@@ -65,6 +70,70 @@ TRIO = {
 
 class Refused(ValueError):
     """A value the wrapper will not write."""
+
+
+# ---- the one import site of the pin contract (PR-01 prooflab.contract.pin); a byte-identical fallback
+# (sort_keys, separators (",", ":"), ensure_ascii) so the wrapper runs before PR-01 merges.
+PIN_ENV_MAX = 5000   # the operator's cap per env value [05 AR-14]
+try:
+    sys.path.insert(0, REPO)
+    from prooflab.contract import pin as _pin  # noqa: E402
+except Exception:  # pragma: no cover - PR-01 not merged yet
+    _pin = None
+finally:
+    if sys.path and sys.path[0] == REPO:
+        sys.path.pop(0)
+
+
+def pin_dumps(obj):
+    if _pin is not None:
+        return _pin.dumps(obj)
+    return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+
+def pin_sha256(pin_json):
+    if _pin is not None:
+        return _pin.sha256_of(pin_json)
+    return hashlib.sha256(pin_json.encode("utf-8")).hexdigest()
+
+
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def pin_env(raw, register_version=None, register_sha256=None):
+    """(pin_json, pin_sha256, register_version, register_sha256) from a pin file's bytes, exactly as the
+    runtime checks them. Refuses a pin without a 64-hex register block, a flag that disagrees with the
+    pin, and a pin over the operator's env-value cap."""
+    try:
+        obj = json.loads(raw.decode("utf-8") if isinstance(raw, bytes) else raw)
+    except ValueError as exc:
+        raise Refused("the pin is not JSON: %s" % exc)
+    reg = obj.get("register") if isinstance(obj, dict) else None
+    if not isinstance(reg, dict) or not isinstance(reg.get("version"), str) or not reg.get("version") \
+            or not isinstance(reg.get("sha256"), str) or not _HEX64.match(reg["sha256"]):
+        raise Refused("the pin has no register block {version, sha256: 64 hex}")
+    for flag, mine in ((register_version, reg["version"]), (register_sha256, reg["sha256"])):
+        if flag is not None and flag != mine:
+            raise Refused("--register-version/--register-sha256 disagree with the pin's register block")
+    if _pin is not None:
+        errors = _pin.validate_pin(obj)
+        if errors:
+            raise Refused("invalid pin: " + "; ".join(errors))
+    text = pin_dumps(obj)
+    if len(text) > PIN_ENV_MAX:
+        raise Refused("the pin is %d chars; the operator caps an env value at %d" % (len(text), PIN_ENV_MAX))
+    return text, pin_sha256(text), reg["version"], reg["sha256"]
+
+
+def refuse_placeholders(docs):
+    """--discover writes what will be applied: no '<...>' placeholder may survive into it."""
+    for cr in docs:
+        ac = cr["spec"]["awsAgentCore"]
+        bad = [k for k, v in ac["environmentVariables"].items() if "<" in v]
+        if "<" in ac.get("containerUri", ""):
+            bad.append("containerUri")
+        if bad:
+            raise Refused("CR %s still holds placeholders in: %s" % (cr["metadata"]["name"], ", ".join(sorted(bad))))
 
 
 class OfflineDiscovery(object):
@@ -195,7 +264,7 @@ def ops_commands(roles, git_sha, out, kit_dir, extra_pip):
                                                             extra_pip, kit_dir),
         ]
     lines += [
-        "python3 tools/make_ifabric_agents.py --discover --roles %s --out %s <same pin/register flags>"
+        "python3 tools/make_ifabric_agents.py --discover --roles %s --out %s --pin <the same pin file>"
         % (",".join(roles), out),
         "kubectl apply --dry-run=server -f %s" % out,
         "kubectl apply -f %s" % out,
@@ -215,8 +284,8 @@ def main(argv=None):
     p.add_argument("--image", action="append", default=[], help="role=repo@sha256:... (default: URI_FILE)")
     p.add_argument("--git-sha", default=None)
     p.add_argument("--pin", help="the in-path pin JSON file (register/pins/<v>-<mode>.json)")
-    p.add_argument("--register-version", default="<register-version>")
-    p.add_argument("--register-sha256", default="<register-sha256>")
+    p.add_argument("--register-version", default=None, help="optional: must equal the pin's register.version")
+    p.add_argument("--register-sha256", default=None, help="optional: must equal the pin's register.sha256")
     p.add_argument("--rails-mode", default="enforce", choices=("enforce", "observe", "off"))
     p.add_argument("--extra-pip", default=DEFAULT_EXTRA_PIP)
     p.add_argument("--out", default=DEFAULT_OUT)
@@ -237,19 +306,21 @@ def main(argv=None):
             images.setdefault(r, _read_uri("/tmp/ifabric-image-uri-%s" % r) or
                               "<repo>@sha256:<digest-of-%s>" % image_tag(r, git_sha))
         if a.pin:
-            raw = open(a.pin, "rb").read()
-            pin_json = json.dumps(json.loads(raw.decode("utf-8")), separators=(",", ":"), sort_keys=True)
-            pin_sha = hashlib.sha256(raw).hexdigest()
+            with open(a.pin, "rb") as f:
+                pin_json, pin_sha, reg_v, reg_s = pin_env(f.read(), a.register_version, a.register_sha256)
         elif a.discover:
             raise Refused("--discover needs --pin (the agents fail closed without one)")
         else:
             pin_json, pin_sha = "<pin-json>", "<pin-sha256>"
+            reg_v, reg_s = a.register_version or "<register-version>", a.register_sha256 or "<register-sha256>"
         if a.discover and os.path.abspath(a.out).startswith(REPO + os.sep):
             raise Refused("--out inside the repo with --discover would put the ledger token in a tracked tree")
-        env = env_extra(a.rails_mode, pin_json, pin_sha, a.register_version, a.register_sha256)
+        env = env_extra(a.rails_mode, pin_json, pin_sha, reg_v, reg_s)
         kit = load_kit(a.kit)
         d = kit.Discovery(None) if a.discover else OfflineDiscovery()
         docs = build_crs(kit, d, roles, images, a.model, env)
+        if a.discover:
+            refuse_placeholders(docs)
     except Refused as e:
         print("make_ifabric_agents: refused: %s" % e, file=sys.stderr)
         return 2

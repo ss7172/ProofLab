@@ -82,7 +82,7 @@ def test_bundle_imports_and_core_is_byte_identical(tmp_path):
         assert mod.CORE_FILE == "/app/_bundle/prooflab/evaluators/c16_core.py"
         assert mod._SOURCES[BA.CORE_MODULE].encode("utf-8") == core_bytes
         assert mod.EVALUATOR_SHA256 == hashlib.sha256(core_bytes).hexdigest()
-    assert ("evaluator.sha256 (prooflab/evaluators/c16_core.py) = " + report["c16_core_sha256"]) in text
+    assert ("\n# evaluator.sha256=" + report["c16_core_sha256"] + "\n") in text
 
 
 def test_every_embedded_module_is_byte_identical(tmp_path):
@@ -155,7 +155,7 @@ def test_manifest_file_and_missing_optional_reported(tmp_path):
     mf = tmp_path / "m.json"
     mf.write_text(json.dumps(m))
     report, _ = BA.bundle(BA._load_manifest(str(mf), None), src_root=STUBS, agents_root=root, write=False)
-    assert "adapters/runtime/rails.py" in report["missing_optional"]
+    assert "adapters/runtime/__init__.py" in report["missing_optional"]
     assert "prooflab" in report["synthesized_empty_packages"]
 
 
@@ -186,3 +186,42 @@ def test_strip_keeps_core_byte_identical_and_prune_drops_unreached(tmp_path):
         mod = _import_file(report["out"])
         assert mod._SOURCES[BA.CORE_MODULE].encode("utf-8") == core_bytes
         assert mod.RESULT == "proceed"
+
+
+# tools/gate.sh (PR-00) check_agents_py: the pattern it greps every agents/*/ifabric-*.py with. Read from the
+# gate when it is in the tree; this copy otherwise (PR-00 5634b06).
+_GATE_RX = r"(?:evaluator[_.]sha256|c16_core[_a-z]*sha256|C16_CORE_SHA256)\W{0,8}([0-9a-f]{64})"
+
+
+def _gate_pattern():
+    import re
+    gate = os.path.join(REPO, "tools", "gate.sh")
+    if os.path.isfile(gate):
+        m = re.search(r'pat = re\.compile\(r"(.+?)", re\.I\)', open(gate).read())
+        if m:
+            return re.compile(m.group(1), re.I)
+    return re.compile(_GATE_RX, re.I)
+
+
+def test_gate_sh_finds_exactly_the_core_sha256_in_a_bundle(tmp_path):
+    root = _agents_root(tmp_path, ENTRY)
+    report, text = BA.bundle(BA.default_manifest("customer"), src_root=STUBS, agents_root=root, write=False)
+    found = _gate_pattern().findall(text)
+    assert found, "PR-00 gate would print SHA FAIL: no embedded c16 core sha256 marker found"
+    assert set(f.lower() for f in found) == {report["c16_core_sha256"]}   # the gate fails on ANY other match
+
+
+def test_no_contract_module_is_ever_embedded(tmp_path):
+    import shutil
+    root = _agents_root(tmp_path, ENTRY)
+    report, _ = BA.bundle(BA.default_manifest("customer"), src_root=STUBS, agents_root=root, write=False)
+    assert not [m for m in report["modules"] if m.startswith("prooflab.contract")]
+    assert not [p for p in BA.DEFAULT_REQUIRED + BA.DEFAULT_OPTIONAL if p.startswith("prooflab/contract")]
+    src = tmp_path / "src"
+    shutil.copytree(STUBS, str(src))
+    (src / "prooflab" / "contract").mkdir()
+    (src / "prooflab" / "contract" / "record.py").write_text("X = 1\n")
+    m = BA.default_manifest("customer")
+    m["optional"].append("prooflab/contract/record.py")
+    with pytest.raises(BA.BundleError):
+        BA.bundle(m, src_root=str(src), agents_root=root, write=False)

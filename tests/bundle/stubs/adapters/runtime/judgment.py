@@ -1,15 +1,10 @@
-"""STUB adapters.runtime.judgment (tests/bundle/stubs): last JSON line, else escalate."""
-import json
+"""STUB adapters.runtime.judgment (tests/bundle/stubs): PR-04's names."""
 
 
-def decide(inv, text, spec, ask):
-    if text is None:
-        return {"disposition": "escalate", "reason": "no-answer"}
-    for line in reversed(text.strip().splitlines()):
-        try:
-            obj = json.loads(line)
-        except ValueError:
-            continue
-        if isinstance(obj, dict) and obj.get("disposition"):
-            return obj
-    return {"disposition": "escalate", "reason": "invalid-structured-output"}
+def record_judgment(client, ctx, disposition, reason, evidence_ids=(), result_digests=(),
+                    reversible_step=None, precedence_rule=None):
+    return client.emit({"record_kind": "judgment", "judgment.disposition": disposition})
+
+
+def record_intent(client, ctx, intent):
+    return client.emit({"record_kind": "lifecycle", "lifecycle.event": "intent"})

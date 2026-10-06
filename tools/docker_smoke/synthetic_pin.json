@@ -1,0 +1,33 @@
+{
+  "schema": "ifabric.pin/1",
+  "register": {
+    "version": "synthetic-s0",
+    "sha256": "b3ccfea1548395077604efa9282c8fd070ba1dc35b7b7007a829be33326d6c5e"
+  },
+  "c16": {
+    "control_id": "ACN-COST-001",
+    "threshold_version": "C16-synthetic-s0",
+    "version_date": "2026-10-05T00:00:00Z",
+    "tiers": [
+      "standard"
+    ],
+    "default_tier": "standard",
+    "caps": {
+      "standard": 50000
+    },
+    "safety_ceiling": 300000,
+    "modes": [
+      "enforce",
+      "observe"
+    ],
+    "mode": "enforce",
+    "bound": {
+      "inline_bound_margin_pct": 10,
+      "inline_bound_fallback_tokens": 4000,
+      "max_tokens": 900
+    }
+  },
+  "c7": {
+    "declared_faults": []
+  }
+}
