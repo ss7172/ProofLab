@@ -50,8 +50,8 @@ TABLE_A = (
 )
 
 REQUIRED = ("schema", "record_id", "record_kind", "phase", "detail", "correlation_id",
-            "run.id", "verdict", "emitted.at", "emitted.clock", "ts", "provenance",
-            "authorship", "source.refs", "emitter", "null_reasons")
+            "run.id", "verdict", "ts", "provenance", "authorship", "source.refs", "emitter",
+            "null_reasons")
 
 
 def _j(*parts):
@@ -114,8 +114,14 @@ def scrub_exception(exc, scrubber):
         return type(exc).__name__
 
 
-def validate(rec):
-    """Return None when acceptable, else a short reason (never contains values)."""
+_EMITTED_ID = re.compile(r"^[0-9]{8}T[0-9]{9}Z-[a-z0-9][a-z0-9.\-]{0,31}-[0-9a-f]{8}$")
+_TIME_PAIRS = (("emitted.at", "emitted.clock"), ("observed.at", "observed.clock"))
+
+
+def _validate_local(rec):
+    """The bundle-side fallback (the prooflab package is not in the agent image beyond c16_core):
+    the null rule, the required fields, the time pair, the id shape and the secret-key guard.
+    PR-01 validate_record is the authority; a test keeps the two agreeing on the golden records."""
     if not isinstance(rec, dict):
         return "record must be a JSON object"
     for k in rec:
@@ -126,18 +132,44 @@ def validate(rec):
     for k in REQUIRED:
         if k not in rec:
             return "missing required field %s" % k
+    if not any(rec.get(a) and rec.get(c) for a, c in _TIME_PAIRS):
+        return "no time pair (emitted.at/emitted.clock or observed.at/observed.clock)"
     if rec.get("schema") != SCHEMA:
         return "wrong schema id"
+    if not _EMITTED_ID.match(str(rec.get("record_id"))):
+        return "malformed record_id"
     nr = rec.get("null_reasons")
     if not isinstance(nr, dict):
         return "null_reasons must be an object"
     for k in TABLE_A:
-        if rec.get(k) is None and k not in nr:
+        if k not in rec:
+            return "table-A field %s missing" % k
+        if rec[k] is None and not str(nr.get(k) or "").strip():
             return "null table-A field %s has no null_reason" % k
+    for k in nr:
+        if rec.get(k) is not None:
+            return "null_reasons.%s names a field that has a value" % k
     try:
         json.dumps(rec)
     except (TypeError, ValueError):
         return "not JSON serialisable"
+    return None
+
+
+try:  # in the repo and in tests the contract is the one authority
+    from prooflab.contract.record import validate_record as _contract_validate
+except Exception:  # pragma: no cover - the agent bundle
+    _contract_validate = None
+
+
+def validate(rec):
+    """Return None when acceptable, else a short reason (field names only, never values)."""
+    bad = _validate_local(rec)          # cheap, always on: also the secret-key guard
+    if bad or _contract_validate is None:
+        return bad
+    errors = _contract_validate(rec)
+    if errors:
+        return "contract: " + "; ".join(e.split(":")[0] for e in errors[:5])
     return None
 
 
@@ -236,7 +268,21 @@ def new_record(ctx, record_kind, ep_id, ep_kind, ep_transport, detail, verdict,
     for k in TABLE_A:
         if rec.get(k) is None and k not in reasons:
             reasons[k] = "not applicable: %s" % ep_kind
+    for k in list(reasons):                      # no stale reason on a field that has a value
+        if rec.get(k) is not None:
+            del reasons[k]
     rec["null_reasons"] = reasons
+    return rec
+
+
+def set_field(rec, name, value, null_reason=None):
+    """Set a field and keep the null rule (a value drops its null reason)."""
+    reasons = rec.setdefault("null_reasons", {})
+    rec[name] = value
+    if value is not None:
+        reasons.pop(name, None)
+    elif null_reason:
+        reasons[name] = null_reason
     return rec
 
 
@@ -286,9 +332,7 @@ class EmitClient(object):
             bad = validate(rec)
             if bad:
                 self.stats["rejected"] += 1
-                self._witness({"schema": SCHEMA, "record_kind": "lifecycle",
-                               "lifecycle.event": "record-rejected", "reason": bad,
-                               "emitted.at": iso_ms(utc_now())})
+                self._witness(self._system_record("record-rejected", bad, record))
                 return REJECTED_SCHEMA
             self._witness(rec)
             critical = rec.get("record_kind") in CRITICAL_KINDS
@@ -348,14 +392,32 @@ class EmitClient(object):
             except Exception:
                 pass
 
+    def _system_record(self, event, why, rec, pending=None):
+        """A contract-valid lifecycle record about the client itself (witness line; gaps stay local)."""
+        src = rec if isinstance(rec, dict) else {}
+        run_id = src.get("run.id") if isinstance(src.get("run.id"), str) else None
+        run_id = run_id or "ifabric-unenveloped-%d-000000" % int(time.time())
+        ctx = RunContext(run_id, EMITTER, provenance=src.get("provenance") or "UNATTRIBUTED",
+                         handoff_id=src.get("handoff.id"), session_id=src.get("runtime.session_id"),
+                         emitter=EMITTER)
+        detail = "%s: %s" % (event, why)
+        if pending is not None:
+            detail += " (pending=%s)" % pending
+        out = new_record(ctx, "lifecycle", "EP-4", "emit client (monitoring gap)", "emit", detail,
+                         "RECORDED", control_ref="C7", control_id="AIA-LOG-001",
+                         extra={"lifecycle.event": event, "reason": why})
+        lost = src.get("record_id")
+        if isinstance(lost, str) and lost:
+            out["source.refs"] = ["lost-record:" + lost]
+        return out
+
     def _gap(self, why, rec, pending=None):
-        g = {"schema": SCHEMA, "record_kind": "lifecycle", "kind": "monitoring-gap",
-             "lifecycle.event": "monitoring-gap", "reason": why,
-             "record_id.lost": rec.get("record_id") if isinstance(rec, dict) else None,
-             "run.id": rec.get("run.id") if isinstance(rec, dict) else None,
-             "pending": pending, "emitted.at": iso_ms(utc_now()), "emitted.clock": "agent-runtime"}
-        self.gaps.append(g)
-        self._witness(g)
+        try:
+            g = self._system_record("monitoring-gap", why, rec, pending)
+            self.gaps.append(g)
+            self._witness(g)
+        except Exception:
+            self.gaps.append({"lifecycle.event": "monitoring-gap", "reason": why})
 
     def _next(self):
         with self._cv:
@@ -403,12 +465,12 @@ class EmitClient(object):
                     last = type(e).__name__
                 if i + 1 < self.attempts:
                     time.sleep(self.backoff * (2 ** i))
+            if not ok:                              # the gap is on record before flush() can return
+                self._gap("post-failed:" + last, rec)
             with self._cv:
                 self._inflight -= 1
                 self.stats["posted" if ok else "failed"] += 1
                 self._cv.notify_all()
-            if not ok:
-                self._gap("post-failed:" + last, rec)
 
 
 def sha256_json(obj):

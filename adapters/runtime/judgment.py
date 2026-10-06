@@ -16,11 +16,18 @@ def normalize_disposition(d):
 
 
 def record_judgment(client, ctx, disposition, reason, evidence_ids=(), result_digests=(),
-                    reversible_step=None, precedence_rule=None):
+                    reversible_step=None, precedence_rule=None, model_disposition=None, valid=None,
+                    reasked=None, evidence_needed=None):
     """Emit one judgment record.  Returns the receipt (REJECTED_SCHEMA on bad input)."""
     disp = normalize_disposition(disposition)
     if disp is None or not isinstance(reason, str) or not reason.strip():
         return ec.REJECTED_SCHEMA
+    j2 = {}
+    for k, v in (("judgment.model_disposition", normalize_disposition(model_disposition)),
+                 ("judgment.valid", valid), ("judgment.reasked", reasked),
+                 ("judgment.evidence_needed", None if evidence_needed is None else list(evidence_needed))):
+        if v is not None:
+            j2[k] = v
     esc = disp == "escalate"
     nr = {}
     if reversible_step is None:
@@ -35,7 +42,7 @@ def record_judgment(client, ctx, disposition, reason, evidence_ids=(), result_di
                "judgment.result_digests": list(result_digests),
                "judgment.reversible_step": reversible_step,
                "judgment.precedence_rule": precedence_rule, "reason": reason,
-               "run.condition": "none"},
+               "run.condition": "none", **j2},
         null_reasons=dict(nr, **({"control.id": "ESC has no library id here"} if esc else {})))
     return client.emit(rec)
 

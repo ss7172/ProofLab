@@ -8,6 +8,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
+from prooflab.contract.record import validate_record
+
 from adapters.runtime import emit_client as ec
 from adapters.runtime import judgment, startup, tool_call
 
@@ -17,6 +19,7 @@ TOKEN = "t0ken-" + "A1b2C3d4E5f6G7h8"      # synthetic, assembled; not a real cr
 class FakeLedger(object):
     def __init__(self, mode="ok"):
         self.records, self.headers, self.mode = [], [], mode
+        self.invalid = []
         outer = self
 
         class H(BaseHTTPRequestHandler):
@@ -34,7 +37,11 @@ class FakeLedger(object):
                     self.end_headers()
                     return
                 outer.headers.append(self.headers.get("X-Audit-Token"))
-                outer.records.append(json.loads(body))
+                rec = json.loads(body)
+                errs = validate_record(rec)         # PR-01's contract validates every posted record
+                if errs:
+                    outer.invalid.append(errs)
+                outer.records.append(rec)
                 self.send_response(200)
                 self.send_header("Content-Length", "2")
                 self.end_headers()
@@ -54,6 +61,7 @@ def ledger():
     l = FakeLedger()
     yield l
     l.stop()
+    assert l.invalid == []
 
 
 def mk(url, out=None, **kw):
@@ -61,8 +69,8 @@ def mk(url, out=None, **kw):
 
 
 def ctx(**kw):
-    d = dict(run_id="ifabric-test-1-abc", actor_id="ifabric-it", handoff_id="h-1",
-             session_id="sess-1", register_version="v1", pin_sha256="p" * 64)
+    d = dict(run_id="ifabric-test-1791260000-abc123", actor_id="ifabric-it", handoff_id="h-1",
+             session_id="sess-1", register_version="v1", pin_sha256="a" * 64)
     d.update(kw)
     return ec.RunContext(**d)
 
@@ -78,6 +86,8 @@ def test_post_roundtrip_and_stdout_witness(ledger):
     lines = [json.loads(x) for x in out.getvalue().splitlines()]
     assert len(lines) == 2 and lines[1]["call.id"] == "act-1"
     assert ledger.records[0]["tool.declared"] is True
+    assert [r["tool.phase"] for r in ledger.records] == ["before", "after"]
+    assert ledger.records[1]["call.id"] == "act-1" and "call.id" not in ledger.records[1]["null_reasons"]
     assert "tool.args_sha256" in ledger.records[0] and "x" not in json.dumps(ledger.records[0]["detail"])
 
 
@@ -126,8 +136,13 @@ def test_unenveloped_path(ledger):
     assert e.run_id == "ifabric-unenveloped-1791260000-ab12cd"
     assert not e.enveloped and e.provenance == "UNATTRIBUTED" and e.tally == 0 and e.strictest_cap
     assert startup.resolve_envelope(None).run_id.startswith("ifabric-unenveloped-")
-    e2 = startup.resolve_envelope({"envelope": {"run_id": "ifabric-run-1-a", "handoff_id": "h"}})
-    assert e2.enveloped and e2.run_id == "ifabric-run-1-a"
+    e2 = startup.resolve_envelope({"envelope": {"run_id": "ifabric-run-1791260000-abc123", "handoff_id": "h"}})
+    assert e2.enveloped and e2.run_id == "ifabric-run-1791260000-abc123"
+    for payload in ({"ifabric": {"run_id": "ifabric-run-1791260000-abc123", "tally_tokens": 7, "tally_calls": 2}},
+                    {"input": {"ifabric": {"run_id": "ifabric-run-1791260000-abc123", "tally_tokens": 7,
+                                           "tally_calls": 2}}}):
+        e3 = startup.resolve_envelope(payload)
+        assert e3.enveloped and e3.tally_tokens == 7 and e3.tally_calls == 2 and e3.tally == 7
     c = mk(ledger.url)
     cx = ctx(run_id=e.run_id, enveloped=False)
     startup.record_no_envelope(c, cx)
@@ -147,7 +162,7 @@ def test_bounded_flush_under_hung_server():
         res = c.flush(timeout=0.5)
         dt = time.time() - t0
         assert dt < 1.0 and not res["ok"] and res["pending"] >= 1
-        assert any(g["reason"] == "flush-bound-exceeded" for g in c.gaps)
+        assert any("flush-bound-exceeded" in g["reason"] for g in c.gaps)
         assert c.flush_p99_ms() is not None
     finally:
         l.stop()
@@ -163,7 +178,7 @@ def test_emit_never_blocks_with_hung_server_and_full_queue():
         assert time.time() - t0 < 1.0
         assert ec.SPOOLED in rc                           # overflow is spooled, not blocked
         assert len(out.getvalue().splitlines()) >= 50     # every record is on stdout regardless
-        assert any(g["reason"] == "queue-full" for g in c.gaps)
+        assert any("queue-full" in g["reason"] for g in c.gaps)
     finally:
         l.stop()
 
@@ -177,7 +192,7 @@ def test_outage_records_gap_and_stdout_keeps_record():
     c = ec.EmitClient("http://127.0.0.1:%d" % port, TOKEN, stdout=out, attempts=2, backoff=0.01)
     judgment.record_judgment(c, ctx(), "escalate", "x")
     assert c.flush(timeout=2.0)["ok"]
-    assert c.stats["failed"] == 1 and c.gaps[0]["kind"] == "monitoring-gap"
+    assert c.stats["failed"] == 1 and c.gaps[0]["lifecycle.event"] == "monitoring-gap"
     assert "monitoring-gap" in out.getvalue() and "ifabric.judgment" in out.getvalue()
 
 
@@ -246,7 +261,7 @@ def test_scrub_exact_value_shapes_and_exception(ledger):
     assert TOKEN not in exc_txt
     cx = ctx()
     rec = ec.new_record(cx, "action", "EP-3", "k", "emit", dirty, "RECORDED",
-                        extra={"nested": {"v": [dirty]}})
+                        extra={"reason": dirty})
     assert c.emit(rec) == ec.ENQUEUED
     c.flush()
     blob = json.dumps(ledger.records) + out.getvalue()
@@ -302,3 +317,106 @@ def test_real_outcome_vocabulary_and_nulls(ledger):
     c.flush()
     for rec in ledger.records:
         assert rec["outcome.real"] is None and rec["null_reasons"]["outcome.real"]
+
+
+def _stdout_records(out):
+    return [json.loads(x) for x in out.getvalue().splitlines()]
+
+
+def test_every_emitted_and_witnessed_record_is_contract_valid(ledger):
+    out = io.StringIO()
+    c = mk(ledger.url, out)
+    cx = ctx()
+    r = tool_call.ToolCallRecorder(c, cx, declared_tools=["a"])
+    r.before("a", {"x": 1}, tool_use_id="tu-1")
+    r.after("a", {"x": 1}, status=200, call_id="act-1", result={"ok": 1}, suspicious=True, tool_use_id="tu-1")
+    r.after("a", {}, status=None, error=RuntimeError("boom"))
+    judgment.record_judgment(c, cx, "escalate", "risky", ["r1"], ["d1"], "undo", "P1",
+                             model_disposition="auto-resolve", valid=True, reasked=False, evidence_needed=["e"])
+    judgment.record_intent(c, cx, "triage")
+    startup.record_no_envelope(c, ctx(run_id="ifabric-unenveloped-1791260000-ab12cd", enveloped=False))
+    g = startup.InvocationGuard()
+    g.begin("h-1")
+    startup.refuse_duplicate(c, cx, g)
+    assert c.flush()["ok"]
+    assert len(ledger.records) == 7
+    lines = _stdout_records(out)
+    assert len(lines) == 7
+    for rec in lines:
+        assert validate_record(rec) == [], rec["record_id"]
+    assert {r["lifecycle.duplicate_state"] for r in lines if "lifecycle.duplicate_state" in r} == {"in-flight"}
+
+
+def test_no_stale_null_reason_on_a_non_null_table_a_field(ledger):
+    c = mk(ledger.url)
+    r = tool_call.ToolCallRecorder(c, ctx(), declared_tools=["a"])
+    r.after("a", {}, status=200, call_id="act-9")
+    r.after("a", {}, status=200)
+    c.flush()
+    for rec in ledger.records:
+        for k in rec["null_reasons"]:
+            assert rec[k] is None, k
+    assert ledger.records[0]["call.id"] == "act-9" and ledger.records[1]["call.id"] is None
+
+
+def test_local_and_contract_validators_agree_on_golden_records(ledger):
+    import copy
+    golden = [
+        ec.new_record(ctx(), "action", "EP-3", "k", "emit", "d", "RECORDED"),
+        tool_call.ToolCallRecorder(mk(ledger.url), ctx(), ["a"])._rec("after", "a", {}, "RECORDED", "d",
+                                                                      {"outcome.http_status": 200}, "act-1"),
+        ec.lifecycle_record(ctx(), "intent", "i"),
+    ]
+    for rec in golden:
+        assert validate_record(rec) == [] and ec._validate_local(rec) is None and ec.validate(rec) is None
+    mutations = [
+        lambda r: r["null_reasons"].pop("trace.id", None) or r.__setitem__("trace.id", None),
+        lambda r: r.pop("emitted.at"),
+        lambda r: r.__setitem__("record_id", "bad id"),
+        lambda r: r.__setitem__("schema", "x"),
+        lambda r: r["null_reasons"].__setitem__("ep.id", "stale"),
+        lambda r: r.pop("ep.id"),
+        lambda r: r.__setitem__("AUDIT_WRITE_TOKEN", "x"),
+    ]
+    for m in mutations:
+        bad = copy.deepcopy(golden[0])
+        m(bad)
+        assert validate_record(bad) != [] and ec._validate_local(bad) is not None
+        assert ec.validate(bad) is not None
+    unknown = copy.deepcopy(golden[0])
+    unknown["bogus.field"] = 1                       # only the contract knows the full field list
+    assert ec.validate(unknown) is not None
+
+
+def test_outage_then_recovery_posts_and_gap_is_recorded():
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()                                              # ledger down: connection refused
+    out = io.StringIO()
+    c = ec.EmitClient("http://127.0.0.1:%d" % port, TOKEN, stdout=out, attempts=1, backoff=0.01)
+    judgment.record_judgment(c, ctx(), "escalate", "during outage")
+    assert c.flush(timeout=2.0)["ok"]
+    assert c.stats["failed"] == 1 and c.stats["posted"] == 0
+    assert c.gaps and c.gaps[0]["lifecycle.event"] == "monitoring-gap"
+    assert validate_record(c.gaps[0]) == []
+    l = FakeLedger.__new__(FakeLedger)                     # bring a ledger up on the same port
+    FakeLedger.__init__(l)
+    try:
+        c._port = int(l.url.rsplit(":", 1)[1])
+        judgment.record_judgment(c, ctx(), "escalate", "after recovery")
+        assert c.flush(timeout=2.0)["ok"]
+        assert c.stats["posted"] >= 1 and len(l.records) == 1 and l.invalid == []
+    finally:
+        l.stop()
+
+
+def test_flush_p99_reported_over_20_flushes(ledger):
+    c = mk(ledger.url)
+    for i in range(25):
+        judgment.record_judgment(c, ctx(), "escalate", "r%d" % i)
+        assert c.flush()["ok"]
+    assert len(c.flush_ms) >= 20 and len(ledger.records) == 25
+    p99 = c.flush_p99_ms()
+    print("flush_p99_ms=%.1f over %d flushes" % (p99, len(c.flush_ms)))
+    assert p99 is not None and p99 < c.flush_bound * 1000.0

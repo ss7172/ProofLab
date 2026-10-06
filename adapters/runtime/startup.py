@@ -89,19 +89,40 @@ class Envelope(object):
         self.run_id, self.enveloped, self.handoff_id = run_id, enveloped, handoff_id
         self.tier, self.tally, self.provenance = tier, tally, provenance
         self.strictest_cap, self.from_agent = strictest_cap, from_agent
+        self.tally_tokens, self.tally_calls = tally, 0
+
+
+def _count(v):
+    return v if isinstance(v, int) and not isinstance(v, bool) and v >= 0 else 0
 
 
 def resolve_envelope(payload, now=None, rand=None):
-    """Our envelope is payload["envelope"] = {run_id, handoff_id, tier, tally, ...}.
-    Without one the agent still works: it mints ifabric-unenveloped-<epoch>-<hex>, stamps
-    UNATTRIBUTED, starts its tally at 0 and asks for the strictest cap in its pin.  Never raises."""
-    env = payload.get("envelope") if isinstance(payload, dict) else None
-    if isinstance(env, dict) and env.get("run_id"):
-        return Envelope(str(env["run_id"]), True, env.get("handoff_id"), env.get("tier"),
-                        int(env.get("tally") or 0), from_agent=env.get("from"))
+    """The envelope is payload["ifabric"] (ARCH 7.2; possibly wrapped in payload["input"]) =
+    {run_id, handoff_id, from, tier, tally_tokens, tally_calls, ...}.  The older payload["envelope"]
+    (key "tally") is still read.  Without one the agent still works: it mints
+    ifabric-unenveloped-<epoch>-<hex>, stamps UNATTRIBUTED, starts its tally at 0 and asks for the
+    strictest cap in its pin.  Never raises."""
+    env = None
+    if isinstance(payload, dict):
+        for holder in (payload, payload.get("input")):
+            if isinstance(holder, dict):
+                for key in ("ifabric", "envelope"):
+                    if isinstance(holder.get(key), dict) and holder[key].get("run_id"):
+                        env = holder[key]
+                        break
+            if env:
+                break
+    if env:
+        tokens = _count(env.get("tally_tokens", env.get("tally")))
+        out = Envelope(str(env["run_id"]), True, env.get("handoff_id"), env.get("tier"), tokens,
+                       provenance=env.get("provenance") or "LIVE_SUBJECT", from_agent=env.get("from"))
+        out.tally_tokens, out.tally_calls = tokens, _count(env.get("tally_calls"))
+        return out
     epoch = int(now if now is not None else time.time())
-    return Envelope("ifabric-unenveloped-%d-%s" % (epoch, rand or uuid.uuid4().hex[:6]), False,
-                    None, None, 0, "UNATTRIBUTED", True)
+    out = Envelope("ifabric-unenveloped-%d-%s" % (epoch, rand or uuid.uuid4().hex[:6]), False,
+                   None, None, 0, "UNATTRIBUTED", True)
+    out.tally_tokens = out.tally_calls = 0
+    return out
 
 
 def record_no_envelope(client, ctx):

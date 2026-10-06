@@ -48,13 +48,13 @@ class ToolCallRecorder(object):
               "tool.args_sha256": args_sha256(args), "tool.phase": phase,
               "run.condition": "none"}
         ex.update(extra)
+        ex["call.id"] = call_id                  # in extra: new_record drops the null reason for a value
         reasons = {}
         if call_id is None:
             reasons["call.id"] = "response header x-modaas-action-id not present"
         rec = ec.new_record(self.ctx, "action", EP_ID, EP_KIND, "emit", detail, verdict,
                             control_ref="C7", control_id="AIA-LOG-001", extra=ex,
                             null_reasons=reasons)
-        rec["call.id"] = call_id
         return rec
 
     def before(self, name, args, tool_use_id=None):
@@ -80,6 +80,5 @@ class ToolCallRecorder(object):
                 "no in-vocabulary outcome for status %r%s (transport error or unmapped 1xx/3xx/4xx)"
                 % (status, " with error" if error is not None else ""))
         else:
-            rec["reason"] = out
-            rec["null_reasons"].pop("reason", None)
+            ec.set_field(rec, "reason", out)
         return self.client.emit(rec)
