@@ -1,4 +1,4 @@
-"""PR-36 driver: rail T-04 (the no-evidence tool-loop guard) through the REAL IT role, the REAL shared app and the
+"""PR-36 driver: rail T-07 (the no-evidence tool-loop guard) through the REAL IT role, the REAL shared app and the
 REAL Strands 1.57.2 Agent (SYNTHETIC, offline).
 
     <venv-strands312>/bin/python tests/it_loop/drive_loop.py --mode enforce --results eeeeeeeeeeee --out OUT.json

@@ -185,7 +185,7 @@ class _Inv(object):
 
     def __init__(self, W, ctx, client, name, fault=None, limit=None, need=""):
         self.W, self.ctx, self.client = W, ctx, client
-        self.limit, self.need, self.streak, self.stop, self.tripped = limit, need, 0, None, False   # rail T-04
+        self.limit, self.need, self.streak, self.stop, self.tripped = limit, need, 0, None, False   # rail T-07
         self.rails = W.rails.Rails(name)
         declared = (getattr(W.rails, "POLICY", None) or {}).get(name, {}).get("tools", ())
         f = fault or {}
@@ -203,13 +203,13 @@ class _Inv(object):
 
 
 def _limit(cfg):
-    """Rail T-04's limit: the pin's c16.tool_no_evidence_limit (from the register's C16 entry), else None (off)."""
+    """Rail T-07's limit: the pin's c16.tool_no_evidence_limit (from the register's C16 entry), else None (off)."""
     k = ((cfg.pin or {}).get("c16") or {}).get("tool_no_evidence_limit")
     return k if type(k) is int and k > 0 else None
 
 
 class _ToolHooks(object):
-    """EP-3 records + rails X-02/X-03 (before) and T-02/T-03 (after) around each actual tool call; rail T-04 ends
+    """EP-3 records + rails X-02/X-03 (before) and T-02/T-03 (after) around each actual tool call; rail T-07 ends
     the loop after the pinned number of consecutive no-evidence (T-02 FLAG) results, with no further model call."""
 
     def __init__(self, inv):
@@ -221,14 +221,14 @@ class _ToolHooks(object):
         registry.add_callback(AfterToolCallEvent, self.after)
         registry.add_callback(AfterToolsEvent, self.batch)
 
-    def batch(self, event):   # T-04: end the turn after this tool batch, without calling the model again
+    def batch(self, event):   # T-07: end the turn after this tool batch, without calling the model again
         if self.inv.stop:
             event.end_turn = self.inv.stop
 
     def before(self, event):
         inv, tu = self.inv, event.tool_use
-        if inv.stop:   # T-04 already stopped the loop: the rest of this batch is not run
-            event.cancel_tool = "denied by rail T-04: tool loop stopped"
+        if inv.stop:   # T-07 already stopped the loop: the rest of this batch is not run
+            event.cancel_tool = "denied by rail T-07: tool loop stopped"
             return
         refusal, args = inv.rails.before_tool(tu.get("name"), tu.get("input"))
         inv.drain()
@@ -264,16 +264,16 @@ class _ToolHooks(object):
         event.result = dict(res, content=[{"text": wrapped}])
 
     def _trip(self, tool):
-        """Rail T-04: one rail decision (DG-1), BLOCK; it acts only when the rails enforce (observe: intended)."""
+        """Rail T-07: one rail decision (DG-1), BLOCK; it acts only when the rails enforce (observe: intended)."""
         inv, c = self.inv, self.inv.ctx
         r = inv.rails
         inv.tripped = True
-        r._d("T-04", "BLOCK", {"no-evidence-streak": inv.streak}, r.e,
+        r._d("T-07", "BLOCK", {"no-evidence-streak": inv.streak}, r.e,
              {"tool.name": tool, "threshold.value": inv.limit, "threshold.sha256": c.pin_sha256},   # K is pinned
-             reason="T-04 BLOCK: %d consecutive tool results held no evidence (limit %d, pin c16.tool_no_evidence_limit)"
+             reason="T-07 BLOCK: %d consecutive tool results held no evidence (limit %d, pin c16.tool_no_evidence_limit)"
              % (inv.streak, inv.limit))
         if r.e:
-            inv.stop = ("Stopped by rail T-04: %d consecutive %s results held no evidence. Disposition gather-evidence;"
+            inv.stop = ("Stopped by rail T-07: %d consecutive %s results held no evidence. Disposition gather-evidence;"
                         " needed: %s." % (inv.streak, tool, inv.need))
 
 
@@ -353,7 +353,7 @@ def build(spec):
             text = str(agent(W.j2.negotiation_question(neg.get("proposal")) if neg else _question(clean))).strip()
             if tally.halted:   # C16 halt: escalate in code, no re-ask
                 j = W.j2.halted_judgment()
-            elif inv.stop:   # rail T-04 ended the tool loop: gather-evidence in code, no re-ask
+            elif inv.stop:   # rail T-07 ended the tool loop: gather-evidence in code, no re-ask
                 j = W.j2.loop_judgment(inv.limit, inv.need, _constraints(neg or clean.get("context")))
             else:
                 j = W.j2.judge(text, lambda p: "" if tally.halted else str(agent(p)).strip(),

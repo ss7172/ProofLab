@@ -23,7 +23,7 @@ R_INVALID = "invalid-structured-output"
 R_C16 = "c16-budget-halt"
 R_NEGOTIATION = "negotiation-position"
 R_PROPOSAL = "proposal-disposition"
-R_LOOP = "tool-no-evidence-limit"   # rail T-04 stopped the tool loop (PR-36)
+R_LOOP = "tool-no-evidence-limit"   # rail T-07 stopped the tool loop (PR-36)
 
 # Gateway C (network -> IT): the IT agent's position on the network's proposal, in safety order.
 POSITIONS = ("agree", "gather-evidence", "disagree", "escalate")
@@ -260,7 +260,7 @@ def halted_judgment():
 
 
 def loop_judgment(k, need, constraints=None):
-    """Rail T-04 (PR-36): k consecutive tool results held no evidence, so the agent loop was ended in code with no
+    """Rail T-07 (PR-36): k consecutive tool results held no evidence, so the agent loop was ended in code with no
     further model call. gather-evidence, naming what would settle it; the freeze rule still escalates."""
     j = Judgment(GATHER, "%d consecutive tool results held no evidence: the tool loop was stopped" % k,
                  reversible_step="none: no change was made", precedence_rule=R_LOOP, named_evidence_needed=[need])
