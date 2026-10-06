@@ -483,6 +483,8 @@
 
 **Status:** fixed for `ifabric-*`; open for the reference agents.
 
+**Resolution (2026-10-06):** fixed in our three images and verified live at S-2 (`ops-lane/b2d-report.md`). Not fixed for the reference agents, which we do not change. Kept here for the record.
+
 ---
 
 ## B21. Model-call records lack `pin.sha256` and `runtime.session_id`
@@ -545,7 +547,7 @@
 
 **What we plan instead:** the pin ceiling halts a loop; the run is judged by C16 as it is.
 
-**Status:** under observation in P1; no fix claimed.
+**Status:** RESOLVED for the loop (2026-10-06). The pilot P1 on the first build halted at the 100K ceiling with 28 runbook-lookup calls inside IT's Gateway C negotiation (`ops-lane/b3-report.md` section 3: 95,936 tokens, 77,660 in that one invocation). PR-36 added the T-07 loop guard (K=3, read from the register) and PR-38 the agent fixes; in the clean pilots T-07 fired once in each (P1c, P3, P5; `ops-lane/b3d-report.md`), and no pilot looped. The repeat of lookups before T-07 stops it is a separate gap (B32). Original wording kept above.
 
 ---
 
@@ -594,5 +596,155 @@
 **What we plan instead:** `head-object`, then `get-object --if-match`, then `head-object`; scans run on unzipped copies (PR-34).
 
 **Status:** worked around.
+
+---
+
+
+## B28. The C16 enforce reservation: the effective inline ceiling is the cap minus a projected bound
+
+**What's missing:** a cap rule that accounts for how enforce decides.
+
+**Why:** in enforce, a call is denied when committed tokens + the projected next-call bound (about 3,000 to 5,400; the projected next call, `max_tokens` 2048 and 10 %) is above the cap. The effective inline ceiling is therefore the cap minus that bound. The pre-registered rule C16-cap/1 (normal need x 1.2, rounded up to 1,000) ignored the reservation. Under v1 (cap 20,000) the first healthy S1 run, N1, was halted by enforce; the bound at IT h1 was 5,139, so an S1 run halted once committed spend passed about 14.9K, below P1c's own natural 15,248.
+
+**Evidence:** `ops-lane/b4-report.md` (section 1 and "Why the cap halts S1"; N1 `ifabric-run-1791291533-39c87b`, 17,384 tokens; its first attempt `ifabric-run-1791291231-eacc22` was an upstream 500, see B30). The decision and the new rule: `ops-lane/b4b-report.md` section 1 (rule C16-cap/2, largest bound 5,139 from the DENY record `20261006T125929290Z-ep1-17920c26`); `planning-handoff.md` (the ~12:58Z and ~13:50Z blocks).
+
+**Impact:** a healthy run was stopped by a rule we pre-registered; the first v1 would have shown a PASS run as a stop. The cap was a measured value with a hole, not a free choice.
+
+**What we plan instead:** a declared post-hoc change, decided by the captain at about 12:58Z (option B): v1.1, rule C16-cap/2 = ceil to 1,000 of (normal need x 1.2 + the largest projected single-call bound) = 25,000, C16 only, C7 and C9 unchanged. v1 and its rules stay on record with their hashes; N1b is kept as the enforce stop record. New T1 (13:38:05Z) and T2 (INC0010338, delivered 13:41:06Z; the captain posted the APPROVED note).
+
+**Consequence:** the natural S2 breach lever was lost: P5 spent 24,430, under the new 25,000 (`ops-lane/b3d-report.md`). N2 uses the pre-registered conflicting-context condition instead.
+
+**Status:** worked around, openly labelled as post-hoc.
+
+---
+
+## B29. S1 spend varies run to run, so enforce can stop the final calls of a healthy run
+
+**What's missing:** a spend figure for S1 that holds from one run to the next.
+
+**Why:** S1's total moved between 14.7K and 22.3K today (P1c 15,248; W1 14,683; N1 22,271), because IT h1 made 5 to 9 model calls (N1b: 7; N1: 9 served calls, 17,623 tokens). A cap derived from two pilots plus headroom cannot cover that spread in enforce.
+
+**Evidence:** `ops-lane/b4b-report.md` (N1 `ifabric-run-1791294968-36d929`: 22,271 tokens, 14 served calls, three EP-1 DENY halts at IT h1, the network agent and IT Gateway C; W1 `ifabric-run-1791294721-fd797f`: 14,683); `ops-lane/b3d-report.md` (P1c 15,248).
+
+**Impact:** under v1.1 enforce stopped N1's final calls. C16 is SATISFIED (22,271 within 25,000, a stop record), but the run did not finish its negotiation.
+
+**What we plan instead:** the captain accepted N1 as the PASS run at about 14:10Z. It is labelled honestly: enforce stopped the final calls. Nothing was tuned after it.
+
+**Status:** accepted, labelled.
+
+---
+
+## B30. Platform failures that AgentCore metrics do not show
+
+**What's missing:** an error signal for a failure that the platform wraps in a success.
+
+**Why:** two kinds, both seen today:
+- A Bedrock `InternalServerException` returned inside a 200 response: 1 in about 360 model calls over 7 days (10:55:32Z, ConverseStream, 469 ms, 0 tokens). It happened twice today, the second time as N1 attempt 1 (`ifabric-run-1791291231-eacc22`).
+- A client read timeout while AWS recorded the invocation as completed: P1b, where IT finished in 24.9 s with HTTP 200 and the CLI waited 900 s for the end of the response.
+AgentCore `Errors`, `SystemErrors`, `UserErrors` and `Throttles` stayed 0 on every runtime.
+
+**Evidence:** `ops-lane/b3b-report.md` (P1 `ifabric-run-1791284097-880f6c`, the HTTP 500); `ops-lane/b3c-report.md` (P1b `ifabric-run-1791285349-7659f8`); `ops-lane/b4-report.md` (N1 attempt 1); `planning-handoff.md` (the 12:16Z read-only check).
+
+**Impact:** a C9 error count taken from AgentCore metrics alone would read 0 on a run that failed. Our own evidence trail (the ledger, the run record, the gateway span) caught both.
+
+**What we plan instead:** an INFRA-FAILED class, catalogued and counted as a C9 error, with a one-time re-run rule under a new CID at least 2 minutes later; `PROOFLAB_CLI_READ_TIMEOUT` (PR-44; 180 s for S1 and S3, 420 s for S2). The failed runs stay on record.
+
+**Status:** worked around; the metric gap itself is a platform limit.
+
+---
+
+## B31. The Assurance agent's gateway call carries no CID
+
+**What's missing:** the run id on the Assurance agent's model call.
+
+**Why:** its call to the gateway sends no baggage, so the gateway mints its own trace and writes that 32-hex trace id as `modaas.run_id`. It is unrelated to our `ifabric-assure-` CID. (B16 records the same gap for the model-call records; this entry covers the join.)
+
+**Evidence:** `ops-lane/b6b-report.md` (action id `9cbe05fb-3ad4-4a64-b024-c3b6f8c8b075`; gateway trace `07047a28...`; zero spans with `modaas.run_id` equal to the CID).
+
+**Impact:** a collector that filters spans by our CID prefixes never sees Assurance calls; a window sweep lists them as unattributed.
+
+**What we plan instead:** PR-41 joins a span whose run id is the gateway's own trace id to the incident's run and finding by action id, through the witness line.
+
+**Status:** worked around. Fixing it at the source needs a handler change, a rebuild and a new approval; not done.
+
+---
+
+## B32. IT's Gateway C negotiation repeats lookups until T-07 stops it
+
+**What's missing:** reuse of the incident and runbook ids the customer agent already found.
+
+**Why:** the negotiation does not carry them, so IT looks them up again; the T-07 guard (K=3) ends it. T-07 fired live in P1c, P3 and P5.
+
+**Evidence:** `ops-lane/b3d-report.md` (T-07 once per pilot, at IT Gateway C); the first-build loop in `ops-lane/b3-report.md` section 3.
+
+**Impact:** extra tokens and calls in every run; the C16 cap and the C9 IT baseline include them.
+
+**What we plan instead:** keep the guard on and say so.
+
+**Status:** open; fixing it needs an agent change, and the images are frozen.
+
+---
+
+## B33. S1 cannot reach the kit's "auto-resolve" disposition
+
+**What's missing:** an S1 procedure in the runbook-lookup tool.
+
+**Why:** the tool returns none, so every S1 disposition is gather-evidence (the network agent's text says "low-risk switchover resolves", but the recorded disposition does not).
+
+**Evidence:** `ops-lane/b3d-report.md` (P1c kit grade 7/8; P3 10/10; P5 10/10); the same in B3, B3b and B3c.
+
+**Impact:** the kit grade for S1 is 7/8 at best. S2 and S3 grade 10/10.
+
+**What we plan instead:** report 7/8 as it is.
+
+**Status:** open, accepted; the tool is not ours.
+
+---
+
+## B34. Three of six pilot attempts failed
+
+**What's missing:** a clean first-attempt pilot record.
+
+**Why:** the pilots ran as P1 (halted, agent-side), P1 again (Bedrock 500), P1b (client timeout), then P1c, P3 and P5, which finished. One failure was the agent's (the first build's runbook loop and guardrail block, fixed by PR-38); two were the platform's (B30). Each is catalogued with its failure class.
+
+**Evidence:** `ops-lane/b3-report.md`, `b3b-report.md`, `b3c-report.md`, `b3d-report.md`; `register/experiments/experiments.jsonl` (P1 with `halted: true`, `derivation_eligible: false`).
+
+**Impact:** the thresholds rest on two eligible measured runs (P1c, P3), plus P5 for the S2 lever. A halted run measures the ceiling, not the need.
+
+**What we plan instead:** v1 and v1.1 cite only the eligible pilots. The captain declined a fallback basis (the 100K appetite) and said "keep trying pilots 3 more times" at about 12:00Z; it was not needed.
+
+**Status:** closed; recorded.
+
+---
+
+## B35. A pin or mode patch is a runtime update, so C9 needs a warm-up run
+
+**What's missing:** a latency baseline that survives a patch.
+
+**Why:** a patch starts a new runtime version; the first run after it pays a cold start. C9 reads an assessed run after an undeclared treatment as INDETERMINATE.
+
+**Evidence:** `planning-handoff.md` (~12:58Z block, PR-45); `ops-lane/b4b-report.md` (W1 `ifabric-run-1791294721-fd797f` counted, C9 SATISFIED for N1).
+
+**Impact:** one extra run (about 15K tokens) before every assessed run after a patch.
+
+**What we plan instead:** PR-45: one warm-up on the same generation and pin satisfies the cold-start rule, and C9 now counts every invocation, including the customer's h0.
+
+**Status:** worked around.
+
+---
+
+## B36. The README shows `<CID>`-style syntax examples
+
+**What's missing:** examples a reader can copy as written.
+
+**Why:** placeholder syntax in the command examples. Cosmetic.
+
+**Evidence:** `planning-handoff.md` (11:59Z block).
+
+**Impact:** none on the evidence; a reader must substitute a value.
+
+**What we plan instead:** leave it; fill the date and window fields from the real data at pack time.
+
+**Status:** open, cosmetic.
 
 ---
