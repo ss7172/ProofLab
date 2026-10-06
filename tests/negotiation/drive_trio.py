@@ -1,6 +1,7 @@
 """PR-28 dynamic driver (run on the Strands 3.12 venv, as a subprocess of test_negotiation.py; SYNTHETIC, offline).
 
     <venv-strands312>/bin/python tests/negotiation/drive_trio.py <S1|S2|S3> --out OUT.json [--fault SPEC]
+        [--variant s3-agree|s2-data]
 
 The REAL orchestrator (`prooflab run`, its preflight with stubbed AWS answers) invokes the REAL shared app
 (ifabric_app.build(role SPEC) -> invoke()) in-process through the runner seam; each app writes through its real
@@ -66,7 +67,7 @@ SCRIPT = {
                           named_evidence_needed=["per-site outage times"], reversible_step="none"),
            "it": _j(disposition="gather-evidence", deciding_evidence=["E1"], reason="two causes fit; inconclusive",
                     named_evidence_needed=["optical power history"], reversible_step="temporary reroute, revert"),
-           "network": _j(disposition="resolve", deciding_evidence=[], reason="probably the optic",
+           "network": _j(disposition="resolve", deciding_evidence=["E1"], reason="probably the optic",
                          proposed_action="replace the optic", change_risk="medium"),
            # the model AGREES, but the runbook lookup came back empty: J2's empty-evidence rule moves it
            "negotiate": _j(disposition="resolve", deciding_evidence=["E1"], position="agree", reason="looks fine")},
@@ -76,6 +77,18 @@ SCRIPT = {
                          proposed_action="reroute the regulated slice", change_risk="high: change freeze"),
            "negotiate": _j(disposition="escalate", deciding_evidence=["E1"], position="disagree",
                            reason="maintenance freeze: the change is out of policy; named approval required")},
+}
+# variants (--variant): the precedence must hold whatever the model says on Gateway C
+AGREE = _j(disposition="resolve", deciding_evidence=["E1"], position="agree", reason="the fix is clear",
+           reversible_step="switch back")
+VARIANTS = {
+    # S3: the IT model AGREES and calls it resolved; the freeze (constraints) and the network's escalate win
+    "s3-agree": {"S3": {"negotiate": AGREE}},
+    # S2: the runbook lookup returns data and the model agrees, but the network proposed gather-evidence
+    "s2-data": {"S2": {"network": _j(disposition="gather-evidence", deciding_evidence=["E1"], reason="two causes fit",
+                                     named_evidence_needed=["QoS policy change log"],
+                                     proposed_action="collect the QoS change log", change_risk="none: read-only"),
+                       "negotiate": AGREE}},
 }
 TOOL = {"customer": "customer-records___customer_lookup", "it": "runbook-lookup___lookup",
         "network": "network-twin___predict_rsrp"}
@@ -88,7 +101,7 @@ class _Ev(object):
 
 class FakeAgent(object):
     """Stands in for strands.Agent: the same hook calls a real Agent makes, a scripted answer."""
-    scenario, n = "S1", [0]
+    scenario, variant, n = "S1", None, [0]
 
     def __init__(self, model=None, tools=None, system_prompt="", hooks=(), callback_handler=None):
         self.mc, self.th = hooks[0], hooks[1]
@@ -114,7 +127,7 @@ class FakeAgent(object):
         before = _Ev(tool_use=tu, cancel_tool=None)
         self.th.before(before)
         if not before.cancel_tool:
-            empty = negotiate and self.scenario == "S2"
+            empty = negotiate and self.scenario == "S2" and self.variant != "s2-data"
             text = "{}" if empty else EVIDENCE[self.role]
             self.th.after(_Ev(tool_use=tu, result={"status": "success", "content": [{"text": text}]},
                               exception=None, cancel_message=None))
@@ -127,6 +140,9 @@ def main(argv):
     scenario = argv[0]
     fault = argv[argv.index("--fault") + 1] if "--fault" in argv else None
     FakeAgent.scenario = scenario
+    FakeAgent.variant = argv[argv.index("--variant") + 1] if "--variant" in argv else None
+    for scen, roles in VARIANTS.get(FakeAgent.variant, {}).items():
+        SCRIPT[scen] = dict(SCRIPT[scen], **roles)
     srv = HTTPServer(("127.0.0.1", 0), Store)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     url = "http://127.0.0.1:%d" % srv.server_port

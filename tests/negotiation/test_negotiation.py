@@ -122,13 +122,14 @@ def test_kit_shape_on_the_emit_path():
 _RUNS = {}
 
 
-def drive(scenario, fault=None, tmp=None):
-    key = (scenario, fault)
+def drive(scenario, fault=None, tmp=None, variant=None):
+    key = (scenario, fault, variant)
     if key not in _RUNS:
         if not os.path.exists(PY312):
             pytest.skip("Strands 3.12 venv not present")
-        out = os.path.join(str(tmp), "%s-%s.json" % (scenario, abs(hash(fault))))
+        out = os.path.join(str(tmp), "%s-%s-%s.json" % (scenario, abs(hash(fault)), variant))
         cmd = [PY312, os.path.join(HERE, "drive_trio.py"), scenario, "--out", out] + (["--fault", fault] if fault else [])
+        cmd += ["--variant", variant] if variant else []
         proc = subprocess.run(cmd, cwd=REPO, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
                               timeout=240)
         assert proc.returncode == 0, proc.stderr[-2000:]
@@ -169,6 +170,54 @@ def test_dynamic_trio_gateway_c_and_records(scenario, tmpdir_mod):
     assert proposal["resolution"] and proposal["change_risk"]
 
 
+def _gateway_c(d):
+    (neg,) = [x["result"] for x in d["results"] if x["negotiate"]]
+    return neg
+
+
+def test_s3_precedence_holds_in_the_app_when_the_it_model_agrees(tmpdir_mod):
+    """The integrated path, not the unit: the script carries S3's constraints (freeze, restricted change) and the
+    network's escalate proposal to Gateway C; the IT model says agree/resolve and is overruled."""
+    d = drive("S3", tmp=tmpdir_mod, variant="s3-agree")
+    neg = _gateway_c(d)
+    assert neg["position"] in ("disagree", "escalate") and neg["disposition"] == j2.ESCALATE
+    assert neg["judgment"]["model_disposition"] == j2.AUTO_RESOLVE
+    assert neg["judgment"]["precedence_rule"] == j2.R_FREEZE          # the constraints reached the app
+    for x in d["results"]:                                             # ... on every trio step too
+        assert x["result"]["disposition"] == j2.ESCALATE, x["agent"]
+    (rec,) = [r for r in d["records"] if r["phase"] == "negotiation"]
+    assert "disposition=escalate" in rec["detail"]
+
+
+def test_s2_network_gather_floors_gateway_c_even_with_runbook_data(tmpdir_mod):
+    d = drive("S2", tmp=tmpdir_mod, variant="s2-data")
+    net = [x["result"] for x in d["results"] if x["agent"] == "ifabric-network"][0]
+    assert net["proposal"]["disposition"] == j2.GATHER
+    neg = _gateway_c(d)
+    assert neg["position"] == "gather-evidence" and neg["disposition"] == j2.GATHER
+    assert neg["judgment"]["precedence_rule"] == j2.R_PROPOSAL     # not the empty-evidence rule: data came back
+
+
+def test_floor_never_loosens_and_reads_aliases():
+    for prop, start, want in (("escalate", j2.AUTO_RESOLVE, j2.ESCALATE), ("resolve", j2.ESCALATE, j2.ESCALATE),
+                              ("gather_evidence", j2.AUTO_RESOLVE, j2.GATHER), ("halted", j2.GATHER, j2.ESCALATE),
+                              (None, j2.AUTO_RESOLVE, j2.AUTO_RESOLVE), ("bogus", j2.AUTO_RESOLVE, j2.AUTO_RESOLVE)):
+        j = j2.Judgment(start, "r", model_disposition=start)
+        assert j2.floor(j, prop).disposition == want, prop
+
+
+def test_scenario_constraints_reach_both_payload_shapes():
+    from prooflab.adapters.orchestrator import run
+    assert run.constraint_flags(["SITE-PHX-04 is under an active maintenance freeze",
+                                 "CUST-3310 is regulated; change requires named human approval"]) == \
+        {"maintenance_freeze": True, "restricted_change": True}
+    assert run.constraint_flags([]) is None and run.constraint_flags({"maintenance_freeze": False}) is None
+    assert run.BUILTIN_CONSTRAINTS["S3"]["maintenance_freeze"] and "S1" not in run.BUILTIN_CONSTRAINTS
+    p = run.negotiate_payload("c", "c:h3", "tp", {"disposition": "escalate"}, {}, {"maintenance_freeze": True})
+    assert p["negotiate"]["constraints"] == {"maintenance_freeze": True}
+    assert "constraints" not in run.negotiate_payload("c", "c:h3", "tp", {}, {})["negotiate"]
+
+
 def _expected_from_register(recs):
     """C7's expected workflow events from the register's own lists (orchestrator events keyed on the script,
     in-agent events per agent; escalation where the agent escalated; negotiation on the IT agent)."""
@@ -206,7 +255,7 @@ def test_c7_over_a_clean_run_with_the_registers_events_is_satisfied(scenario, tm
 
 def test_c7_after_stop_events_use_the_contract_stop_name():
     text = open(os.path.join(REPO, "register", "register.yaml")).read()
-    assert 'workflow_events_after_stop: "decision,stop,judgment,handoff.received"' in text
+    assert 'workflow_events_after_stop: "decision,stop,judgment"' in text
     assert "lifecycle.stop" not in text
 
 
