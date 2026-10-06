@@ -1,0 +1,109 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "ifabric.assessment/1",
+ "title": "ProofLab assessment (ARCH §3.2; transports.Assessment)",
+ "description": "As a record: record_kind assessment with these fields flattened under assessment.*.",
+ "type": "object",
+ "required": [
+  "assessment_id",
+  "control_ref",
+  "control_id",
+  "threshold_version",
+  "threshold_sha256",
+  "register_version",
+  "scope_kind",
+  "scope_id",
+  "scope_start",
+  "scope_end",
+  "requirement_verdict",
+  "design",
+  "operation",
+  "deficiency",
+  "evidence_sufficiency",
+  "measured",
+  "exceptions",
+  "denominators",
+  "completeness",
+  "formula",
+  "evidence_refs",
+  "gaps",
+  "evaluator_name",
+  "evaluator_sha256",
+  "as_of",
+  "snapshot_id"
+ ],
+ "properties": {
+  "assessment_id": {},
+  "control_ref": {
+   "enum": [
+    "C16",
+    "C7",
+    "C9",
+    "ESC",
+    "APPROVAL",
+    "INV",
+    "PLATFORM",
+    "NONE",
+    "RAIL"
+   ]
+  },
+  "control_id": {},
+  "threshold_version": {},
+  "threshold_sha256": {},
+  "register_version": {},
+  "scope_kind": {
+   "enum": [
+    "run",
+    "window",
+    "interval",
+    "escalation"
+   ]
+  },
+  "scope_id": {},
+  "scope_start": {},
+  "scope_end": {},
+  "requirement_verdict": {
+   "enum": [
+    "SATISFIED",
+    "BREACHED",
+    "INDETERMINATE",
+    "NOT_ASSESSED"
+   ]
+  },
+  "design": {},
+  "operation": {},
+  "deficiency": {},
+  "evidence_sufficiency": {},
+  "measured": {
+   "type": "object"
+  },
+  "exceptions": {
+   "type": "array"
+  },
+  "denominators": {
+   "type": "object"
+  },
+  "completeness": {
+   "type": "object"
+  },
+  "formula": {},
+  "evidence_refs": {
+   "type": "array"
+  },
+  "gaps": {
+   "type": "array"
+  },
+  "evaluator_name": {},
+  "evaluator_sha256": {},
+  "as_of": {},
+  "snapshot_id": {},
+  "finding": {
+   "type": [
+    "object",
+    "null"
+   ]
+  }
+ },
+ "additionalProperties": false,
+ "x-assessment-id": "<control_ref>:<threshold_version>:<scope_kind>:<scope_id>:r<n>"
+}

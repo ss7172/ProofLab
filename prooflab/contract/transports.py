@@ -1,0 +1,166 @@
+"""The one contract: four transports, one record (ARCH §3.2). Version `ifabric.contract/1`. Stdlib, 3.9.
+
+  evaluate(q, pin) -> Decision      synchronous, in the path; EXACTLY ONE CALLER: adapters/runtime/model_call.py
+  emit(record) -> EmitReceipt       async enqueue; never raises (implemented by adapters/runtime/emit_client.py)
+  callback(event) -> record         a later verdict (notify-then-poll; only the poller calls it)
+  pull(source, window, as_of) -> Capture ; normalize(capture) -> [record]   off the path
+
+C16Question / Decision / PinnedC16 live in prooflab.evaluators.c16_core (PR-02) and are re-exported here
+lazily (one import site: `_core()`), so the in-path and off-path copies are one file with one sha256.
+A change to this module is a PR that bumps CONTRACT_VERSION (R-D-06).
+"""
+from __future__ import annotations
+
+import importlib
+from dataclasses import dataclass, field
+
+CONTRACT_VERSION = "ifabric.contract/1"
+CORE_MODULE = "prooflab.evaluators.c16_core"
+EMIT_RECEIPTS = ("ENQUEUED", "SPOOLED", "REJECTED_SCHEMA")
+EVALUATOR_ERROR = "evaluator-error"
+
+
+def _core():
+    """THE one coupling to PR-02's c16 core."""
+    return importlib.import_module(CORE_MODULE)
+
+
+def __getattr__(name):  # PEP 562: C16Question, Decision, PinnedC16 re-exported from the core
+    if name in ("C16Question", "Decision", "PinnedC16"):
+        return getattr(_core(), name)
+    raise AttributeError(name)
+
+
+def evaluate(q, pin, evaluator_sha256=None):
+    """Pure. Delegates to c16_core.decide_inline(q, pin[, evaluator_sha256]); the sha256 is the embedded
+    core's own (the bundle records it; the core cannot hash itself). An exception inside becomes a
+    fail-closed Decision (verdict DENY, action halt, reason evaluator-error), decided here, never in the
+    adapter. The fail-closed Decision carries the same evaluator_sha256, so its record still validates."""
+    core = _core()
+    try:
+        if evaluator_sha256 is not None:
+            return core.decide_inline(q, pin, evaluator_sha256)
+        return core.decide_inline(q, pin)
+    except Exception as exc:  # noqa: BLE001 - fail closed on anything
+        return _fail_closed(core, q, pin, exc, evaluator_sha256)
+
+
+def _safe(obj, name, default=None):
+    try:
+        return getattr(obj, name, default)
+    except Exception:  # noqa: BLE001 - a raising attribute must not escape the fail-closed path
+        return default
+
+
+def _cap_for(q, pin):
+    """The pin's cap for q.tier, or None when it does not resolve (never raises)."""
+    try:
+        caps = dict(_safe(pin, "caps", None) or ())
+        cap = caps.get(_safe(q, "tier"))
+        return cap if isinstance(cap, int) and not isinstance(cap, bool) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _fail_closed(core, q, pin, exc, evaluator_sha256=None):
+    sha = evaluator_sha256 if evaluator_sha256 is not None else (_safe(core, "CORE_SHA256", None) or None)
+    maker = getattr(core, "fail_closed_decision", None)
+    if maker is not None:
+        try:
+            try:
+                return maker(q, pin, EVALUATOR_ERROR, sha)
+            except TypeError:          # an older core: (q, pin, reason)
+                return maker(q, pin, EVALUATOR_ERROR)
+        except Exception:  # noqa: BLE001 - a broken maker falls through to the built-in fail-closed Decision
+            pass
+    total = 0
+    for k in ("committed_tokens", "reserved_tokens", "bound_tokens"):
+        try:
+            total += int(_safe(q, k, 0) or 0)
+        except (TypeError, ValueError):
+            pass
+    cap = _cap_for(q, pin)
+    return core.Decision(
+        control_ref="C16", control_id=_safe(pin, "control_id", "ACN-COST-001"), verdict="DENY",
+        reason="%s: %s" % (EVALUATOR_ERROR, type(exc).__name__), measured_value=total,
+        threshold_value=cap if cap is not None else 0, tier=_safe(q, "tier", ""), mode=_safe(pin, "mode", "enforce"),
+        limit_applied="cap", limit_value=cap, action="halt", bound_basis=_safe(q, "bound_basis"),
+        threshold_version=_safe(pin, "threshold_version", ""), register_version=_safe(pin, "register_version", ""),
+        threshold_sha256=_safe(pin, "register_sha256", None) or None, pin_sha256=_safe(pin, "pin_sha256", None) or None,
+        evaluator_name=CORE_MODULE, evaluator_sha256=sha,
+    )
+
+
+# --- the other transports' shapes --------------------------------------------------------------
+
+@dataclass(frozen=True)
+class DeferredVerdict:
+    """A verdict that arrives later (owner response, human approval, or cutoff silence)."""
+    finding_id: str
+    run_id: str
+    kind: str                 # "owner-response" | "approval" | "cutoff-silence"
+    observed_at: str          # UTC, the ServiceNow clock
+    actor: str                # the human (ServiceNow user) or "cutoff"
+    detail: str
+    source_refs: tuple = ()
+
+
+@dataclass(frozen=True)
+class SourceSpec:
+    system: str               # e.g. "aws-spans", "modaas-evidence", "pdp", "ledger", "servicenow"
+    query: str                # the exact query / filter text (recorded in the capture manifest)
+    by_run_id: "str | None" = None
+
+
+@dataclass(frozen=True)
+class Window:
+    start: str                # UTC
+    end: str                  # UTC
+
+
+@dataclass(frozen=True)
+class Capture:
+    """Raw bytes exactly as pulled + the capture manifest (Arth's .capture.json sidecar fields)."""
+    source: SourceSpec
+    window: Window
+    as_of: str
+    path: str
+    sha256: str
+    manifest: dict = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class Assessment:
+    """The control test's output (§3.2). As a record: record_kind assessment, fields under assessment.*."""
+    assessment_id: str
+    control_ref: str
+    control_id: str
+    threshold_version: str
+    threshold_sha256: str
+    register_version: str
+    scope_kind: str
+    scope_id: str
+    scope_start: str
+    scope_end: str
+    requirement_verdict: str
+    design: str
+    operation: str
+    deficiency: str
+    evidence_sufficiency: str
+    measured: dict
+    exceptions: list
+    denominators: dict
+    completeness: dict
+    formula: str
+    evidence_refs: list
+    gaps: list
+    evaluator_name: str
+    evaluator_sha256: str
+    as_of: str
+    snapshot_id: str
+    finding: "dict | None" = None
+
+
+def assessment_id(control_ref: str, threshold_version: str, scope_kind: str, scope_id: str, n: int) -> str:
+    """`<control_ref>:<threshold_version>:<scope_kind>:<scope_id>:r<n>`."""
+    return "%s:%s:%s:%s:r%d" % (control_ref, threshold_version, scope_kind, scope_id, int(n))
