@@ -103,12 +103,15 @@ def join(spans, units, slack_ms=0):
 
 
 def with_call_ids(records, pairs):
-    """Copies of `records` where each joined unit's EP-3 records carry the span's action id as call.id."""
+    """Copies of `records` where each joined unit's EP-3 `after` record carries the span's action id as call.id.
+    A before-only unit (the after record suppressed, N4) still consumes its span but is never stamped, so C7 sees the
+    call as unrecorded. Mirrors adapters/runtime/tool_call.py, which sets call.id only on the after record."""
     ids = dict(((run, use), aid) for aid, use, run in pairs)
     out = []
     for r in records or ():
         key = (r.get("run.id") or r.get("correlation_id"), r.get("tool.use_id"))
-        if r.get("ep.id") == "EP-3" and key in ids and not r.get("call.id"):
+        if (r.get("ep.id") == "EP-3" and r.get("tool.phase") == "after" and key in ids
+                and not r.get("call.id")):
             r = dict(r)
             r["call.id"] = ids[key]
         out.append(r)

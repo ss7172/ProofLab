@@ -42,7 +42,7 @@ def _rec(phase, use, name, t, agent="ifabric-it"):
             "emitted.at": _iso(t), "phase": "ifabric.action", "record_id": "%s-%s" % (use, phase), "control.ref": "C7"}
 
 
-def _run(n_calls=4, suppress=None, handshake=True):
+def _run(n_calls=4, suppress=None, handshake=True, drop_both=False):
     """Gateway spans + our records for one agent making n sequential tools/call calls (+ handshake spans)."""
     spans, ours = [], []
     if handshake:
@@ -52,8 +52,11 @@ def _run(n_calls=4, suppress=None, handshake=True):
         s = T0 + i * 2
         spans.append(_span("tools/call", "runbook-lookup", "runbook-lookup___lookup", "ac-%d-0000-0000-000000000000" % i,
                            s + 0.01, s + 0.8))
-        if i == suppress:
-            continue                                     # N4-style: the span exists, our record was suppressed
+        if i == suppress and drop_both:
+            continue                                     # both records missing
+        if i == suppress:                                # N4-style (_Suppress): only the AFTER record is dropped
+            ours.append(_rec("before", "use%d" % i, "runbook-lookup___lookup", s))
+            continue
         ours.append(_rec("before", "use%d" % i, "runbook-lookup___lookup", s))
         ours.append(_rec("after", "use%d" % i, "runbook-lookup___lookup", s + 0.82))
     return _store(spans), ours
@@ -87,9 +90,16 @@ def test_clean_run_reaches_full_tool_coverage():
 def test_suppressed_record_is_still_breached():
     store, ours = _run(suppress=2)
     exp, a, res = _assess(store, ours)
-    assert res["unmatched_spans"] == ["ac-2-0000-0000-000000000000"]
+    assert res["unmatched_spans"] == []                  # the before-only unit consumes its span (one to one) ...
     assert a.requirement_verdict == "BREACHED" and a.measured["coverage"] == "3/4"
     assert a.exceptions[0]["key"] == "call:ac-2-0000-0000-000000000000"
+
+
+def test_suppressed_both_records_is_still_breached():
+    store, ours = _run(suppress=2, drop_both=True)
+    exp, a, res = _assess(store, ours)
+    assert res["unmatched_spans"] == ["ac-2-0000-0000-000000000000"]
+    assert a.requirement_verdict == "BREACHED" and a.measured["coverage"] == "3/4"
 
 
 def test_without_the_join_nothing_matches():
