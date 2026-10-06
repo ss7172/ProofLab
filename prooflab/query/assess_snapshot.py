@@ -100,7 +100,10 @@ def _model_call_span(r):
 
 
 def _tool_call_span(r):
-    return bool(_toolcalls.tool_spans([r]))
+    """False only for a gateway request the store NAMES as another method (initialize, tools/list, notifications/*,
+    a plain http call): not a governed action. An observation that names no method is kept (older shapes)."""
+    m = re.match(r"^gateway request (\S+) ", str(r.get("detail") or ""))
+    return m is None or m.group(1) == c7.TOOL_METHOD
 
 
 def run_facts(recs):
