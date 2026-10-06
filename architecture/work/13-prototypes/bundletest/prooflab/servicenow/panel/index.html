@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iFabric Evidence Chain</title>
+  <link rel="stylesheet" href="ifabric-case-panel.css">
+  <script src="ifabric-case-panel.js" defer></script>
+</head>
+<body class="ifab-page">
+  <header class="ifab-page-head">
+    <h1>iFabric ProofLab · ServiceNow evidence chain</h1>
+    <p>Each card follows one finding: AWS control result → ServiceNow incident → named owner → ServiceNow agent analysis → AI Control Tower inventory.</p>
+  </header>
+  <main>
+    <div id="ifabric-cases" data-ifabric-cases-src="cases.json" data-ifabric-poll-ms="10000"></div>
+  </main>
+</body>
+</html>

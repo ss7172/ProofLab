@@ -120,3 +120,27 @@ Also decided earlier:
   - DG-6: NeMo Guardrails stays out of the image (offline cross-check only)
   - DG-7: the ADV-H-02 fault case as designed (live only with OK, within budget)
   - Design: architecture/guardrails/AGENT-GUARDRAILS.md + PLAN.md (plain-Python rails; ≤~60K tokens total).
+- **PHASES (captain, 01:08Z 2026-10-06):**
+  - Phase 1 = the MINIMUM SUBMISSION, target 4 h: 3 ifabric agents on AgentCore; C16 → C7 → C9 in order, thresholds working; CLI control test + pack; first submit; PLUS a minimal ServiceNow notify on each breach (APPROVED: "yes use it").
+  - Phase 2 = ServiceNow integration + Assurance agent + AICT + dashboard + C9 completion; second submit.
+  - Phase 3 = adversarial, recorded demo, rehearsals, final submit.
+  - The build prompt is BUILD-SESSION-PROMPT.md (Opus-high orchestrator, PR feature map with executable merge gates, Sonnet-medium default, serial ops lane).
+- **Prompt-review decisions APPROVED (01:40Z, captain: "approved all"):**
+  - Phase 1 target = the realistic projection (~06:20 UTC, 07:00 at the latest)
+  - new ifabric agents/tools stay pre-authorized (the CAPTAIN annotates approvals himself; agents never do)
+  - the ServiceNow register approval in Phase 1, right after the v1 S3 freeze
+  - the guardrail-block demo in Phase 1
+  - C16 observe/enforce switches on OUR agents are pre-authorized
+  - DEADLINE 15:00 UTC (confirmed via "approved all")
+  - final submit 14:00 UTC (>=1 h buffer)
+
+
+## STATE at 2026-10-06T01:39Z: build kit ready
+- **The build kit is in the repo:**
+  - `BUILD-SESSION-PROMPT.md` (repo root): the build prompt, verified and phased (Opus orchestrator, PR feature map with executable merge gates, Sonnet-medium default, serial ops lane; Phase 1 = the minimum submission).
+  - `IMPLEMENTATION-PLAN.md` (repo root): workstreams T0–T8, glue G-01..G-22, seed feature map PR-00..PR-22, gates G1–G7, the ops-lane schedule.
+  - `NEXT-SESSION-PROMPT.md` (repo root): a pointer to the two files above.
+  - `architecture/`: integrated (the Assurance agent §3.11, the console §3.12, EP-14..16).
+  - `architecture/work/16-build-prompt-review.md`: the independent review of the build prompt.
+  - `architecture/work/13-prototypes/`: work/13's Assurance bundle prototype and its test, rescued from the scratchpad (T0.7 productises them; the plan's T0.7 still names the old scratchpad path).
+- **The build starts in a NEW Opus session** with: "Read BUILD-SESSION-PROMPT.md and IMPLEMENTATION-PLAN.md and follow them; start Phase 1"

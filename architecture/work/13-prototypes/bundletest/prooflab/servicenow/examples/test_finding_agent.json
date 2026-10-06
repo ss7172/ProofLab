@@ -1,0 +1,67 @@
+{
+  "control_ref": "C16",
+  "control_id": "ACN-COST-001",
+  "threshold_version": "TEST",
+  "scope_kind": "run",
+  "scope_id": "AGENT-ANALYSIS-TEST-2",
+  "verdict": "INDETERMINATE",
+  "summary": "TEST ONLY - ServiceNow agent analysis check, no real control result",
+  "detected_at": "2026-10-05T08:00:00Z",
+  "evidence": [
+    "test:gateway-action-none",
+    "test:ledger-cid-none"
+  ],
+  "kind": "wiring-test",
+  "register": {
+    "version_date": "2026-10-01",
+    "owner": "annapurna@invences.com",
+    "approval": "TEST ONLY - not a real register entry"
+  },
+  "trace": [
+    {
+      "at": "2026-10-05T07:58:00Z",
+      "actor": "test-customer-agent",
+      "zone": "customer",
+      "action": "receive request",
+      "decision": "accepted",
+      "ref": "test:span-1",
+      "run_id": "AGENT-ANALYSIS-TEST-2"
+    },
+    {
+      "at": "2026-10-05T07:58:02Z",
+      "actor": "modaas-agw",
+      "zone": "gateway",
+      "action": "model_call",
+      "decision": "allowed",
+      "ref": "test:gateway-action-none",
+      "run_id": "AGENT-ANALYSIS-TEST-2"
+    },
+    {
+      "at": "2026-10-05T07:58:05Z",
+      "actor": "test-network-agent",
+      "zone": "network",
+      "action": "run diagnostics",
+      "decision": "done",
+      "ref": "test:span-2",
+      "run_id": "AGENT-ANALYSIS-TEST-2"
+    },
+    {
+      "at": "2026-10-05T07:58:07Z",
+      "actor": "modaas-agw",
+      "zone": "gateway",
+      "action": "return path",
+      "decision": "allowed",
+      "ref": "test:gateway-action-none",
+      "run_id": "AGENT-ANALYSIS-TEST-2"
+    },
+    {
+      "at": "2026-10-05T07:58:09Z",
+      "actor": "test-customer-agent",
+      "zone": "customer",
+      "action": "reply",
+      "decision": "sent",
+      "ref": "test:span-3",
+      "run_id": "AGENT-ANALYSIS-TEST-2"
+    }
+  ]
+}

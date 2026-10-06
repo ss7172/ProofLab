@@ -133,7 +133,9 @@ out.append("<desc>The live path with the one in-path question (EP-1's C16 check,
            "embedded in each agent) and the EP-0 pre-run gate; the platform's own enforcement points; one contract "
            "with four transports; and, off the path, the control registry, the stateless evaluators (the same c16 "
            "function again at EP-2, after the run), THE ONE STORE (the platform ledger), the stitcher, the Evidence "
-           "Pack, the control test and dashboard, the ServiceNow human loop (notify, then poll), the risk register, "
+           "Pack, the control test and Arth's Evidence Console (the dashboard), the ServiceNow human loop (notify, then poll) "
+           "with the Assurance agent (the 4th AgentCore runtime), the in-agent rails (EP-14, EP-3, EP-4, EP-15), the cockpit side "
+           "door (EP-16, observed), the risk register, "
            "the AI inventory, the finding loop, the five habits and the three control timing layers.</desc>")
 out.append("<defs>")
 for c in (INK, BLUE, RED, GREY, GREEN, PURPLE, ORANGE, TEAL, AMBER, DGREY):
@@ -144,8 +146,8 @@ BG_INDEX = len(out)
 out.append("")  # background rect placeholder
 
 text(24, 40, "ProofLab · team iFabric · one-page architecture", 28, "bold", maxw=1552)
-text(24, 72, "Only ONE question sits in the live path: the C16 check before each model call.  "
-             "Before a run, EP-0 may decline to start an assessed run.", 17, "bold", RED, maxw=1552)
+text(24, 72, "Only ONE CONTROL question waits in the live path: the C16 check before each model call.  "
+             "Rails may refuse (DG-1); EP-0 may decline to start an assessed run.", 17, "bold", RED, maxw=1552)
 text(24, 98, "Claim C-FM-01: during fault resolution, the three ifabric- agents meet our declared event-recording (C7), "
              "drift (C9) and token-spend (C16) requirements.", 15, fill=DGREY, maxw=1552)
 
@@ -162,8 +164,8 @@ sx, sy, sw_, sh = card(SX, ROW_TOP, SW, "Orchestrating script", [
     "mints the CID; invokes the",
     "3 agents in sequence; carries",
     "tier, C16 tally, register v + sha",
-    "EP-5 handoffs: emit(), never",
-    "blocks",
+    "EP-5 handoffs = Gateway A / B:",
+    "emit() only, never blocks",
 ], BLUE, "#eff6ff", BLUE, chips=[("PRE", GREEN), ("CONT", RED)], h=268)
 card(SX + 10, ROW_TOP + 152, SW - 20, "EP-0 pre-run gate (D13)", [
     ("running version = approved?", {"fill": GREEN}),
@@ -206,13 +208,13 @@ text(gap_mid, EP1Y + 89, "in process", 14, fill=RED, anchor="middle", style="ita
      maxw=COREX - EP1X - EP1W - 4)
 # EP-3 / EP-4 under EP-1 (left column); the area under the core stays free for the dashed link
 B_Y = EP1_BOTTOM + 10
-card(EP1X, B_Y, 158, "EP-3 tool calls", ["emit() every call,", "real status 403/404"], BLUE, "#ffffff", BLUE,
+card(EP1X, B_Y, 158, "EP-3 tool calls", ["rails (DG-1) +", "emit() every call"], BLUE, "#ffffff", BLUE,
      title_size=15, sw=2)
-card(EP1X + 166, B_Y, 158, "EP-4 judgment", ["emit() disposition,", "evidence, reason"], BLUE, "#ffffff", BLUE,
+card(EP1X + 166, B_Y, 158, "EP-4 judgment", ["output rails +", "emit() disposition"], BLUE, "#ffffff", BLUE,
      title_size=15, sw=2)
 B_BOTTOM = B_Y + need_h(2)
 text(EP1X, B_BOTTOM + 18, "emit client: async → THE ONE STORE", 14, "bold", BLUE, maxw=COREX - EP1X - 10)
-text(EP1X, B_BOTTOM + 37, "start-up fails closed without keys or pin", 14, fill=GREY, style="italic",
+text(EP1X, B_BOTTOM + 37, "EP-14 ingress rails · EP-15 egress audit", 14, fill=GREY, style="italic",
      maxw=COREX - EP1X - 10)
 RUNTIME_BOTTOM = ROW_TOP + ROW_H
 assert B_BOTTOM + 37 + 8 <= RUNTIME_BOTTOM, ("runtime overflow", B_BOTTOM + 45, RUNTIME_BOTTOM)
@@ -225,11 +227,11 @@ card(PX, ROW_TOP, PW, "Platform EPs (not ours)", [
     ("modaas-agw (one shared key):", {"weight": "bold"}),
     "· authz: API key, fail-closed",
     "· PDP / Cedar tool policy;",
-    ("   we configure 1 forbid rule (if D15)", {"weight": "bold", "fill": BLUE}),
+    ("   1 forbid rule: customer-records (DG-4)", {"weight": "bold", "fill": BLUE}),
     "· guardrails: a block logs ALLOW",
     "· ceilings: 100 req/min, 2.5M tok/h",
     "· pause → 404 (logged ALLOW)",
-    "admission (CEL + VAP) · approvals",
+    "admission · approvals · cockpit ask = EP-16",
 ], GREY, "#f3f4f6", DGREY, h=ROW_H)
 card(PX + 12, ROW_TOP + 288, 150, "Bedrock", ["Nemotron, via", "the gateway only"], GREY, "#ffffff", DGREY,
      title_size=15, sw=2)
@@ -313,8 +315,8 @@ card(GX1, R1, GW1, "Control registry", [
     "+ sha256 · the kit's flat format",
     "each control: own version + date",
     "date proof: the S3 write-once",
-    "object (T1); the owner's",
-    "ServiceNow approval corroborates",
+    "object (T1); Arth's approval",
+    "Finding (T2) corroborates (C-7)",
     ("hands out a pinned extract;", {"weight": "bold", "fill": GREEN}),
     ("NEVER in the path", {"weight": "bold", "fill": GREEN}),
 ], GREEN, "#ffffff", GREEN, chips=[("PRE", GREEN)], h=R1H)
@@ -337,7 +339,7 @@ card(GX3, R1, GW3, "THE ONE STORE", [
     "normalized, each pointing",
     "at its raw source",
     "no update or delete route",
-    ("(D16, pending captain)", {"style": "italic", "fill": GREY}),
+    ("(D16 (a), the captain decided)", {"style": "italic", "fill": GREY}),
 ], ORANGE, "#fff7ed", ORANGE, h=R1H, sw=3)
 card(GX4, R1, GW4, "Stateless evaluators", [
     "c16 · c7 · c9: pure functions",
@@ -365,7 +367,7 @@ card(GX5, R1, GW5, "Pull adapters (collectors)", [
 card(GX1, R2, GW1, "Risk register", [
     "risks.yaml, frozen + dated",
     "with register.yaml",
-    "R-C16 · R-C7 · R-C9 + 2 of ours",
+    "R-C16 · R-C7 · R-C9 · R-GR-01..05",
     "likelihood × severity (5×5)",
     "→ inherent; appetite → each",
     "threshold; residual; owner",
@@ -388,13 +390,13 @@ card(GX4, R2, GW4, "Findings → the risk loop", [
     ("closed ONLY by a passing re-test", {"weight": "bold"}),
 ], PURPLE, "#f5f3ff", PURPLE, chips=[("POST", TEAL)], h=R2H)
 card(GX5, R2, GW5, "ServiceNow human loop (EP-13)", [
-    "finding → notify() → an incident",
-    "assigned to the owner (Sree)",
-    "her verdict returns by callback():",
-    "check polls it, or records the silence",
+    "finding → notify() → an incident (Sree)",
+    "Assurance agent: 4th AgentCore runtime,",
+    "Arth's analyser in our one-file handler,",
+    "one validated work note per incident",
+    "callback(): check polls reply or silence",
     ("records only; never holds work", {"weight": "bold"}),
-    "AICT: discovery of our runtimes",
-    ("(observed, not built)", {"style": "italic", "fill": GREY}),
+    ("AICT lists the ifabric_ runtimes by name", {"style": "italic", "fill": GREY}),
 ], PURPLE, "#f5f3ff", PURPLE, chips=[("POST", TEAL)], h=R2H)
 
 # --- row 3
@@ -404,19 +406,19 @@ card(GX1, R3, GW1, "AI inventory", [
     "resolution · owner Sree",
     "risk tier: high (our 5×5 rating);",
     "EU AI Act class unverified (OC-21)",
-    "agents, models, tools, prompts:",
-    "owner + approved version each",
+    "agents (incl. the Assurance agent),",
+    "models, tools: owner + version",
     ("joined at query time;", {"weight": "bold", "fill": GREEN}),
     ("never in the path", {"weight": "bold", "fill": GREEN}),
 ], GREEN, "#ffffff", GREEN, chips=[("PRE", GREEN)], h=R3H)
-card(PACKX, R3, PACKW, "Control test / query tool + dashboard (offline)", [
+card(PACKX, R3, PACKW, "Control test / query tool + the console (offline)", [
     ("prooflab query --control C16|C7|C9", {"family": MONO}),
     ("--run <CID>  |  --window T1..T2", {"family": MONO}),
     "recomputes every verdict from the pack · exit 0/1/2",
     "under 2 minutes; every answer names who is responsible,",
     "who acted, and the decision at each EP",
-    ("dashboard = static HTML: a VIEW that sees", {"weight": "bold"}),
-    ("everything and refuses nothing (not an EP)", {"weight": "bold"}),
+    ("dashboard = Arth's Evidence Console (D17): a VIEW", {"weight": "bold"}),
+    ("on this engine · run catalogue + declared window", {"weight": "bold"}),
 ], TEAL, "#f0fdfa", TEAL, chips=[("POST", TEAL)], h=R3H)
 card(GX4, R3, GW4, "Five habits", [
     "1 the telemetry store never judges",

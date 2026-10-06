@@ -758,6 +758,8 @@ New `verdict` values and a new `record_kind` are contract changes. The validator
 
 ## 12. Decisions for the captain (the lead relays)
 
+**Status (2026-10-06):** DG-1 was decided by the captain at 00:26Z and DG-2–DG-7 at 00:30Z, all as recommended below (DG-4: the rule is kept through judging). Recorded in `../decisions.md`; the build schedule is `../../IMPLEMENTATION-PLAN.md`.
+
 | # | Decision | Recommended default | If no answer |
 |---|---|---|---|
 | DG-1 | **Guardrails may block** (the frame, pending) | Yes: `IFABRIC_RAILS_MODE=enforce` for the MIN/P2 rails | `observe`: every rail records; refusals stay with the platform, C16 and the agents' judgment. Same build |

@@ -1,0 +1,1274 @@
+[
+  {
+    "schema": "ifabric.servicenow.case/v1",
+    "generated_at": "2026-10-05T19:17:56Z",
+    "finding_id": "ifabric:C16:G-FM-v1:run:FM-B:finding",
+    "finding": {
+      "control_ref": "C16",
+      "control_id": "ACN-COST-001",
+      "threshold_version": "G-FM-v1",
+      "scope_kind": "run",
+      "scope_id": "FM-B",
+      "verdict": "BREACHED",
+      "summary": "10,800 tokens > cap 10,000",
+      "detected_at": "2026-10-05T10:00:00Z",
+      "evidence": [
+        "gateway:action-123",
+        "ledger:cid=fault-1",
+        "aict:trace-FM-B"
+      ],
+      "kind": "finding"
+    },
+    "delivery": {
+      "state": "DELIVERED",
+      "at": "2026-10-05T19:17:56Z",
+      "number": "INC0001000"
+    },
+    "agent_run": {
+      "state": "WRITTEN",
+      "at": "2026-10-05T19:17:56Z",
+      "reason": null,
+      "backend": "modaas-agw:nemotron-super-120b",
+      "model_alias": "nemotron-super-120b",
+      "action_ids": [
+        "agw-0001"
+      ],
+      "evidence": "ifabric_C16_G-FM-v1_run_FM-B_finding_20261005T191756Z_0.json"
+    },
+    "links": {
+      "incident": "https://servicenow.invalid/incident.do?sys_id=60f04e3c7ede41788b7e0dbc4cabce4c",
+      "aict": "https://servicenow.invalid/aiux/aict/home"
+    },
+    "response": {
+      "state": "RESPONDED",
+      "actor": "owner@example.com",
+      "at": "2026-10-05 10:20:00",
+      "cutoff": "2099-01-01T00:00:00Z",
+      "source": "delivery_log"
+    },
+    "servicenow": {
+      "status": "ok",
+      "sys_id": "60f04e3c7ede41788b7e0dbc4cabce4c",
+      "url": "https://servicenow.invalid/incident.do?sys_id=60f04e3c7ede41788b7e0dbc4cabce4c",
+      "number": "INC0001000",
+      "short_description": "[iFabric][C16 ACN-COST-001 v=G-FM-v1] run FM-B BREACHED: 10,800 tokens > cap 10,000",
+      "state": "2",
+      "owner": "Sree Annapurna Rallabandi",
+      "urgency": "2",
+      "updated_at": "2026-10-05 11:01:00",
+      "updated_by": "ifabric.integration"
+    },
+    "agent_analysis": {
+      "status": "present",
+      "at": "2026-10-05 11:01:00",
+      "author": "iFabric Integration",
+      "fields": {
+        "Finding ID": "ifabric:C16:G-FM-v1:run:FM-B:finding",
+        "Control": "C16 ACN-COST-001",
+        "Threshold version": "G-FM-v1",
+        "Scope": "run FM-B",
+        "Verdict": "BREACHED",
+        "Measured vs limit": "10,800 tokens vs limit <= 10,000 tokens (+800, 8% over)",
+        "Evidence refs": "gateway:action-123; ledger:cid=fault-1",
+        "Owner": "Sree Annapurna Rallabandi",
+        "State": "2",
+        "Owner response": "Yes",
+        "Missing evidence": "none",
+        "Next step": "Close only after a linked passing re-test.",
+        "Agent path": "customer-care-agent → it-ops-agent → network-fault-agent (3 agents, 3 gateway crossings)",
+        "Policy alignment": "8/8 pass",
+        "Validation": "facts echoed exactly; evidence refs within the finding; model reasoning removed and not stored; call via modaas-agw:nemotron-super-120b",
+        "Model": "NVIDIA Nemotron via modaas-agw:nemotron-super-120b (alias nemotron-super-120b; model nvidia/nemotron-test; action agw-0001)"
+      },
+      "missing_fields": [],
+      "complete": true,
+      "finding_matches": true,
+      "verified": true,
+      "note_sha256": "8675cdb7c6b0eab2fcc6bd4766ef82b8b006da3bca9c342a9b6f7ca9a058f1b0",
+      "facts_match": true
+    },
+    "movement": {
+      "steps": [
+        {
+          "at": "2026-10-05T09:58:01Z",
+          "actor": "customer-care-agent",
+          "zone": "customer",
+          "action": "receive fault report",
+          "decision": "accepted",
+          "ref": "span:cc-01",
+          "run_id": "FM-B"
+        },
+        {
+          "at": "2026-10-05T09:58:03Z",
+          "actor": "modaas-agw",
+          "zone": "gateway",
+          "action": "model_call",
+          "decision": "allowed",
+          "ref": "gateway:action-123",
+          "run_id": "FM-B"
+        },
+        {
+          "at": "2026-10-05T09:58:05Z",
+          "actor": "it-ops-agent",
+          "zone": "it",
+          "action": "handoff: correlate tickets",
+          "decision": "accepted",
+          "ref": "span:it-07",
+          "run_id": "FM-B"
+        },
+        {
+          "at": "2026-10-05T09:58:09Z",
+          "actor": "modaas-agw",
+          "zone": "gateway",
+          "action": "tool_call",
+          "decision": "allowed",
+          "ref": "gateway:action-124",
+          "run_id": "FM-B"
+        },
+        {
+          "at": "2026-10-05T09:58:12Z",
+          "actor": "network-fault-agent",
+          "zone": "network",
+          "action": "run diagnostics",
+          "decision": "fault found",
+          "ref": "span:nw-03",
+          "run_id": "FM-B"
+        },
+        {
+          "at": "2026-10-05T09:58:20Z",
+          "actor": "modaas-agw",
+          "zone": "gateway",
+          "action": "return path",
+          "decision": "allowed",
+          "ref": "gateway:action-125",
+          "run_id": "FM-B"
+        },
+        {
+          "at": "2026-10-05T09:58:22Z",
+          "actor": "customer-care-agent",
+          "zone": "customer",
+          "action": "reply to customer",
+          "decision": "sent",
+          "ref": "span:cc-02",
+          "run_id": "FM-B"
+        }
+      ],
+      "path": [
+        "customer-care-agent",
+        "modaas-agw",
+        "it-ops-agent",
+        "modaas-agw",
+        "network-fault-agent",
+        "modaas-agw",
+        "customer-care-agent"
+      ],
+      "agents": [
+        "customer-care-agent",
+        "it-ops-agent",
+        "network-fault-agent"
+      ],
+      "zones": [
+        "customer",
+        "gateway",
+        "it",
+        "gateway",
+        "network",
+        "gateway",
+        "customer"
+      ],
+      "gateway_crossings": 3,
+      "checks": [
+        {
+          "id": "M1",
+          "label": "No direct network → customer hop (every return passes a gateway)",
+          "status": "pass",
+          "detail": "every network → customer movement crossed a gateway"
+        },
+        {
+          "id": "M2",
+          "label": "Every step belongs to this run",
+          "status": "pass",
+          "detail": "all 7 steps carry run FM-B"
+        },
+        {
+          "id": "M3",
+          "label": "Every step has a valid UTC timestamp",
+          "status": "pass",
+          "detail": "7/7 valid"
+        }
+      ]
+    },
+    "decision_trace": [
+      {
+        "at": "2026-10-05T09:58:01Z",
+        "source": "agent",
+        "actor": "customer-care-agent",
+        "decision": "accepted",
+        "detail": "receive fault report (customer)",
+        "ref": "span:cc-01"
+      },
+      {
+        "at": "2026-10-05T09:58:03Z",
+        "source": "gateway",
+        "actor": "modaas-agw",
+        "decision": "allowed",
+        "detail": "model_call (gateway)",
+        "ref": "gateway:action-123"
+      },
+      {
+        "at": "2026-10-05T09:58:05Z",
+        "source": "agent",
+        "actor": "it-ops-agent",
+        "decision": "accepted",
+        "detail": "handoff: correlate tickets (it)",
+        "ref": "span:it-07"
+      },
+      {
+        "at": "2026-10-05T09:58:09Z",
+        "source": "gateway",
+        "actor": "modaas-agw",
+        "decision": "allowed",
+        "detail": "tool_call (gateway)",
+        "ref": "gateway:action-124"
+      },
+      {
+        "at": "2026-10-05T09:58:12Z",
+        "source": "agent",
+        "actor": "network-fault-agent",
+        "decision": "fault found",
+        "detail": "run diagnostics (network)",
+        "ref": "span:nw-03"
+      },
+      {
+        "at": "2026-10-05T09:58:20Z",
+        "source": "gateway",
+        "actor": "modaas-agw",
+        "decision": "allowed",
+        "detail": "return path (gateway)",
+        "ref": "gateway:action-125"
+      },
+      {
+        "at": "2026-10-05T09:58:22Z",
+        "source": "agent",
+        "actor": "customer-care-agent",
+        "decision": "sent",
+        "detail": "reply to customer (customer)",
+        "ref": "span:cc-02"
+      },
+      {
+        "at": "2026-10-05T10:00:00Z",
+        "source": "control",
+        "actor": "C16 evaluator",
+        "decision": "BREACHED",
+        "detail": "measured 10,800 tokens",
+        "ref": "ACN-COST-001 v=G-FM-v1"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "INTENT",
+        "detail": "",
+        "ref": ""
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "SENT",
+        "detail": "",
+        "ref": "INC0001000"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "DELIVERED",
+        "detail": "",
+        "ref": "INC0001000"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "owner",
+        "actor": "owner@example.com",
+        "decision": "RESPONDED",
+        "detail": "at 2026-10-05 10:20:00",
+        "ref": "INC0001000"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "assurance_agent",
+        "actor": "modaas-agw:nemotron-super-120b",
+        "decision": "attempt 1: checks passed",
+        "detail": "facts echoed; refs within finding",
+        "ref": "agw-0001"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "assurance_agent",
+        "actor": "modaas-agw:nemotron-super-120b",
+        "decision": "WRITTEN",
+        "detail": "",
+        "ref": "agw-0001"
+      }
+    ],
+    "evidence": [
+      {
+        "ref": "gateway:action-123",
+        "kind": "gateway",
+        "used_by_agent": true
+      },
+      {
+        "ref": "ledger:cid=fault-1",
+        "kind": "ledger",
+        "used_by_agent": true
+      },
+      {
+        "ref": "aict:trace-FM-B",
+        "kind": "aict",
+        "used_by_agent": false
+      }
+    ],
+    "policy_alignment": {
+      "passed": 8,
+      "total": 8,
+      "checks": [
+        {
+          "id": "P1",
+          "label": "Verdict follows from measured value vs limit",
+          "status": "pass",
+          "detail": "10,800 tokens vs limit <= 10,000 → outside"
+        },
+        {
+          "id": "P2",
+          "label": "Threshold version dated before the test",
+          "status": "pass",
+          "detail": "G-FM-v1 dated 2026-10-01; detected 2026-10-05T10:00:00Z"
+        },
+        {
+          "id": "P3",
+          "label": "Named owner matches the register",
+          "status": "pass",
+          "detail": "register owner owner@example.com; incident owner owner@example.com"
+        },
+        {
+          "id": "P4",
+          "label": "Named owner was notified (incident read back)",
+          "status": "pass",
+          "detail": "DELIVERED"
+        },
+        {
+          "id": "P5",
+          "label": "Owner response or silence recorded",
+          "status": "pass",
+          "detail": "RESPONDED"
+        },
+        {
+          "id": "P6",
+          "label": "Not closed without a linked passing re-test",
+          "status": "pass",
+          "detail": "incident 2; closes only after a linked passing re-test"
+        },
+        {
+          "id": "P7",
+          "label": "Evidence records attached",
+          "status": "pass",
+          "detail": "3 reference(s)"
+        },
+        {
+          "id": "P8",
+          "label": "No direct network → customer hop (every return passes a gateway)",
+          "status": "pass",
+          "detail": "every network → customer movement crossed a gateway"
+        }
+      ]
+    },
+    "outcome_validation": {
+      "status": "validated",
+      "checks": [
+        {
+          "id": "V1",
+          "label": "Assurance Agent run completed",
+          "status": "pass",
+          "detail": "WRITTEN"
+        },
+        {
+          "id": "V2",
+          "label": "Note is the agent's own (digest in the run log)",
+          "status": "pass",
+          "detail": "trust anchor: delivery log"
+        },
+        {
+          "id": "V3",
+          "label": "Facts in the note match the finding",
+          "status": "pass",
+          "detail": "control, version, scope, verdict, next step"
+        },
+        {
+          "id": "V4",
+          "label": "Evidence refs cited by the agent exist in the finding",
+          "status": "pass",
+          "detail": "2 cited"
+        },
+        {
+          "id": "V5",
+          "label": "Model reasoning not stored",
+          "status": "pass",
+          "detail": "only SHA-256 of raw responses are kept"
+        },
+        {
+          "id": "V6",
+          "label": "Governed Nemotron call with provenance",
+          "status": "pass",
+          "detail": "modaas-agw:nemotron-super-120b"
+        }
+      ]
+    }
+  },
+  {
+    "schema": "ifabric.servicenow.case/v1",
+    "generated_at": "2026-10-05T19:17:56Z",
+    "finding_id": "ifabric:C7:L-v1:run:FM-C:finding",
+    "finding": {
+      "control_ref": "C7",
+      "control_id": "AIA-LOG-001",
+      "threshold_version": "L-v1",
+      "scope_kind": "run",
+      "scope_id": "FM-C",
+      "verdict": "ESCALATED",
+      "summary": "network agent answered the customer directly",
+      "detected_at": "2026-10-05T10:07:00Z",
+      "evidence": [
+        "gateway:action-201",
+        "ledger:cid=fault-3"
+      ],
+      "kind": "finding"
+    },
+    "delivery": {
+      "state": "DELIVERED",
+      "at": "2026-10-05T19:17:56Z",
+      "number": "INC0001001"
+    },
+    "agent_run": {
+      "state": "WRITTEN",
+      "at": "2026-10-05T19:17:56Z",
+      "reason": null,
+      "backend": "modaas-agw:nemotron-super-120b",
+      "model_alias": "nemotron-super-120b",
+      "action_ids": [
+        "agw-0002"
+      ],
+      "evidence": "ifabric_C7_L-v1_run_FM-C_finding_20261005T191756Z_1.json"
+    },
+    "links": {
+      "incident": "https://servicenow.invalid/incident.do?sys_id=48b71c7b07f14f9ca13ef75c52ef75e3",
+      "aict": "https://servicenow.invalid/aiux/aict/home"
+    },
+    "response": {
+      "state": "AWAITING_RESPONSE",
+      "actor": null,
+      "at": null,
+      "cutoff": "2099-01-01T00:00:00Z",
+      "source": "live"
+    },
+    "servicenow": {
+      "status": "ok",
+      "sys_id": "48b71c7b07f14f9ca13ef75c52ef75e3",
+      "url": "https://servicenow.invalid/incident.do?sys_id=48b71c7b07f14f9ca13ef75c52ef75e3",
+      "number": "INC0001001",
+      "short_description": "[iFabric][C7 AIA-LOG-001 v=L-v1] run FM-C ESCALATED: network agent answered the customer directly",
+      "state": "New",
+      "owner": "Sree Annapurna Rallabandi",
+      "urgency": "2",
+      "updated_at": "2026-10-05 11:02:00",
+      "updated_by": "ifabric.integration"
+    },
+    "agent_analysis": {
+      "status": "present",
+      "at": "2026-10-05 11:02:00",
+      "author": "iFabric Integration",
+      "fields": {
+        "Finding ID": "ifabric:C7:L-v1:run:FM-C:finding",
+        "Control": "C7 AIA-LOG-001",
+        "Threshold version": "L-v1",
+        "Scope": "run FM-C",
+        "Verdict": "ESCALATED",
+        "Measured vs limit": "not applicable: escalation, no numeric limit",
+        "Evidence refs": "gateway:action-201",
+        "Owner": "Sree Annapurna Rallabandi",
+        "State": "New",
+        "Owner response": "No",
+        "Missing evidence": "gateway record for the return path",
+        "Next step": "The named approver must record a decision.",
+        "Agent path": "customer-care-agent → network-fault-agent (2 agents, 1 gateway crossings); ROUTE RULE BROKEN",
+        "Policy alignment": "5/8 pass; fail: P8; unknown: P1, P5",
+        "Validation": "facts echoed exactly; evidence refs within the finding; model reasoning removed and not stored; call via modaas-agw:nemotron-super-120b",
+        "Model": "NVIDIA Nemotron via modaas-agw:nemotron-super-120b (alias nemotron-super-120b; model nvidia/nemotron-test; action agw-0002)"
+      },
+      "missing_fields": [],
+      "complete": true,
+      "finding_matches": true,
+      "verified": true,
+      "note_sha256": "d89dd4d3f147ee7102753e0827de4c5b5970b7f642f6a11aebfd67bd48651cf6",
+      "facts_match": true
+    },
+    "movement": {
+      "steps": [
+        {
+          "at": "2026-10-05T10:01:00Z",
+          "actor": "customer-care-agent",
+          "zone": "customer",
+          "action": "receive fault report",
+          "decision": "accepted",
+          "ref": "span:cc-11",
+          "run_id": "FM-C"
+        },
+        {
+          "at": "2026-10-05T10:01:02Z",
+          "actor": "modaas-agw",
+          "zone": "gateway",
+          "action": "model_call",
+          "decision": "allowed",
+          "ref": "gateway:action-201",
+          "run_id": "FM-C"
+        },
+        {
+          "at": "2026-10-05T10:01:06Z",
+          "actor": "network-fault-agent",
+          "zone": "network",
+          "action": "run diagnostics",
+          "decision": "fault found",
+          "ref": "span:nw-12",
+          "run_id": "FM-C"
+        },
+        {
+          "at": "2026-10-05T10:01:09Z",
+          "actor": "customer-care-agent",
+          "zone": "customer",
+          "action": "reply to customer",
+          "decision": "sent",
+          "ref": "span:cc-12",
+          "run_id": "FM-C"
+        }
+      ],
+      "path": [
+        "customer-care-agent",
+        "modaas-agw",
+        "network-fault-agent",
+        "customer-care-agent"
+      ],
+      "agents": [
+        "customer-care-agent",
+        "network-fault-agent"
+      ],
+      "zones": [
+        "customer",
+        "gateway",
+        "network",
+        "customer"
+      ],
+      "gateway_crossings": 1,
+      "checks": [
+        {
+          "id": "M1",
+          "label": "No direct network → customer hop (every return passes a gateway)",
+          "status": "fail",
+          "detail": "network-fault-agent (2026-10-05T10:01:06Z) → customer-care-agent (2026-10-05T10:01:09Z) skipped the gateways"
+        },
+        {
+          "id": "M2",
+          "label": "Every step belongs to this run",
+          "status": "pass",
+          "detail": "all 4 steps carry run FM-C"
+        },
+        {
+          "id": "M3",
+          "label": "Every step has a valid UTC timestamp",
+          "status": "pass",
+          "detail": "4/4 valid"
+        }
+      ]
+    },
+    "decision_trace": [
+      {
+        "at": "2026-10-05T10:01:00Z",
+        "source": "agent",
+        "actor": "customer-care-agent",
+        "decision": "accepted",
+        "detail": "receive fault report (customer)",
+        "ref": "span:cc-11"
+      },
+      {
+        "at": "2026-10-05T10:01:02Z",
+        "source": "gateway",
+        "actor": "modaas-agw",
+        "decision": "allowed",
+        "detail": "model_call (gateway)",
+        "ref": "gateway:action-201"
+      },
+      {
+        "at": "2026-10-05T10:01:06Z",
+        "source": "agent",
+        "actor": "network-fault-agent",
+        "decision": "fault found",
+        "detail": "run diagnostics (network)",
+        "ref": "span:nw-12"
+      },
+      {
+        "at": "2026-10-05T10:01:09Z",
+        "source": "agent",
+        "actor": "customer-care-agent",
+        "decision": "sent",
+        "detail": "reply to customer (customer)",
+        "ref": "span:cc-12"
+      },
+      {
+        "at": "2026-10-05T10:07:00Z",
+        "source": "control",
+        "actor": "C7 evaluator",
+        "decision": "ESCALATED",
+        "detail": "network agent answered the customer directly",
+        "ref": "AIA-LOG-001 v=L-v1"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "INTENT",
+        "detail": "",
+        "ref": ""
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "SENT",
+        "detail": "",
+        "ref": "INC0001001"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "DELIVERED",
+        "detail": "",
+        "ref": "INC0001001"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "assurance_agent",
+        "actor": "modaas-agw:nemotron-super-120b",
+        "decision": "attempt 1: checks passed",
+        "detail": "facts echoed; refs within finding",
+        "ref": "agw-0002"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "assurance_agent",
+        "actor": "modaas-agw:nemotron-super-120b",
+        "decision": "WRITTEN",
+        "detail": "",
+        "ref": "agw-0002"
+      }
+    ],
+    "evidence": [
+      {
+        "ref": "gateway:action-201",
+        "kind": "gateway",
+        "used_by_agent": true
+      },
+      {
+        "ref": "ledger:cid=fault-3",
+        "kind": "ledger",
+        "used_by_agent": false
+      }
+    ],
+    "policy_alignment": {
+      "passed": 5,
+      "total": 8,
+      "checks": [
+        {
+          "id": "P1",
+          "label": "Verdict follows from measured value vs limit",
+          "status": "unknown",
+          "detail": "measured value or limit not provided"
+        },
+        {
+          "id": "P2",
+          "label": "Threshold version dated before the test",
+          "status": "pass",
+          "detail": "L-v1 dated 2026-10-01; detected 2026-10-05T10:07:00Z"
+        },
+        {
+          "id": "P3",
+          "label": "Named owner matches the register",
+          "status": "pass",
+          "detail": "register owner owner@example.com; incident owner owner@example.com"
+        },
+        {
+          "id": "P4",
+          "label": "Named owner was notified (incident read back)",
+          "status": "pass",
+          "detail": "DELIVERED"
+        },
+        {
+          "id": "P5",
+          "label": "Owner response or silence recorded",
+          "status": "unknown",
+          "detail": "pending until the cutoff"
+        },
+        {
+          "id": "P6",
+          "label": "Not closed without a linked passing re-test",
+          "status": "pass",
+          "detail": "incident New; closes only after a linked passing re-test"
+        },
+        {
+          "id": "P7",
+          "label": "Evidence records attached",
+          "status": "pass",
+          "detail": "2 reference(s)"
+        },
+        {
+          "id": "P8",
+          "label": "No direct network → customer hop (every return passes a gateway)",
+          "status": "fail",
+          "detail": "network-fault-agent (2026-10-05T10:01:06Z) → customer-care-agent (2026-10-05T10:01:09Z) skipped the gateways"
+        }
+      ]
+    },
+    "outcome_validation": {
+      "status": "validated",
+      "checks": [
+        {
+          "id": "V1",
+          "label": "Assurance Agent run completed",
+          "status": "pass",
+          "detail": "WRITTEN"
+        },
+        {
+          "id": "V2",
+          "label": "Note is the agent's own (digest in the run log)",
+          "status": "pass",
+          "detail": "trust anchor: delivery log"
+        },
+        {
+          "id": "V3",
+          "label": "Facts in the note match the finding",
+          "status": "pass",
+          "detail": "control, version, scope, verdict, next step"
+        },
+        {
+          "id": "V4",
+          "label": "Evidence refs cited by the agent exist in the finding",
+          "status": "pass",
+          "detail": "1 cited"
+        },
+        {
+          "id": "V5",
+          "label": "Model reasoning not stored",
+          "status": "pass",
+          "detail": "only SHA-256 of raw responses are kept"
+        },
+        {
+          "id": "V6",
+          "label": "Governed Nemotron call with provenance",
+          "status": "pass",
+          "detail": "modaas-agw:nemotron-super-120b"
+        }
+      ]
+    }
+  },
+  {
+    "schema": "ifabric.servicenow.case/v1",
+    "generated_at": "2026-10-05T19:17:56Z",
+    "finding_id": "ifabric:C9:D-v1:window:2026-10-05T09:finding",
+    "finding": {
+      "control_ref": "C9",
+      "control_id": "AIA-ARC-006",
+      "threshold_version": "D-v1",
+      "scope_kind": "window",
+      "scope_id": "2026-10-05T09",
+      "verdict": "INDETERMINATE",
+      "summary": "trace coverage 61% < 95%",
+      "detected_at": "2026-10-05T10:05:00Z",
+      "evidence": [
+        "aict:query-7"
+      ],
+      "kind": "finding"
+    },
+    "delivery": {
+      "state": "DELIVERED",
+      "at": "2026-10-05T19:17:56Z",
+      "number": "INC0001002"
+    },
+    "agent_run": {
+      "state": "REFUSED",
+      "at": "2026-10-05T19:17:56Z",
+      "reason": "Verdict must be 'INDETERMINATE' (got 'SATISFIED')",
+      "backend": "modaas-agw:nemotron-super-120b",
+      "model_alias": "nemotron-super-120b",
+      "action_ids": [
+        "agw-0003",
+        "agw-0004"
+      ],
+      "evidence": "ifabric_C9_D-v1_window_2026-10-05T09_finding_20261005T191756Z_2.json"
+    },
+    "links": {
+      "incident": "https://servicenow.invalid/incident.do?sys_id=16da2609915a417b8446f25d4b235eed",
+      "aict": "https://servicenow.invalid/aiux/aict/home"
+    },
+    "response": {
+      "state": "AWAITING_RESPONSE",
+      "actor": null,
+      "at": null,
+      "cutoff": "2099-01-01T00:00:00Z",
+      "source": "live"
+    },
+    "servicenow": {
+      "status": "ok",
+      "sys_id": "16da2609915a417b8446f25d4b235eed",
+      "url": "https://servicenow.invalid/incident.do?sys_id=16da2609915a417b8446f25d4b235eed",
+      "number": "INC0001002",
+      "short_description": "[iFabric][C9 AIA-ARC-006 v=D-v1] window 2026-10-05T09 INDETERMINATE: trace coverage 61% < 95%",
+      "state": "New",
+      "owner": "Sree Annapurna Rallabandi",
+      "urgency": "3",
+      "updated_at": "2026-10-05 10:00:00",
+      "updated_by": "ifabric.integration"
+    },
+    "agent_analysis": {
+      "status": "pending"
+    },
+    "movement": {
+      "steps": [],
+      "path": [],
+      "agents": [],
+      "zones": [],
+      "gateway_crossings": 0,
+      "checks": [
+        {
+          "id": "M1",
+          "label": "No direct network → customer hop (every return passes a gateway)",
+          "status": "unknown",
+          "detail": "no trace provided"
+        },
+        {
+          "id": "M2",
+          "label": "Every step belongs to this run",
+          "status": "unknown",
+          "detail": "steps carry no run id"
+        },
+        {
+          "id": "M3",
+          "label": "Every step has a valid UTC timestamp",
+          "status": "unknown",
+          "detail": "no trace provided"
+        }
+      ]
+    },
+    "decision_trace": [
+      {
+        "at": "2026-10-05T10:05:00Z",
+        "source": "control",
+        "actor": "C9 evaluator",
+        "decision": "INDETERMINATE",
+        "detail": "trace coverage 61% < 95%",
+        "ref": "AIA-ARC-006 v=D-v1"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "INTENT",
+        "detail": "",
+        "ref": ""
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "SENT",
+        "detail": "",
+        "ref": "INC0001002"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "DELIVERED",
+        "detail": "",
+        "ref": "INC0001002"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "assurance_agent",
+        "actor": "modaas-agw:nemotron-super-120b",
+        "decision": "attempt 1: refused",
+        "detail": "Verdict must be 'INDETERMINATE' (got 'SATISFIED')",
+        "ref": "agw-0003"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "assurance_agent",
+        "actor": "modaas-agw:nemotron-super-120b",
+        "decision": "attempt 2: refused",
+        "detail": "Verdict must be 'INDETERMINATE' (got 'SATISFIED')",
+        "ref": "agw-0004"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "assurance_agent",
+        "actor": "modaas-agw:nemotron-super-120b",
+        "decision": "REFUSED",
+        "detail": "Verdict must be 'INDETERMINATE' (got 'SATISFIED')",
+        "ref": "agw-0003, agw-0004"
+      }
+    ],
+    "evidence": [
+      {
+        "ref": "aict:query-7",
+        "kind": "aict",
+        "used_by_agent": false
+      }
+    ],
+    "policy_alignment": {
+      "passed": 3,
+      "total": 8,
+      "checks": [
+        {
+          "id": "P1",
+          "label": "Verdict follows from measured value vs limit",
+          "status": "unknown",
+          "detail": "measured value or limit not provided"
+        },
+        {
+          "id": "P2",
+          "label": "Threshold version dated before the test",
+          "status": "unknown",
+          "detail": "register reference not provided"
+        },
+        {
+          "id": "P3",
+          "label": "Named owner matches the register",
+          "status": "unknown",
+          "detail": "register reference not provided"
+        },
+        {
+          "id": "P4",
+          "label": "Named owner was notified (incident read back)",
+          "status": "pass",
+          "detail": "DELIVERED"
+        },
+        {
+          "id": "P5",
+          "label": "Owner response or silence recorded",
+          "status": "unknown",
+          "detail": "pending until the cutoff"
+        },
+        {
+          "id": "P6",
+          "label": "Not closed without a linked passing re-test",
+          "status": "pass",
+          "detail": "incident New; closes only after a linked passing re-test"
+        },
+        {
+          "id": "P7",
+          "label": "Evidence records attached",
+          "status": "pass",
+          "detail": "1 reference(s)"
+        },
+        {
+          "id": "P8",
+          "label": "No direct network → customer hop (every return passes a gateway)",
+          "status": "unknown",
+          "detail": "no trace provided"
+        }
+      ]
+    },
+    "outcome_validation": {
+      "status": "failed",
+      "checks": [
+        {
+          "id": "V1",
+          "label": "Assurance Agent run completed",
+          "status": "fail",
+          "detail": "REFUSED: Verdict must be 'INDETERMINATE' (got 'SATISFIED')"
+        },
+        {
+          "id": "V2",
+          "label": "Note is the agent's own (digest in the run log)",
+          "status": "unknown",
+          "detail": "trust anchor: delivery log"
+        },
+        {
+          "id": "V3",
+          "label": "Facts in the note match the finding",
+          "status": "unknown",
+          "detail": "control, version, scope, verdict, next step"
+        },
+        {
+          "id": "V4",
+          "label": "Evidence refs cited by the agent exist in the finding",
+          "status": "unknown",
+          "detail": "0 cited"
+        },
+        {
+          "id": "V5",
+          "label": "Model reasoning not stored",
+          "status": "pass",
+          "detail": "only SHA-256 of raw responses are kept"
+        },
+        {
+          "id": "V6",
+          "label": "Governed Nemotron call with provenance",
+          "status": "pass",
+          "detail": "modaas-agw:nemotron-super-120b"
+        }
+      ]
+    }
+  },
+  {
+    "schema": "ifabric.servicenow.case/v1",
+    "generated_at": "2026-10-05T19:17:56Z",
+    "finding_id": "ifabric:C16:G-FM-v1:run:FM-D:finding",
+    "finding": {
+      "control_ref": "C16",
+      "control_id": "ACN-COST-001",
+      "threshold_version": "G-FM-v1",
+      "scope_kind": "run",
+      "scope_id": "FM-D",
+      "verdict": "BREACHED",
+      "summary": "12,400 tokens > cap 10,000",
+      "detected_at": "2026-10-05T10:09:00Z",
+      "evidence": [
+        "gateway:action-301"
+      ],
+      "kind": "finding"
+    },
+    "delivery": {
+      "state": "DELIVERED",
+      "at": "2026-10-05T19:17:56Z",
+      "number": "INC0001003"
+    },
+    "agent_run": {
+      "state": "NOT_RUN"
+    },
+    "links": {
+      "incident": "https://servicenow.invalid/incident.do?sys_id=832d11061cf84cfdaa102b6861914a5b",
+      "aict": "https://servicenow.invalid/aiux/aict/home"
+    },
+    "response": {
+      "state": "AWAITING_RESPONSE",
+      "actor": null,
+      "at": null,
+      "cutoff": "2099-01-01T00:00:00Z",
+      "source": "live"
+    },
+    "servicenow": {
+      "status": "ok",
+      "sys_id": "832d11061cf84cfdaa102b6861914a5b",
+      "url": "https://servicenow.invalid/incident.do?sys_id=832d11061cf84cfdaa102b6861914a5b",
+      "number": "INC0001003",
+      "short_description": "[iFabric][C16 ACN-COST-001 v=G-FM-v1] run FM-D BREACHED: 12,400 tokens > cap 10,000",
+      "state": "New",
+      "owner": "Sree Annapurna Rallabandi",
+      "urgency": "2",
+      "updated_at": "2026-10-05 11:03:00",
+      "updated_by": "mallory"
+    },
+    "agent_analysis": {
+      "status": "present",
+      "at": "2026-10-05 11:03:00",
+      "author": "Mallory",
+      "fields": {
+        "Finding ID": "ifabric:C16:G-FM-v1:run:FM-D:finding",
+        "Verdict": "SATISFIED",
+        "Next step": "Close now."
+      },
+      "missing_fields": [
+        "Control",
+        "Threshold version",
+        "Scope",
+        "Measured vs limit",
+        "Evidence refs",
+        "Owner",
+        "State",
+        "Owner response",
+        "Missing evidence",
+        "Agent path",
+        "Policy alignment",
+        "Validation",
+        "Model"
+      ],
+      "complete": false,
+      "finding_matches": true,
+      "verified": false,
+      "note_sha256": "32ffcfc348f055a660994a5b69c6875530489d9e28296111f33d3e143499bcfb",
+      "facts_match": false
+    },
+    "movement": {
+      "steps": [],
+      "path": [],
+      "agents": [],
+      "zones": [],
+      "gateway_crossings": 0,
+      "checks": [
+        {
+          "id": "M1",
+          "label": "No direct network → customer hop (every return passes a gateway)",
+          "status": "unknown",
+          "detail": "no trace provided"
+        },
+        {
+          "id": "M2",
+          "label": "Every step belongs to this run",
+          "status": "unknown",
+          "detail": "steps carry no run id"
+        },
+        {
+          "id": "M3",
+          "label": "Every step has a valid UTC timestamp",
+          "status": "unknown",
+          "detail": "no trace provided"
+        }
+      ]
+    },
+    "decision_trace": [
+      {
+        "at": "2026-10-05T10:09:00Z",
+        "source": "control",
+        "actor": "C16 evaluator",
+        "decision": "BREACHED",
+        "detail": "measured 12,400 tokens",
+        "ref": "ACN-COST-001 v=G-FM-v1"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "INTENT",
+        "detail": "",
+        "ref": ""
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "SENT",
+        "detail": "",
+        "ref": "INC0001003"
+      },
+      {
+        "at": "2026-10-05T19:17:56Z",
+        "source": "servicenow",
+        "actor": "ifabric.integration",
+        "decision": "DELIVERED",
+        "detail": "",
+        "ref": "INC0001003"
+      }
+    ],
+    "evidence": [
+      {
+        "ref": "gateway:action-301",
+        "kind": "gateway",
+        "used_by_agent": false
+      }
+    ],
+    "policy_alignment": {
+      "passed": 6,
+      "total": 8,
+      "checks": [
+        {
+          "id": "P1",
+          "label": "Verdict follows from measured value vs limit",
+          "status": "pass",
+          "detail": "12,400 tokens vs limit <= 10,000 → outside"
+        },
+        {
+          "id": "P2",
+          "label": "Threshold version dated before the test",
+          "status": "pass",
+          "detail": "G-FM-v1 dated 2026-10-01; detected 2026-10-05T10:09:00Z"
+        },
+        {
+          "id": "P3",
+          "label": "Named owner matches the register",
+          "status": "pass",
+          "detail": "register owner owner@example.com; incident owner owner@example.com"
+        },
+        {
+          "id": "P4",
+          "label": "Named owner was notified (incident read back)",
+          "status": "pass",
+          "detail": "DELIVERED"
+        },
+        {
+          "id": "P5",
+          "label": "Owner response or silence recorded",
+          "status": "unknown",
+          "detail": "pending until the cutoff"
+        },
+        {
+          "id": "P6",
+          "label": "Not closed without a linked passing re-test",
+          "status": "pass",
+          "detail": "incident New; closes only after a linked passing re-test"
+        },
+        {
+          "id": "P7",
+          "label": "Evidence records attached",
+          "status": "pass",
+          "detail": "1 reference(s)"
+        },
+        {
+          "id": "P8",
+          "label": "No direct network → customer hop (every return passes a gateway)",
+          "status": "unknown",
+          "detail": "no trace provided"
+        }
+      ]
+    },
+    "outcome_validation": {
+      "status": "failed",
+      "checks": [
+        {
+          "id": "V1",
+          "label": "Assurance Agent run completed",
+          "status": "unknown",
+          "detail": "NOT_RUN"
+        },
+        {
+          "id": "V2",
+          "label": "Note is the agent's own (digest in the run log)",
+          "status": "fail",
+          "detail": "trust anchor: delivery log"
+        },
+        {
+          "id": "V3",
+          "label": "Facts in the note match the finding",
+          "status": "fail",
+          "detail": "control, version, scope, verdict, next step"
+        },
+        {
+          "id": "V4",
+          "label": "Evidence refs cited by the agent exist in the finding",
+          "status": "pass",
+          "detail": "0 cited"
+        },
+        {
+          "id": "V5",
+          "label": "Model reasoning not stored",
+          "status": "unknown",
+          "detail": "only SHA-256 of raw responses are kept"
+        },
+        {
+          "id": "V6",
+          "label": "Governed Nemotron call with provenance",
+          "status": "unknown",
+          "detail": "no run record"
+        }
+      ]
+    }
+  }
+]

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1842" viewBox="0 0 1600 1842" role="img" aria-label="ProofLab one-page architecture, team iFabric">
 <title>ProofLab one-page architecture (team iFabric)</title>
-<desc>The live path with the one in-path question (EP-1's C16 check, answered by the c16 core embedded in each agent) and the EP-0 pre-run gate; the platform's own enforcement points; one contract with four transports; and, off the path, the control registry, the stateless evaluators (the same c16 function again at EP-2, after the run), THE ONE STORE (the platform ledger), the stitcher, the Evidence Pack, the control test and dashboard, the ServiceNow human loop (notify, then poll), the risk register, the AI inventory, the finding loop, the five habits and the three control timing layers.</desc>
+<desc>The live path with the one in-path question (EP-1's C16 check, answered by the c16 core embedded in each agent) and the EP-0 pre-run gate; the platform's own enforcement points; one contract with four transports; and, off the path, the control registry, the stateless evaluators (the same c16 function again at EP-2, after the run), THE ONE STORE (the platform ledger), the stitcher, the Evidence Pack, the control test and Arth's Evidence Console (the dashboard), the ServiceNow human loop (notify, then poll) with the Assurance agent (the 4th AgentCore runtime), the in-agent rails (EP-14, EP-3, EP-4, EP-15), the cockpit side door (EP-16, observed), the risk register, the AI inventory, the finding loop, the five habits and the three control timing layers.</desc>
 <defs>
 <marker id="arr-1f2937" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2937"/></marker>
 <marker id="arr-1d4ed8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/></marker>
@@ -15,7 +15,7 @@
 </defs>
 <rect x="0" y="0" width="1600" height="1842" fill="#ffffff"/>
 <text x="24" y="40" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="28" font-weight="bold" font-style="normal" fill="#1f2937" text-anchor="start">ProofLab · team iFabric · one-page architecture</text>
-<text x="24" y="72" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#dc2626" text-anchor="start">Only ONE question sits in the live path: the C16 check before each model call.  Before a run, EP-0 may decline to start an assessed run.</text>
+<text x="24" y="72" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#dc2626" text-anchor="start">Only ONE CONTROL question waits in the live path: the C16 check before each model call.  Rails may refuse (DG-1); EP-0 may decline to start an assessed run.</text>
 <text x="24" y="98" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" font-style="normal" fill="#374151" text-anchor="start">Claim C-FM-01: during fault resolution, the three ifabric- agents meet our declared event-recording (C7), drift (C9) and token-spend (C16) requirements.</text>
 <rect x="12" y="112" width="1576" height="438" rx="14" ry="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="8 6"/>
 <text x="24" y="136" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#334155" text-anchor="start">THE LIVE PATH   (blue = our code · grey = the platform's)</text>
@@ -29,8 +29,8 @@
 <text x="36" y="215" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">mints the CID; invokes the</text>
 <text x="36" y="234" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">3 agents in sequence; carries</text>
 <text x="36" y="253" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">tier, C16 tally, register v + sha</text>
-<text x="36" y="272" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">EP-5 handoffs: emit(), never</text>
-<text x="36" y="291" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">blocks</text>
+<text x="36" y="272" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">EP-5 handoffs = Gateway A / B:</text>
+<text x="36" y="291" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">emit() only, never blocks</text>
 <rect x="34" y="302" width="250" height="117" rx="12" ry="12" fill="#f0fdf4" stroke="#15803d" stroke-width="2"/>
 <text x="46" y="326" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#15803d" text-anchor="start">EP-0 pre-run gate (D13)</text>
 <text x="46" y="348" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#15803d" text-anchor="start">running version = approved?</text>
@@ -64,14 +64,14 @@
 <text x="729.0" y="299" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="italic" fill="#dc2626" text-anchor="middle">in process</text>
 <rect x="360" y="394" width="158" height="79" rx="12" ry="12" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
 <text x="372" y="418" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#1d4ed8" text-anchor="start">EP-3 tool calls</text>
-<text x="372" y="440" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">emit() every call,</text>
-<text x="372" y="459" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">real status 403/404</text>
+<text x="372" y="440" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">rails (DG-1) +</text>
+<text x="372" y="459" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">emit() every call</text>
 <rect x="526" y="394" width="158" height="79" rx="12" ry="12" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
 <text x="538" y="418" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#1d4ed8" text-anchor="start">EP-4 judgment</text>
-<text x="538" y="440" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">emit() disposition,</text>
-<text x="538" y="459" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">evidence, reason</text>
+<text x="538" y="440" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">output rails +</text>
+<text x="538" y="459" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">emit() disposition</text>
 <text x="360" y="491" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1d4ed8" text-anchor="start">emit client: async → THE ONE STORE</text>
-<text x="360" y="510" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="italic" fill="#6b7280" text-anchor="start">start-up fails closed without keys or pin</text>
+<text x="360" y="510" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="italic" fill="#6b7280" text-anchor="start">EP-14 ingress rails · EP-15 egress audit</text>
 <rect x="984" y="150" width="336" height="380" rx="12" ry="12" fill="#f3f4f6" stroke="#6b7280" stroke-width="2.5"/>
 <text x="996" y="174" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#374151" text-anchor="start">Platform EPs (not ours)</text>
 <text x="996" y="196" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="italic" fill="#374151" text-anchor="start">they refuse on their own; we pull</text>
@@ -79,11 +79,11 @@
 <text x="996" y="234" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1f2937" text-anchor="start">modaas-agw (one shared key):</text>
 <text x="996" y="253" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">· authz: API key, fail-closed</text>
 <text x="996" y="272" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">· PDP / Cedar tool policy;</text>
-<text x="996" y="291" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1d4ed8" text-anchor="start">   we configure 1 forbid rule (if D15)</text>
+<text x="996" y="291" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1d4ed8" text-anchor="start">   1 forbid rule: customer-records (DG-4)</text>
 <text x="996" y="310" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">· guardrails: a block logs ALLOW</text>
 <text x="996" y="329" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">· ceilings: 100 req/min, 2.5M tok/h</text>
 <text x="996" y="348" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">· pause → 404 (logged ALLOW)</text>
-<text x="996" y="367" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">admission (CEL + VAP) · approvals</text>
+<text x="996" y="367" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">admission · approvals · cockpit ask = EP-16</text>
 <rect x="996" y="438" width="150" height="79" rx="12" ry="12" fill="#ffffff" stroke="#6b7280" stroke-width="2"/>
 <text x="1008" y="462" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#374151" text-anchor="start">Bedrock</text>
 <text x="1008" y="484" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">Nemotron, via</text>
@@ -141,8 +141,8 @@
 <text x="36" y="809" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">+ sha256 · the kit's flat format</text>
 <text x="36" y="828" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">each control: own version + date</text>
 <text x="36" y="847" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">date proof: the S3 write-once</text>
-<text x="36" y="866" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">object (T1); the owner's</text>
-<text x="36" y="885" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">ServiceNow approval corroborates</text>
+<text x="36" y="866" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">object (T1); Arth's approval</text>
+<text x="36" y="885" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">Finding (T2) corroborates (C-7)</text>
 <text x="36" y="904" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#15803d" text-anchor="start">hands out a pinned extract;</text>
 <text x="36" y="923" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#15803d" text-anchor="start">NEVER in the path</text>
 <rect x="338" y="744" width="214" height="212" rx="12" ry="12" fill="#ffffff" stroke="#15803d" stroke-width="2.5"/>
@@ -167,7 +167,7 @@
 <text x="580" y="866" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">normalized, each pointing</text>
 <text x="580" y="885" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">at its raw source</text>
 <text x="580" y="904" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">no update or delete route</text>
-<text x="580" y="923" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="italic" fill="#6b7280" text-anchor="start">(D16, pending captain)</text>
+<text x="580" y="923" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="italic" fill="#6b7280" text-anchor="start">(D16 (a), the captain decided)</text>
 <rect x="822" y="744" width="300" height="212" rx="12" ry="12" fill="#ffffff" stroke="#15803d" stroke-width="2.5"/>
 <rect x="1058.9" y="734" width="53.1" height="21" rx="10.5" ry="10.5" fill="#0f766e" stroke="#0f766e" stroke-width="1"/>
 <text x="1085.4" y="749.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#ffffff" text-anchor="middle">POST</text>
@@ -203,7 +203,7 @@
 <text x="36" y="1020" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#15803d" text-anchor="start">Risk register</text>
 <text x="36" y="1042" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">risks.yaml, frozen + dated</text>
 <text x="36" y="1061" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">with register.yaml</text>
-<text x="36" y="1080" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">R-C16 · R-C7 · R-C9 + 2 of ours</text>
+<text x="36" y="1080" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">R-C16 · R-C7 · R-C9 · R-GR-01..05</text>
 <text x="36" y="1099" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">likelihood × severity (5×5)</text>
 <text x="36" y="1118" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">→ inherent; appetite → each</text>
 <text x="36" y="1137" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">threshold; residual; owner</text>
@@ -231,13 +231,13 @@
 <rect x="1512.9" y="986" width="53.1" height="21" rx="10.5" ry="10.5" fill="#0f766e" stroke="#0f766e" stroke-width="1"/>
 <text x="1539.4" y="1001.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#ffffff" text-anchor="middle">POST</text>
 <text x="1214" y="1020" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#7c3aed" text-anchor="start">ServiceNow human loop (EP-13)</text>
-<text x="1214" y="1042" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">finding → notify() → an incident</text>
-<text x="1214" y="1061" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">assigned to the owner (Sree)</text>
-<text x="1214" y="1080" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">her verdict returns by callback():</text>
-<text x="1214" y="1099" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">check polls it, or records the silence</text>
-<text x="1214" y="1118" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1f2937" text-anchor="start">records only; never holds work</text>
-<text x="1214" y="1137" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">AICT: discovery of our runtimes</text>
-<text x="1214" y="1156" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="italic" fill="#6b7280" text-anchor="start">(observed, not built)</text>
+<text x="1214" y="1042" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">finding → notify() → an incident (Sree)</text>
+<text x="1214" y="1061" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">Assurance agent: 4th AgentCore runtime,</text>
+<text x="1214" y="1080" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">Arth's analyser in our one-file handler,</text>
+<text x="1214" y="1099" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">one validated work note per incident</text>
+<text x="1214" y="1118" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">callback(): check polls reply or silence</text>
+<text x="1214" y="1137" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1f2937" text-anchor="start">records only; never holds work</text>
+<text x="1214" y="1156" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="italic" fill="#6b7280" text-anchor="start">AICT lists the ifabric_ runtimes by name</text>
 <rect x="24" y="1214" width="270" height="212" rx="12" ry="12" fill="#ffffff" stroke="#15803d" stroke-width="2.5"/>
 <rect x="241.2" y="1204" width="42.8" height="21" rx="10.5" ry="10.5" fill="#15803d" stroke="#15803d" stroke-width="1"/>
 <text x="262.6" y="1219.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#ffffff" text-anchor="middle">PRE</text>
@@ -247,21 +247,21 @@
 <text x="36" y="1298" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">resolution · owner Sree</text>
 <text x="36" y="1317" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">risk tier: high (our 5×5 rating);</text>
 <text x="36" y="1336" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">EU AI Act class unverified (OC-21)</text>
-<text x="36" y="1355" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">agents, models, tools, prompts:</text>
-<text x="36" y="1374" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">owner + approved version each</text>
+<text x="36" y="1355" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">agents (incl. the Assurance agent),</text>
+<text x="36" y="1374" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">models, tools: owner + version</text>
 <text x="36" y="1393" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#15803d" text-anchor="start">joined at query time;</text>
 <text x="36" y="1412" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#15803d" text-anchor="start">never in the path</text>
 <rect x="338" y="1214" width="468" height="212" rx="12" ry="12" fill="#f0fdfa" stroke="#0f766e" stroke-width="2.5"/>
 <rect x="742.9" y="1204" width="53.1" height="21" rx="10.5" ry="10.5" fill="#0f766e" stroke="#0f766e" stroke-width="1"/>
 <text x="769.4" y="1219.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#ffffff" text-anchor="middle">POST</text>
-<text x="350" y="1238" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#0f766e" text-anchor="start">Control test / query tool + dashboard (offline)</text>
+<text x="350" y="1238" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#0f766e" text-anchor="start">Control test / query tool + the console (offline)</text>
 <text x="350" y="1260" font-family="Menlo, Monaco, Consolas, monospace" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">prooflab query --control C16|C7|C9</text>
 <text x="350" y="1279" font-family="Menlo, Monaco, Consolas, monospace" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">--run &lt;CID&gt;  |  --window T1..T2</text>
 <text x="350" y="1298" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">recomputes every verdict from the pack · exit 0/1/2</text>
 <text x="350" y="1317" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">under 2 minutes; every answer names who is responsible,</text>
 <text x="350" y="1336" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">who acted, and the decision at each EP</text>
-<text x="350" y="1355" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1f2937" text-anchor="start">dashboard = static HTML: a VIEW that sees</text>
-<text x="350" y="1374" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1f2937" text-anchor="start">everything and refuses nothing (not an EP)</text>
+<text x="350" y="1355" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1f2937" text-anchor="start">dashboard = Arth's Evidence Console (D17): a VIEW</text>
+<text x="350" y="1374" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" font-style="normal" fill="#1f2937" text-anchor="start">on this engine · run catalogue + declared window</text>
 <rect x="822" y="1214" width="300" height="212" rx="12" ry="12" fill="#fffbeb" stroke="#92400e" stroke-width="2.5"/>
 <text x="834" y="1238" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#92400e" text-anchor="start">Five habits</text>
 <text x="834" y="1260" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" font-style="normal" fill="#1f2937" text-anchor="start">1 the telemetry store never judges</text>

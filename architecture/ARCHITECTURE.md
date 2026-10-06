@@ -15,9 +15,11 @@ Also read: the kit's `register.yaml`, `evaluate.py` and `submit.sh`, the Finding
 - **Decided by the captain (2026-10-05, relayed by the lead):**
   - D7: build a **new `ifabric-` trio** on `nemotron-super-120b`, cloned from the reference agent, with judgment as structured output checked by code and real evidence emission.
   - One constraint on D9: **the named PASS and BREACH runs are on the same agents.** The reference trio stays the untouched, **unassessed** "before" system: no reference re-run and no IT revert.
-- **Requested by the captain (2026-10-05):** the three control timing layers (pre-deployment, continuous, post-deployment) made explicit: §5.0, and a band on the one-page sketch. With them comes an optional pre-run version gate (EP-0, D13, pending captain).
+- **Requested by the captain (2026-10-05):** the three control timing layers (pre-deployment, continuous, post-deployment) made explicit: §5.0, and a band on the one-page sketch. With them comes a pre-run version gate (EP-0, D13, decided by the captain: it blocks assessed runs).
 - **Requested by the captain (2026-10-05, later):** risk and ownership, from the Accenture lightning talk [talk s4–s11]. Added: the risk register (§3.9), the AI inventory (§3.10), the optional inventory-reconciliation control (§5.6), the mapping to the talk's lifecycle (§2.5), and D14 (where both files live).
-- **Still pending:** D2, D3, D5, D9's levers, D10, D11, D13, D14 and the D8 mirror. The recommended option is written as the default and marked **(pending captain)**. A different answer changes values and live steps, not components (§13).
+- **Decided by the captain (2026-10-06, 00:26Z and 00:30Z; memory `planning-handoff.md`):** D2 (the safety ceiling ≤ 300K per run, always on), D3 (C9 = per-run latency Maximum + Errors, two-sided, + an hourly roll-up), D5 (T1 dates the register; T2 corroborates), D9 (the pilots decide the C16 breach lever; with none, C7 first), D10 (revised A), D11 (the laptop hub), D13 (EP-0 blocks assessed runs), D14 (repo YAML; Arth's AICT mirror), D15 (Cedar edits with the captain's OK per change, a test DENY on an existing tool included), D16 (a) (the ledger is the one store; fallback: a single laptop store), C-7 (T2 = Arth's approval Finding, after T1) and the guardrail decisions DG-1–DG-7 (§6). **By the captain's directions:** Arth's console is the dashboard (D17); the Assurance agent runs on AgentCore as the 4th runtime; Arth's code is used as-is and the boundary glue is ours; a minimal ServiceNow notify on each BREACH is in the build's Phase 1; the build is phased (Phase 1 the minimum submission, Phase 2, Phase 3; each ends with a submit).
+- **Integrated 2026-10-06 (~01:20 UTC) by the integrator** (`work/15-integration-changelog.md`): handoff-3 (§3.11, §3.12, §7.3; the glue G-01…G-22), the guardrails layer (EP-14, EP-15; §6), the cockpit side door (EP-16), Gateway A/B (EP-5), the run catalogue and the declared event window (§3.7, §9.1).
+- **The build plan and the schedule are `IMPLEMENTATION-PLAN.md`** (repo root; the method is `BUILD-SESSION-PROMPT.md`). Where its times differ from §12, it wins. **Still open:** the D8 mirror and the plan's DC-1…DC-11, each with a default that blocks nothing.
 
 **How to read it:**
 - §2 is the one-screen picture. §5.0 shows the three control timing layers.
@@ -80,7 +82,7 @@ Architecturally it is the masterclass pattern [slides p15], with these elements:
 | Risk [slides p20] | "Missing events, broken run links, or excessive unexplained gaps" | "Drift goes unnoticed, or the measurements themselves are missing" | "A loop overspends, or calls are missed or charged to the wrong run" |
 | Requirement brackets, filled in the register (values from §5.4) | coverage ≥ [C%]; gap < [G ms]; violating gaps ≤ [B7%] | drift ≤ [D%] against the frozen baseline; violating windows ≤ [B9%] | total input + output tokens per run, all agents and retries, ≤ [N] (per tier if tiers are adopted) |
 | Control test | `c7.assess_run` over expected (gateway- and spec-written) vs observed (adapter-emitted) | `c9.assess_run` / `assess_window` over AgentCore metrics | `c16.assess_run` over `aws/spans`, the figure of record |
-| Inline | none (records only) | none (records only) | `c16.decide_inline` before each model call: **the one in-path question** |
+| Inline | none (records only) | none (records only) | `c16_core.decide_inline` before each model call: **the one in-path question** |
 
 Rollup: the tool prints one claim line. Fewer than three complete and satisfied controls reads "partial coverage", never "claim satisfied" [02 R-J-09].
 
@@ -138,7 +140,7 @@ And **five habits** keep it honest.
 
 ### 2.2 Our adaptation (the captain's frame, on the verified platform)
 - **An adapter at every EP** calls the one contract. Every adapter produces the same evidence record (§4) [frame].
-- **Exactly one question sits in the live path and may make work wait:** the C16 check before each model call, "is this run still under cap?" [frame]. **Nothing inside a run waits on anything else; before an assessed run, EP-0 may decline to start it** (D13, pending captain; §3.1) (A3, I-01).
+- **Exactly one question sits in the live path and may make work wait:** the C16 check before each model call, "is this run still under cap?" [frame]. **Nothing inside a run waits on anything else; before an assessed run, EP-0 may decline to start it** (D13, decided by the captain; §3.1) (A3, I-01). **The in-agent rails may refuse or modify (DG-1, decided by the captain), but none is a control question:** C16 stays the only control question that waits (§2.3, §6).
   - It is asked inside **our agent runtime**, the only team code in the model-call path [handoff §5.9; 02 R-C-01].
   - **The evaluator runs there too:** the c16 core, embedded byte for byte in each single-file agent, with the same sha256 as the repo file (§3.4). The same function runs again after the run at EP-2, over the gateway's log: the second enforcement point (§11).
   - It uses a **frozen, version-stamped** pin set at deploy. The registry is never called [frame].
@@ -148,7 +150,7 @@ And **five habits** keep it honest.
   - `callback`: the owner's responses and approvals, which arrive later; with no inbound endpoint allowed, it is realised as notify-then-poll (§3.8);
   - `pull`: spans, decision logs, metrics, CR status, by run id and by time window [frame].
 - **Agent-to-agent handoffs are record events.** The orchestrating script emits them and they never block [frame].
-- **THE ONE STORE is the platform ledger, `audit-store`** (E-01; D16 (a), the lead's recommendation, **pending captain**). Every adapter writes its records there: ours at action time; the platform's decisions after each pull, as `platform_decision` records that point at their raw sources, which stay where they are; handoffs, callbacks and pulls alike. The laptop writes through the S1 spike path. Each run is exported to the versioned team bucket with a MANIFEST, and the Evidence Pack is the final export: copies of the one store, which the control test and the dashboard query offline. If spike S1 fails, the one store is a normalized, append-only file on the laptop that ingests the ledger and every pull (§3.5).
+- **THE ONE STORE is the platform ledger, `audit-store`** (E-01; D16 (a), **decided by the captain**). Every adapter writes its records there: ours at action time; the platform's decisions after each pull, as `platform_decision` records that point at their raw sources, which stay where they are; handoffs, callbacks and pulls alike. The laptop writes through the S1 spike path. Each run is exported to the versioned team bucket with a MANIFEST, and the Evidence Pack is the final export: copies of the one store, which the control test and the dashboard query offline. If spike S1 fails, the one store is a normalized, append-only file on the laptop that ingests the ledger and every pull (§3.5).
 - **The C16 running tally travels with the run.** The script seeds it, each agent adds its gateway usage, and on "over cap" the agent makes no more model calls, returns a halted result and emits the decision [frame].
 
 ```
@@ -158,8 +160,10 @@ And **five habits** keep it honest.
  │   C16 tally, register version + sha256; emit(handoff.sent / .received): never blocks     │
  │ EP-0 preflight (D13): each agent's running version = an approved one? It may decline     │
  │   to START an assessed run. Nothing inside a run waits on it                             │
+ │ Gateway A / Gateway B of the brief = its two handoffs (h1, h2): record only              │
  └───────┬──────────────────────────────────────────────────────────────────────────────────┘
          │ InvokeAgentRuntime x3, in sequence: customer -> it -> network (CID + session id)
+         │ (EP-16, observed: the cockpit's ask API can invoke any agent with no envelope)
          v
  ┌─ AgentCore Runtime: ifabric-customer | ifabric-it | ifabric-network (OURS) ──────────────┐
  │ EP-1 model-call adapter  ** THE ONE IN-PATH QUESTION **                                  │
@@ -168,6 +172,7 @@ And **five habits** keep it honest.
  │     action:  enforce: DENY = halt  |  observe: DENY recorded; halt only at the ceiling   │
  │   pin = a frozen extract of the register, set in env at deploy (no registry call)        │
  │ EP-3 tool calls: emit    EP-4 judgment: emit    emit client -> THE ONE STORE (async)     │
+ │ rails may refuse (DG-1): EP-14 ingress · EP-3 tool · EP-4 output · EP-15 egress          │
  └───────┬────────────────────────────────────────────────────────────────────────────────┬─┘
          │ model + MCP calls (baggage CID, run traceparent)                               │ emit (async)
          v                                                                                v
@@ -193,9 +198,12 @@ And **five habits** keep it honest.
   `prooflab refresh`: export of THE ONE STORE + raw -> stitcher (CID > action id > trace id > handoff id
     > CID + session id on the AWS invoke record > finding id)
   -> per-run exports + EVIDENCE PACK (store export + raw + derived + assessments + MANIFEST) -> versioned bucket
-  -> control test / query CLI, per run or per window + static dashboard (a view: sees everything, refuses nothing)
+  -> control test / query CLI, per run or per window + Arth's Evidence Console (D17; a view: sees everything,
+     refuses nothing; §3.12), with the run catalogue over a declared event window
   -> findings -> ServiceNow: notify() raises the incident; the owner's verdict returns through callback(),
      realised by polling (check --cutoff) -> response or silence, recorded
+  -> the Assurance agent (the 4th AgentCore runtime; our one-file handler around Arth's unchanged analyser):
+     one validated work note per incident (§3.11); AICT lists the ifabric_ runtimes by name
   -> a failed test exposes its risk (residual back to inherent) until a passing re-test closes the finding
   inventory + risks joined at stitch/query time (owners, approved versions): never in the path
   INV (optional, after C9): scheduled pull of CRs + AICT export vs inventory.yaml -> findings
@@ -206,12 +214,13 @@ And **five habits** keep it honest.
 | Where | Question or event | Transport | Waits? |
 |---|---|---|---|
 | Our runtime, before each model call | C16: "is this run still under cap?" | `evaluate` | **Yes: the only question that waits** |
+| Our runtime, rails (EP-14 ingress; EP-3 tool calls; EP-4 output; EP-15 egress, observe) | "Is this safe?" Deterministic, µs; a Nemotron self-check only on a flag (I-04, through EP-1's guarded path, failing closed; DG-5) | `emit` | **May refuse or modify (DG-1, decided by the captain); not a control question.** The one waiting control question stays C16 ([guardrails/AGENT-GUARDRAILS.md](guardrails/AGENT-GUARDRAILS.md) §6) |
 | Our runtime, after each model call | Usage, action id, real outcome | `emit` | No |
 | Our runtime, end of each invocation | The flush of still-queued records, after the result is computed | `emit` | **Declared, bounded and deciding nothing:** at most 2 s, best effort; it never fails or changes the call, and its p99 is reported from the smoke and pilot runs (B1, I-08). Not a question |
 | Our runtime, each tool call | Tool name, declared or not, args digest, real status | `emit` | No |
 | Our runtime, disposition | Judgment (auto-resolve / gather-evidence / escalate / halted) | `emit` | No |
 | Orchestrating script | handoff.sent / handoff.received, run lifecycle | `emit` | No |
-| Orchestrating script, step 1 of the preflight, **before** an assessed run starts | EP-0 (optional): "is each agent's running version an approved version?" | `approval.check_versions` (pure) + `emit`; the preflight acts only on the decision's `action` | Nothing inside a run waits on it. It may decline to **start** an assessed run (D13, pending captain; §5.0) |
+| Orchestrating script, step 1 of the preflight, **before** an assessed run starts | EP-0 (optional): "is each agent's running version an approved version?" | `approval.check_versions` (pure) + `emit`; the preflight acts only on the decision's `action` | Nothing inside a run waits on it. It may decline to **start** an assessed run (D13, decided by the captain; §5.0) |
 | Platform EPs (PDP/Cedar, guardrails, pause, ceilings, admission) | Their own decisions; they refuse on their own | `pull` (+ `emit` from our deploy and pause wrappers), then normalized into the one store as `platform_decision` records (§3.5) | Not ours |
 | ServiceNow | Finding → incident; the owner's response arrives later | `notify` out; the response back through `callback()`, realised by polling (`check`); `pull` for export | No |
 | Post-run: EP-2 and the evaluators (C16, C7, C9) | EP-2's replayed C16 decisions (§11); assessments, findings | `pull` (inputs), `emit` (outputs) | No |
@@ -273,7 +282,8 @@ prooflab/
                    PURE: no I/O, no clock, no module state
   adapters/
     runtime/       model_call.py (EP-1), tool_call.py (EP-3), judgment.py (EP-4), emit_client.py,
-                   action_id.py (httpx response hook)       -> bundled into each single-file agent (§7.1)
+                   action_id.py (httpx response hook), rails.py + egress.py (the rails: EP-14, EP-3, EP-4,
+                   EP-15; guardrails/AGENT-GUARDRAILS.md)   -> bundled into each single-file agent (§7.1)
     orchestrator/  run.py (EP-5, the run driver; EP-0 in its preflight)
     postrun/       c16_replay.py (EP-2: the c16 core once per gateway call, after the run, §11)
     collectors/    aws_spans.py (EP-2), modaas_evidence.py + pdp_logs.py (EP-6), gateway_stdout.py +
@@ -285,16 +295,24 @@ prooflab/
   store/           ledger_client.py, snapshot.py (`prooflab refresh`), observations.py (deterministic
                    normalizer), ingest.py (normalized records -> the one store, §3.5), manifest.py, redact.py
   stitch/          stitcher.py
-  query/           cli.py (`prooflab query|tail|refresh|render|recheck|registry|run`), engine.py, render_html.py
+  query/           cli.py (`prooflab query|tail|refresh|recheck|registry|run`), engine.py, grammar.py +
+                   answer.py (`ifabric.answer/v1` for the console, G-08)
+  pack/            projector.py + index.py (the one-way projection into Arth's console contracts, G-07), build.py
+  console/         Arth's Evidence Console (D17): server.py (loopback; PACK and LIVE), static/ (his panel's
+                   JS and CSS byte-identical) (§3.12, G-09)
+  humanloop/       the runner (G-05) and invoke.py (G-03: the Assurance agent through CallableAnalyzer)
+  watch/           `prooflab watch` and `tail`; the live feed (G-10)
   recheck/         independent arithmetic rechecker (written by a different worker than evaluators/)
-  servicenow/      Arth's package, unchanged [SN §4]
+  servicenow/      Arth's handoff-3 package, unchanged (152 tests; `handoffs/ifabric-handoff-3/`) [SN §4]
   tests/
+agents/ifabric-assurance/   the 4th runtime: Arth's unchanged nemotron.py + our shim, one file (§7.3; G-01)
 agents/ifabric-customer/ ifabric-it/ ifabric-network/   one bundled file per agent (§7.1; 05 AR-03): the clone of
                    the reference agent, the runtime adapters, and evaluators/c16_core.py embedded byte for byte
 register/          register.yaml (working copy), versions/<v>.yaml + <v>.sha256 (frozen), experiments/,
                    pins/<v>-<mode>.json + .sha256 (the in-path pin, §3.3)
                    risks.yaml (working copy) -> versions/<v>.risks.yaml + .sha256 (frozen with the register, §3.9)
                    inventory.yaml (working copy) -> inventory/<iv>.yaml + .sha256 (frozen per change, §3.10)
+tools/            bundle_agent.py, make_ifabric_agents.py, bundle_assurance.py, manifest.py (Arth's), gate.sh
 ```
 
 ### 3.1 The EP adapters
@@ -302,7 +320,7 @@ Every adapter speaks the one contract (§3.2) and writes the one record (§4). E
 
 Adapter ids are EP ids. "In path" means our code can make the work wait. Only EP-1 is. **Nothing inside a run waits on anything else; before an assessed run, EP-0 may decline to start it** (A3, I-01).
 
-#### EP-0 · Pre-run version gate, in step 1 of `prooflab run`'s preflight (optional; D13, pending captain)
+#### EP-0 · Pre-run version gate, in step 1 of `prooflab run`'s preflight (D13, decided by the captain: it blocks assessed runs)
 - **In path or observed:** **before the path.** A go/no-go before a run starts: the masterclass's "before it runs: may this go live at all?" and its "release or admission gate that can refuse" [slides p13]. Nothing inside a run waits on it; it may decline to **start** an assessed run.
 - **Transport:** a pure check, `approval.check_versions` (§3.4), called in step 1 of the preflight (§7.2). It returns the `Decision` shape of §3.2: the gate policy is its `mode`, and the preflight acts only on its `action` (`proceed` | `decline-start`), holding no verdict logic of its own (B2). The decision goes out through `emit()`. It is not an in-path `evaluate()`; routing it through `evaluate()` at a declared pre-run placement is the captain's alternative under D13. Its approved versions come from the frozen inventory (§3.10), the same data the optional INV control reconciles (§5.6).
 - **What it reads** (filtered reads only; never env values, which hold the ledger token and the gateway key [07 GS-22]):
@@ -319,7 +337,7 @@ Adapter ids are EP ids. "In path" means our code can make the work wait. Only EP
   - a `decision` per agent (`ep.id: EP-0`, `control.ref: APPROVAL`): running vs approved (image digest, model alias, generation, runtime version), the approval's time and subject, ALLOW or DENY, the reason, `inline.mode` (the gate policy) and `inline.action`;
   - on `decline-start`: a `lifecycle` record "run not started", plus a finding to the owner.
 - **Where it runs:** the laptop, inside step 1 of `prooflab run`'s preflight (§7.2).
-- **Status:** build (W3). Whether it declines assessed runs or only records is D13 (pending captain). Detail in §5.0.
+- **Status:** build (W3). D13, decided by the captain: it declines assessed runs on a mismatch and only records for every other run. Detail in §5.0.
 
 #### EP-1 · Model call, inside our agent runtime (model-call adapter)
 - **In path or observed:** **IN PATH.** The one waiting question. The EP kind is "sidecar / SDK: interceptor in the process" [slides p14].
@@ -332,7 +350,7 @@ Adapter ids are EP ids. "In path" means our code can make the work wait. Only EP
   - an `action` per completed call: `call.id` from `x-modaas-action-id`, model, tokens in and out, the raw `finish_reason` (captured below Strands, which maps `content_filter` to `end_turn` [05 AR-12]), real outcome (SERVED / BLOCKED_GUARDRAIL when `content_filter` with 0 tokens / ERROR_5XX / CANCELLED_C16);
   - a `lifecycle` stop record after a `halt`.
 - **Where it runs:** AgentCore Runtime, in each `ifabric-` agent (§7).
-- **Status:** build (D2: pending captain; D7: decided by the captain). Detail in §5.1.
+- **Status:** build (D2 and D7: decided by the captain). Detail in §5.1.
 
 #### EP-2 · Managed gateway log, after the run (spend and actions adapter over `aws/spans`)
 - **In path or observed:** **OBSERVED.** The slide-14 kinds "Managed gateway: no code of yours in it, read its log" and "Scheduled batch job: no request to sit inside". This is the **second placement of the same C16 evaluator** (§11): after the run, its adapter calls the c16 core's `decide_inline`, the function EP-1 calls inline, once per gateway call (E-02).
@@ -380,11 +398,12 @@ Adapter ids are EP ids. "In path" means our code can make the work wait. Only EP
   - `handoff.received`: status, disposition, halted, duration, tally out;
   - the run lifecycle: `run.started` with the `ifabric-run-…` CID, agent versions, register version and sha256, `run.condition`, provenance and tier decision; then `run.finished`.
 - **Where it runs:** the laptop (§7.2).
+- **Gateway A and Gateway B** of the brief (customer → Gateway A → IT → Gateway B → network) **are these two handoffs**, h1 (customer → IT) and h2 (IT → network): record-only events, never a block or a strip (decided by the captain). PII is masked at the receiving agent's input (EP-14; DG-2), and `handoff.sent` keeps the raw payload's sha256.
 - **Status:** build.
 
 #### EP-6 · Gateway authorization: `modaas-authz` + PDP/Cedar
 - **In path or observed:** **OBSERVED.** The platform refuses on its own (authz fail-closed; Cedar).
-  - We **configure** one Cedar forbid rule; which ToolConfig carries it is D15 (pending captain; §6.2).
+  - We **configure** one Cedar forbid rule: `forbid` on `SITE-ADV-*` in `customer-records` (D15 and DG-4, decided by the captain; applied with the captain's OK at run time and kept through judging; §6.2).
   - We never put code in it: the admission policy refuses participant writes in `agentgateway-system` and `modaas-system`, by the policy's text, never tested by a write of ours [handoff §5.9; 07 GS-01; 04b nit].
 - **Transport:** `pull()` on:
   - `/modaas/evidence`, by CID over Logs Insights (30 d), and swept by time window for our own tool's route, so a call that never carried our CID still lands (E-12);
@@ -399,7 +418,7 @@ Adapter ids are EP ids. "In path" means our code can make the work wait. Only EP
   - the platform's decision (ALLOW / DENY), policy id and version, principal, `call.id`, `trace.id`, CID, and `source.refs` to the raw line;
   - joined by the stitcher to EP-7's real outcome.
 - **Where it runs:** the laptop.
-- **Status:** build (pull); configure (Cedar: D10, pending captain).
+- **Status:** build (pull); configure (Cedar: D15 and DG-4, decided by the captain).
 
 #### EP-7 · Guardrails and the real outcome of each call (gateway outcome adapter)
 - **In path or observed:** **OBSERVED.** Bedrock guardrails refuse on their own. The platform records a block **as ALLOW** [handoff §5.2; gap 4].
@@ -472,8 +491,33 @@ Adapter ids are EP ids. "In path" means our code can make the work wait. Only EP
   - `pull()`: `export` captures each incident as stored, and `check` reconciles by correlation id [SN §3, §7, §8].
 - **Controls served:** the alert to a named owner for C16, C7 and C9 breaches, monitoring gaps and ESC; the finding loop (re-test closes it); the register approval (date proof T2).
 - **What it records:** `notification` records (mirrored from `delivery-log.jsonl`: delivery state, incident number, assignee); `approval` / response records (RESPONDED with actor and time, or NO_RESPONSE_OBSERVED after the cutoff).
-- **Where it runs:** the laptop, or the IDE terminal if the ServiceNow credentials live there (D11, pending captain).
-- **Status:** built (Arth's package, 46 offline tests [handoff §4.3]) + glue to build (§3.8).
+- **Where it runs:** the laptop (D11, decided by the captain; `~/.prooflab-snow.env`, `selftest` PASSED 2026-10-06 ~00:45Z).
+- **The Assurance agent** (§3.11) sits in this EP's callback loop: after DELIVERED it writes one validated work note per incident. Nothing waits on it, and it is not a control.
+- **Status:** built (Arth's handoff-3 package, 152 offline tests, used as-is) + our glue (§3.8: G-04–G-06, G-13). A minimal `notify` on each BREACH is in the build's Phase 1 (decided by the captain).
+
+#### EP-14 · Agent ingress rails (our entrypoint, before `agent(...)`) (DG-1, decided by the captain)
+- **In path or observed:** **in path: may refuse or modify.** A rail, not a control question: it asks "is this safe?" and never calls `evaluate()` [guardrails/AGENT-GUARDRAILS.md §6.1].
+- **Rails:** I-01 payload format; I-02 secrets + PII masking at the receiving agent's input (DG-2); I-03 injection heuristics; I-04 a Nemotron self-check, only when I-03 flags, through EP-1's guarded path, failing closed (DG-5); RT-01's prompt and policy hash echo.
+- **Transport:** `emit()`: a `rail_decision` record for every BLOCK or MODIFY, compact ALLOWs on the `intent` record (DG-3).
+- **Controls served:** Hostile resistance (R-J-36); the judgment pillar; C16 counts the self-check's tokens (it runs through EP-1).
+- **Where it runs:** our runtime, inside each single-file agent.
+- **Status:** build (MIN in the frozen image; P2 if it fits, else `rails-v2`, a declared treatment for the adversarial windows).
+
+#### EP-15 · Runtime egress audit (a process-wide PEP 578 hook, RT-03)
+- **In path or observed:** **observed** (FLAG); enforce only later. Self-enforced in-agent (rails gap G-6).
+- **Transport:** `emit()`.
+- **What it records:** the destinations our process opens, as FLAGs against the declared allowlist.
+- **Where it runs:** our runtime.
+- **Status:** build (P2, observe).
+
+#### EP-16 · The cockpit's "ask" API: a side door we observe
+- **What it is:** the platform cockpit's one POST, `/api/agents/{name}/ask`, invokes an agent, and the cockpit has no authentication of its own: anyone holding the cockpit link can invoke any agent [memory platform facts; notes #25].
+- **In path or observed:** **OBSERVED.** Not ours; we never call it, except one approved probe (ADV-R-14).
+- **Transport:** `pull()` (the AWS-written `InvokeAgentRuntime` records' caller and CID; our agents' "no envelope" records) + `emit()` (our agent's own records when it is invoked without an envelope, §7.1).
+- **Controls served:** WHO and AUTHORIZED (an invocation outside our script); C16 (the floor counts it under its own CID); the run catalogue (labelled side-door, `UNATTRIBUTED`).
+- **What it records:** `observation` records; our agent's `ifabric-unenveloped-…` records, which start at tally 0 under the strictest cap.
+- **Where it runs:** the laptop (the `side_door` collector); the runtime (the unenveloped path).
+- **Status:** observe; one active probe (ADV-R-14), cut first, with the captain's explicit OK.
 
 #### No adapter of ours (stated so the EP table has no blank row)
 - **The ledger's token gate.** The ledger is our store. Its 401 is recorded only if an adversarial test exercises it, with the user's OK, because it pollutes the shared ledger [handoff §3d].
@@ -568,7 +612,7 @@ Rules:
 - **emit, on the laptop:** the same client, plus a local append-only spool file (`spool/*.jsonl`, fsync'd) that replays on restart. Its POST path is the S1 spike's (§3.5).
 - **callback:** used by `human_loop.py` only. Its only caller is the poller (`check`), never an inbound request (R-P-07).
 - **pull:** captures are byte-exact files with a capture manifest. Every source is pulled by run id **and** swept by time window, so traffic that never carried our CID still lands in the store (E-12; §3.5, §3.6). `normalize()` is pure and gives `record_id = "obs-" + sha256(source.system + "|" + source.ref)[:32]`, so a re-pull deduplicates.
-- **Every normalized record goes into the one store** (E-01; D16, pending captain; §3.5). The platform's decisions become `record_kind: platform_decision` records, other telemetry `observation` or `metric` records, all `authorship: PLATFORM`. `store/ingest.py` appends them to the ledger between runs, never while a run is live [06 C5], and skips any `record_id` already there. The raw capture stays where it is and remains the authority: each record's `source.refs` names the raw file, the line and the sha256 of the raw line.
+- **Every normalized record goes into the one store** (E-01; D16 (a), decided by the captain; §3.5). The platform's decisions become `record_kind: platform_decision` records, other telemetry `observation` or `metric` records, all `authorship: PLATFORM`. `store/ingest.py` appends them to the ledger between runs, never while a run is live [06 C5], and skips any `record_id` already there. The raw capture stays where it is and remains the authority: each record's `source.refs` names the raw file, the line and the sha256 of the raw line.
 
 ### 3.3 The control registry
 **Source of truth.** `register/register.yaml` [03 D5] (build choice). It uses the kit's format, extended with flat keys, because the judged threshold document is the `register.yaml` that `submit.sh` packages [kit: submit.sh]. The kit's `evaluate.py` should still parse it [kit: evaluate.py].
@@ -617,14 +661,14 @@ The values are **not** in this file. They come from the threshold experiments (�
 6. The live lane patches the env block into the three `ifabric-` AgentConfigs. Each patch makes a new generation and runtime version, with no re-approval (OC-12, closed [05 AR-15]). A rejected value leaves the runtime on its **old** env, so before an assessed run EP-0 checks the runtime version and the pin sha256 the agent echoes back (§3.1).
 7. Copy the frozen file to WORKDIR as the judged `register.yaml`.
 
-**Hand-out** [03 D5] (pending captain):
+**Hand-out** [03 D5] (decided by the captain):
 - **In the path (H1):** env pinned at deploy. `PinnedC16.from_env()` builds once at process start: it parses `IFABRIC_PIN_JSON`, checks it against `IFABRIC_PIN_SHA256`, and refuses to start if a field is missing or the hash differs (a fail-closed start-up, not a control question [02 R-P-13]). The agent hashes the pin's bytes; it never sees the file.
 - **The post-run pin check** closes that gap (I-04, B4). The control test re-derives the pin from the frozen file with the same pure function, compares it byte for byte with the pin whose sha256 each decision carries, and checks every decision's `threshold.value` against the file's value for its tier. A mismatch becomes a `reconciliation` record and turns the assessment's `operation` to DEGRADED.
 - **The payload never carries a cap.** It may carry a tier name. The cap comes from the pin.
 - **The script stamps** version and sha256 into the run envelope and the first handoff record. The agent compares them with its pin. A mismatch is **recorded**, never refused, and the pin wins.
 - **Off the path (H4):** evaluators, the stitcher and the query tool load `register/versions/<v>.yaml` and check its sha256. Each record and assessment is tested under **the version bound to its evidence**, never the latest [02 R-J-12].
 
-**Date proof** [03 D5] (pending captain). **T1 alone is the date proof; T2 corroborates** (E-04):
+**Date proof** [03 D5] (decided by the captain). **T1 alone is the date proof; T2 corroborates** (E-04); T2 is Arth's approval Finding, raised after T1 (C-7, decided by the captain):
 - **T1, required:** the write-once object in the **versioned** evidence bucket. S3 sets LastModified and VersionId; an overwrite can't backdate; noncurrent versions persist 7 days; the PUT is in server access logs that participants can't reach [03 F1].
   - A control's date proof is the T1 of the **first** file version that carried its `threshold_version` (C16-v1 → `v1.yaml`, even when the run was bound to `v1.1`).
   - It is fail-safe: there is no Object Lock, so "write-once" is a convention, but an overwrite or a delete marker can only move LastModified later. Tampering turns the check INDETERMINATE, never into a false pass [06 D2].
@@ -708,7 +752,7 @@ Rules:
 - **The rechecker** (`prooflab/recheck/`) is written from §5 by a different worker, without reading `evaluators/`. CI fails on any disagreement [01 row K3].
 
 ### 3.5 The evidence store and the export
-**THE ONE STORE is the platform ledger, `audit-store`** (E-01; D16 (a), the lead's recommendation, **pending captain**; it replaces the earlier D8 reading that kept the platform's decisions out of it) [03 D8, F7]. Every decision of every EP is recorded there: ours at action time, the platform's after each pull, each pointing at its raw source. Everything else is either a raw source that stays where it is (CloudWatch log groups, pod logs, our byte-exact captures of them) or an export of the store (the per-run exports and the Evidence Pack). Neither is a second store.
+**THE ONE STORE is the platform ledger, `audit-store`** (E-01; D16 (a), **decided by the captain**; it replaces the earlier D8 reading that kept the platform's decisions out of it) [03 D8, F7]. Every decision of every EP is recorded there: ours at action time, the platform's after each pull, each pointing at its raw source. Everything else is either a raw source that stays where it is (CloudWatch log groups, pod logs, our byte-exact captures of them) or an export of the store (the per-run exports and the Evidence Pack). Neither is a second store.
 - `POST /records` appends any JSON object to one JSONL file.
 - There is no update or delete route.
 - The writer may set `ts`; the store sets `seq` (epoch ms, can collide).
@@ -820,8 +864,8 @@ So `query --incident` resolves any CID or time a tester picks in the window [02 
 | `query --incident <CID or time>` | The six questions (WHO, WHAT, AUTHORIZED, APPROVED, INTEGRITY, RECONSTRUCT) with record ids and stated limits, for any CID or time in the window, `UNATTRIBUTED` ones included (§3.6); and the output block below. A CID outside our scope (the reference trio, another team's agents, `modaas-docs` discovery traffic) answers "out of scope (scope_rule, inventory version …)" with what was seen (G-12) |
 | `query --claim` | The C-FM-01 line |
 | `query --risk <id> [--as-of T]` | The risk's statement, ratings, appetite and owner; each linked finding with its state and re-test; its state as of T (§3.9) |
-| `query --inventory [--as-of T]` | The AI system, its owner and tier; each component's owner and approved version (approver, time) in force at T; **every agent with its host (AgentCore runtime ARN, or the ServiceNow agent) and its model**, and a check that every AWS-side model call in the pack names a Nemotron id (R-J-05); the INV passes, if built (§3.10, §5.6) |
-| `query --runs` | Every CID in the declared window, with its phase (Alert 0/1/2: the declared label, from phase boundaries written into the run index before the runs; I-11), provenance, `run.condition`, control role and ADV ids, and file version (A4: no "system" column; there is one system) |
+| `query --inventory [--as-of T]` | The AI system, its owner and tier; each component's owner and approved version (approver, time) in force at T; **every agent with its host (its AgentCore runtime ARN; the Assurance agent's included) and its model**, and a check that every AWS-side model call in the pack names a Nemotron id (R-J-05); the INV passes, if built (§3.10, §5.6) |
+| `query --runs` | Every CID in the declared window, with its phase (Alert 0/1/2: the declared label, from phase boundaries written into the run index before the runs; I-11), provenance, `run.condition`, control role and ADV ids, and file version (A4: no "system" column; there is one system). **The run catalogue** (`derived/run-catalogue.jsonl`, decided by the captain): every run any source saw in the window (ours, the reference trio's, `my-agent`'s, the cockpit's, other parties', unattributed), each honestly labelled; the declared window is `evidence/window.json`, uploaded write-once before judging |
 | `tail --run <CID>` | **Live, laptop only, read-only:** GET `/records?cid=` while a run happens. Used to show the inline verdict forming in the path [02 R-J-18] |
 | `watch` | **Live, laptop only:** the near-real-time loop (every few minutes, default 3). C9 per-run windows (+ optional C16 floor and a provisional C7 view) → findings within minutes. It also runs the `check` poller, the only caller of `callback()` (§3.8). Labelled "near-real-time post-run evaluation", never in the path (§5.0) |
 | `refresh` / `render` / `recheck` / `registry …` / `run …` | Snapshot (with the `check` poller); render HTML; independent recheck; freeze and pin; drive a run (§7.2) |
@@ -836,27 +880,15 @@ A field the evidence lacks prints as "unknown", with its gap id [02 R-P-04a].
 
 Exit codes: 0 SATISFIED, 1 BREACHED, 2 INDETERMINATE / NOT_ASSESSED / unknown run / unsupported control. The non-success words are explicit ("not assessed", "insufficient evidence") [02 R-J-10c]. This matches the kit's 0/1/2 [kit: evaluate.py].
 
-**The dashboard** (the captain's app) is **one static, self-contained HTML file** (`evidence/dashboard.html`), rendered by `render_html.py` from the engine's JSON output. Data is inlined, so it opens from the zip with no server and no network [03 D1].
-- **Views:**
-  - Claim;
-  - Control test (control × named run and window grid);
-  - Evidence ledger (per-run timeline: authorship tag on each record, the real outcome next to the platform's decision, raw refs as relative links);
-  - Six questions (per incident);
-  - Registry (versions, dates, date proofs, owners; the risk register with each risk's state; the inventory);
-  - Human loop;
-  - Adversarial log;
-  - Security matrix;
-  - Gap list.
-- **It contains no verdict logic.** JavaScript only filters and displays. Every screen shows the tool version (git sha), the register version and sha256, the snapshot id and the as-of time. Window roll-ups for arbitrary T1..T2 stay in the CLI [03 D1 risks].
+**The dashboard is Arth's Evidence Console** (D17, settled by the captain's direction "the dashboard in handoff 3 is the frontend"; spec `handoffs/ifabric-handoff-3/evidence-console-plan/` 02, 03, 06, 07, 09; §3.12). The static `dashboard.html` of D1 is dropped; the CLI stays the control test and the P0 fallback.
+- **Views:** Ask / Answer (the control test, through this engine); the Evidence Ledger; **the run catalogue** (every run in the declared window, honestly labelled); the Six Questions; the Register (with the date-before-test ribbon); the Human Loop (Arth's panel, unchanged: the Assurance agent's notes); Adversarial; Architecture (the EPs rendered from `pack-index.enforcement_points`, never hard-coded); Gaps; the Live Monitor (LIVE mode).
+- **It contains no verdict logic.** Its answers come from this engine (`ifabric.answer/v1`, G-08); its JavaScript only renders. Every screen shows the pack's MANIFEST status, the register version and the as-of time.
 - **It is a view, not an EP:** "sees everything, refuses nothing" [slides p12; 02 R-J-53].
-- **No public endpoint:**
-  - no server and no listener;
-  - nothing deployed to the load balancer, CloudFront or S3 website hosting;
-  - no credential, presigned URL, IdeUrl or CockpitUrl inside [02 R-P-07].
-- A local `127.0.0.1` server (D1-C) is a cut-line extra only.
+- **No public endpoint:** loopback only (`127.0.0.1:8787`) on the presenter's laptop, never the IDE; a one-time token → a session cookie; a Host allow-list; CSP; GET-only in PACK mode; it refuses to start with a secret in its environment; no credential, presigned URL, IdeUrl or CockpitUrl inside [02 R-P-07; console plan 07].
+- **A fake/real data switch is ours** (Arth's panel has none [13 D8]): `--data fixtures | pack | live`, with a provenance banner by source; PACK mode refuses SYNTHETIC data and the panel's fake sample.
 
 ### 3.8 The ServiceNow callback / notify (the human loop)
-Arth's `prooflab/servicenow` is the human-loop adapter, **unchanged** [SN §3–§8; 01 row H1]. Its map onto the contract is **notify-then-poll**, because no inbound endpoint is allowed [02 R-P-07; I-03; 04b nit]:
+Arth's `prooflab/servicenow` (the handoff-3 version: 152 tests, `handoffs/ifabric-handoff-3/`) is the human-loop adapter, **unchanged** [SN §3–§8; 01 row H1]. Its map onto the contract is **notify-then-poll**, because no inbound endpoint is allowed [02 R-P-07; I-03; 04b nit]:
 - `notify()` raises the request: the outbound half, not the callback;
 - the owner's verdict returns through `callback()`, realised by polling. `check_response()` (`check --cutoff`) is the only caller: `prooflab watch` runs it every few minutes and every `refresh` runs it once, and it calls `callback()` once per new response, or once when the cutoff passes in silence;
 - `export` = `pull()`: each incident captured as stored;
@@ -872,7 +904,9 @@ Arth's `prooflab/servicenow` is the human-loop adapter, **unchanged** [SN §3–
   - No regex on `detail` is needed: our agents write structured judgment records, and the reference trio is never assessed.
   - It avoids the kit's Rail 1 traps: idempotent, with an assignee [handoff §3b Q15].
 - **`mirror()`:** each new delivery-log line becomes a `notification` record in the one store (§3.5), carrying `finding.id`, state, incident number, assignee and time on the ServiceNow clock.
-- **The approval export** for the register's T2 (§3.3: corroboration, not the date proof) and for risk acceptances (below).
+- **T2 = Arth's approval Finding** (C-7, decided by the captain; G-13): after the S3 upload (T1), `registry freeze` writes `approval-finding.json` (`control_ref: REG`, `kind: approval`, both sha256s as evidence refs); it is raised with its own absolute delivery log, never assessed and never analyzed; the captain's APPROVED note is captured by `check` and exported at once. T2 corroborates; T1 dates (D5). The same path exports risk acceptances (below).
+- **The finding builder** (G-04): the finding context (`measured`, `limit`, `register`, a ≤ 200-step `trace` with our handoffs as `zone: other`, `retest`) and templated summaries, checked by Arth's `finding_from_dict`.
+- **The human-loop runner** (G-05): one process, the only writer of the absolute delivery log; `selftest` before each batch; the process guards for bugs (a) and (b); Assurance analyses only between subject runs. The Assurance agent (§3.11) runs after DELIVERED.
 
 **Finding identity:** `ifabric:{control_ref}:{threshold_version}:{scope_kind}:{scope_id}:{kind}`. A re-run reuses the incident [SN §6].
 
@@ -887,9 +921,9 @@ Arth's `prooflab/servicenow` is the human-loop adapter, **unchanged** [SN §3–
 
 **Incident volume bound** (pending captain, with the owner): one finding per control × run scope (C9 lists runtimes in its summary), plus one per monitoring gap. This bounds C9 to the number of runs, not hours × runtimes [handoff §4.3].
 
-**Before judging:** `check --cutoff <judging start>` and `export` for every finding [SN §8.4].
+**Before judging:** `check --cutoff` with a cutoff no later than the final check (a cutoff after the last check never records silence; R-19) and `export` for every finding [SN §8.4].
 
-**Accepted adapter risks** [handoff §4.3], both confirmed from source, each with a minimal fix proposed for W9 [08 SN-05, SN-06]:
+**Accepted adapter risks** (accepted as known risks by the captain; Arth's code is not changed; G-05's process guards hold them) [handoff §4.3; 08 SN-05, SN-06]:
 - (a) `notify --dry-run` can log DELIVERED and is not offline. We never rely on dry-run being offline, and a dry run always writes to a scratch delivery log.
 - (b) An empty journal read can become NO_RESPONSE_OBSERVED. Our rendering shows the response basis (`at_basis: last_update`), and we read the exported incident directly. Nobody but the owner updates our incidents after she responds.
 
@@ -898,7 +932,8 @@ Arth's `prooflab/servicenow` is the human-loop adapter, **unchanged** [SN §3–
 **AICT:** discovery and observability only, at L2–L3 [handoff §5.8].
 - Our runtimes appear as `ifabric_…` about 20 min after creation [SN §9].
 - Its usage count is 0 for our traffic, and Monitor covers Managed agents only. Both are recorded as gaps.
-- The AICT exports and the CloudTrail AssumeRole proof are Arth's, in `evidence/servicenow/aict/` [SN §9].
+- The AICT exports are Arth's, in `evidence/servicenow/aict/` [SN §9]; the AWS half of the proof (CloudTrail `AssumeRole` by the AICT user, its `Get`/`ListAgentRuntimes` on our runtimes) comes from our own reads (G-12).
+- `ifabric_assurance_agent`, the 4th runtime (§3.11), is the AICT-visible form of the Assurance agent: AICT lists it by name, with no usage and no Monitor.
 
 ### 3.9 The risk register (`register/risks.yaml`; off the path; frozen and dated with `register.yaml`)
 **Why** (the captain's request, from the talk). The talk's organisation set-up lists "Define acceptable risks" before "Define controls", and its notes stress the order [talk s5]. Its closing rule is "decide the risk you can accept first and derive the controls from it; then watch that risk live, because for AI it moves" [talk s11]. The masterclass already names one risk per control [slides p8, p20]. This file makes each risk a versioned record with an owner, a rating and an appetite, and every threshold in the register cites it.
@@ -987,7 +1022,7 @@ It answers WHO owns each component, and whether a running version is the APPROVE
 | `owner` | Sree (Sree Annapurna Rallabandi, the control owner [SN §2]) |
 | `risk_tier` | `high`: EU AI Act high-risk because of the network agent (critical infrastructure; Art. 12 record-keeping) [playbook §1.0 l.35]. UNVERIFIED against a primary source (§3.9, OC-21). AICT's matching value is "High" [AICT notes §2.7] |
 | `claim`, `risks` | C-FM-01; R-C16, R-C7, R-C9, R-OWN, R-JDG (§3.9) |
-| `scope_rule` | In scope: CRs named `ifabric-*`, AgentCore and AICT assets named `ifabric_*`, and what their `dependsOn` names. Declared out of scope, each with its owner: the reference trio (the unassessed "before" system, the organisers') and every other team's assets on the shared instance. Arth's ServiceNow-native agent (L3) gets its own entry, owner Arth, once it exists [SN §9] |
+| `scope_rule` | In scope: CRs named `ifabric-*`, AgentCore and AICT assets named `ifabric_*`, and what their `dependsOn` names. Declared out of scope, each with its owner: the reference trio (the unassessed "before" system, the organisers') and every other team's assets on the shared instance. The Assurance agent `ifabric-assurance-agent` (the 4th AgentCore runtime, §3.11) is a component: owner Arth, approver Sree, outside every control's `applies_to` (the ServiceNow-native prototype is superseded by the facilitators' Nemotron ruling) |
 
 The scope rule matters: the shared AICT instance lists every team's identically named reference agents [SN §2]. Without it, INV would report them as "not inventoried" on every pass.
 
@@ -998,7 +1033,10 @@ The scope rule matters: the shared AICT instance lists every team's identically 
 | `ifabric-customer`, `ifabric-it`, `ifabric-network` | Agent: AgentConfig + AgentCore runtime | Sree | Image digest + model alias; the CR generation is recorded | The AgentConfig's approval annotation: its subject string and time, verbatim (the approval is Sree's human act, §7.1), plus the digest our deploy wrapper recorded at that moment (EP-10) | CR approval records + our deploy records; AICT discovery confirms the runtime and its version |
 | `nemotron-super-120b`; any declared swap model (N8) | Model: ModelConfig | MoDaaS platform (organisers) | Model alias + ModelConfig generation | The ModelConfig's approval annotation (pulled). A declared treatment also needs the owner's approval record (§5.0 part 4) | CR approval records; our declaration for the treatment |
 | `customer-records`, `runbook-lookup`, `network-twin` | Tool: shared ToolConfig | MoDaaS platform (organisers) | ToolConfig generation (+ the Lambda's CodeSha256, if readable: EP-12) | The ToolConfig's approval annotation (pulled) | CR approval records |
-| The `ifabric-` Cedar test tool (if D10) | Tool: our ToolConfig | Sree | ToolConfig generation + the projected policy's `resourceVersion` | Its CR approval (Sree) | CR approval records + our deploy records |
+| The Cedar test rule in `customer-records` (D15, DG-4) | Policy text on a platform ToolConfig | The tool: MoDaaS; the rule: Sree | ToolConfig generation + the projected policy's `resourceVersion` after SP-1 | The captain's OK at run time, recorded with the version | CR records + our deploy records |
+| `ifabric-assurance-agent` | Agent: AgentConfig + AgentCore runtime (§3.11) | Arth (approver Sree) | Image digest + model alias; the CR generation is recorded | Its approval annotation (Sree's act) | CR approval records + our deploy records; AICT lists it |
+| `ifabric-rails-policy` | Policy: the rails' table and patterns, inside each agent image | Sree | `rail.policy_sha256` (echoed at start-up) | Covered by the agent's approval | Our declaration (the build records the sha256) |
+| `ifabric-adversarial-corpus` | Test dataset (RTM-1) | Sree | Its sha256 manifest | The register approval that names it | Our declaration |
 | `prompt:<agent>` | Prompt: each agent's system prompt | Sree | Its sha256, inside the approved image digest | Covered by the agent's approval | Our declaration (the build records the sha256) |
 | `dataset:scenarios` (S1–S3); `condition:conflicting-context`; the declared faults | Test datasets | Sree | Each file's sha256 (conditions already carry theirs in the register) | The owner's register approval (T2), which names them | Our declaration |
 
@@ -1012,11 +1050,30 @@ The scope rule matters: the shared AICT instance lists every team's identically 
 - A new version follows every change of an approved version or an owner: the agents' freeze, N8's declared treatment and its revert, a remediation.
 - The run index records the version in force for every run.
 - A version needs no approval of its own: the approvals it records are the CR approvals and the owner's register approval, each with its own time.
-- `inv-1` is frozen at the agents' freeze (02:00, §12.1), before the pilots.
+- `inv-1` is frozen at the agents' freeze (Phase 1, about 04:25; `IMPLEMENTATION-PLAN.md` §4.3), before the pilots.
 
 **The join** (never in the path). At stitch and query time (§3.6, key 7), each record is matched to the inventory version in force at its time. That fills the derived ownership fields (§4.2) on every record: the AI system, the component, its owner, its approved version, the approver and time, and the linked risks. The emitted record is never changed. A record it can't match gets `inventory.match: not inventoried`, a fact; the verdict is INV's or EP-0's.
 
-**The AICT mirror (D14, pending captain).** Arth mirrors the AI system, its owners and its tier into ServiceNow AICT for L2/L3, using an asset's `Managed by` and `Risk classification` fields [AICT notes §4]. The repo file stays the source the evaluators and the pack read, because AICT's "Approved" is only an editable Status, with no approver, time or version link [AICT notes §2.6]. Whether Arth's account can set those fields is OC-23.
+**The AICT mirror (D14, decided by the captain).** Arth mirrors the AI system, its owners and its tier into ServiceNow AICT for L2/L3, using an asset's `Managed by` and `Risk classification` fields [AICT notes §4]. The repo file stays the source the evaluators and the pack read, because AICT's "Approved" is only an editable Status, with no approver, time or version link [AICT notes §2.6]. Whether Arth's account can set those fields is OC-23.
+
+
+### 3.11 The iFabric Assurance agent (handoff-3; the 4th AgentCore runtime)
+Arth's Nemotron-based reviewer of our own control-finding incidents [handoff-3 `evidence-console-plan/08`; `work/12` §2]. **Arth's code is the master and is used as-is; the boundary glue is ours** (G-01…G-06, G-20, G-22).
+- **Two parts:**
+  - **the enforcement wrapper** `run_assurance_agent()` (Arth's) runs in our laptop's human-loop runner (G-05), the one process that holds the ServiceNow credentials and writes the delivery log;
+  - **the analyzer** runs on AgentCore as `ifabric-assurance-agent` (runtime `ifabric_assurance_agent-…`): **our one-file handler around Arth's unchanged `nemotron.py`** (G-01): his file embedded byte for byte behind an importlib finder, plus our shim: the `BedrockAgentCoreApp` entrypoint, the injected `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `MODEL_ALIAS` mapped (a trailing `/v1` stripped), **the gateway-URL shim** (a subclass constructor accepts the operator-injected plain-HTTP gateway URL that Arth's URL check refuses; recorded under gap 9) and **the token limit via config** (`IFABRIC_ASSURE_MAX_TOKENS`, default 900, sets `nemotron.MAX_TOKENS` at load). About 5.8K chars gzip+base64, against the 24,000 gate [13 R3].
+- **What one call does** (Arth's order): find our incident → read it → skip if a complete note with a logged digest exists → record any live owner reply first → build 9 facts from the finding and the incident → ask Nemotron at most twice → accept only if the 9 facts are echoed exactly and every cited ref is in the finding → write ONE `work_notes`-only PATCH → read it back by digest → a run record + an `ANALYSIS_<STATE>` delivery-log line. The five dashboard sections (movement, decision trace, evidence, P1–P8, V1–V6) are computed by code, never by the model.
+- **Transports:** `callback()`'s loop (it runs after DELIVERED) and `pull()` (the incident read and readback). It is never in an agent's path and is not a control; its own REFUSED or BLOCKED only stops its own note.
+- **Invocation:** the laptop's helper (G-03) calls `InvokeAgentRuntime` with `AWS_MAX_ATTEMPTS=1` and its own CID prefix `ifabric-assure-…`, so its model calls never count in a subject run's C16 floor or C7 set; `CallableAnalyzer(…, backend="agentcore:ifabric_assurance_agent")` keeps V6 passing. Its model calls send no baggage, so they join the platform's records by action id (gap entry).
+- **Identity and secrets:** the runtime holds only the injected gateway key; no ServiceNow credential and no ledger pair.
+- **Inventory:** a component, owner Arth, approver Sree, outside every control's `applies_to` (§3.10). **AICT** lists it by name (no usage, no Monitor).
+- **Fallback (G-15, only if the runtime isn't READY in time):** Arth's own `GatewayAnalyzer` over a loopback `port-forward` to `modaas-agw` (his URL check accepts loopback), with the captain's OK.
+
+### 3.12 The Evidence Console and the one-way pack projector
+- **The console** is Arth's plan, built as specified (`evidence-console-plan/` 02, 06, 07, 09) with his panel embedded unchanged; our additions are listed in §3.7 (the data switch, the EPs from data, the panel fed through `/api/v1/cases` with `render()`, the secret-env refusals, the run-catalogue view). Its acceptance is Arth's AT-P0 (AT-01…AT-12, AT-14) on the downloaded pack.
+- **The projector** (G-07) maps our snapshot into his contracts (`pack-index.json`, `records/`, `assessments/`, `runs/<cid>/run.json`, `auditor/`, `gaps/`, `adversarial/`), validated against his `schemas/contracts.schema.json` with 0 errors. **One-way:** nothing reads the projection back (not the evaluators, the stitcher or the control test), so D8/D16's one store and "the telemetry store never judges" hold.
+- **The answer composer** (G-08) builds `ifabric.answer/v1` from this engine's result, with his deterministic `answer_id`; `controltest`, `ask`, `auditor` and `trail` are aliases of `query`.
+- **The live feed** (G-10): `prooflab watch` writes `live/events.jsonl`, labelled "live index", for LIVE mode.
 
 ---
 
@@ -1166,7 +1223,7 @@ The captain asked for the three kinds of control to be explicit [captain via lea
 | CONTINUOUS | <ul><li>The continuous-compliance bonus, "a verdict formed inline, in the path, while it runs". Only C16's inline check earns it; C9's loop is near-real-time and is not claimed [02 R-J-18]</li><li>The second EP: the same evaluator inline and post-run (§11)</li></ul> |
 | POST | <ul><li>Axis 1, controls complete end to end: "post-run forensics is the floor" [slides p23]</li><li>The two-minute live test</li><li>The LOSE items "a finding closed without a passing re-test" and "a design that only works in the request path"</li></ul> |
 
-**(4) EP-0: the optional pre-run version gate (D13, pending captain; the lead recommends blocking ASSESSED runs, record-only otherwise)**
+**(4) EP-0: the pre-run version gate (D13, decided by the captain: it blocks ASSESSED runs and only records otherwise)**
 - **What:** before a run, the orchestrating script checks that each agent's **running version** (image digest, model alias) equals an **approved version**.
 - **Approved version** means one of:
   - (a) the base version approved by its CR approval annotation (time and generation from CR status), with the image digest and model our deploy wrapper recorded at the moment of approval (EP-10);
@@ -1200,7 +1257,7 @@ The captain asked for the three kinds of control to be explicit [captain via lea
 - **The headroom is always printed:** committed − cap for every `enforce` run, so N3's margin is on record (E-11).
 - **Notify:** BREACHED → finding → ServiceNow incident to the owner (§3.8).
 
-**The one in-path question: EP-1, the bonus.** Its shape is frame-decided; its values are pending captain (D2). Reserve, then commit [slides p14; 03 D2-C]:
+**The one in-path question: EP-1, the bonus.** Its shape is frame-decided; the safety ceiling (≤ 300K per run, always on) is decided by the captain (D2), and the caps come from the pilots. Reserve, then commit [slides p14; 03 D2-C]:
 ```
 run start (script):     tally = 0; tier = tier_rule(declared scenario attributes)  -> emit decision(tier), run.started
 agent invocation:       RunTally.seed(envelope.tally_tokens, envelope.tally_calls)
@@ -1252,7 +1309,7 @@ The term that won is stamped as `bound_basis` on the decision. The projection er
 - An exception inside the core: `evaluate()` returns DENY with `action: halt` and reason `evaluator-error` (fail closed, recorded, decided in the contract, never in the adapter; §3.2).
 - An emit failure never blocks (§3.2).
 
-**Tiers** (pending captain, D2). The judge hinted "think of a risk matrix" [handoff §3b Q2]. If tiers are adopted:
+**Tiers** (optional; not decided; D2). The judge hinted "think of a risk matrix" [handoff §3b Q2]. If tiers are adopted:
 - `tier_rule` maps declared scenario attributes, from the scenario definition outside the graded agents, to a tier through the owner's 5×5 likelihood × impact matrix;
 - the script makes the classification before the first handoff and records it as a decision;
 - the payload carries only the tier name; the agent looks the cap up in its pin;
@@ -1317,7 +1374,7 @@ Coverage and gap are separate verdicts, and both must hold.
 If normal gaps sit above what the appetite allows, that is a finding about the recording, raised to the owner. The limit is not stretched to fit.
 
 ### 5.3 C9 · drift and performance (AIA-ARC-006), continuous
-**Default** (pending captain, D3) [03 D3]:
+**Decided by the captain** (D3, 2026-10-06) [03 D3]:
 - **Metric M1:** AgentCore invocation `Latency` per runtime (`AWS/Bedrock-AgentCore`, 60 s resolution, AWS-written), statistic **Maximum**. Plus `Errors` Sum and invocation counts for coverage: an expected invocation with no datapoint is INDETERMINATE, never healthy [03 F6; slides p22].
 - **Window W2, per run:** [`run.started`, `run.finished` + 60 s], per runtime. That answers "was control 9 satisfied for run FM-B?" directly [slides p23]. An hourly roll-up over closed UTC hours answers window questions; an hour with no traffic expects no invocation, so it is NOT_ASSESSED, never a monitoring gap [04b nit; 08 SN-08].
 - **Baseline B-a:** six BASELINE runs on the frozen agents, weighted to the scenario the named C9 runs use: 4 × S1, 1 × S2, 1 × S3, per (runtime, scenario). N7–N9 are all S1, so the band they are judged against rests on n = 4, stated in `why_value` (G-13). The statistic is declared in the register (for example the largest of the baseline Maxima). Its value is frozen in register `v1.1` (`C9-v1.1`), dated before any C9 assessed run.
@@ -1389,12 +1446,12 @@ Pilot P8 informs which metric can see the risk, never the limit. If normal sprea
    - A threshold change after a freeze is a new version with new assessed runs, and the old results are kept [02 R-J-21].
    - The experiments log (`register/experiments/experiments.jsonl`: run id, time, agent versions, mode, condition, measured values) and the derivation notes go into the pack.
 
-### 5.5 Named runs (D9: same agents, decided by the captain; levers pending captain)
+### 5.5 Named runs (D9, decided by the captain: the same agents; the pilots decide the C16 lever)
 **Constraint (decided by the captain).** Each control's PASS and BREACH run on the **same `ifabric-` agents**, under the **same frozen threshold version**. The reference trio is never assessed: no reference re-run, no IT revert [captain via lead].
 
 **Every named run is `LIVE_SUBJECT`**, with its lever in `run.condition` (none, `conflicting-context`, a declared fault, a declared treatment) and a CID of the form `ifabric-run-<epoch>-<hex>`, so none looks like a reference `fault-` run (B7, I-17; 04b nit). A run that doubles as an adversarial case carries both tags, its control role and its ADV id (N3 = ADV-R-05, N4 = ADV-R-10), and runs inside the declared phase window (I-11). C16's PASS and BREACH fall in one tier, or each tier gets its own pair (I-10).
 
-**Levers.** The defaults below are the lead's recommendation (pending captain).
+**Levers** (D9, decided by the captain: the pilots decide C16's lever; the others as below).
 - Every BREACH is declared in the register before any assessed run.
 - Every BREACH raises a finding.
 - A remediation plus a passing re-test closes it [02 R-J-24].
@@ -1415,7 +1472,7 @@ Pilot P8 informs which metric can see the risk, never the limit. If normal sprea
 
 The adversarial log's own row lives in §6.4. If an unplanned failure happens, it leads, and this case stays the adversarial example [S-05].
 
-**Fallbacks** (pending captain):
+**Fallbacks** (D9, decided by the captain for C16: with no lever, C7 becomes the first complete control):
 - **C16:** if neither (a) nor (b) exceeds the cap in the pilots, there is no honest BREACH lever. C16 is reported "built properly, no breach demonstrated" (an honest failure); the cap is not tuned. A third declared condition, pre-registered in `v1` before the pilots (for example an exhaustive-verification instruction, measured in P7), is the lead's option for the captain (G-10).
 - **C9:** if the swap moves no metric in either direction, the pre-registered `delay` condition is the lever; otherwise C9 is reported incomplete (§5.3).
 - **C7:** if the agent-level suppression is not built, the script suppresses its own `handoff.received` instead, declared the same way.
@@ -1469,9 +1526,8 @@ The adversarial log's own row lives in §6.4. If an unplanned failure happens, i
 
 **What the guardrails are, after the feasibility vetting** [07; the lead's brief, 2026-10-05]. Four layers, and only these:
 1. **The gateway guardrail: fixed, and observed.** One Bedrock guardrail per model alias, created by the platform's model operator. For `nemotron-super-120b` it is `yclc11u8sb3j` v2: PROMPT_ATTACK on input (HIGH), nothing on output, and no PII, topic, word or grounding filter. (Only the `nemotron-super-120b-helper` alias's guardrail adds a PII policy [guardrails/02 GR-06].) We can't create or update a guardrail (an explicit IAM deny [07 GS-15]), and an agent can't choose one per call: it is fixed per model-alias route [07 GS-16]. Its version moves when the ModelConfig reconciles, so every run records the guardrail id and version.
-2. **In-agent rails,** in our runtime (§7.1): the fail-closed start-up, the duplicate-invocation guard, tool output treated as data (flagged, never obeyed), declared-vs-used tool records, J2's precedence rules (freeze → escalate; empty evidence → gather-evidence) and span-content redaction. They record, or decline work before it starts; none is a waiting question (§2.3).
-   - **Whether an in-agent rail may block** (an input BLOCK, a tool-call Deny, an output BLOCK, or an LLM self-check that work waits on) **is a captain's decision**, raised by the guardrails design. A blocking rail is a new in-path question, so it would amend R-P-13 and R-P-10 ("exactly one row is `evaluate()`"); the alternative runs the rails in `observe` mode, recording only, as EP-1 does in `observe` [guardrails/02 §0]. Until the captain decides, they record.
-3. **Cedar edits on EXISTING ToolConfigs** (D15 (a), pending captain; §6.2). A rule applies to every caller (one shared principal, gap 2), so each edit needs the captain's OK.
+2. **In-agent rails,** in our runtime: plain-Python rails at every stage (EP-14 ingress, EP-3 tool calls and results, EP-1's guarded self-check, EP-4 output, EP-15 egress), plus the fail-closed start-up, the duplicate-invocation guard and span-content redaction. **Rails may block (DG-1, decided by the captain, 2026-10-06):** each asks one question ("is this safe?"), returns ALLOW / BLOCK / MODIFY / FLAG and records it; none calls `evaluate()`, so C16 stays the one waiting **control** question (R-P-10 holds for controls). The other guardrail decisions, all decided by the captain: PII masked at the receiving agent's input, never at the handoff (DG-2); compact ALLOW records (DG-3); the Cedar test rule on `customer-records` (DG-4); a Nemotron self-check only on a flag, through C16, failing closed (DG-5); NeMo Guardrails out of the image (DG-6); the ADV-H-02 fault case as designed (DG-7).
+3. **Cedar edits on EXISTING ToolConfigs** (D15, decided by the captain; DG-4: `customer-records`; §6.2). A rule applies to every caller (one shared principal, gap 2), so each edit needs the captain's OK, recorded with its version. Per-agent rules live inside our agents (RT-04's Cedar-shaped table in v1; IMPLEMENTATION-PLAN DC-1).
 4. **The C16 guard** (EP-1): the one in-path question, with its safety ceiling always on.
 
 **Not available, so not designed for:**
@@ -1485,23 +1541,23 @@ The adversarial log's own row lives in §6.4. If an unplanned failure happens, i
 
 And **pausing an AgentConfig doesn't stop an agent.** The pause sets the phase and annotates the registry record, but the runtime stays READY and our script's direct `InvokeAgentRuntime` still works. It is a record, not a stop [07 GS-14]. Containment comes from a model or tool pause (platform assets, so every caller is hit) or from C16 `enforce`.
 
-**The detailed guardrails design** is being written separately, in [`architecture/guardrails/`](guardrails/). Its inputs so far are `01-nvidia-talk-summary.md` (the NVIDIA talk's rail catalogue) and `02-platform-guardrail-feasibility.md` (what the platform lets us build). It details each rail and its tests; this section keeps the platform limits, the matrix and the frame's rule that only C16 waits.
+**The guardrails design** is [`architecture/guardrails/AGENT-GUARDRAILS.md`](guardrails/AGENT-GUARDRAILS.md) (the rail catalogue, the EPs, the hook order, the record, the red-teaming tiers, the rails gaps G-1…G-14) with its plan [`guardrails/PLAN.md`](guardrails/PLAN.md), folded into `IMPLEMENTATION-PLAN.md` as workstream T2. Its inputs are `01-nvidia-talk-summary.md` and `02-platform-guardrail-feasibility.md`. This section keeps the platform limits, the matrix and the frame's rule that only C16 waits as a control.
 
-### 6.1 The matrix (default: D10-A as revised above, pending captain)
+### 6.1 The matrix (D10-A as revised, decided by the captain)
 Exactly one row uses `evaluate()` [02 R-P-10]. Every row has a test or a gap-list entry. Test ids:
 - `T-…` are functional tests;
 - `ADV-H-…` and `ADV-R-…` are the Hostile and Rogue cases (§6.4).
 
 | EP | Guard | Who refuses | Our transport | What we record | Test | Status |
 |---|---|---|---|---|---|---|
-| EP-0: pre-run version gate (script preflight) | The running version (model alias + generation + runtime version, with the image digest; the digest alone doesn't identify an agent) = an approved version; the agent not paused [07 GS-14, GS-22] | Us, **before** a run starts (if D13 = block assessed runs) | A pure check (`approval.check_versions`, which also holds the staleness test) + `emit` | A decision per agent; a finding on mismatch | T-PRE-01 (mismatch → refused or recorded); N8's declared treatment passes only with the owner's approval record; T-PRE-02 (a paused AgentConfig → the run is not started, because the pause alone doesn't stop it [07 GS-14]) | Build (D13 pending captain). Live today it would flag the reference IT and network agents: generation 2 on a generation-1 approval [07 GS-22] |
+| EP-0: pre-run version gate (script preflight) | The running version (model alias + generation + runtime version, with the image digest; the digest alone doesn't identify an agent) = an approved version; the agent not paused [07 GS-14, GS-22] | Us, **before** a run starts (D13: it blocks assessed runs) | A pure check (`approval.check_versions`, which also holds the staleness test) + `emit` | A decision per agent; a finding on mismatch | T-PRE-01 (mismatch → refused or recorded); N8's declared treatment passes only with the owner's approval record; T-PRE-02 (a paused AgentConfig → the run is not started, because the pause alone doesn't stop it [07 GS-14]) | Build (D13 decided by the captain). Live today it would flag the reference IT and network agents: generation 2 on a generation-1 approval [07 GS-22] |
 | EP-1: our runtime, model call | C16 cap (`enforce`) / safety ceiling (`observe`) | **us** | **`evaluate`** (the one) | Decision and stop records; usage with the real outcome | T-C16-01 stub-model tests (cancel, own-cancel flag, fallback bound, OpenAI retries = 0, Strands 429 retries re-enter the hook, usage 0/0 = UNKNOWN, concurrency) [05 AR-10–AR-12]; the halt proof on a deliberately low test cap before any S2-class run [08 LB-04]; N3; ADV-R-05; ADV-R-06 | Build |
 | Our runtime, start-up | Injected keys present; pin valid (a precondition, not a control question) | Us (no work starts) | `emit` (start-up record) | Start-up refusal with its reason | T-START-01 (missing key → refuses, records) | Build |
 | Our runtime, invocation | A second invocation with a `handoff.id` already in flight is refused (an idempotency precondition, not a control question) [05 AR-18] | Us (the duplicate does no work) | `emit` (`lifecycle` record) | `duplicate-invocation`, with the session id | T-DUP-01 (the same `handoff.id` twice → the second refused and recorded) | Build |
-| EP-3: our runtime, tool call | Declared-tool scope; argument digests; tool output treated as untrusted (instructions never obeyed; flagged) | Nobody (records). A refusal is Cedar's, at the PDP | `emit` | Action records (declared or not, real status); `suspicious_tool_output` | ADV-H-02; ADV-R-01 | Build (detection; prevention only through a Cedar rule on the called tool, D15, so gap 3 stays) |
-| EP-4: judgment | J2: JSON-in-text validated by code (§7.1); precedence rules (freeze → escalate; empty evidence → gather-evidence) | Nobody (agent behaviour, recorded) | `emit` | Judgment record with deciding evidence and reason | ADV-H-04; the S1/S2/S3 dispositions | Build |
+| EP-3: our runtime, tool call | Declared-tool scope (X-01, X-02); arguments (X-03); repetition (X-04, FLAG); quarantine (X-05); tool output screened and enveloped (T-01–T-06; instructions never obeyed) | **Our rails** (DG-1); Cedar at the PDP | `emit` | Action records (declared or not, real status); `suspicious_tool_output` | ADV-H-02; ADV-R-01 | Build (detection; prevention only through a Cedar rule on the called tool, D15, so gap 3 stays) |
+| EP-4: judgment | J2: JSON-in-text validated by code (§7.1); precedence rules; the output rails O-01–O-07 (a disposition only moves toward safety; no secret leaves) | **Our rails** (DG-1), recorded | `emit` | Judgment record with deciding evidence and reason | ADV-H-04; the S1/S2/S3 dispositions | Build |
 | EP-5: orchestrating script | Handoff records (from → to, payload digest, classification, `runtime.session_id`); tally carriage; exactly one invocation per handoff (§7.2) | Nobody (records) | `emit` / `pull` | Handoff records, TIMEOUT included (the staleness test moved to EP-0's `approval.check_versions`, §3.4) | T-HO-01 handoff completeness; ADV-R-06; ADV-R-10 (fallback) | Build |
-| EP-6: gateway authz + PDP/Cedar | API key (fail-closed); Cedar tool policy | Platform | `pull`; **configure** a forbid rule in an existing ToolConfig's `spec.access.cedarPolicy` (D15 (a), pending captain; it applies to every caller) | DENY / ALLOW, policy id and version, principal | SP-1 (one allowed and one forbidden call; both PDP replicas + `/modaas/evidence`) [07 SP-1]; ADV-R-01 Cedar DENY end to end; ADV-R-07 no-key call → 403 (optional) | Observe + configure (D15 pending captain) |
+| EP-6: gateway authz + PDP/Cedar | API key (fail-closed); Cedar tool policy | Platform | `pull`; **configure** a forbid rule in an existing ToolConfig's `spec.access.cedarPolicy` (D15 and DG-4, decided by the captain: `customer-records`; it applies to every caller) | DENY / ALLOW, policy id and version, principal | SP-1 (one allowed and one forbidden call; both PDP replicas + `/modaas/evidence`) [07 SP-1]; ADV-R-01 Cedar DENY end to end; ADV-R-07 no-key call → 403 (optional) | Observe + configure (D15 and DG-4 decided) |
 | EP-7: Bedrock guardrails | One guardrail per model alias, fixed: PROMPT_ATTACK on input (HIGH); no output, topic, word or grounding filter, and PII only on the `-helper` alias; no guardrail on tool routes at all [guardrails/02 GR-06, GR-09]. Not editable by us, not chosen per call [07 GS-15, GS-16] | Platform | `pull`: the span shows HTTP 200, 0/0 tokens and cost 0. No span carries a finish reason, so BLOCKED is an **inference**, labelled so, and corroborated by EP-1's own `content_filter` record through the action id [06 A5], and by the AWS-written `ConverseStream` record's `guardrailTrace.actionReason = "Guardrail blocked."` (joined by time, role and model) [10-f11 §4.4] | BLOCKED next to the platform's ALLOW; the guardrail id and version per run | ADV-H-01 prompt attack in the ticket: **P0, straight after N1** (the L1 gate's "one guardrail block on record") [04 E-09] | Observe (gap 4 answered in our store) |
 | EP-8: kill switch | Pause a model or tool: the route is withdrawn. **An AgentConfig pause is a record, not a stop**: the runtime stays READY and direct invokes still work [07 GS-14] | Platform (route withdrawn), for models and tools | `emit` (requested) + `pull` (effective; the 404 joined by trace id) | Requested vs effective time; real outcome | ADV-R-08 **model pause mid-run** (Rogue containment, P2, a declared Rogue window, the user's explicit OK) [04 E-09]; T-PRE-02 (EP-0 declines a run on a paused AgentConfig) | Observe |
 | EP-9: ceilings | 100 req/min; 2.5M tokens/h | Platform | `pull` + the live lane's headroom `emit` | Headroom per run; any 429 | None deliberate (it would hit every run in the account) | Observe |
@@ -1513,11 +1569,16 @@ Exactly one row uses `evaluate()` [02 R-P-10]. Every row has a test or a gap-lis
 | OTel collector / CloudWatch | None: a telemetry source; it refuses nothing | Platform (nobody refuses) | `pull` source | Ingestion lag and completeness per run | T-OTEL-01: every action id our agents recorded appears in `aws/spans` under the run's CID, and span end → `@ingestionTime` stays under the 60 s pull wait (observed p95 8.3 s, max 9.6 s) [06 A3, A6] | Observe; gap entries: the collector is the platform's, spans hold prompts and customer content unless our agents redact them (gap 9), and X-Ray truncates long runs [06 B4] (R-P-10) |
 | Transport (TLS) | The `llm-tls` :8443 listener, for model routes only. Its certificate is a self-signed placeholder (SAN literally `<PERIMETER-HOST>`); MCP has no TLS listener, so the gateway key crosses in clear text on every tool call [07 GS-25] | — | None (not used) | — | None: not built | Gap 9 (OC-18 closed as a gap-9 fact) |
 | Pack pipeline | Secrets hygiene before upload | Us (blocks the upload, not agent work) | — | Pre-flight scan result | T-PACK-01 exact-value scan = 0 hits, over the staged tree and the unzipped readback (the three CR token paths, the ServiceNow client id and secret included) | Build (§9.3) |
-| Dashboard | No endpoint, no secrets | — | — | — | T-APP-01 no listener; scan clean | Build |
+| EP-14: our runtime, ingress rails | I-01–I-04 (format; secrets + PII masked at the receiving agent's input, DG-2; injection heuristics; a self-check only on a flag, DG-5); RT-01's hash echo | **Our rails** (DG-1) | `emit` (`rail_decision` + compact ALLOWs, DG-3) | Every BLOCK / MODIFY as its own record | S-G2 (the golden-set false-positive gate); ADV-H-01 legs A/B; ADV-H-05; ADV-R-11 | Build (MIN; P2 if it fits) |
+| EP-15: our runtime, egress audit | RT-03, a PEP 578 hook: destinations vs the declared allowlist | Nobody (FLAG; observe) | `emit` | Destination FLAGs | ADV-R-12 (synthetic) | Build (P2, observe); rails gap G-7 |
+| EP-16: the cockpit's ask API (side door) | None of ours: the cockpit has no auth; it can invoke any agent with no envelope | Nobody | `pull` (the AWS invoke records' caller + CID) + our agents' unenveloped records | The side-door invocation, labelled `UNATTRIBUTED` in the run catalogue | ADV-R-14 (one probe; the captain's explicit OK) | Observe |
+| The Assurance runtime | Only Nemotron through `modaas-agw`; the injected gateway key; no ServiceNow secret, no ledger pair | Platform (authz, the guardrail) | Arth's run record + the `ANALYSIS_*` line (G-06 mirrors it) | One validated note per incident; REFUSED / BLOCKED kept as evidence | ADV-H-07 (an injected ticket); ADV-R-13 (a forged note) | Build (G-01, G-02) |
+| The human-loop runner | The ServiceNow credentials; the only writer of the delivery log; the bug (a)/(b) guards | Us (process rules) | `emit` (the mirror) | Delivery states, responses, silence | G-22's live-shape tests | Build (G-05) |
+| The console | Loopback, a session token, CSP, a Host check, GET-only in PACK mode, the secret-env refusal | — | — | — | Arth's AT-06, AT-07, AT-08; the scan clean | Build (G-09) |
 
-### 6.2 Cedar through an existing ToolConfig (configure; D15 (a), pending captain)
+### 6.2 Cedar through an existing ToolConfig (configure; D15, decided by the captain; DG-4)
 - **The lever:** `spec.access.cedarPolicy` on a ToolConfig in `components`, which the admission policy doesn't cover. The operator projects it to `modaas-system/modaas-toolconfig-<alias>` on every create, update and resume, in any phase. Edit the ToolConfig, never the projection: the admission policy refuses participant writes to ConfigMaps labelled `managed-by` [handoff §5.9; PV row 1; 07 GS-08].
-- **Which ToolConfig (D15, pending captain):**
+- **Which ToolConfig (D15, decided by the captain: an existing tool's policy; DG-4: a `forbid` on `SITE-ADV-*` in `customer-records`):**
   - **(a), recommended: an existing ToolConfig's policy.** For AgentCore-gateway tools the wire name is `<target>___<tool>`, and authz asks for `modaas-toolconfig-<target>` on every route [07 GS-07]. So a rule in `customer-records`, `runbook-lookup` or `network-twin` decides that tool's `tools/call` for every caller, whichever route the call came in on. The guardrails design ([`architecture/guardrails/`](guardrails/)) picks the tool and the rule.
   - **(b) only if the captain relaxes the no-Lambda / no-gateway-write rule.** Its least invasive form is a custom `ifabric-` MCP tool from the kit's template (`new-tool.sh`): no Lambda and no AWS write, but the tool operator writes a new backend and route on the shared gateway, and a delete leaves a projected ConfigMap and a DEPRECATED registry record that we can't remove [07 GS-01, GS-02, GS-26]. A new Lambda or AgentCore-gateway target (GS-04, GS-05) would also need the organisers' OK.
   - **Removed:** an `ifabric-` ToolConfig that adopts an existing gateway target. It can't work: the platform's policy for that target still decides every `tools/call`, and ours would see only `initialize` and `tools/list` [07 GS-03].
@@ -1542,9 +1603,9 @@ Exactly one row uses `evaluate()` [02 R-P-10]. Every row has a test or a gap-lis
   - SP-1 then makes one allowed and one forbidden `tools/call` from the laptop, with the gateway key held in memory: expect ALLOW, then 403 at the client, `decide … decision=DENY` in the PDP log and DENY in `/modaas/evidence` with the new `policy_version` [07 SP-1 steps 5–7]. ADV-R-01 later shows the same inside an agent run;
   - the projected ConfigMap's new `resourceVersion` is recorded as the policy version;
   - the first Cedar DENY ever seen on this platform (0 of 1,097 decisions so far [handoff §5.9]) is captured from both PDP replicas and `/modaas/evidence`;
-  - after the adversarial cases and before the final snapshot, the original text is restored, so the pack holds all three versions; unless the guardrails design keeps the rule for a live demo. Each edit moves the tool's generation, so a new inventory version records it before any INV pass (otherwise INV reports one discrepancy).
+  - **the rule is kept through judging (DG-4, decided by the captain)**; the original text is restored after judging, with the captain's OK, from the restore text reviewed with the other two. Each edit moves the tool's generation, so a new inventory version records it before any INV pass (otherwise INV reports one discrepancy).
 - **Never:**
-  - an edit to a shared ToolConfig without the captain's D15 answer and the user's explicit OK;
+  - an edit to a shared ToolConfig without the captain's OK at run time (D15 is decided; each edit still needs its OK, recorded with its version);
   - an adopt-mode ToolConfig (above), a custom `policyId`, or a write to the projected ConfigMap;
   - Lambda, IAM or AgentCore-gateway writes [02 R-C-11; 07 GS-04, GS-05], unless D15 (b) is chosen and the organisers agree.
 
@@ -1575,19 +1636,27 @@ It also records Hostile/Rogue events we **observe** in the window, since who inj
 | Id | Case | Expected defence | Priority |
 |---|---|---|---|
 | ADV-H-01 | Prompt attack in the ticket text | Guardrail BLOCKED (HTTP 200, 0/0 tokens, cost 0 on the span, an inference; EP-1's `content_filter` record corroborates it by action id) next to the platform's ALLOW; the agent records BLOCKED and escalates. Also the L1 gate's "one guardrail block on record" [02 R-J-01 (b)] | Required, **P0: one S1 with the attack text, straight after N1** (a few thousand tokens) [04 E-09] |
-| ADV-H-02 | Injected instructions in tool output | Not obeyed; flagged. SYNTHETIC fixture against the judgment validator; live only if D15 (b) builds a tool of ours | Required (synthetic) |
+| ADV-H-02 | Injected instructions in tool output | Not obeyed; flagged (T-03). Live through the pin-gated `inject-tool-output` fault (DG-7, decided by the captain; declared in the pins), plus the SYNTHETIC fixture | Required |
+| ADV-H-05 | Encoded or obfuscated injection (base64, zero-width) | I-03 `inj.encoding` FLAG → I-04 → BLOCK, or escalate [guardrails §9] | Optional (cut first) |
+| ADV-H-06 | A directive to use a non-declared tool | X-01 withholds it; any attempt → X-02 BLOCK; escalate [guardrails §9] | Optional (cut first) |
+| ADV-H-07 | Instructions injected into a ticket that the Assurance agent reads (`work/12`'s ADV-H-05, renumbered) | REFUSED (the 9-fact echo and the refs check) or BLOCKED by the guardrail; TEST log | Should |
 | ADV-H-03 | Delay in a step | The C7 gap rule and C9 detect it. SYNTHETIC fixture for the gap rule | Optional |
 | ADV-H-04 | Conflicting context | Judgment: gather-evidence or escalate, with a reason. It is also C16 lever (b) when declared | Required |
-| ADV-R-01 | Unauthorized tool use | EP-3 records an undeclared call; the Cedar forbid rule on the called (existing) tool refuses it at the PDP (if D15 (a) is approved; otherwise detection only) | Required if D15 (a); P2: it needs no build once SP-1 has passed |
+| ADV-R-01 | Unauthorized tool use | Leg 1: X-01/X-02 stop an undeclared call in-agent. Leg 2: a declared call on `SITE-ADV-99`: our rails pass it and **the Cedar forbid rule refuses it at the PDP** (D15, DG-4) | Should; it needs no build once SP-1 has passed |
 | ADV-R-02 | Bypass: a direct Bedrock call from the runtime | Runtime IAM deny (policy-verified [03 F3]); not exercised unless approved | Optional |
 | ADV-R-03 | Tampered records, on an exported copy | The corroboration report flags the mismatch against `aws/spans` (COUNTERFACTUAL_EXPORT) | Required (offline) |
 | ADV-R-04 | Tokenless ledger write | 401 | Optional (ask) |
 | ADV-R-05 | Runaway loop | Inline DENY at the cap (= N3) | Required (P1) |
-| ADV-R-06 | Forged tally in the run envelope (FAULT_INJECTION, `--tamper-tally`) | **Expected to break inline:** the in-path check trusts the carried tally, because no store read is allowed in the path. The floor holds. **The honest-failure candidate** | Required |
+| ADV-R-06 | Forged tally in the run envelope (FAULT_INJECTION, `--tamper-tally`, one forged handoff) | **Expected to break inline:** the in-path check trusts the carried tally, because no store read is allowed in the path. The floor holds. **The honest-failure candidate** | Required |
+| ADV-R-06b | The re-test after the change (R-J-19, §5.5) | The `tally-mismatch` reconciliation finding names the forged handoff | Required (with ADV-R-06) |
 | ADV-R-07 | A call without the gateway key | authz 403 DENY in `/modaas/evidence` | Optional |
 | ADV-R-08 | **Model pause mid-run (Rogue containment)**, during a declared Rogue run. It replaces "pause our own tool": under D15 (a) we have no tool of our own | The next model call is refused within ≤ 2 s on super-120b (nano-9b takes 33–41 s and serves calls meanwhile; resume about 24–35 s) [PV row 6]. The platform records ALLOW; our records show PAUSED_404 through the trace-id join; requested vs effective time. The ModelConfig is a platform asset, so the pause hits every agent on that alias: only with the user's explicit OK, in a declared Rogue window, with no other run live and the reference trio not running | Required, **P2** (R-J-37 containment; the only containment case that needs no build) [04 E-09] |
 | ADV-R-09 | Evidence-store outage during a run | Agents carry on and spool; C7 reports the missing events (R-P-01f). SYNTHETIC by default | Required (synthetic) |
 | ADV-R-10 | A suppressed record (= N4) | C7 coverage breach | Required (P2) |
+| ADV-R-11 | A payload tries to switch the rails off | I-01 FLAGs the unknown field; the mode comes only from the pin [guardrails §9] | Optional (cut first) |
+| ADV-R-12 | Unexpected egress | RT-03 FLAG (SYNTHETIC, local container) | Optional |
+| ADV-R-13 | A forged look-alike Assurance note (`work/12`'s ADV-R-11, renumbered) | The panel shows it under "not written by the agent (untrusted)": its digest is not in our log | Should |
+| ADV-R-14 | The cockpit side door (EP-16): one ask call to `ifabric-customer` | Our agent runs unenveloped (`UNATTRIBUTED`, the strictest cap); C16's floor counts it under its own CID; the run catalogue labels it | Optional (cut first; the captain's explicit OK) |
 
 **Coverage of the alert levels:**
 - **R-J-36 (Hostile):** detection, safe degradation, and unsafe actions denied. The denial comes from the guardrail, from Cedar (if D15 (a)) and from the agents' escalation; never from a second waiting question of ours [frame; 02 T16].
@@ -1625,13 +1694,14 @@ It also records Hostile/Rogue events we **observe** in the window, since who inj
   4. apply → Reviewing → **Sree runs the approval annotation** (`modaas.tmforum.org/approver` + `approval-attestation`) in the live lane, and the deploy wrapper records the words and the time (EP-10). The approver string is self-asserted: anyone holding the shared role could annotate as anyone (gap 5);
   5. READY about 40 s after the annotation; then the smoke invocation (§12.1).
 - **Python:** the Strands hook tests run in a Python 3.12 venv with the exact pins (`strands-agents[openai]==1.57.2`, `bedrock-agentcore==1.24.0`, `mcp==1.30.0`, ADOT 0.21.0, and a pinned `openai`, which floats in the image today). `prooflab/` itself stays standard library, 3.9+ [05 AR-29].
-- **Tools (`dependsOn.tools`):** customer → `customer-records`; IT → `runbook-lookup`; network → `network-twin`, as in the reference trio. The Cedar demo edits an existing ToolConfig's policy (D15 (a), pending captain, §6.2); no tool of ours is built unless D15 (b) is chosen.
+- **Tools (`dependsOn.tools`):** customer → `customer-records`; IT → `runbook-lookup`; network → `network-twin`, as in the reference trio. The Cedar demo edits an existing ToolConfig's policy (D15 and DG-4, decided by the captain, §6.2); no tool of ours is built.
+- **The rails** (EP-14, EP-3, EP-4, EP-15; DG-1) ride in each bundle: `adapters/runtime/rails.py` + `egress.py`, ≤ 6 KB for the MIN set and ≤ 10 KB with P2; the size gate counts them; `IFABRIC_RAILS_MODE=enforce` in env; `inject-tool-output` sits in the pin's declared faults (DG-7) [guardrails/AGENT-GUARDRAILS.md §3, §6.2].
 - **A staged build, to protect the cut lines:**
   - Stage A: the clone, EP-1/EP-3/EP-4 emission, the C16 hook (with the safety ceiling), the fail-closed start-up and the duplicate-invocation guard. C16 and C7 need it.
   - Stage B: judgment J2, the pillar.
 
   If Stage B slips, Stage A ships and gap 1 stays open in the gap list.
-- **A 4th agent (iFabric Assurance agent, handoff-3) is pending integration; the single-file build constraint (AR-03) applies to it.** It is ServiceNow-facing and is to run on AgentCore (the captain's `ifabric-handoff-3`, relayed by the lead on 2026-10-05); it is integrated after this pass.
+- **The 4th AgentCore runtime, `ifabric-assurance-agent`** (handoff-3's Assurance agent): built and deployed as §7.3 says; the single-file constraint applies.
 
 **Judgment J2** [03 D7]:
 - **Structured output, as JSON in the text answer** (build choice) [05 AR-31]. The model ends its text answer with one JSON object: `disposition` ∈ {auto-resolve, gather-evidence, escalate}, `deciding_evidence` (record ids and tool-result digests), `reversible_step` and `reason`. Code parses and validates it. Invalid output gets one re-ask, then `escalate` with reason `invalid-structured-output`.
@@ -1694,14 +1764,14 @@ It runs on the laptop as WSParticipantRole. It invokes each runtime through `Inv
 1. **Preflight:**
    - identity check (WSParticipantRole);
    - valid credentials (they expire 2026-10-06T06:29:19Z unless refreshed, §8);
-   - headroom over the last 60 min (EP-9), and at most 3 S2-class runs in any clock hour [08 LB-01];
-   - **EP-0 (D13, pending captain):** each agent's running version against the approved one, read through filtered fields only (`spec.awsAgentCore.containerUri`, `spec.dependsOn.models`, `metadata.generation`, the runtime's `agentRuntimeVersion` and `lastUpdatedAt`; never env values, since `get-agent-runtime` returns the whole env, tokens included, and `--query` filters only on the client) [05 AR-30; 07 GS-22]. The approved generation comes from the `ApprovalRecorded` notification's `observedGeneration`, corroborated by the AWS Agent Registry's AWS-set `updatedAt` and the runtime version history. It also reads `spec.paused`: **a paused AgentConfig doesn't stop direct `InvokeAgentRuntime`** (the runtime stays READY), so the preflight declines to start a run on a paused agent [07 GS-14];
+   - **the budget guard** (`IMPLEMENTATION-PLAN.md` §5.1; the captain's build prompt): ≤ 1.0M tokens in any 60 min including this run's bound, ≤ 2 `observe` S2 runs per rolling hour, ≤ 30 model requests/min by serialisation, and the 300K safety ceiling per run [08 LB-01];
+   - **EP-0 (D13, decided by the captain):** each agent's running version against the approved one, read through filtered fields only (`spec.awsAgentCore.containerUri`, `spec.dependsOn.models`, `metadata.generation`, the runtime's `agentRuntimeVersion` and `lastUpdatedAt`; never env values, since `get-agent-runtime` returns the whole env, tokens included, and `--query` filters only on the client) [05 AR-30; 07 GS-22]. The approved generation comes from the `ApprovalRecorded` notification's `observedGeneration`, corroborated by the AWS Agent Registry's AWS-set `updatedAt` and the runtime version history. It also reads `spec.paused`: **a paused AgentConfig doesn't stop direct `InvokeAgentRuntime`** (the runtime stays READY), so the preflight declines to start a run on a paused agent [07 GS-14];
    - the pin sha256 each agent last echoed equals the pin the run is meant for (the register version and mode, §3.3, §7.1);
    - the live-lane OK recorded.
 2. **Mint the CID:** `ifabric-run-<epoch>-<hex>` for every run of our trio (subject, pilot, baseline), so no assessed run looks like a reference run (§4.2). Test traffic uses `ifabric-test-…`; adversarial runs use `ifabric-adv-…`.
 3. **Tier decision** (if tiers) → a `decision` record.
 4. **`run.started`.**
-5. **Per agent:** `handoff.sent` → invoke → `handoff.received` (status, disposition, halted, duration, tally out) → forward the tally.
+5. **Per agent:** `handoff.sent` → invoke → `handoff.received` (status, disposition, halted, duration, tally out) → forward the tally. The two handoffs are the brief's Gateway A (h1, customer → IT) and Gateway B (h2, IT → network): record-only (EP-5).
 6. **`run.finished`.**
 7. **Append the run index line:** CID, agent versions, register version and sha256, mode, condition, provenance, times.
 
@@ -1720,10 +1790,18 @@ It runs on the laptop as WSParticipantRole. It invokes each runtime through `Inv
   - Fallbacks, in order: `kubectl port-forward svc/audit-store 18080:8080` (raw TCP, nothing strips the header; a CONNECT, outside the admission policy), then the IDE terminal (inside the VPC; a person drives it), then a one-shot pod in `components` (a cluster write, the user's OK) [06 C2; 05 AR-22].
   - The same path carries the EP-5 handoffs, the assessment and finding records, the ServiceNow `notification` mirror and, if D16 (a) is chosen, the pulled platform observations.
 
+
+### 7.3 The Assurance agent's runtime: build and deployment (G-01, G-02, G-03)
+- **The file:** `tools/bundle_assurance.py` writes `agents/ifabric-assurance/ifabric-assurance.py`: Arth's `nemotron.py`, byte-identical, served by an importlib finder (registered in `sys.modules` before exec, as `work/13` R4 proved with his full suite), plus our shim (§3.11). It imports nothing else of Arth's. Never named `agent.py`; the CI size gate (≤ 24,000) applies; a local arm64 Docker run (`/ping`, `/invocations`) against a stub before any CodeBuild; an end-to-end test drives it with Arth's own `run_assurance_agent` + `CallableAnalyzer` (WRITTEN, V1–V6; a 200 + `content_filter` → BLOCKED).
+- **The CR:** `ifabric-assurance-agent` (the operator names the runtime `ifabric_assurance_agent-…`, keeping the `ifabric_` prefix AICT shows); `dependsOn.models: [nemotron-super-120b]`; no tools; env without the ledger pair and without any key or ServiceNow value; built through `build-agent-image.sh` with `IMAGE_TAG=ifabric-assurance-<git sha>` and a `URI_FILE` (never `new-agent.sh`); the captain annotates the approval herself; READY about 40 s later; digest and generation recorded (EP-10).
+- **The call from the laptop (G-03):** `invoke_assurance(messages)` through `aws bedrock-agentcore invoke-agent-runtime` (subprocess), `AWS_MAX_ATTEMPTS=1`, `--cli-read-timeout 300`, a fresh session id, `--baggage modaas-correlation-id=ifabric-assure-<epoch>-<hex>`; errors become `AnalyzerError`; the response file is deleted at once and the text is never logged; never re-invoked on a timeout.
+- **AICT:** Arth presses Execute Now at least 20 minutes after the runtime exists, then exports the inventory list (OC-29).
+- **When:** the build's Phase 2 (`IMPLEMENTATION-PLAN.md` §4.3); Phase 1's minimal notify needs none of it.
+
 ---
 
-## 8. Where things run, and credentials (D11; default P3, laptop hub, pending captain)
-No Lambda, IAM or protected-namespace writes, and nothing deployed into `components` except our agents (the `ifabric-` trio; the handoff-3 Assurance agent once integrated) and, only if D15 (b) is chosen, a custom `ifabric-` tool [02 R-C-01, R-C-11]. **The laptop is the hub** (D11 P3, pending captain): it is the only place that has Logs Insights, the ServiceNow credentials, the delivery log and the live lane together [08 SN-12].
+## 8. Where things run, and credentials (D11, decided by the captain: the laptop is the hub)
+No Lambda, IAM or protected-namespace writes, and nothing deployed into `components` except our agents (the `ifabric-` trio and the handoff-3 Assurance agent, §3.11); no tool of ours (D15 uses an existing tool's policy) [02 R-C-01, R-C-11]. **The laptop is the hub** (D11, decided by the captain): it is the only place that has Logs Insights, the ServiceNow credentials, the delivery log and the live lane together [08 SN-12].
 
 | Component | Host | Identity | Holds | Must never hold |
 |---|---|---|---|---|
@@ -1733,14 +1811,17 @@ No Lambda, IAM or protected-namespace writes, and nothing deployed into `compone
 | The ServiceNow terminal, only if Arth keeps the credentials off the laptop (not the default) | Arth's machine or the IDE | Arth | The ServiceNow credentials | Then every `notify` and `check` waits for Arth, and his delivery log must be merged into the pack [08 SN-12] |
 | Pulls, if the laptop credentials lapse | CloudShell | WSParticipantRole | — | — |
 | The judge's control test | Any machine with Python 3.9+ | None | Nothing | — |
+| The Evidence Console (§3.12) | The presenter's laptop, loopback only (never the IDE) | None (reads the pack) | A session token for its own page | Any secret: it refuses to start with one in its environment |
+| The human-loop runner (G-05) | The laptop | `ifabric.integration` on ServiceNow (OAuth) | `~/.prooflab-snow.env` (mode 600); the only writer of the absolute delivery log | Any AWS or gateway key in a file |
+| The Assurance runtime (§3.11) | AgentCore | The shared runtime role | The injected gateway key only | ServiceNow credentials; the ledger pair |
 
 **Duties:**
-- **AWS credential refresh: exactly one, between 03:30 and 06:29 UTC** [08 OP-01, OP-02].
+- **AWS credential refresh: exactly one, between 03:30 and 06:29 UTC** (the build plan places it at about 04:45, inside Phase 1) [08 OP-01, OP-02].
   - WSParticipantRole credentials are issued for 12 h (`durationSeconds=43200` on all 11 issuances since 2026-10-04). The current ones were issued at 18:29:19Z and **expire at 2026-10-06T06:29:19Z**, in the middle of the live lane. They lapsed once before, at about 18:20 UTC [handoff §0.4].
   - A refresh between 03:30 and 06:29 gives an expiry of 15:30–18:29 UTC, past the 15:00 deadline. A refresh before 03:00 would expire before 15:00 and force a second one during rehearsals (one at exactly 03:00 expires at exactly 15:00), so "refresh now" is the wrong move. New credentials don't revoke the old ones, so any point in the window is safe.
   - Duty: the user, from the Workshop Studio dashboard, at the **03:30 alarm**, with a **backstop alarm at 05:45**. If judging needs live AWS after the new expiry, one more refresh.
   - When they lapse, runs, pulls, kubectl, S3 and the secret scan (so every push) stop together. A supervisor in the laptop collectors detects ExpiredToken, emits a `monitoring-gap` record and stops. It never fails silently [03 D11].
-- **ServiceNow credentials by about 03:30 UTC** [08 SN-02, SN-03, SN-06]: Arth's OAuth client id and secret for the app "iFabric Agent Assurance" (Sree's own vault may already hold them), written to `~/.prooflab-snow.env` and sourced only in the live lane's shell.
+- **ServiceNow credentials: done** (`~/.prooflab-snow.env`, mode 600; `selftest` PASSED 2026-10-06 ~00:45Z) [08 SN-02, SN-03, SN-06]: Arth's OAuth client id and secret for the app "iFabric Agent Assurance" (Sree's own vault may already hold them), written to `~/.prooflab-snow.env` and sourced only in the live lane's shell.
   - `python3 -m prooflab.servicenow selftest` (read-only) runs once they arrive and before each `notify` batch, so a reverted instance setting shows as a delivery gap, never as silence. Arth confirms tonight that the integration user, the OAuth app and the instance's client-credentials property are still active.
   - The id and the secret join the exact-value scan (§9.3).
   - They gate the T2 rehearsal (SP-2 (b), §12.1), every T2 record and N2's incident at the C16 milestone.
@@ -1774,12 +1855,16 @@ WORKDIR/     register.yaml (the latest frozen version, byte-identical to registe
 ~/evidence/  -> evidence/ in the zip
   README.md          for a stranger: the declared window (UTC start/end, Alert 0/1/2 boundaries), the pillars
                      table, one command per question, every query with its capture time, the honest failure
-  MANIFEST.json      sha256, bytes, source, captured_at for every other file
+  MANIFEST.json      sha256 + bytes for every other file (Arth's tools/manifest.py; source and captured_at
+                     live in each capture's sidecar)
   prooflab/          the tool, stdlib only: cd evidence && python3 -m prooflab query --control C16 --run <CID>
-  dashboard.html     static, self-contained
+  pack-index.json    the console's index (G-07); with records/ answers/ auditor/ runs/ live/: the one-way
+                     projection the Evidence Console reads (`python3 -m prooflab console --data pack`, §3.12)
+  window.json        the declared event window (UTC start, end, Alert 0/1/2 boundaries), uploaded write-once
   register/          versions/*.yaml + .sha256 (incl. <v>.risks.yaml, §3.9); inventory/<iv>.yaml + .sha256 (§3.10);
                      <v>.head.json (T1); <v>.versions.json (IDE export);
-                     approvals/ (T2 export); conditions/; experiments/ (plan, log, derivations)
+                     approval/ (T2: Arth's approval Finding, its own delivery log and export); conditions/;
+                     experiments/ (plan, log, derivations)
   store/records.jsonl                       the ledger export, verbatim (per-CID exports after each run + one
                                             full GET at the final refresh, §8), + its capture manifest
   raw/               byte for byte: aws-spans/ modaas-evidence/ pdp/ (both replicas) gateway-stdout/ gateway-otlp/
@@ -1788,11 +1873,12 @@ WORKDIR/     register.yaml (the latest frozen version, byte-identical to registe
   reviews/           rehearsal-1.md, rehearsal-2.md, run-of-show.md (R-J-45); link-handcheck.md (R-P-03 (e));
                      mentor-review.md (R-J-56); gates.jsonl (the stage gate records, R-D-05)
   derived/           observations.jsonl  run-index.jsonl  stitched/  timeline/  unjoined.jsonl  corroboration/
-                     ownership.jsonl (§3.6 key 7)  risks.json (§3.9)
+                     ownership.jsonl (§3.6 key 7)  risks.json (§3.9)  run-catalogue.jsonl (every run, labelled)
   assessments/C16/ C7/ C9/ ESC/ (INV/, if built)    findings/
-  servicenow/        delivery-log.jsonl  incidents/INC*.json  aict/ (Arth)
+  servicenow/        delivery-log.jsonl  incidents/INC*.json  assurance-agent/  cases/  aict/ (Arth)
+                     wiring-tests/ (TEST only, never in the production log)
   adversarial/       log.jsonl + cases/*.md
-  cases/             one rendered case per control x named run
+  answers/           one rendered answer per control x named run (renamed from cases/: R-15)
   live-lane-log.jsonl  every live action: time, action, the user's OK, CID, budget before/after (no secrets)
   security-matrix.md   §6 with test results
   architecture/      ARCHITECTURE.md, one-page.svg, one-page.md, decisions.md
@@ -1802,7 +1888,7 @@ WORKDIR/     register.yaml (the latest frozen version, byte-identical to registe
   - our records carry digests, not content;
   - raw captures that hold customer data (runtime spans hold prompts and customer records [gap 9]) are included only where a question needs them, and otherwise summarized as counts and ids;
   - the README says what was left out, and why.
-- **`run-ids.txt`: the CID first** [04b B14]. One run per line: the CID, then the control, the role (PASS / BREACH / RETEST), the UTC window, the register version, the mode and the condition, as trailing fields. The kit's note asks for "one run id per line" (`submit.sh`, the comment at line 23), and `submit.sh` only copies the file, so a CID-first line serves a person and any script that reads the first field. §5.5 lists the same fields.
+- **`run-ids.txt`: one CID per line** (the kit's format, "one run id per line" in `submit.sh`; §5.5; `work/11a` item 3). The per-run details (control, role and every attempt, the UTC window, the register and control versions, mode, condition, INC) go in `evidence/named-runs.md` and the README; a write-once copy (`ifabric/run-ids/<UTC>.txt`) dates it before judging.
 - **The kit's cross-check, scoped** [04b B14]. The kit's `evaluate.py 16` reads `<evidence-dir>/gateway-log.json` and sums `gen_ai.usage.input_tokens` + `output_tokens` over **every** record whose `modaas.run_id` is the run: no listener filter, no deduplication. It compares the sum with control 16's `observation_limit`, which holds only the default tier's cap (§3.3), and the §9.1 layout has no such file. So:
   - `refresh` writes `kit-crosscheck/<CID>/gateway-log.json` in the kit's shape, from our `aws/spans` capture: **model-call spans only** (`listener = llm`), deduplicated by action id;
   - it runs only for default-tier runs: `python3 evaluate.py 16 <CID> --evidence-dir evidence/kit-crosscheck/<CID> --register register.yaml`. A run in another tier is listed "not cross-checked: tier <t>";
@@ -1892,7 +1978,7 @@ The default candidates; the final choice is made at rehearsal from what actually
 | A design that only works in the request path | Everything except the one question records; the floor (EP-2) gives the verdict with EP-1 in observe mode or absent (the N2/N3 pair shows both) | §2.3, §5.1 |
 
 ### 10.3 The six auditor questions (for any incident in the declared window)
-"Any incident" means any CID or time a tester picks in the window, including traffic that never carried our CID: the window sweep brings it into the run index, as `UNATTRIBUTED` or under an `unattributed:` pseudo-CID (§3.6; E-12).
+"Any incident" means any CID or time a tester picks in the window, including traffic that never carried our CID: the window sweep brings it into the run index, as `UNATTRIBUTED` or under an `unattributed:` pseudo-CID (§3.6; E-12). **The declared window and the run catalogue** (§3.7, §9.1; decided by the captain) list every run in it, honestly labelled: ours, the reference trio's, `my-agent`'s, the cockpit's (EP-16) and other parties'.
 
 | Question | Answered from | Stated limit |
 |---|---|---|
@@ -1916,7 +2002,7 @@ The default candidates; the final choice is made at rehearsal from what actually
 | The six deliverables | Evidence file (§9.1); threshold document (`register.yaml`); control test tool (§3.7); two named runs per control (`run-ids.txt`, §5.5); the sketch (`one-page.svg` → `sketch.png`); the gap list |
 | One contract, four transports (R-J-47) | §3.2; all four built; `callback()` realised as notify-then-poll, its only caller the `check` poller |
 | One waiting question (R-J-48) | §2.3: exactly one question waits; the bounded end-of-invocation flush is declared there and decides nothing; EP-0 sits before the path and may only decline to start a run |
-| One append-only store for every decision (R-P-02) | THE ONE STORE, the platform ledger (D16, pending captain): our records at action time, the platform's decisions as `platform_decision` copies of their raw lines, per-run S3 exports with a MANIFEST; the named laptop fallback if spike S1 fails (§3.5) |
+| One append-only store for every decision (R-P-02) | THE ONE STORE, the platform ledger (D16 (a), decided by the captain): our records at action time, the platform's decisions as `platform_decision` copies of their raw lines, per-run S3 exports with a MANIFEST; the named laptop fallback if spike S1 fails (§3.5) |
 | Every answer carries who was responsible, who acted and the decision at each EP (R-P-04a) | The control test's output block (§3.7; B8): EP-responsible party and control owner; actor, runtime, version, platform principal, on whose behalf; the decision at each EP that saw the run |
 | Agent inventory in the pack (R-J-05) | The frozen inventory (§3.10) in `evidence/register/inventory/`; `query --inventory` lists every agent with its host (AgentCore runtime ARN, or the ServiceNow agent) and its model; the corroboration report checks that every AWS-side model call names a Nemotron id (§3.7) |
 | What broke, and what we changed (R-J-19) | The planned break → change → passing re-test: ADV-R-06 → the seed-vs-gateway reconciliation finding → ADV-R-06b (§5.5; §6.4) |
@@ -1935,6 +2021,8 @@ The default candidates; the final choice is made at rehearsal from what actually
 ---
 
 ## 11. The second enforcement point (D6, build choice)
+
+**ServiceNow (EP-13) is the human queue, not the second EP** (`work/14` C-1): the second EP is the same `c16_core` at EP-1 and EP-2. Arth's ServiceNow section, his pitch and the console use our EP numbering.
 
 ### 11.1 The pair: the same C16 evaluator function at two enforcement points, with nothing rewritten
 **The same function, literally** (E-02, item 4): `c16_core.decide_inline`, the evaluator, runs at both EPs, on the same pin, with one sha256. Each placement returns a `Decision` per model call.
@@ -1985,6 +2073,8 @@ The default candidates; the final choice is made at rehearsal from what actually
 
 ## 12. Critical path, parallel workstreams, the live lane, cut lines
 
+> **Superseded for the schedule, the live lane and the budget by `IMPLEMENTATION-PLAN.md`** (2026-10-06, ~01:20 UTC). The build is phased (Phase 1, the minimum submission, target ~05:30; Phase 2, about 4 h; Phase 3), and every phase ends with a submit. The method is `BUILD-SESSION-PROMPT.md` (a PR feature map, executable merge gates, the ops lane, four batched holds); the lane limits are ≤ 30 model requests/min, ≤ 1.0M tokens per 60 min and 300K per run. This section keeps the reasoning and the spike definitions.
+
 ### 12.1 Critical path (UTC; re-timed at 2026-10-05 23:45 from the real dependency chain; deadline 2026-10-06 15:00, UNCONFIRMED)
 Every live step needs the user's OK. The schedule assumes the user is available overnight (§8). If not, it shifts and the slip rule below and the cut lines (§12.4) apply.
 
@@ -2032,7 +2122,7 @@ Also in parallel, with no AWS cost: **SP-2 (Arth)** [07 SP-2]: (b) one T2 test r
 | 09:00–09:40 | C7 (batch window B5): N4 BREACH (declared fault) → N5 re-test; N6 S3 (ESC) | Live lane | C7 gate |
 | 09:40–10:30 | 6 BASELINE runs → **freeze `v1.1`** (the C9 baseline; Arth reviews, the owner approves) → env pin `v1.1` | Live lane; owner | `v1.1` timestamps |
 | 10:30–11:20 | C9 (batch window B6): N7 PASS → swap `ifabric-it` → N8 BREACH → revert → N9 re-test, with the warm-up rule | Live lane | C9 gate |
-| 11:20–11:50 | The remaining adversarial cases (§6.4): Hostile, then Rogue, in declared windows (ADV-H-04, ADV-R-06, ADV-R-01 if D15 (a)); then the Cedar policy restored, if SP-1 ran. In parallel, if C16, C7 and C9 are complete: INV's named passes (P3+, read-only, no tokens) | Live lane | Adversarial log; INV gate |
+| 11:20–11:50 | The remaining adversarial cases (§6.4): Hostile, then Rogue, in declared windows (ADV-H-04, ADV-R-06, ADV-R-01); the Cedar rule stays through judging (DG-4). In parallel, if C16, C7 and C9 are complete: INV's named passes (P3+, read-only, no tokens) | Live lane | Adversarial log; INV gate |
 | 11:50–12:05 | **Final re-snapshot,** after the last assessed run [handoff §3a item 5] (batch window B7 covers it and the submit) | Live lane | MANIFEST |
 | by 12:00 | Arth's AICT exports in `evidence/servicenow/aict/` (moved from 09:30, because the pack now starts at 12:05) [08 AI-04] | Arth | Export times recorded |
 | 12:05–13:15 | Assess everything; findings; `notify`, `check`, `export`; the pack; redaction and the exact-value scan; render the HTML and `sketch.png`; **a non-builder hand-checks 5 random links** (R-P-03 (e)); first `submit.sh` + readback | W10 + live lane; Arth for the hand-check | Readback hashes match; the scan finds 0 hits |
@@ -2052,7 +2142,7 @@ C16 completes first, by design. If anything later slips, one control is already 
 | B3 (~05:45) | `v0-pilot` freeze and upload; pilots P1–P8 in order, with P8's swap and revert |
 | B4 (~07:45) | C16: N1, ADV-H-01, the mode patches, N2, N3; then ADV-R-08's model pause |
 | B5 (~09:00) | C7: N4, N5, N6; the baseline runs; the `v1.1` upload and pin |
-| B6 (~10:30) | C9: N7, the swap, N8, the revert, N9; the remaining adversarial cases; the Cedar restore |
+| B6 (~10:30) | C9: N7, the swap, N8, the revert, N9; the remaining adversarial cases (the Cedar restore moves after judging, DG-4) |
 | B7 (~11:50) | The final snapshot; the uploads; `submit.sh` and the readbacks |
 
 **The slip rule** [04b A8]:
@@ -2087,9 +2177,9 @@ Every row has an owner (the builder, then a checker who is not the builder) and 
 | W6 | Stitcher (with key 7, the ownership join); snapshot (`refresh`); corroboration report; MANIFEST; redaction and the exact-value scan hook | W0, W4 | W6 worker → W7's worker | A re-run is byte-identical [02 R-P-03 (d)]; **a non-builder hand-checks 5 random links against the raw files** [R-P-03 (e)] | 3–4 |
 | W7 | Query CLI + engine (with `--risk`, `--inventory`, the window assessments); static HTML dashboard; `tail` | W0, W5, W6 | W7 worker → W5's worker | `query --control C16 --run <CID>` answers within 2 min from the unzipped pack on Python 3.9; a search finds no verdict logic in the HTML | 4–6 |
 | W8 | Registry tooling (freeze, pin, date check); the experiment plan; drafts of the four answers for the owner; `risks.yaml` and `inventory.yaml` (schema, freeze, the draft ratings for the owner, prompt and dataset sha256s); **the throwaway `v0-smoke` version** for S-3's halt proof (a deliberately low cap, EXPLORATORY, frozen locally, never uploaded as T1) | W0 | W8 worker → the owner (values) and W5's worker (code) | Re-freezing an existing version is refused; the pin round-trips byte for byte; the kit's parser reads the frozen file; `registry pin` derives `v0-smoke`'s pin and the post-run pin check accepts it | 3–4 (+ owner) |
-| W9 | Human-loop glue (`publish`, ESC producer, mirror). **The T2 approval record and its export** (Option B, or only the export under Option A) and **the re-test link note**: ServiceNow writes, each with the user's OK [04b B9; 08 SN-09, SN-10]. The adapter fixes (a) dry-run and (b) journal ACL, each with a test [08] | W0, W5 | W9 worker → Arth | The tests for bugs (a) and (b) green; one T2 test record exported with `sys_created_on` (SP-2 (b)) | 3–4 |
+| W9 | Human-loop glue (`publish`, ESC producer, mirror). **The T2 approval record and its export** (Option B, or only the export under Option A) and **the re-test link note**: ServiceNow writes, each with the user's OK [04b B9; 08 SN-09, SN-10]. **Arth's code is not changed:** G-05's process guards hold bugs (a) and (b) (accepted risks); T2 is Arth's approval Finding (G-13, C-7) [08; `work/12` §5.3] | W0, W5 | W9 worker → Arth | Tests show the guards hold against bugs (a) and (b); one T2 test record exported with `sys_created_on` (SP-2 (b)) | 3–4 |
 | W10 | Docs: `sketch.png` render, gap-list updates, security-matrix results, adversarial log, the stranger's README, `run-ids.txt` (CID first), `reviews/` | all | W10 worker → Arth | A test finds no pilot or baseline id in `run-ids.txt`; the README's commands run as written from the unzipped pack | 2–3 |
-| W-AA | **Assurance agent + console (handoff-3), pending integration.** The ServiceNow-facing 4th agent, to run on AgentCore, and Arth's dashboard and evidence-console plan | The integration pass that follows this one | To be set at integration | To be set; the single-file build (AR-03) applies | — |
+| W-AA | **Assurance agent + console (handoff-3), integrated:** G-01–G-03 (the Assurance runtime, §3.11, §7.3) and G-07–G-09 (the projector, the answer composer, the console, §3.12); `IMPLEMENTATION-PLAN.md` PR-16, PR-17, PR-19 | W2's Docker harness; W5–W7 | W-AA workers → W2 / W6 / W7 workers | G-01 end to end: WRITTEN, V1–V6; console AT-P0; the projection 0 schema errors | ~11–15 (console) + ~3–4 (Assurance) |
 
 **Total:** about 41–54 agent-hours, plus about 2–3 for risk and ownership (W5–W8 additions; INV's code only at P3+). With 6–8 parallel workers that is about 6–8 h of wall clock. **What sets the agents' freeze time is not the total but the critical chain,** W0 → W1 → W2 Stage A: about 4 h of wall clock even when W1 is split (§12.1).
 
@@ -2123,7 +2213,7 @@ AI reviewers check engineering gates only; they are not the assurance role.
 9. The baseline runs.
 10. Upload `v1.1` and its approval; env pin.
 11. C9 named runs, with the swap and the revert.
-12. The remaining adversarial cases; then the Cedar policy restored, if SP-1 ran.
+12. The remaining adversarial cases; the Cedar rule stays through judging (DG-4) and is restored afterwards.
 13. The final snapshot.
 14. `notify` / `check` / `export` (Arth).
 15. Submit and readback.
@@ -2146,7 +2236,7 @@ Before each run: the preflight of §7.2 (credentials, headroom, EP-0, the echoed
 | **Total** | **about 37–45** | | **about 2.5M if S2 doesn't loop; up to about 4.3M** |
 
 - Over about 10 h that averages 0.35–0.45M an hour. **The peak hour is the pilot block: about 1.2M** (3·SC + 5·s ≈ 1.15M in about 1.5 h), under the 2.5M/h ceiling. Requests (49/min at S2's peak, against 100/min) don't bind.
-- **The safety ceiling is ≤ about 300K and always on.** Even with all three S2-class pilots in one 60-min window, a 20% margin only needs SC ≤ about 580K. At most 3 S2-class runs per clock hour; a headroom check before every run; no S2-class run before S-3's halt proof [08 LB-01, LB-04].
+- **The safety ceiling is ≤ about 300K and always on.** Even with all three S2-class pilots in one 60-min window, a 20% margin only needs SC ≤ about 580K. At most 3 S2-class runs per clock hour (superseded: ≤ 2 `observe` S2 runs per rolling hour under the 1.0M-per-60-min lane limit, `IMPLEMENTATION-PLAN.md` §5.1); a headroom check before every run; no S2-class run before S-3's halt proof [08 LB-01, LB-04].
 - **What breaks it:** one unbounded S2-class run costs about 2.0M tokens in about 5 min and up to about 1 h of stalled lane. With 15 min of buffer left, even one would cost the C9 block, which is why the halt proof and a pinned SC come first. The other limit is the lane's clock: about 3.3 h of pure run time fits only if each OK takes minutes, hence the batch windows (§12.1) [08 LB-03].
 
 ### 12.4 Cut lines, by priority (C16 end to end first)
@@ -2164,27 +2254,37 @@ Before each run: the preflight of §7.2 (credentials, headroom, EP-0, the echoed
 
 ---
 
-## 13. Decisions (D1–D16: D13 and D14 from the captain's requests, D15 and D16 from the feasibility pass)
+## 13. Decisions (D1–D23 + DG-1–DG-7; captain decisions of 2026-10-06 00:26Z and 00:30Z marked)
 The rationale for each row is in `architecture/decisions.md`. The options and evidence are in [03] and, for the rows changed on 2026-10-05 after 23:00, in the feasibility reports [05]–[10].
 
 | D | Decision | Chosen or recommended | Status |
 |---|---|---|---|
-| D1 | The app: form and hosting | The CLI is the control test; one static, self-contained HTML file is rendered from the snapshot; no server, no endpoint | Build choice (the upload's content: pending captain) |
-| D2 | C16: floor, inline check, tally | The floor (EP-2) is authoritative. Inline reserve-then-commit at EP-1; the tally carried by the script; modes `enforce` / `observe` + a safety ceiling, **≤ about 300K and always on**, with the halt proven on a low test cap before any S2-class run [08 LB-01, LB-04]; tiers optional | Shape frame-decided; caps, tiers, safety ceiling and test budget pending captain |
-| D3 | C9: metric, statistic, window, baseline, alerts | M1 Latency **Maximum + Errors**, per run, **two-sided** (a model swap can make a runtime faster as well as slower [04 E-07]), + counts; W2 per run + an hourly roll-up; baseline B-a (6 runs, `v1.1`) with a declared warm-up rule; a near-real-time loop (`prooflab watch`, every few minutes; its interval set by OC-20) for the continuous layer; M2 and M3 diagnostics; pilot P8 informs the choice | Pending captain |
+| D1 | The app: form and hosting | **Superseded by D17:** Arth's Evidence Console (loopback; PACK and LIVE) over our query engine; the CLI stays the control test and the P0 fallback; the static HTML file is dropped | Superseded by D17 (the captain's direction) |
+| D2 | C16: floor, inline check, tally | The floor (EP-2) is authoritative. Inline reserve-then-commit at EP-1; the tally carried by the script; modes `enforce` / `observe` + a safety ceiling, **≤ about 300K and always on**, with the halt proven on a low test cap before any S2-class run [08 LB-01, LB-04]; tiers optional | **Decided by the captain** (2026-10-06): the safety ceiling ≤ 300K per run, always on; caps from the pilots |
+| D3 | C9: metric, statistic, window, baseline, alerts | M1 Latency **Maximum + Errors**, per run, **two-sided** (a model swap can make a runtime faster as well as slower [04 E-07]), + counts; W2 per run + an hourly roll-up; baseline B-a (6 runs, `v1.1`) with a declared warm-up rule; a near-real-time loop (`prooflab watch`, every few minutes; its interval set by OC-20) for the continuous layer; M2 and M3 diagnostics; pilot P8 informs the choice | **Decided by the captain** (2026-10-06) |
 | D4 | C7: expected events, event set, gaps | E1 (gateway + workflow spec + refusals, including after-stop events); observed = adapter-emitted only; G-a judged, G-b diagnostic | Build choice (values: the owner) |
-| D5 | Registry: source, hand-out, date proof | `register.yaml` (kit format + flat keys) → frozen + sha256, per-control versions; H1 env pin + H4 file loads; **date proof: T1, the S3 write-once object, dates the threshold; T2, the owner's ServiceNow approval (not a Finding), corroborates**, and a late or missing T2 is a gap, not INDETERMINATE [04 E-04]. T1 is fail-safe without Object Lock [06 D2] | Pending captain |
+| D5 | Registry: source, hand-out, date proof | `register.yaml` (kit format + flat keys) → frozen + sha256, per-control versions; H1 env pin + H4 file loads; **date proof: T1, the S3 write-once object, dates the threshold; T2, the owner's ServiceNow approval (not a Finding), corroborates**, and a late or missing T2 is a gap, not INDETERMINATE [04 E-04]. T1 is fail-safe without Object Lock [06 D2] | **Decided by the captain** (2026-10-06): T1 dates, T2 corroborates; T2 = Arth's approval Finding (C-7) |
 | D6 | The second EP | D6-A (EP-1 + EP-2, one c16 core, `c16_core.py`, embedded byte for byte in each agent; EP-2 replays `decide_inline` per gateway call, §3.4, §11) + D6-C (the judge's machine); D6-B optional | Build choice |
 | D7 | Agents | A new `ifabric-` trio cloned from the reference agent, on super-120b; J2 structured judgment checked by code (build choice: JSON in the text answer); real evidence emission; the reference trio untouched as the "before" system. Build facts: **one self-contained file per agent** within the 24,049-char budget, a unique `IMAGE_TAG` always [05 AR-03, AR-05]; a 4th agent (handoff-3) pending integration | **Decided by the captain** (2026-10-05) |
-| D8 | The one evidence store | The platform ledger is the one live store; **D16 settles whether the platform's decisions are appended to it** (the literal "one store"); the snapshot is the pack. Mirror optional: its runtime half is now free (our stdout lands AWS-timestamped in `[runtime-logs]`, OC-9), and only the laptop's log group would be an AWS write | Store frame-decided (lead's reconciliation); D16 and the mirror pending captain |
-| D9 | Named runs | Same agents, same version. C16: the breach path is **decided by the experiments**: pilots P5–P7 show (a) natural, else (b) the declared condition, in `observe` → `enforce` re-test. C7: a declared suppressed record. C9: a model swap. A remediation + re-test for each. The organisers' twin fix adds no lever [09]. With no C16 lever, C7 is milestone 1 (§12.4) | Same-agents constraint **decided by the captain**; levers pending captain |
-| D10 | Guardrail layers per EP | **D10-A as revised (§6):** the fixed gateway guardrail, observed; in-agent rails that record (whether they may block is the captain's call, raised by the guardrails design [guardrails/02 §0]); Cedar on an existing ToolConfig (D15); the C16 guard. No guardrail of our own (D10-B needs our own ModelConfig, a new model alias: SP-3) | Pending captain |
-| D11 | Where things run; credentials | P3 split; **the laptop as hub** (the only place with Logs Insights, the ServiceNow credentials, the delivery log and the live lane); the IDE for human reads only (not team-exclusive [09 §7]); CloudShell as the fallback; ServiceNow credentials on the laptop **by about 03:30 UTC**; **one AWS credential refresh in 03:30–06:29 UTC** (they expire 06:29:19Z) [08 OP-01, SN-02, SN-12] | Pending captain |
+| D8 | The one evidence store | The platform ledger is the one live store; **D16 settles whether the platform's decisions are appended to it** (the literal "one store"); the snapshot is the pack. Mirror optional: its runtime half is now free (our stdout lands AWS-timestamped in `[runtime-logs]`, OC-9), and only the laptop's log group would be an AWS write | Store decided (D16 (a), by the captain); the mirror still open |
+| D9 | Named runs | Same agents, same version. C16: the breach path is **decided by the experiments**: pilots P5–P7 show (a) natural, else (b) the declared condition, in `observe` → `enforce` re-test. C7: a declared suppressed record. C9: a model swap. A remediation + re-test for each. The organisers' twin fix adds no lever [09]. With no C16 lever, C7 is milestone 1 (§12.4) | **Decided by the captain**: the same agents; the pilots decide the lever; with no C16 lever, C7 first |
+| D10 | Guardrail layers per EP | **D10-A as revised (§6):** the fixed gateway guardrail, observed; in-agent rails that record (whether they may block is the captain's call, raised by the guardrails design [guardrails/02 §0]); Cedar on an existing ToolConfig (D15); the C16 guard. No guardrail of our own (D10-B needs our own ModelConfig, a new model alias: SP-3) | **Decided by the captain** (revised A; rails may block, DG-1) |
+| D11 | Where things run; credentials | P3 split; **the laptop as hub** (the only place with Logs Insights, the ServiceNow credentials, the delivery log and the live lane); the IDE for human reads only (not team-exclusive [09 §7]); CloudShell as the fallback; ServiceNow credentials on the laptop **by about 03:30 UTC**; **one AWS credential refresh in 03:30–06:29 UTC** (they expire 06:29:19Z) [08 OP-01, SN-02, SN-12] | **Decided by the captain** |
 | D12 | Record schema and stitch keys | R1 flat dotted; the record kinds; deterministic ids for pulled records; stitch order 1–6. **Key 5 is now an exact join:** the AWS-written `InvokeAgentRuntime` record's baggage CID + `runtimeSessionId` ↔ `handoff.sent`, its `eventTime` (the call's end) ↔ `handoff.received`; `aws.request_id` stays null [10-f11] | Build choice |
-| D13 (new) | The optional pre-run version gate (EP-0), from the captain's timing-layer request | Before each run, check each agent's running version (model alias + generation + runtime version; the digest alone doesn't identify an agent) against an approved version (the generation from `ApprovalRecorded.observedGeneration`, corroborated by the AWS Agent Registry's `updatedAt`, or a declared treatment with the owner's approval). Also decline a run on a paused AgentConfig (a pause doesn't stop direct invokes). Block ASSESSED runs on a mismatch; record-only otherwise. Never read env values. Live today it would flag the reference IT and network agents [07 GS-14, GS-22] | Pending captain (the lead's recommendation: block assessed runs) |
-| D14 (new) | Where the AI inventory and the risk register live, from the captain's risk-and-ownership request (§3.9, §3.10) | **Recommended:** repo YAML (`register/inventory.yaml`, `register/risks.yaml`) is the evaluators' source: frozen, dated, hashed and in the pack. Arth mirrors the AI system, its owners and its risk tier into ServiceNow AICT (L2/L3). Alternatives: repo only (no mirror); AICT as master (exported into the pack before judging) | Pending captain |
-| D15 (new) | The Cedar demo path, from the governance vetting [07] (§6.2) | **(a) Recommended:** a narrow `forbid` (a declared test value no scenario uses; every attribute guarded with `has`) in an **existing** ToolConfig's `spec.access.cedarPolicy`, applied by SP-1 before the agents' freeze and restored before the final snapshot. It applies to every caller, so it needs the captain's OK and the user's explicit OK. **(b)** Relax the no-Lambda / no-gateway-write rule. Its least invasive form is a custom `ifabric-` MCP tool (no Lambda and no AWS write, but the tool operator writes a new route on the shared gateway, and a delete leaves leftovers we can't remove [07 GS-01, GS-02, GS-26]); a new Lambda or AgentCore-gateway target would also need the organisers [GS-04, GS-05]. **Removed:** an adopt-mode ToolConfig, which can't decide `tools/call` [GS-03] | Pending captain |
-| D16 (new) | "One store", literally, from the adversarial review [04 E-01] (§3.2, §3.5) | **(a) Recommended:** the platform ledger with **every adapter writing to it**: our records at action time, and the platform's decisions appended by the pull adapters as normalized `platform_decision` records (deterministic `record_id`; `source.refs` to the raw line and its sha256), between runs only. It needs S-1's POST path from the laptop and per-CID exports (the store is single-threaded, 256Mi) [06 C5]. **Fallback (b):** a normalized store on the laptop (the snapshot's derived records) for the platform's decisions, with the ledger holding only our records | Pending captain |
+| D13 (new) | The optional pre-run version gate (EP-0), from the captain's timing-layer request | Before each run, check each agent's running version (model alias + generation + runtime version; the digest alone doesn't identify an agent) against an approved version (the generation from `ApprovalRecorded.observedGeneration`, corroborated by the AWS Agent Registry's `updatedAt`, or a declared treatment with the owner's approval). Also decline a run on a paused AgentConfig (a pause doesn't stop direct invokes). Block ASSESSED runs on a mismatch; record-only otherwise. Never read env values. Live today it would flag the reference IT and network agents [07 GS-14, GS-22] | **Decided by the captain**: blocks assessed runs |
+| D14 (new) | Where the AI inventory and the risk register live, from the captain's risk-and-ownership request (§3.9, §3.10) | **Recommended:** repo YAML (`register/inventory.yaml`, `register/risks.yaml`) is the evaluators' source: frozen, dated, hashed and in the pack. Arth mirrors the AI system, its owners and its risk tier into ServiceNow AICT (L2/L3). Alternatives: repo only (no mirror); AICT as master (exported into the pack before judging) | **Decided by the captain** |
+| D15 (new) | The Cedar demo path, from the governance vetting [07] (§6.2) | **(a) Recommended:** a narrow `forbid` (a declared test value no scenario uses; every attribute guarded with `has`) in an **existing** ToolConfig's `spec.access.cedarPolicy`, applied by SP-1 before the agents' freeze and restored before the final snapshot. It applies to every caller, so it needs the captain's OK and the user's explicit OK. **(b)** Relax the no-Lambda / no-gateway-write rule. Its least invasive form is a custom `ifabric-` MCP tool (no Lambda and no AWS write, but the tool operator writes a new route on the shared gateway, and a delete leaves leftovers we can't remove [07 GS-01, GS-02, GS-26]); a new Lambda or AgentCore-gateway target would also need the organisers [GS-04, GS-05]. **Removed:** an adopt-mode ToolConfig, which can't decide `tools/call` [GS-03] | **Decided by the captain**: Cedar edits with the captain's OK per change, recorded with the version, incl. the test DENY (DG-4) |
+| D16 (new) | "One store", literally, from the adversarial review [04 E-01] (§3.2, §3.5) | **(a), decided by the captain:** the platform ledger with **every adapter writing to it**: our records at action time, and the platform's decisions appended by the pull adapters as normalized `platform_decision` records (deterministic `record_id`; `source.refs` to the raw line and its sha256), between runs only. It needs S-1's POST path from the laptop and per-CID exports (the store is single-threaded, 256Mi) [06 C5]. **Fallback: a single laptop store** (`ifabric-store/records.jsonl`) that ingests the ledger export and every pull, so the one store stays literal (`work/11a` item 1) | **Decided by the captain**: (a), with a single laptop store as the fallback |
+| D17 (new) | The dashboard's form (handoff-3; `work/12` §5.6) | Arth's Evidence Console (loopback; PACK and LIVE) as the judged dashboard, over our query engine; the CLI stays the control test (§3.7, §3.12) | **Settled by the captain's direction** ("the dashboard in handoff 3 is the frontend") |
+| D18 (new) | The Assurance agent's backend | AgentCore primary (`ifabric-assurance-agent`, our one-file handler around Arth's unchanged analyser; the AICT-visible form); the direct gateway over a loopback port-forward only as a fallback (G-15) | AgentCore: **by the captain's direction**; the fallback: default |
+| D19 (new) | The T2 mechanism | Arth's approval Finding (`kind: approval`, its own log, never assessed or analyzed), after T1 | **Decided by the captain** (C-7, 00:26Z) |
+| D20 (new) | EP numbering and the second-EP claim | Ours (EP-0…EP-16) everywhere; ServiceNow is EP-13 and not the second EP; reject EP3 admission, held actions, a per-invocation call limit, FM-B on the reference agents | Default (frame; `work/12`, `work/14` C-1) |
+| D21 (new) | The Agent Trail facets (AP-v1 policy checks, outcome validation) | Console P1, cut first (G-17) | Default |
+| D22 (new) | The Finding's `scope_id` | The CID; aliases from `run-ids.txt` in the projection | Default |
+| D23 (new) | Who owns the Assurance agent | Owner Arth (builder), approver Sree; outside every control's `applies_to` | Default |
+| DG-1–DG-7 (new) | The guardrail decisions ([guardrails/AGENT-GUARDRAILS.md](guardrails/AGENT-GUARDRAILS.md) §12) | Rails may block (DG-1); PII masked at the receiving agent's input (DG-2); compact ALLOWs (DG-3); the Cedar test rule on `customer-records`, kept through judging (DG-4); a self-check only on a flag, through C16, fail closed (DG-5); NeMo out of the image (DG-6); the ADV-H-02 fault case as designed (DG-7) | **Decided by the captain** (00:26Z for DG-1; 00:30Z for DG-2–DG-7) |
+| P1-notify (new) | A minimal ServiceNow notify on each BREACH in the build's Phase 1 | Arth's `notify` as-is + our finding builder (G-04) + the process guards (G-05) | **Decided by the captain** (2026-10-06, ~01:10Z) |
+| Phases (new) | The build's shape | Phase 1, the minimum submission (target ~05:30); Phase 2 (~4 h: ServiceNow, the Assurance agent, AICT, the console, C9 complete, guardrails extended); Phase 3 (adversarial, demo, rehearsals); every phase ends with a submit (`IMPLEMENTATION-PLAN.md`) | **Decided by the captain** (~01:05Z) |
 
 ---
 
@@ -2218,7 +2318,19 @@ The feasibility vetting of 2026-10-05 (22:55–23:59 UTC) closed many of them. A
 | OC-23 | Whether Arth's account can set AICT's `Managed by` and `Risk classification` on our `ifabric_` assets (discovered assets arrive Unmanaged, with no owner and risk "To be determined" [AICT notes §2.3]) | The D14 mirror | Arth, on the instance. It is a ServiceNow write: the user's OK first |
 | OC-24 (new) | Whether WSParticipantRole can PutObject into the team bucket (never tried; reads and `head-object` work) | T1 (D5) and `submit.sh` | **Spike 06 S2** in L1 (§12.1). AccessDenied would mean an SCP or bucket policy we can't read: raise it with the organisers before any freeze [06 D1] |
 | OC-25 (new) | Whether AICT actually imported a runtime we created: `my_agent` has existed since about 09:00Z, and the AICT role reads it every cycle on the AWS side [08 AI-01, AI-02] | L2 discovery; INV; the D14 mirror | Arth, read-only, now (before the `ifabric_` runtimes exist) |
-| OC-26 (new) | Whether the no-mistakes pipeline runs green on this repo: it has never run on this machine, and the repo has no CI [08 TC-06] | Every merge (R-D-04) | The pilot PR (W0) with W-CI's test command (§12.1, §12.2) |
+| OC-26 (new) | Whether the no-mistakes pipeline runs green on this repo: it has never run on this machine, and the repo has no CI [08 TC-06] | Every merge (R-D-04) | Now the build prompt's merge gate (`tools/gate.sh`), smoked on PR-00 (`IMPLEMENTATION-PLAN.md` T0.3) |
+| OC-27 (new; `work/12`'s OC-24, renumbered) | A loopback port-forward to `modaas-agw` works for a governed call | G-15 (the fallback only) | One `port-forward` + one ≤ 20-token call, with the captain's OK |
+| OC-28 (new; `work/12`'s OC-25) | Is `max_tokens` 900 enough for a complete 16-line note? Reasoning may consume it | G-01 | The first live analysis; if REFUSED for "no analysis note", raise `IFABRIC_ASSURE_MAX_TOKENS` (the token limit via config; Arth's prompt is never edited) |
+| OC-29 (new; `work/12`'s OC-26) | Does AICT import `ifabric_assurance_agent` (the ServiceNow half)? | The L2 claim | Arth, ≥ 20 min after G-02 |
+| OC-30 (new; `work/12`'s OC-27) | Does Arth's panel render under the console's CSP? | G-09 | AT-07 + a visual check |
+| OC-31 (new; `work/12`'s OC-28) | The ServiceNow API load at the snapshot cadence (a shared instance) | G-05 | Count the calls per cycle; watch for 429s |
+| OC-32 (new; `work/12`'s OC-29) | The injected `OPENAI_BASE_URL` shape (`…/v1`) | G-01 | A filtered read of the one variable; never log the raw response (AR-30) |
+| OC-33 (new; `work/12`'s OC-30) | Does a hand-set `baggage` header reach `modaas.run_id`? | Only a handler variant that sets baggage | N/A for §3.11's design (Arth's unchanged analyser sends none) |
+| OC-34 (new) | The model request rate of one `observe` S2 invocation (≤ 30/min?) | The lane limit | Pilot P5's gateway lines |
+| OC-35 (new) | Does the cockpit's ask route invoke an `ifabric-` agent, and with which CID and baggage? | EP-16 | Passively by the `side_door` collector; actively by ADV-R-14 (the captain's OK) |
+| OC-36 (new) | T-SPAN-01: the L-G1 canary absent from every span and log group | Gap 9 | S-2 (+ 60 s) |
+| OC-37 (new) | The deadline (15:00 UTC) and the account's end | The whole schedule | The captain asks the organisers (Hold-1) |
+| Closed (new) | The ServiceNow `selftest` with the OAuth credentials on the laptop | EP-13 | **CLOSED:** PASSED 2026-10-06 ~00:45Z (OAuth token issued; the incident API readable) |
 
 ---
 
@@ -2264,3 +2376,12 @@ The feasibility vetting of 2026-10-05 (22:55–23:59 UTC) closed many of them. A
 | Organiser-injected Hostile/Rogue events: who injects them, and when, is unknown | Organisers | The adversarial log also records events we observe |
 | The inline bonus must be shown live during judging | Account lifetime; budget | `prooflab tail` on a live run while the account is up; otherwise the recorded N3 decision records, labelled "recorded, not live" |
 | Readiness records not yet produced: the recorded L1 → L3 demo and the timed 15-minute run-of-show (R-J-45), the 5-link hand-check (R-P-03 (e)), the mentor review (R-J-56) [04b] | Time | Planned in §12.1 and kept in `reviews/` (§9.1). Any not produced by the final submit is listed here and in `gap-list.md` |
+| Adapter bug (a): `notify --dry-run` on an existing incident logs DELIVERED and is not offline | Arth's code, used as-is; accepted by the captain | A dry run only ever writes to a TEST log (G-05) |
+| Adapter bug (b): an itil journal read of 0 rows can read as NO_RESPONSE_OBSERVED | Arth's code, used as-is; accepted by the captain | `check` every ≤ 60 s; nobody else updates our incidents after the owner; the sticky-RESPONDED rule; the response basis shown |
+| The Assurance agent's model calls carry no subject CID (their run id is their trace id) | Arth's analyser sends no baggage | They join the platform's records by action id; their tokens are team overhead, never a subject run's C16 spend |
+| The Assurance runtime sends the gateway key over plain HTTP (the gateway-URL shim) | Every AgentCore runtime gets a plain-HTTP gateway URL; the :8443 certificate is a placeholder (gap 9) | Recorded as a security decision; the key never leaves the runtime's env |
+| A finding's trace holds at most 200 steps | Arth's `finding_context` rejects longer traces | G-04 summarises per invocation; the full trail stays in the pack |
+| The console's live file is a convenience index; a replay is labelled REPLAY | A design choice (G-10) | The pack's records stay the authority |
+| The cockpit side door (EP-16): the cockpit has no auth, and anyone with its link can invoke any agent | Platform | Observed and labelled in the run catalogue; our agents run an unenveloped call under the strictest cap |
+| The rails' own gaps (rails gap G-1…G-14: no NVIDIA safety models, the fixed guardrail, no tool-output screening by the platform, self-enforced rails, unverifiable egress, …) | Platform; time | [guardrails/AGENT-GUARDRAILS.md](guardrails/AGENT-GUARDRAILS.md) §11; each in `gap-list.md` section B |
+| Arth's Section A (A1–A18) | ServiceNow and AICT limits | Merged into `gap-list.md` as section A, with `work/14` R-18's corrections |
