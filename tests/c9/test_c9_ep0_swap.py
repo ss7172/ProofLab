@@ -128,3 +128,14 @@ def test_warm_up_is_a_text_free_exploratory_condition():
     assert c["text"] == "" and c["sha256"] is None
     ns = argparse.Namespace(provenance=None, condition="warm-up")
     assert R._provenance(ns, "run", False) == "EXPLORATORY"
+
+
+def test_the_post_swap_warm_up_records_the_treatment_only_with_the_n8_label():
+    """The warm-up (EXPLORATORY, not gating) must carry the model-swap treatment record, or C9's warm-up rule cannot
+    match N8's runtime update: without --named-run N8 the undeclared change is stripped (never called declared)."""
+    t = []
+    steps, _ = preflight.ep0(versions(), False, [A], check_versions, treatments=t)
+    assert t == [] and "RECORDED (not gating)" in steps[0]["detail"]
+    t = []
+    steps, _ = preflight.ep0(versions(), False, [A], check_versions, treatments=t, named_run="N8", declarations=DECL)
+    assert steps[0]["ok"] and t and t[0]["model_swap"]["label"] == "N8"

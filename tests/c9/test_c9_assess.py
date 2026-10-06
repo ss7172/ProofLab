@@ -266,3 +266,13 @@ def test_claim_does_not_count_a_not_assessed_control_as_coverage(tmp_path):
     row = [r for r in E.claim_line(E.Pack(snap))["rows"] if r["control"] == "C9"][0]
     assert row["worst"] == "NOT_ASSESSED"
     assert E.claim_line(E.Pack(snap))["coverage"].startswith("partial coverage: 0 of 3")
+
+
+def test_a_run_bound_to_another_register_version_is_not_assessed_under_this_one(tmp_path):
+    recs = run_records(CID, "08:18:15", "08:19:50")
+    recs.append(dict(rec(CID, "intent", "2026-10-06T08:18:20.000Z", "agent start-up"), **{
+        "actor.id": "ifabric-it", "register.version": "v1"}))
+    snap = snapshot(tmp_path, [(CID, recs)])               # the file in the snapshot is v0-pilot (C9-v0)
+    measure_capture(snap, P1_POINTS)
+    out = A.assess_snapshot(snap, controls=("C9",))
+    assert out["written"] == [] and "bound to register v1" in out["skipped"][0][2]

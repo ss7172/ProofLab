@@ -307,8 +307,14 @@ def assess_snapshot(root, register=None, controls=("C16", "C7", "C9"), runs=None
                 docs.append(c7.assess_run(cid, exp, ours7, [], pin7, as_of, snapshot_id=snap_id,
                                           provenance=prov, condition=cond))
         if "C9" in controls:
+            bound = sorted(set(r.get("register.version") for r in f["ours"]
+                               if _reg.REGISTER_VERSION_RE.match(str(r.get("register.version") or ""))))
             if "C9" not in entries:
                 skipped.append(("C9", cid, "no C9 entry in the register"))
+            elif bound and reg_version not in bound:
+                # every run is tested under the version bound to its evidence, never the latest (ARCH 3.3, 5.3)
+                skipped.append(("C9", cid, "run bound to register %s, not %s: assess it with that file"
+                                % (",".join(bound), reg_version)))
             else:
                 if metrics is None:
                     metrics, warmups = _c9in.read_metrics(root), _c9in.warm_up_index(by_run)
