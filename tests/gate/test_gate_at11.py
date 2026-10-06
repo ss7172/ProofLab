@@ -4,9 +4,19 @@ and applies the same pattern directly (it must not call gate.sh: the gate runs t
 import os
 import re
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PAT = re.compile(r"(cap|limit|threshold|ceiling)[a-z0-9_]*\s*(:[^=#]*)?=\s*-?[0-9]", re.I)
 NOT_ASSIGN = re.compile(r"[=!<>]=\s*-?[0-9]")
+
+
+def test_repo_root_resolves_to_real_tree():
+    # guards against a wrong REPO depth silently scanning nothing
+    assert os.path.isdir(os.path.join(REPO, "prooflab", "evaluators"))
+    assert os.path.isdir(os.path.join(REPO, "prooflab", "adapters"))
+
+
+def test_pattern_catches_planted_literal():
+    assert PAT.search("    cap_tokens = 5000") and not NOT_ASSIGN.search("    cap_tokens = 5000")
 
 
 def test_no_threshold_literal_in_evaluators_adapters_agents():
