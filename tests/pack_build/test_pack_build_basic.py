@@ -165,4 +165,4 @@ def test_readback(inputs):
 
 def test_no_threshold_or_secret_literals():
     src = open(os.path.join(REPO, "prooflab", "pack", "build.py")).read()
-    assert "AKIA" not in src and "BEGIN " + "PRIVATE" not in src
+    assert "AK" + "IA" not in src and "BEGIN " + "PRIV" not in src
