@@ -12,8 +12,22 @@ run on the agent's 3.12 stack.
 
 Coupling to the contract is one site: `_core` (prooflab.evaluators.c16_core).
 Tests may replace `model_call._core` with a double.
+
+evaluator.sha256 (D8): CORE_SHA256, the sha256 of the c16 core source this process runs, taken once at
+import: in the agent bundle the exact text the bundle's finder serves (verified there against the base
+file's `# evaluator.sha256=` marker); from the repo, the bytes of c16_core.py. It is passed to
+`decide_inline`, the same value EP-2's replay records (register/c16_core.sha256).
+
+call.id on decisions (D6, ARCH 5.2): a `proceed` decision is built before the call (its emitted.at and
+seq.in_stream are the decision's) but HELD until the call returns, then emitted with the call's
+x-modaas-action-id, just before the action record, so C7 can match it as decision:<action id>. A halt
+decision is emitted at once, before any model call (C16 halt semantics unchanged). A held decision is
+never dropped: the after-call path emits it with or without an action id, and a held decision whose
+after-call event never came is emitted at the next model-call check.
 """
 import datetime
+import hashlib
+import sys
 import threading
 import uuid
 
@@ -71,6 +85,22 @@ def _new_record(kind, null_reason, fields):
 def _sha_or_none(v):
     return v if isinstance(v, str) and len(v) == 64 else None
 
+
+def _core_sha256(core):
+    """sha256 of the c16 core source this process runs (None if it cannot be read): the bundle's
+    served text first (its __file__ is a virtual path), else the module's file bytes."""
+    try:
+        name = core.__name__
+        src = getattr(sys.modules.get(type(core.__loader__).__module__), "_SOURCES", None)
+        if isinstance(src, dict) and name in src:
+            return hashlib.sha256(src[name].encode("utf-8")).hexdigest()
+        with open(core.__file__, "rb") as f:
+            return hashlib.sha256(f.read()).hexdigest()
+    except Exception:
+        return None
+
+
+CORE_SHA256 = _core_sha256(_core)
 
 
 
@@ -138,7 +168,7 @@ def _failclosed_decision(pin, exc):
     d.threshold_sha256 = None
     d.pin_sha256 = getattr(pin, "pin_sha256", None)
     d.evaluator_name = "prooflab.evaluators.c16_core"
-    d.evaluator_sha256 = None
+    d.evaluator_sha256 = CORE_SHA256
     return d
 
 
@@ -158,7 +188,7 @@ def _evaluate(q, pin):
     """evaluate(): pure delegation to the core. An exception becomes a DENY /
     halt (fail closed, decided here, never by the callers)."""
     try:
-        return _core.decide_inline(q, pin)
+        return _core.decide_inline(q, pin, CORE_SHA256)
     except Exception as exc:
         return _failclosed_decision(pin, exc)
 
@@ -179,6 +209,7 @@ class ModelCallAdapter(object):
         self.bound_projection = bound_projection
         self.emit = emit
         self._key = None
+        self._held = {}             # key -> the proceed decision record, emitted after the call (D6)
         self._n = 0
         self._klock = threading.Lock()
         self.dispatcher = Dispatcher(
@@ -307,22 +338,37 @@ class ModelCallAdapter(object):
                                    records=recs, source="c16"), d
             t.reserve(key, bound)               # the adapter compares nothing
             served = "SERVED" if d.verdict == "DENY" else None   # observe: DENY recorded, call served
-            return StageResult(records=[self._decision_record(d, q, served)], source="c16"), d
+            self._held[key] = self._decision_record(d, q, served)  # emitted after the call, with its call.id
+            return StageResult(source="c16"), d
+
+    def _release_held(self, key, call_id=None, why=None):
+        """The held decision of `key` (or []) with call.id set to the call's action id, or null with `why`."""
+        rec = self._held.pop(key, None)
+        if rec is None:
+            return []
+        rec["call.id"] = call_id
+        reasons = rec.setdefault("null_reasons", {})
+        reasons.pop("call.id", None)
+        if call_id is None:
+            reasons["call.id"] = why or "the response carried no x-modaas-action-id header"
+        return [rec]
 
     def _stage(self, event_name, ctx):
         if event_name == "before_model":
             with self._klock:
+                stale = self._release_held(self._key, None, "no after-call event was observed for this call")
                 self._n += 1
                 key = "call-%d" % self._n
                 self._key = key         # after-call reads it: calls inside one agent are sequential
             try:
                 res, _ = self._check("model-call", ctx.get("projected"), key)
+                res.records[:0] = stale
             except Exception as exc:            # adapter bug: fail closed, recorded
                 self.tally.mark_halt("c16-budget-halt")
                 rec = self._lifecycle("adapter-error", "EP-1 adapter error: %s" % type(exc).__name__,
                                       {"reason": "adapter-error"})
                 return StageResult(cancel=True, message=CANCEL_MESSAGE, reason="adapter-error",
-                                   records=[rec], source="c16")
+                                   records=stale + [rec], source="c16")
             return res
         if event_name == "after_model":
             return self._after(ctx)
@@ -334,16 +380,18 @@ class ModelCallAdapter(object):
         key = self._key
         if t.consume_own_cancel():
             t.release(key)          # our own cancel looks like a served 0-token call: not one
-            return None
+            held = self._release_held(key, None, "no call was dispatched (cancelled)")
+            return StageResult(records=held, source="c16") if held else None
         exc = ctx.get("exception")
         call_id = self.capture.take()
         finish = self.finish.take()
+        held = self._release_held(key, call_id)
         if exc is not None:
             t.release(key)
             status = getattr(exc, "status_code", None)
             outcome = _error_outcome(exc, status)
-            return StageResult(records=[self._action_record(call_id, None, None, True, finish,
-                                                            outcome, status)], source="c16")
+            return StageResult(records=held + [self._action_record(call_id, None, None, True, finish,
+                                                                   outcome, status)], source="c16")
         usage = ctx.get("usage") or {}
         tin = usage.get("inputTokens")
         tout = usage.get("outputTokens")
@@ -356,7 +404,7 @@ class ModelCallAdapter(object):
         else:
             t.commit(key, tin, tout, unknown=unknown)
             outcome = "SERVED"
-        return StageResult(records=[self._action_record(
+        return StageResult(records=held + [self._action_record(
             call_id, tin or 0, tout or 0, unknown, finish, outcome, 200)], source="c16")
 
     # -- Strands hook callbacks ---------------------------------------------------
@@ -393,17 +441,18 @@ class ModelCallAdapter(object):
             self._n += 1
             key = "guard-%d" % self._n
         res, _ = self._check(purpose, None, key)
-        if res.cancel:
-            self._emit(res.records)
-            return GuardedResult("BLOCK", "stopped" if res.reason == "stopped" else "c16-deny")
         self._emit(res.records)
+        if res.cancel:
+            return GuardedResult("BLOCK", "stopped" if res.reason == "stopped" else "c16-deny")
         try:
             out = post() or {}
         except Exception as exc:
             self.tally.release(key)
             st = getattr(exc, "status_code", None)
-            self._emit([self._action_record(None, None, None, True, None, _error_outcome(exc, st), st)])
+            self._emit(self._release_held(key, None, "the call failed before a response") + [
+                self._action_record(None, None, None, True, None, _error_outcome(exc, st), st)])
             return GuardedResult("BLOCK", "post-error")
+        self._emit(self._release_held(key, out.get("call_id")))
         usage = out.get("usage") or {}
         tin, tout = usage.get("inputTokens"), usage.get("outputTokens")
         finish = out.get("finish_reason")
