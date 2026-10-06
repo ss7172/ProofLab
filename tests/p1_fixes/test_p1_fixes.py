@@ -92,6 +92,14 @@ def test_blocked_reask_keeps_the_precedence_rules_and_the_label():
     assert j.disposition == "escalate" and j.precedence_rule == "guardrail-blocked-reask"
 
 
+def test_blocked_task_call_no_reask_escalates():
+    """The app passes no text and no re-ask (ask_again None) when the guardrail blocked the task call (ADV-H-01)."""
+    j = j2.judge("", None)
+    assert j.disposition == "escalate" and j.precedence_rule == "guardrail-blocked-reask" and j.reasked is False
+    assert j.model_disposition is None and j.valid is False
+    assert j2.judge("", None, constraints={"maintenance_freeze": True}).disposition == "escalate"
+
+
 def test_a_served_but_invalid_reask_still_escalates_invalid():
     j = j2.judge("nope", lambda p: "still nope")
     assert j.disposition == "escalate" and j.precedence_rule == "invalid-structured-output"
@@ -196,7 +204,7 @@ def test_real_app_task_call_blocked_escalates_with_no_reask(args):
     res = d["result"]
     assert res["disposition"] == "escalate" and res["judgment"]["precedence_rule"] == "guardrail-blocked-reask"
     assert res["answer"] == "" and BLOCKED not in json.dumps(res)
-    assert res["judgment"]["model_disposition"] is None
+    assert res["judgment"]["model_disposition"] is None and res["judgment"]["reasked"] is False   # none was made
     if args:
         assert res["position"] == "escalate"
 
@@ -274,6 +282,7 @@ def test_p1_replay_network_task_call_blocked():
     assert c["disposition"] == "gather-evidence"   # the customer is unchanged (its re-ask blocked, text derived)
     assert n["disposition"] == "escalate" and n["judgment"]["precedence_rule"] == "guardrail-blocked-reask"
     assert n["answer"] == "" and j2.proposal_empty(n["proposal"]) and BLOCKED not in json.dumps(n)
+    assert n["judgment"]["reasked"] is False and c["judgment"]["reasked"] is True
     assert n["tally_calls"] - c["tally_calls"] >= 1
     assert neg and i3["position"] == "escalate" and "no proposal received" in i3["judgment"]["reason"]
     assert i3["tally_calls"] == n["tally_calls"]   # Gateway C made no model call
