@@ -1,0 +1,8 @@
+version: inv-1
+system_id: customer-fault-resolution
+system_owner: Sree
+components:
+  - component_id: ifabric-customer
+    owner: "Sree"
+    host: "agentcore-runtime-synthetic"
+    model: "nemotron-synthetic"

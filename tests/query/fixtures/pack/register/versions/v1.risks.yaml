@@ -1,0 +1,6 @@
+version: v1
+risks:
+  - risk_id: R-C16
+    statement: "A run spends more tokens than the cap"
+    owner: "Sree"
+    appetite: "low"
