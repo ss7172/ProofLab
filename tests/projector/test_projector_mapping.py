@@ -98,7 +98,8 @@ def test_claim_and_controls_are_derived_not_asserted(run):
     c16 = [c for c in idx["claim"]["controls"] if c["ref"] == "C16"][0]
     assert c16["verdict_overall"] == "BREACHED" and c16["completeness"]["f_query_under_2min"] is False
     assert c16["completeness"]["a_register"] and c16["completeness"]["b_bound_records"] and c16["completeness"]["e_owner_alerted"] is False
-    assert idx["register"]["approval"] == {"status": "PENDING"} and idx["integrity"]["status"] == "UNVERIFIED"
+    # claim.json says PENDING, but the approval comes from the T2 files only: the fixture has none -> MISSING
+    assert idx["register"]["approval"]["status"] == "MISSING" and idx["integrity"]["status"] == "UNVERIFIED"
     assert idx["cases"][0]["incident"] == "INC0000001" and len(idx["cases"][0]["sha256"]) == 64
 
 
