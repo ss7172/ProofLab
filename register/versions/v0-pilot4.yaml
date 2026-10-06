@@ -1,0 +1,151 @@
+# WORKING COPY of the threshold register (ARCH 3.3). Strict flat subset: top-level keys first, flat entries, nothing after the last entry.
+# This is the v0-pilot4 pilot register: the pilot cap equals the safety ceiling (observe only), labelled so in why_value; EXPLORATORY, never assessed.
+# Every PENDING value is filled from the experiments (register/experiments/plan.md) or by the owner BEFORE the v1 freeze.
+# At freeze the dates below are set to the freeze time and the versions to v1; a changed control bumps its own threshold_version and version_date.
+version: v0-pilot4
+version_date: "2026-10-06T10:15:44Z"
+supersedes: none
+claim_id: C-FM-01
+register_owner: Sree
+pre_run_gate: block-assessed
+join_tolerance_s: 5
+register_version: v0-pilot4
+status: EXPLORATORY
+frozen_at: "2026-10-06T10:15:44Z"
+builder: "Sree (the owner also builds: a recorded separation-of-duties gap)"
+assurance: "ifabric-assurance-agent (owner Arth, approver Sree); outside every control's applies_to"
+retention: "Evidence is kept for 7 years from the submission date per the pack README; the account itself is destroyed when the event ends."
+owner: annapurna@invences.com
+owner_name: "Sree Annapurna Rallabandi"
+controls:
+  - control_id: "16"
+    name: "Per-run token spend cap"
+    metric: "Total input plus output tokens per fault-resolution run, all three ifabric agents, every retry included"
+    observation_limit: 300000
+    exception_tolerance: 0
+    measurement_basis: "Gateway per-call usage in aws/spans by run id (the CID), model calls only (listener llm), deduplicated by action id; rail model calls count toward C16"
+    owner: annapurna@invences.com
+    version_date: "2026-10-06T10:15:44Z"
+    enforcement_point: "EP-1 inline before each model call (observe in the pilot); EP-2 post-run floor over aws/spans, authoritative"
+    control_ref: C16
+    library_id: ACN-COST-001
+    threshold_version: C16-v0
+    mode: in-transaction
+    in_claim: true
+    objective: "No assessed fault-resolution run spends more tokens than the owner's appetite for its tier"
+    risk: "A loop overspends, or calls are missed or charged to the wrong run"
+    risk_ref: R-C16
+    scope: "ifabric trio only; the rails policy and mode are part of the agent version and an EP setting, never an agent change; the reference trio is never assessed"
+    applies_to: "ifabric-customer@sha256:550ae80a4c7de3df61d65a0d978b59e15cad62b99bc3354adb31ca7bbb53d800@nemotron-super-120b,ifabric-it@sha256:e7359144514c1abe445fcca2b4e823eac4a44d6187c3ec97bcca2c18c670a4e5@nemotron-super-120b,ifabric-network@sha256:5e1f3ee723309fd93113b6b31d444baa0fc40e1bf811949ea7da79089aebbb73@nemotron-super-120b"
+    metric_unit: tokens
+    calculation: "sum of input plus output tokens over the deduplicated model calls of the run, compared with cap(tier) inclusive: total <= cap is within"
+    exception_denominator: "assessed runs"
+    why_metric: "A runaway loop is the risk: the reference S2 run made 174 model calls and spent 1,999,001 tokens in 5 minutes"
+    why_value: "PENDING-PILOT: v0-pilot4 (EXPLORATORY, observe only, never assessed): the pilot cap equals the safety ceiling 300000 (captain 2026-10-06T08:02Z: 100000 for P1 and P3, 300000 for P5 only) so pilots measure natural spend; v1 cap derived by rule C16-cap from the S1 and S3 pilots bounded above by the owner's appetite, never from S2"
+    measured_on: "PENDING-PILOT: pilot ids P1 P3 P5 (S1, S3 normal need; S2 only decides the breach lever)"
+    stops_holding_when: "The agents, the model or the rails policy change (a new treatment restarts the protocol) or the gateway stops reporting usage per call"
+    missing_data_rule: "Missing usage is INDETERMINATE (monitoring gap); a known subtotal over the cap is BREACHED even with gaps"
+    late_data_rule: "Spans are pulled at least 60 s after run.finished; an unfinished window is INDETERMINATE"
+    duplicate_rule: "One charge per action id"
+    invalid_data_rule: "A span without a run id or tokens is unattributed and listed, never silently dropped"
+    transport_inline: "evaluate() through the dispatcher at EP-1"
+    transport_postrun: "pull at EP-2 then replay of the same core"
+    evaluator_module: "prooflab.evaluators.c16"
+    evaluator_sha256: "PENDING-BUILD"
+    alert_recipient: annapurna@invences.com
+    alert_volume_bound: "one finding per control per run"
+    tier_rule: "Single tier default (D2 tiers not adopted); if adopted, the owner's 5x5 matrix maps declared scenario attributes to a tier"
+    default_tier: default
+    cap_tier_default: 300000
+    inline_modes: observe
+    safety_ceiling: 300000
+    inline_bound_margin_pct: 10
+    inline_bound_fallback_tokens: 6000
+    max_tokens: 2048
+    tool_no_evidence_limit: 3
+    declared_conditions: "conflicting-context:sha256=PENDING-CONDITION-TEXT"
+    breach_protocol: "Switch the EP setting to enforce with the owner's OK and re-run the identical scenario (N3); the first SATISFIED re-test closes the finding"
+  - control_id: "7"
+    name: "Automatic event recording"
+    metric: "Expected events recorded and joined to one run id, and the longest gap between consecutive expected events in one agent stream"
+    observation_limit: "coverage 100 percent of expected events; gap limit PENDING-PILOT milliseconds; violating gaps PENDING-OWNER percent"
+    exception_tolerance: 0
+    measurement_basis: "Expected set from the gateway spans, refusals and the frozen workflow spec; observed set is the emitted records only (testimony); rail records are outside C7's expected population"
+    owner: annapurna@invences.com
+    version_date: "2026-10-06T10:15:44Z"
+    enforcement_point: "Emit at EP-1, EP-3, EP-4, EP-5; tested after the run"
+    control_ref: C7
+    library_id: AIA-LOG-001
+    threshold_version: C7-v0
+    mode: event-driven
+    in_claim: true
+    objective: "Every governed action of an assessed run is recorded and linked to its run"
+    risk: "Missing events, broken run links, or excessive unexplained gaps"
+    risk_ref: R-C7
+    scope: "Rail records (rail_decision) are outside C7's expected population; pulled platform records never count as observed"
+    applies_to: "ifabric-customer@sha256:550ae80a4c7de3df61d65a0d978b59e15cad62b99bc3354adb31ca7bbb53d800@nemotron-super-120b,ifabric-it@sha256:e7359144514c1abe445fcca2b4e823eac4a44d6187c3ec97bcca2c18c670a4e5@nemotron-super-120b,ifabric-network@sha256:5e1f3ee723309fd93113b6b31d444baa0fc40e1bf811949ea7da79089aebbb73@nemotron-super-120b"
+    metric_unit: "ratio and milliseconds"
+    calculation: "coverage = expected events observed / expected events; gap = time between consecutive observed expected events on the agent clock"
+    exception_denominator: "expected events"
+    why_metric: "The reference S2 run left 16 ledger records for 174 model calls: recording gaps are the risk"
+    why_value: "PENDING-PILOT: coverage follows the Low appetite (all expected events); the gap limit is bounded below by the pilots' normal gap distribution"
+    measured_on: "PENDING-PILOT: pilot ids P1 P3 P5"
+    stops_holding_when: "The workflow spec or the emit transport changes"
+    missing_data_rule: "A missing expected source (spans not ingested) is INDETERMINATE, never SATISFIED"
+    late_data_rule: "Records after the run window close are listed as late"
+    duplicate_rule: "Set semantics: duplicates cannot inflate coverage"
+    invalid_data_rule: "A record failing validation is counted as not observed"
+    transport_inline: "none (emit only)"
+    transport_postrun: "pull at EP-2 then assess"
+    evaluator_module: "prooflab.evaluators.c7"
+    evaluator_sha256: "PENDING-BUILD"
+    alert_recipient: annapurna@invences.com
+    alert_volume_bound: "one finding per control per run"
+    expected_sources: "gateway spans,/modaas/evidence refusals,frozen workflow spec"
+    workflow_events: "run.started,handoff.sent,invocation.received,intent,judgment,handoff.received,escalation,negotiation,run.finished,decision"
+    workflow_events_after_stop: "decision,stop,judgment"
+    gap_clock: agent-runtime
+    declared_faults: "suppress-record:ifabric-it:tool.call:1,inject-tool-output:ifabric-it:lookup:tool-directive"
+  - control_id: "9"
+    name: "Drift and performance against a frozen baseline"
+    metric: "AgentCore invocation Latency Maximum per runtime, with Errors Sum and invocation counts"
+    observation_limit: "two-sided band around the frozen baseline: change limit PENDING-OWNER percent, violating windows PENDING-OWNER percent"
+    exception_tolerance: 0
+    measurement_basis: "CloudWatch AWS/Bedrock-AgentCore metrics per run window W2, AWS-written"
+    owner: annapurna@invences.com
+    version_date: "2026-10-06T10:15:44Z"
+    enforcement_point: "Scheduled pull after each run (continuous), near-real-time post-run evaluation"
+    control_ref: C9
+    library_id: AIA-ARC-006
+    threshold_version: C9-v0
+    mode: continuous
+    in_claim: true
+    objective: "A model or runtime change nobody reviewed is noticed within minutes"
+    risk: "Drift goes unnoticed, or the measurements themselves are missing"
+    risk_ref: R-C9
+    scope: "ifabric runtimes; runs spaced at least 2 minutes apart for per-run attribution"
+    applies_to: "ifabric-customer@sha256:550ae80a4c7de3df61d65a0d978b59e15cad62b99bc3354adb31ca7bbb53d800@nemotron-super-120b,ifabric-it@sha256:e7359144514c1abe445fcca2b4e823eac4a44d6187c3ec97bcca2c18c670a4e5@nemotron-super-120b,ifabric-network@sha256:5e1f3ee723309fd93113b6b31d444baa0fc40e1bf811949ea7da79089aebbb73@nemotron-super-120b"
+    metric_unit: milliseconds
+    calculation: "relative change of the window Maximum against the frozen baseline value for the runtime and scenario, absolute value, inclusive limit"
+    exception_denominator: "assessed windows"
+    why_metric: "The IT runtime's Maximum was 278.4 s against 8.2 to 8.5 s for the others, with Errors 0; a model swap needed no re-approval"
+    why_value: "PENDING-PILOT: baseline from the declared baseline-eligible S1 and S3 runs (DC-11), n stated; the limit comes from the owner's appetite above the baseline spread"
+    measured_on: "PENDING-PILOT: pilot ids P1 P3 and named runs declared baseline-eligible"
+    stops_holding_when: "Warm-up policy or session policy changes, or fewer than the declared baseline runs exist for a runtime and scenario"
+    missing_data_rule: "An expected invocation with no datapoint is INDETERMINATE; an idle hour is NOT_ASSESSED, never a gap"
+    late_data_rule: "Metric publication delay is unverified; assess after the window plus the declared delay"
+    duplicate_rule: "One datapoint per runtime and minute"
+    invalid_data_rule: "A datapoint with no matching run window is listed unjoined"
+    transport_inline: "none"
+    transport_postrun: "pull of AgentCore metrics then assess"
+    evaluator_module: "prooflab.evaluators.c9"
+    evaluator_sha256: "PENDING-BUILD"
+    alert_recipient: annapurna@invences.com
+    alert_volume_bound: "one finding per crossing run"
+    metric_namespace: "AWS/Bedrock-AgentCore"
+    statistic: Maximum
+    window_rule: "W2: run.started to run.finished plus 60 s, per runtime"
+    baseline_procedure: "Largest Maximum per runtime and scenario over the declared baseline-eligible runs; frozen in the register version that first carries it"
+    limit_direction: two-sided
+    comparability: "Identical session policy for baseline and named runs; one unassessed warm-up invocation per updated runtime precedes the next baseline or assessed run"
+    declared_treatments: "model-swap:ifabric-it:nemotron-nano-9b"

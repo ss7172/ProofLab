@@ -1,0 +1,224 @@
+# DRAFT risk register (ARCH 3.9), frozen with register.yaml as one version. Strict flat subset, same parser.
+# Every rating below is a DRAFT FOR THE OWNER: Sree confirms or changes each one before the v1 freeze. Until then no threshold cites a rating.
+# Appetite is written BEFORE any pilot; every derivation rule starts from it (the appetite is the upper bound, the pilots the lower).
+version: v0-pilot4
+version_date: "2026-10-06T10:15:44Z"
+matrix: "5x5: likelihood 1 rare to 5 almost certain; severity 1 negligible to 5 severe; rating = likelihood x severity"
+bands: "Low 1-4, Medium 5-9, High 10-16, Critical 20-25"
+owner: annapurna@invences.com
+risks:
+  - risk_id: R-C16
+    statement: "A loop overspends, or calls are missed or charged to the wrong run"
+    source: "masterclass slides p20 (verbatim)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network"
+    controls: "C16,EP-1,EP-2"
+    regulatory_basis: "none claimed"
+    likelihood: 4
+    severity: 4
+    inherent_rating: "16 High"
+    rating_evidence: "Reference S2 run: 174 model calls and 1,999,001 tokens in 5 minutes, 80 percent of the hourly budget; the platform has no per-run halt"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "6 Medium"
+    appetite_statement: "No assessed run goes over its cap; the cap bounds the loss per run (value PENDING-OWNER in tokens)"
+    threshold_derivation_C16: "Cap = normal need of S1 and S3 pilots plus declared headroom, at most the appetite; never derived from S2; safety ceiling bounds an observe-mode run"
+    residual_likelihood: 2
+    residual_severity: 2
+    residual_rating: "4 Low in enforce"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a threshold change, a regulatory change"
+    status: treated
+    exceptions: none
+  - risk_id: R-C7
+    statement: "Missing events, broken run links, or excessive unexplained gaps"
+    source: "masterclass slides p20 (verbatim)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network"
+    controls: "C7"
+    regulatory_basis: "EU AI Act Art. 12 record-keeping, high-risk tier UNVERIFIED against a primary source (playbook 1.0 l.35, OC-21)"
+    likelihood: 5
+    severity: 4
+    inherent_rating: "20 Critical"
+    rating_evidence: "The same S2 run left 16 ledger records for 174 model calls; the reference agents record no action id or tokens"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "4 Low"
+    appetite_statement: "A governed action may go unrecorded only if it is reported as missing"
+    threshold_derivation_C7: "Coverage from the appetite (all expected events); gap bounded below by the pilots' normal gaps; violating-gap share from the appetite"
+    residual_likelihood: 2
+    residual_severity: 2
+    residual_rating: "4 Low"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a threshold change, a regulatory change"
+    status: treated
+    exceptions: none
+  - risk_id: R-C9
+    statement: "Drift goes unnoticed, or the measurements themselves are missing"
+    source: "masterclass slides p20 (verbatim)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network,nemotron-super-120b"
+    controls: "C9,EP-0"
+    regulatory_basis: "none claimed"
+    likelihood: 4
+    severity: 3
+    inherent_rating: "12 High"
+    rating_evidence: "IT runtime Maximum 278.4 s against 8.2 to 8.5 s for the others with Errors 0; a model swap needed no re-approval"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "6 Medium"
+    appetite_statement: "A runtime change is noticed within minutes; an unmeasured expected window is never healthy"
+    threshold_derivation_C9: "Baseline measured from declared baseline-eligible runs; the limit is the owner's, above the baseline spread and at most the appetite"
+    residual_likelihood: 3
+    residual_severity: 2
+    residual_rating: "6 Medium (detected, not prevented)"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a threshold change, a regulatory change"
+    status: treated
+    exceptions: none
+  - risk_id: R-OWN
+    statement: "An AI component runs with no owner, outside the inventory, or at a version nobody approved"
+    source: "team-authored (ARCH 3.9)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network,ifabric-assurance-agent"
+    controls: "EP-0,EP-10,INV"
+    regulatory_basis: "none claimed"
+    likelihood: 4
+    severity: 3
+    inherent_rating: "12 High"
+    rating_evidence: "IT's only approval predates its model swap; all 18 approvals have an empty signature"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "4 Low"
+    appetite_statement: "Every in-scope component has a named owner and an approved running version"
+    threshold_derivation_INV: "Zero discrepancies per pass (optional control, Phase 3)"
+    residual_likelihood: 2
+    residual_severity: 2
+    residual_rating: "4 Low if EP-0 blocks assessed runs; 6 Medium and open if record-only"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a threshold change, a regulatory change"
+    status: treated
+    exceptions: none
+  - risk_id: R-JDG
+    statement: "An agent acts on a guess instead of gathering evidence or escalating"
+    source: "team-authored (ARCH 3.9)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network"
+    controls: "ESC,EP-4"
+    regulatory_basis: "none claimed"
+    likelihood: 4
+    severity: 4
+    inherent_rating: "16 High"
+    rating_evidence: "my-agent answered wrongly while fully governed; no twin data 40 times in 24 h"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "6 Medium"
+    appetite_statement: "An agent with insufficient evidence escalates or gathers more, never guesses"
+    threshold_derivation_ESC: "Disposition checked by code against the declared J2 rules; no numeric threshold"
+    residual_likelihood: 2
+    residual_severity: 3
+    residual_rating: "6 Medium"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a threshold change, a regulatory change"
+    status: treated
+    exceptions: none
+  - risk_id: R-GR-01
+    statement: "An injected instruction leads to an unsafe disposition"
+    source: "guardrails design 6.5 (team-authored)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network,ifabric-rails-policy"
+    controls: "EP-14,EP-3,EP-4"
+    regulatory_basis: "none claimed"
+    likelihood: 4
+    severity: 4
+    inherent_rating: "16 High"
+    rating_evidence: "Treatments I-03, I-04, T-03, O-02, O-03; adversarial corpus RTM-1"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "6 Medium"
+    appetite_statement: "An injected instruction is neutralised or flagged; the answer never follows it"
+    residual_likelihood: 2
+    residual_severity: 3
+    residual_rating: "6 Medium (self-enforced in-agent)"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a rails policy change, a regulatory change"
+    status: treated
+    exceptions: none
+  - risk_id: R-GR-02
+    statement: "Customer PII reaches the model, telemetry or logs beyond need"
+    source: "guardrails design 6.5 (team-authored)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network,ifabric-rails-policy"
+    controls: "EP-14,EP-15"
+    regulatory_basis: "none claimed"
+    likelihood: 4
+    severity: 3
+    inherent_rating: "12 High"
+    rating_evidence: "Chat spans carry the system prompt and customer records; treatments I-02, T-05, T-06, O-04, span redaction"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "4 Low"
+    appetite_statement: "Customer data reaches only what the task needs and is redacted in telemetry"
+    residual_likelihood: 2
+    residual_severity: 3
+    residual_rating: "6 Medium and open above the appetite (self-enforced in-agent)"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a rails policy change, a regulatory change"
+    status: open
+    exceptions: none
+  - risk_id: R-GR-03
+    statement: "An agent uses a tool outside its role"
+    source: "guardrails design 6.5 (team-authored)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network,customer-records"
+    controls: "EP-14,EP-3"
+    regulatory_basis: "none claimed"
+    likelihood: 3
+    severity: 4
+    inherent_rating: "12 High"
+    rating_evidence: "Cross-tool calls are allowed and Cedar sees one shared identity; treatments X-01, X-02, Cedar D15 (a)"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "6 Medium"
+    appetite_statement: "A tool call outside the agent's declared role is refused or recorded"
+    residual_likelihood: 2
+    residual_severity: 3
+    residual_rating: "6 Medium (self-enforced in-agent plus one Cedar rule)"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a rails policy change, a regulatory change"
+    status: treated
+    exceptions: none
+  - risk_id: R-GR-04
+    statement: "The rails themselves degrade service through false positives"
+    source: "guardrails design 6.5 (team-authored)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network,ifabric-rails-policy"
+    controls: "EP-14"
+    regulatory_basis: "none claimed"
+    likelihood: 3
+    severity: 3
+    inherent_rating: "9 Medium"
+    rating_evidence: "Golden false-positive gate over the legitimate scenarios; observe mode available"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "6 Medium"
+    appetite_statement: "No legitimate scenario is blocked by a rail"
+    residual_likelihood: 2
+    residual_severity: 2
+    residual_rating: "4 Low"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a rails policy change, a regulatory change"
+    status: treated
+    exceptions: none
+  - risk_id: R-GR-05
+    statement: "Egress to an unapproved destination"
+    source: "guardrails design 6.5 (team-authored)"
+    system_id: customer-fault-resolution
+    components: "ifabric-customer,ifabric-it,ifabric-network,ifabric-rails-policy"
+    controls: "EP-15"
+    regulatory_basis: "none claimed"
+    likelihood: 3
+    severity: 4
+    inherent_rating: "12 High"
+    rating_evidence: "Treatment RT-03; the platform has no egress filter for participants"
+    rating_status: "DRAFT: owner to confirm"
+    appetite_rating: "4 Low"
+    appetite_statement: "An agent reaches only declared destinations"
+    residual_likelihood: 2
+    residual_severity: 3
+    residual_rating: "6 Medium and open above the appetite (self-enforced in-agent)"
+    owner_name: "Sree Annapurna Rallabandi"
+    review_trigger: "A new image or model, a rails policy change, a regulatory change"
+    status: open
+    exceptions: none

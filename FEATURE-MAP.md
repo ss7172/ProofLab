@@ -28,6 +28,25 @@
 | PR-00b | 1 | merged | PR-00b-gate | f209c7c |
 | PR-25 | 1 | merged (integration) | PR-25-integration | a278f43 |
 | PR-26 | 1 | merged (build carrier) | PR-26-build-carrier | 769b07a |
+| PR-27 | 1 | merged (e2e rehearsal) | PR-27-e2e-rehearsal | 245078d |
+| PR-28 | 1 | merged (negotiation, D12, D5, kit parity) | PR-28-negotiation | 3bfc5ad |
+| PR-29a | 1 | merged (EP-1 call.id, evaluator sha) | PR-29a-modelcall-fix | 47dbbcf |
+| PR-29b | 1 | merged (laptop defects D1-D11) | PR-29b-laptop-fixes | 3c68551 |
+| PR-30a | 1 | merged (MCP PII off, rails, metrics dims) | PR-30a-fixes | 5f60928 |
+| PR-30b | 1 | merged (EP-0 pin-only rule) | PR-30b-ep0 | 68217bb |
+| PR-31 | 1 | merged (EP-3 DG-1 sweep) | PR-31-ep3-rails | 168124d |
+| PR-32 | 1 | merged (root publish) | PR-32-root-publish | b0c90c3 |
+| PR-34 | 1 | merged (pack/submit fixes) | PR-34-pack-fixes | cee1ad3 |
+| PR-37 | 1 | merged (gap list B19-B27, decisions log) | PR-37-gaps-decisions | c5c6aab |
+| PR-38 | 1 | merged (T-07 loop guard, benign re-ask, no-proposal path; incl. PR-36) | PR-36-it-loop-guard | 830502f |
+| PR-39 | 1 | merged (C7 expected set, pilot artifacts) | PR-39-c7-artifacts | 4f23303 |
+| PR-40 | 2 | merged (console round 1) | PR-40-console-fix | d57c868 |
+| PR-40b | 2 | merged (console round 2) | PR-40b-console | ab7d8d4 |
+| PR-40c | 2 | merged (console round 3; real-Chrome recheck pass) | PR-40c-console | 4e9373f |
+| PR-41 | 2 | merged (C9 completion tooling) | PR-41-c9 | e2d9293 |
+| PR-42 | 2 | merged (retest, ESC finding, collect driver) | PR-42-humanloop-collect | 8df84df |
+| PR-43 | 1 | merged (Arth integration gate) | PR-43-integration-gate | d7b79ea |
+| PR-44 | 1 | merged (read-timeout override) | PR-44-read-timeout | 86c257a |
 | PR-24 | 1 | merged | PR-24-cedar-texts | cb03cd7 |
 | PR-11 | 1 | merged | PR-11-registry | 8358e39 |
 | PR-08a | 1 | merged | PR-08a-orchestrator | a985c2c |
