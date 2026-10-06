@@ -718,6 +718,12 @@ def step_assess(R):
                 real[(name, ctl)] = json.loads(_read(fp))["requirement_verdict"]
     R.check("`prooflab assess --snapshot` writes assessments/<C>/<cid>.json for every named run",
             len(real) == 2 * len(runs), "rc=%d files=%d %s" % (rc, len(real), (err.strip())[:80]))
+    c9v = {}
+    for name, run in runs.items():                 # PR-41: C9 is assessed too; v1 has no frozen baseline (C9-v1)
+        fp = _p(snap, "assessments", "C9", run["cid"] + ".json")
+        c9v[name] = json.loads(_read(fp))["requirement_verdict"] if os.path.isfile(fp) else None
+    R.check("assess --snapshot C9 under v1: every named run NOT_ASSESSED (no frozen baseline), never a pass",
+            all(v == V.NOT_ASSESSED for v in c9v.values()), str(sorted(c9v.items())))
     try:
         got = assess_glue(R, snap)
     except Exception as exc:  # noqa: BLE001

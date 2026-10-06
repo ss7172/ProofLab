@@ -257,3 +257,12 @@ def test_fewer_invocations_in_the_metric_than_the_run_made_is_a_gap(tmp_path):
                     invocations={"ifabric-it": 1.0})
     d = _load(A.assess_snapshot(snap, controls=("C9",))["written"][0][3])
     assert d["requirement_verdict"] == "INDETERMINATE" and any("a datapoint is missing" in g for g in d["gaps"])
+
+
+def test_claim_does_not_count_a_not_assessed_control_as_coverage(tmp_path):
+    snap = snapshot(tmp_path, [(CID, run_records(CID, "08:18:15", "08:19:50"))], reg=open(V0).read())
+    measure_capture(snap, P1_POINTS)
+    A.assess_snapshot(snap, controls=("C9",))
+    row = [r for r in E.claim_line(E.Pack(snap))["rows"] if r["control"] == "C9"][0]
+    assert row["worst"] == "NOT_ASSESSED"
+    assert E.claim_line(E.Pack(snap))["coverage"].startswith("partial coverage: 0 of 3")

@@ -639,7 +639,7 @@ def claim_line(pack):
             worst = a["verdict"] if worst is None or ["SATISFIED", "INDETERMINATE", "NOT_ASSESSED", "BREACHED"].index(a["verdict"]) > \
                 ["SATISFIED", "INDETERMINATE", "NOT_ASSESSED", "BREACHED"].index(worst) else worst
         rows.append({"control": c, "runs": len(found), "worst": worst or "NOT_ASSESSED"})
-        counts += 1 if found else 0
+        counts += 1 if any(a["verdict"] != "NOT_ASSESSED" for a in found) else 0   # a NOT_ASSESSED file is not coverage
     top = (pack.registers[sorted(pack.registers)[-1]]["doc"]["top"] if pack.registers else {})
     return {"kind": "claim", "verdict": "RECORDED", "claim_id": top.get("claim_id") or "C-FM-01", "rows": rows,
             "coverage": "full coverage: %d of %d controls assessed" % (counts, len(CONTROLS)) if counts == len(CONTROLS)
