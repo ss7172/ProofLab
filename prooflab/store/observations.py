@@ -101,8 +101,13 @@ def _build(kind, rid, run_id, observed_at, clock, detail, provenance, refs, null
     return rec
 
 
-def _gateway_record(kv: dict, raw_ref: str, lineno: int, line_sha: str, provenance_map):
-    """-> (record or None, sighting or None, reason or None)."""
+def _gateway_record(kv: dict, raw_ref: str, lineno: int, line_sha: str, provenance_map, known_action_ids=None):
+    """-> (record or None, sighting or None, reason or None).
+
+    `known_action_ids`: action ids our own records name (e.g. the Assurance agent's ANALYSIS_* delivery-log lines).
+    The ifabric-assure runtime's model call carries no baggage, so the gateway mints its own root trace and puts
+    THAT 32-hex id in `modaas.run_id` (b6b, live 2026-10-06): such a span whose action id we know is kept as
+    `unresolved:<trace>` for the stitcher to join by action id, never dropped as another party's traffic."""
     run_id = kv.get("modaas.run_id") or None
     trace = kv.get("modaas.trace_id") or kv.get("trace.id") or None
     status = _int(kv.get("http.status"))
@@ -116,7 +121,10 @@ def _gateway_record(kv: dict, raw_ref: str, lineno: int, line_sha: str, provenan
         sighting = {"run_id": run_id, "source": "gateway", "ts": at, "tokens_in": tokens_in, "tokens_out": tokens_out}
     refused = status is not None and status >= 400
     if run_id and not _ids.is_valid_run_id(run_id):
-        return None, sighting, None            # another party's id: catalogue only
+        if known_action_ids and _TRACE_RE.match(run_id) and kv.get("modaas.action_id") in known_action_ids:
+            run_id, sighting = _ids.unresolved_correlation_id(run_id), None   # joined by action id (stitcher)
+        else:
+            return None, sighting, None            # another party's id: catalogue only
     if not run_id:
         if not refused:
             return None, None, "background"
@@ -218,7 +226,7 @@ def insights_row_to_flat(doc: dict) -> dict:
     return flat
 
 
-def normalize_gateway_text(text: str, raw_ref: str, provenance_map=None, insights=False) -> dict:
+def normalize_gateway_text(text: str, raw_ref: str, provenance_map=None, insights=False, known_action_ids=None) -> dict:
     """Gateway pod log text (or span-export JSON lines) -> {records, sightings, rejects, background}.
 
     `raw_ref` is the capture's path inside the snapshot (`raw/gateway/<file>`); it goes into source.refs.
@@ -243,7 +251,8 @@ def normalize_gateway_text(text: str, raw_ref: str, provenance_map=None, insight
             kv = parse_gateway_line(line)
         if kv is None:
             continue
-        rec, sighting, why = _gateway_record(kv, raw_ref, lineno, sha256_text(line.rstrip("\n")), provenance_map)
+        rec, sighting, why = _gateway_record(kv, raw_ref, lineno, sha256_text(line.rstrip("\n")), provenance_map,
+                                             known_action_ids)
         if sighting:
             sightings.append(sighting)
         if rec is None:
