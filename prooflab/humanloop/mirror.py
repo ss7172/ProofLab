@@ -45,7 +45,9 @@ def _build(entry: dict, line: str, previous: Optional[str]) -> Optional[dict]:
     at, clock = _time(entry)
     run_id = run_id_of(entry["finding_id"], entry["ts"])
     from prooflab.store.observations import family_provenance
-    call_id = entry.get("action_id") or entry.get("call_id")
+    ids = entry.get("action_ids")
+    ids = [str(i) for i in ids if i] if isinstance(ids, (list, tuple)) else ([str(ids)] if ids else [])
+    call_id = ",".join(ids) or entry.get("action_id") or entry.get("call_id")
     fields = {
         "record_id": line_record_id(line), "run.id": run_id, "finding.id": entry["finding_id"],
         "detail": "delivery log %s%s" % (state, (" (from %s)" % previous) if previous else ""),

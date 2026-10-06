@@ -152,6 +152,18 @@ def test_mirror_transitions_dedupe_and_validate(tmp_path):
     assert mirror.mirror_lines(lines, {r["record_id"] for r in records}) == []     # a re-mirror deduplicates
 
 
+def test_mirror_analysis_line_carries_call_id_and_digest():
+    fid = "F-1"
+    line = json.dumps({"ts": "2026-10-06T06:04:00Z", "finding_id": fid, "state": "ANALYSIS_WRITTEN",
+                       "note_digest": "ab", "action_ids": ["act-1", "act-2"]})
+    [r] = mirror.mirror_lines([line])
+    assert r["call.id"] == "act-1,act-2"
+    assert '"note_digest": "ab"' in r["detail"]
+    assert rec.validate_record(r) == []
+    [r1] = mirror.mirror_lines([line.replace('["act-1", "act-2"]', '["act-1"]')])
+    assert r1["call.id"] == "act-1"
+
+
 def test_runner_mirror_and_check_verbs(fake, tmp_path, capsys):
     data, config, log, sys_id = delivered(fake, tmp_path)
     path = write_json(tmp_path / "f.json", data)
