@@ -26,7 +26,8 @@ The assurance role is one file (no base): only the IFABRIC_ROLE_* pair is carrie
 Writes the request JSON and a sidecar <out minus .json>.meta.json (role, tag, file sha256s, sizes, the c16
 core sha256) that holds NO base64 value. Refuses: a tag that is not ifabric-<role>-<7..40 hex> or is a
 reference tag; a source file named as the kit's reference file; a buildspec over 25,600 chars; any env value
-or the env total over 44,000 chars (46,548 proven; margin); a base whose evaluator.sha256 marker is not the
+over 44,000 chars or the env total over 46,000 chars (decision D-B'', 2026-10-06 06:20Z: the 03:29Z CodeBuild
+probe accepted one value of 46,548 chars and ~46.7K in all; margin kept on both); a base whose evaluator.sha256 marker is not the
 sha256 of prooflab/evaluators/c16_core.py; a role pinned to a different base file. It never calls AWS.
 Standard library only; Python 3.9+.
 """
@@ -48,8 +49,10 @@ ROLES = ("customer", "it", "network", "assurance")
 SINGLE_FILE_ROLES = ("assurance",)                    # one self-contained file, no base
 
 BUILDSPEC_CAP = 25600          # CodeBuild's buildspecOverride limit
-ENV_VALUE_CAP = 44000          # per value; the probe proved one value of 46,548 chars
-ENV_TOTAL_CAP = 44000          # all override names + values; the probe sent ~46.7K in all
+# D-B'' (06:20Z): the 2026-10-06 03:29Z CodeBuild StartBuild probe (ops-lane/build-probe-report.md) was accepted
+# with one value of 46,548 chars and ~46.7K of names + values in all. The gates keep a margin under both.
+ENV_VALUE_CAP = 44000          # per value (proven 46,548)
+ENV_TOTAL_CAP = 46000          # all override names + values (proven ~46.7K)
 
 TAG_RE = re.compile(r"^ifabric-([a-z]+)-[0-9a-f]{7,40}$")
 REFERENCE_TAGS = ("reference-agent-v5", "reference-agent-v5-agentcore", "my-agent", "hackathon-helper", "latest")

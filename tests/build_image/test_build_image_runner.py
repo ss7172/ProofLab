@@ -162,3 +162,31 @@ def test_refuses_a_request_with_a_reference_tag(req_path, fake, tmp_path):
         r = _run(["--request", str(p), "--region", "us-east-1"] + extra, env)
         assert r.returncode == 2 and "REFUSED" in r.stderr
     assert _calls(tmp) == []
+
+
+def test_env_gate_is_44000_per_value_and_46000_in_all(req_path, fake, tmp_path):
+    # D-B'' (06:20Z; 03:29Z probe: one value 46,548, ~46.7K in all): a total between 44000 and 46000 passes the
+    # runner's own gate (dry run), one over 46000 in all or one value over 44000 is REFUSED before any aws call.
+    out, req = req_path
+    env, tmp = fake
+
+    def with_pad(n):
+        r = json.loads(json.dumps(req))
+        have = sum(len(e["name"]) + len(e["value"]) for e in r["environmentVariablesOverride"])
+        r["environmentVariablesOverride"].append({"name": "PAD", "value": "x" * (n - have - 3), "type": "PLAINTEXT"})
+        p = tmp_path / ("pad-%d.json" % n)
+        p.write_text(json.dumps(r))
+        return str(p)
+
+    ok = _run(["--request", with_pad(45900), "--dry-run"], env)
+    assert ok.returncode == 0, ok.stderr
+    over = _run(["--request", with_pad(46100), "--dry-run"], env)
+    assert over.returncode == 2 and "REFUSED" in over.stderr
+    big = json.loads(json.dumps(req))
+    big["environmentVariablesOverride"] = [e for e in big["environmentVariablesOverride"] if not e["name"].endswith("_B64")]
+    big["environmentVariablesOverride"].append({"name": "IFABRIC_ROLE_B64", "value": "x" * 44001, "type": "PLAINTEXT"})
+    p = tmp_path / "one-big.json"
+    p.write_text(json.dumps(big))
+    r = _run(["--request", str(p), "--dry-run"], env)
+    assert r.returncode == 2 and "REFUSED" in r.stderr
+    assert _calls(tmp) == []

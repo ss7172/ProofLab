@@ -66,8 +66,9 @@ if not re.match(r"^[a-z0-9][a-z0-9._/-]*$", repo) or not re.match(r"^[A-Za-z0-9]
     bad.append("bad repo or project name")
 if len(req.get("buildspecOverride", "")) > 25600:
     bad.append("buildspec over 25600 chars")
-if any(len(v) > 44000 for v in env.values()) or sum(len(k) + len(v) for k, v in env.items()) > 44000:
-    bad.append("env overrides over the 44000-char gate")
+# D-B'' (06:20Z): each value <= 44000, all names + values <= 46000 (03:29Z probe: 46,548 one value, ~46.7K total).
+if any(len(v) > 44000 for v in env.values()) or sum(len(k) + len(v) for k, v in env.items()) > 46000:
+    bad.append("env overrides over the gate (44000 per value, 46000 in all)")
 if "IFABRIC_ROLE_B64" not in env or "IFABRIC_ROLE_SHA256" not in env:
     bad.append("no IFABRIC_ROLE_B64/SHA256 pair")
 if req.get("environmentTypeOverride") != "ARM_CONTAINER":
