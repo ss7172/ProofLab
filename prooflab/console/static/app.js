@@ -32,7 +32,7 @@ async function inspect(ref) {
   if (/^servicenow:INC\d+$/.test(ref)) { location.hash = "#/loop/" + ref.slice(11); return; }
   const rec = findRecord(ref), body = $("drBody"); const rr = rec ? await api("/api/v1/raw?ref=" + encodeURIComponent(rec.source.raw_ref)).catch(() => null) : null; body.replaceChildren(); $("drTitle").textContent = rec ? rec["call.id"] || rec.evidence_id : ref;
   if (!rec) { const got = /^(record|raw):/.test(ref) ? await api("/api/v1/raw?ref=" + encodeURIComponent(ref)).catch(() => null) : null;
-    body.append(h("p", { class: "dim" }, "Reference "), h("pre", { class: "raw" }, ref), got && got.data ? [h("div", { class: "label" }, "Line as captured" + (got.data.path ? " (" + got.data.path + (got.data.line_no ? " line " + got.data.line_no : "") + ")" : "")), rawLine(got.data.line), kv([["sha256", h("span", { class: "mono" }, got.data.sha256)]])] : h("p", { class: "v-breach" }, "unresolved: not listed in the pack (shown red, never hidden)")); return openDrawer(); }
+    body.append(h("p", { class: "dim" }, "Reference "), h("pre", { class: "raw" }, ref), got && got.data ? h("div", {}, h("div", { class: "label" }, "Line as captured" + (got.data.path ? " (" + got.data.path + (got.data.line_no ? " line " + got.data.line_no : "") + ")" : "")), rawLine(got.data.line), kv([["sha256", h("span", { class: "mono" }, got.data.sha256)]])) : h("p", { class: "v-breach" }, "unresolved: not listed in the pack (shown red, never hidden)")); return openDrawer(); }
   const raw = rr && rr.data ? rr.data.line : null, cap = (rr && rr.data && rr.data.capture) || {}, out = h("span", { class: "mono muted" }, "not yet recomputed");
   body.append(
     h("div", { class: "label" }, "Bound evidence record · ifabric.evidence/v1"),
