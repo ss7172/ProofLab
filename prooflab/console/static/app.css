@@ -90,7 +90,7 @@ dl.kv{display:grid;grid-template-columns:minmax(130px,max-content) minmax(0,1fr)
 .hash{font-size:.92em;background:var(--surface-2);border-radius:3px;padding:0 3px;cursor:help}
 .ref{font:13px var(--mono);color:var(--accent);border-bottom:1px dotted var(--accent);cursor:pointer;overflow-wrap:anywhere}.ref:hover{border-bottom-style:solid}
 .idc{font:13px var(--mono);padding:1px 6px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--border);color:var(--ink-2);cursor:pointer}.idc.lit{outline:2px solid var(--accent);color:var(--accent)}
-.srctag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:3px;font:11.5px var(--mono);color:var(--ink-3);border:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+.srctag{display:inline;margin-left:6px;padding:0 5px;border-radius:3px;font:11.5px var(--mono);color:var(--ink-3);border:1px solid var(--border);vertical-align:baseline;white-space:normal;overflow-wrap:anywhere;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .callout{margin:10px 0 0;padding:10px 14px;border-radius:var(--r);font-weight:600;font-size:14px;border:1px solid}
 .callout.bad{background:var(--br-bg);color:var(--br);border-color:color-mix(in srgb,var(--br) 35%,transparent)}
 .callout.good{background:var(--sat-bg);color:var(--sat);border-color:color-mix(in srgb,var(--sat) 35%,transparent)}
