@@ -365,7 +365,8 @@ def _human_loops(recs, pack=None, cid=None, control=None):
                     "delivery": {"state": "DELIVERED" if dl else "NOT_RECORDED", "at": _utc_or(dl["text"].split(" DELIVERED ")[-1].split(" ")[0]) if dl else None},
                     "response": {"state": "UNKNOWN", "actor": None, "at": None},
                     "assurance_agent": {"state": "ANALYSIS_WRITTEN" if an else "UNKNOWN", "at": None},
-                    "closure": {"state": cl["state"] if cl else "OPEN"},
+                    "closure": dict({"state": cl["state"] if cl else "OPEN"},
+                                    **({"retest_ref": cl["ref"]} if cl and cl["state"] in ("CLOSED_BY_RETEST", "RETEST_CLOSED") else {})),
                     "lines": [x["text"] for x in items], "source": "joined-from: findings/, servicenow/delivery-log.jsonl, closures/"})
         return out
     notes = [r for r in recs if r.get("record_kind") == "notification"]
