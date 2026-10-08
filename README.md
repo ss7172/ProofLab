@@ -145,9 +145,3 @@ The presenter cheat sheet, with the verified Ask questions, is in `docs/presenta
 - **The risk register's ratings still carry the label "DRAFT: owner to confirm"** in the frozen file. The EU AI Act tier is UNVERIFIED against a primary source.
 - **No sealing or signing of records** (out of scope). `prooflab watch` (live C7/C9) was built but not used in the runs.
 
-## Team
-
-- **Sree:** captain and accountable owner (`annapurna@invences.com`). Sree approves the thresholds and the agent versions.
-- **Arth:** ServiceNow integration and the Assurance agent analyser.
-
-The AWS-side build and evidence pipeline were developed with Claude Code.
